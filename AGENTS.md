@@ -40,15 +40,20 @@ src/grid/ src/datetime/       # DataGrid (virtualised rows, cursor cell, sort, r
 src/pager/ src/tabs/ src/selectall/ # Pager with page arithmetic and selectorPages; PageTabs; SelectAllBar with checkedAfterClick
 src/menu/ src/palette/        # matchQuery, MenuQuery.logic (refusal, cursor, level trails), useBellBeat, menu.css; Palette and PaletteQuery over them
 src/charts/                   # Line, Pie, Scatter, and ResultChart over pure *.logic.ts geometry; Drawing.ts saves a chart as SVG or PNG; series colours --chart-1..8 (seriesColour.ts)
+src/terminal/                 # Terminal over Ghostty's VT engine (ghostty/: runtime, core, renderer, surface; vendor/ WebAssembly and fonts/ symbols font, each with its LICENSE); not in src/index.ts, only @bigpixelrocket/uiok/terminal
 docs/components/<area>.md     # per area: purpose, props, example, keyboard behaviour, labels read
-test/colorLiterals.test.ts    # no colour literal in src/ outside the token blocks and the catalog; only ids and attributes imported from src/themes/
-test/api.test.ts              # every public export has a docblock (TypeScript checker over src/index.ts)
+test/colorLiterals.test.ts    # no colour literal in src/ outside the token blocks, the catalog, and the terminal's fallbackColors.ts; only ids and attributes imported from src/themes/
+test/api.test.ts              # every public export has a docblock (TypeScript checker over src/index.ts and src/terminal/index.ts)
+test/fileFetch.ts             # serves the terminal's vendored WebAssembly to fetch in the engine suites
 test/cancelKey.test.ts        # no library module writes the ⌘. chord; Escape is the one cancel key
 test/stylesheets.ts           # CSS test helpers: readStylesheet (follows @import), applyStylesheets, declaredValues
 test/stylesheets.test.ts      # src/styles.css imports every component stylesheet
 test/setup.ts                 # Testing Library cleanup after each test; calls no app code
-scripts/build.mjs             # cleans dist/, runs tsc -p tsconfig.build.json, copies src/**/*.css
-scripts/verify-pack.mjs       # no source maps; every exports target packed; each area resolves as @bigpixelrocket/uiok/<area>; packed @imports resolve
+scripts/build.mjs             # cleans dist/, runs tsc -p tsconfig.build.json, copies src/**/*.css, *.wasm, *.woff2, and vendored LICENSE files
+scripts/verify-pack.mjs       # no source maps; every exports target packed; each area resolves as @bigpixelrocket/uiok/<area>; packed @imports resolve; every new URL('./…', import.meta.url) asset, the terminal's licences, and NOTICE packed
+scripts/smoke-terminal.mjs    # npm run smoke:terminal: packs, installs into a Vite app, builds, checks the terminal's assets are emitted; needs the network, not in check or CI
+scripts/build-libghostty-vt.sh # builds the terminal's WebAssembly from Ghostty source and ghostty-effects.zig with Zig from mise; not run in CI
+NOTICE                        # third-party licences of the terminal's engine, adapter, and font, shipped in the package
 tsconfig.json                 # strict, NodeNext; type-checks src, test, and configs without emitting
 tsconfig.build.json           # emits dist/: one .js and .d.ts per module, no maps, no Node types
 vitest.config.ts              # jsdom by default; a suite opts into node with `@vitest-environment node`
@@ -58,6 +63,6 @@ docs/releasing.md             # how to cut a release and the one-time npm setup
 docs/themes.md                # how themes work, the attribute contract, tokens by role, app tokens, the migration renames
 ```
 
-`package.json` `exports` maps `.` (`dist/index.js` and its types), `./styles.css`, `./package.json`, and the pattern `./*` to `dist/<area>/index.js` and `index.d.ts`, so a new `src/<area>/index.ts` is importable as `@bigpixelrocket/uiok/<area>` with no exports change. A new stylesheet is imported from `src/styles.css`; any other public file needs its own `exports` entry. `verify-pack.mjs` checks each.
+`package.json` `exports` maps `.` (`dist/index.js` and its types), `./styles.css`, `./package.json`, and the pattern `./*` to `dist/<area>/index.js` and `index.d.ts`, so a new `src/<area>/index.ts` is importable as `@bigpixelrocket/uiok/<area>` with no exports change. A new stylesheet is imported from `src/styles.css`; any other public file needs its own `exports` entry. `verify-pack.mjs` checks each. A runtime asset (the terminal's WebAssembly and font) is named with `new URL('./…', import.meta.url)` from the module beside it, never a bundler-specific `?url` import, and `build.mjs` copies it into `dist/`.
 
 To add an area: create `src/<area>/` with an `index.ts` barrel (a docblock on every export), put its CSS beside it and `@import` it from `src/styles.css`, add one `export *` line to `src/index.ts`, write `docs/components/<area>.md`, and add any shared chrome strings as a label group (`docs/labels.md`). Per-instance copy is a prop. `lucide-react` is a peer dependency for icons.

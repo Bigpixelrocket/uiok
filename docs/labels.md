@@ -44,6 +44,7 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | `pager`     | `PagerLabels`     | `DEFAULT_PAGER_LABELS`      | `Pager`                                                                                 |
 | `palette`   | `PaletteLabels`   | `DEFAULT_PALETTE_LABELS`    | `PaletteQuery`: the level chip and a refused keystroke                                  |
 | `selectAll` | `SelectAllLabels` | `DEFAULT_SELECT_ALL_LABELS` | `SelectAllBar`                                                                          |
+| `terminal`  | `TerminalLabels`  | `DEFAULT_TERMINAL_LABELS`   | `Terminal` (`@bigpixelrocket/uiok/terminal`): its menu, its failure line, its input     |
 
 ### `keys`
 
@@ -149,6 +150,19 @@ A folded pair's label ("Up/Down") is not a label here: the app owns its pair voc
 | `checkAll`     | `string` | Check all                                                       |
 | `withSelected` | `string` | With selected:                                                  |
 | `label`        | `string` | With selected (the bar's accessible name when it is given none) |
+
+### `terminal`
+
+| Field         | Type     | English default                                                                  |
+| ------------- | -------- | -------------------------------------------------------------------------------- |
+| `menu`        | `string` | Terminal (the menu's accessible name)                                            |
+| `copy`        | `string` | Copy                                                                             |
+| `paste`       | `string` | Paste                                                                            |
+| `startFailed` | `string` | Could not start the terminal.                                                    |
+| `input`       | `string` | Terminal input (the input element's name when the engine is started without one) |
+| `scrollback`  | `string` | Scrollback (the scrollbar's accessible name)                                     |
+
+A terminal's own name is its `ariaLabel` prop, and the chords its menu shows are its `menuChords` prop (`docs/components/terminal.md`).
 
 ## Mapping an app's i18n
 

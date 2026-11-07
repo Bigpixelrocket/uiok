@@ -25,6 +25,7 @@
 @import './menu/menu.css';
 @import './palette/palette.css';
 @import './charts/charts.css';
+@import './terminal/terminal.css';
 
 :root {
   /* Surfaces that float over other content (sticky headers, cards,

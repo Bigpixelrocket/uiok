@@ -38,7 +38,8 @@
   },
   "files": [
     "dist",
-    "CHANGELOG.md"
+    "CHANGELOG.md",
+    "NOTICE"
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
@@ -48,6 +49,7 @@
     "format:check": "prettier --check .",
     "test": "vitest run",
     "verify:pack": "node scripts/verify-pack.mjs",
+    "smoke:terminal": "node scripts/smoke-terminal.mjs",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build && npm run verify:pack",
     "prepublishOnly": "npm run check"
   },

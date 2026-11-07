@@ -16,6 +16,7 @@ import { DEFAULT_LISTING_LABELS, type ListingLabels } from './listing.js';
 import { DEFAULT_PAGER_LABELS, type PagerLabels } from './pager.js';
 import { DEFAULT_PALETTE_LABELS, type PaletteLabels } from './palette.js';
 import { DEFAULT_SELECT_ALL_LABELS, type SelectAllLabels } from './selectAll.js';
+import { DEFAULT_TERMINAL_LABELS, type TerminalLabels } from './terminal.js';
 
 /**
  * Every chrome string UIOK's components share across instances, grouped by
@@ -43,6 +44,8 @@ export interface UiokLabels {
   readonly palette: PaletteLabels;
   /** A select-all bar's checkbox and lead-in (`SelectAllBar`). */
   readonly selectAll: SelectAllLabels;
+  /** A terminal's menu, its failure line, and its input's fallback name (`@bigpixelrocket/uiok/terminal`). */
+  readonly terminal: TerminalLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
@@ -55,5 +58,6 @@ export const DEFAULT_LABELS: UiokLabels = {
   listing: DEFAULT_LISTING_LABELS,
   pager: DEFAULT_PAGER_LABELS,
   palette: DEFAULT_PALETTE_LABELS,
-  selectAll: DEFAULT_SELECT_ALL_LABELS
+  selectAll: DEFAULT_SELECT_ALL_LABELS,
+  terminal: DEFAULT_TERMINAL_LABELS
 };

@@ -10,8 +10,9 @@
  * `src/themes/themes.generated.css`, which the theme catalog writes: `:root`,
  * a theme's `:root[data-light-theme]` or `:root[data-dark-theme]` block, and a
  * theme's preview scope (`[data-theme-preview]`), each outside any query or
- * under an appearance's; and in the catalog's own modules, which hold the
- * palettes and the rules over them. A rule under `@media print` draws on
+ * under an appearance's; and in the palette data modules (`THEME_SOURCES`:
+ * the catalog's, which hold the palettes and the rules over them, and the
+ * terminal's fallback colours). A rule under `@media print` draws on
  * paper, which no theme colours, so its literals stay free. Anywhere else a
  * literal must sit on a line `ALLOWED` names with the reason it stays
  * literal. `transparent` and `currentColor` are no colour of a theme's and
@@ -42,11 +43,19 @@ const SOURCES: Readonly<Record<string, string>> = Object.fromEntries(
     .map((file) => [file, readFileSync(join(ROOT, file), 'utf8')])
 );
 
-/** The catalog's modules, which hold the palettes and the rules that derive tokens from them. */
+/**
+ * The modules that hold palette data, skipped by the literal scan: the
+ * catalog's, which hold the palettes and the rules that derive tokens from
+ * them, and the terminal's fallback colours. A canvas engine must have
+ * concrete colours before it draws, so the terminal keeps one Catppuccin
+ * Mocha theme and the engine's own defaults for a page whose stylesheet
+ * sets no `--terminal-*` tokens; every themed colour still comes from them.
+ */
 const THEME_SOURCES = new Set([
   'src/themes/catalog.ts',
   'src/themes/color.ts',
-  'src/themes/tokens.ts'
+  'src/themes/tokens.ts',
+  'src/terminal/ghostty/fallbackColors.ts'
 ]);
 
 /**
