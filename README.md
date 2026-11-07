@@ -6,7 +6,7 @@ UIOK is a React UI library with a retro look: compact controls set in system and
 
 ## Status
 
-Pre-1.0. The package currently ships the base stylesheet (font stacks, the z-index scale, the frosted-surface filter, and the `visually-hidden` utility) and the `VisuallyHidden` component. Themes and the rest of the components are on their way; expect breaking changes in minor releases until 1.0.
+Pre-1.0; expect breaking changes in minor releases until 1.0. Version 0.1.0 ships the base stylesheet with 18 light and dark themes ([docs/themes.md](docs/themes.md)), shared labels, keyboard helpers, and component areas from buttons, tooltips, and dialogs to listings, data grids, pickers, palettes, and charts ([docs/components/](docs/components/)). Each area is importable on its own as `@bigpixelrocket/uiok/<area>`.
 
 ## Install
 
@@ -14,7 +14,7 @@ Pre-1.0. The package currently ships the base stylesheet (font stacks, the z-ind
 npm install @bigpixelrocket/uiok
 ```
 
-`react` and `react-dom` 19 are peer dependencies.
+`react` and `react-dom` 19 and `lucide-react` 1.31 or later within 1.x are peer dependencies.
 
 ## Quick start
 

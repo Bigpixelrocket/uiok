@@ -8,6 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
+- Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
+
+## [0.1.0] - 2026-11-07
+
+The first published version. The package is published to npm as `@bigpixelrocket/uiok`: install it with `npm install @bigpixelrocket/uiok` and import from `@bigpixelrocket/uiok` and `@bigpixelrocket/uiok/<area>`.
+
+### Added
+
+- `@bigpixelrocket/uiok/styles.css`, the base stylesheet: the `--font-ui` and `--font-mono` stacks, the `--z-panel`, `--z-dialog`, and `--z-tooltip` scale, the `--frost` backdrop filter, and the `visually-hidden` utility class.
+- `VisuallyHidden`, a component for text that only assistive technology reads.
 - Themes: 18 light and dark themes as generated colour tokens inside `@bigpixelrocket/uiok/styles.css`, chosen with `data-light-theme` and `data-dark-theme` on the root element (`wearThemes`, `subscribeThemeChange`). The catalog, colour helpers, token rules, and `themeStylesheet()`, whose options let an app derive and emit tokens of its own, are exported. See `docs/themes.md`.
 - `@bigpixelrocket/uiok/styles.css` declares `color-scheme: light dark` and fades every disabled control to `--disabled-opacity`.
 - `UiokProvider`, `useLabels`, and `mergeLabels`: shared chrome strings (`UiokLabels`), English by default, with key names and glyphs in the `keys` group.
@@ -22,18 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Filtered menus and palettes: the fuzzy matcher `matchQuery` with `hasQueryTerms` and `hasNegativeTerms`, the menu rules (`menuQueryRefused`, `moveMenuCursor`, `pickableCursor`, `movedPickableCursor`, and the level trail helpers), `useBellBeat`, and the menu look in `@bigpixelrocket/uiok/menu`; `Palette` and `PaletteQuery` in `@bigpixelrocket/uiok/palette`, whose words come from the new `palette` label group.
 - Charts (`@bigpixelrocket/uiok/charts`): `LineChart`, `PieChart`, `ScatterChart`, and `ResultChart` (bar, column, line, spline, area, pie, timeline, scatter; stackable), painted from the `--chart-*` tokens, and `tokenColour`, `svgMarkup`, and `svgPng` to save a chart as a picture. Their shared words are the `charts` label group (`ChartLabels`).
 - Each area is importable on its own as `@bigpixelrocket/uiok/<area>` (`@bigpixelrocket/uiok/button`, `@bigpixelrocket/uiok/keyboard`, …).
-- `lucide-react` 1.x is a peer dependency.
+- `lucide-react` 1.31 or later within 1.x is a peer dependency.
 
-### Changed
-
-- The package is published to npm as `@bigpixelrocket/uiok`: install it with `npm install @bigpixelrocket/uiok` and import from `@bigpixelrocket/uiok` and `@bigpixelrocket/uiok/<area>`. The unscoped name `uiok` was never published.
-
-## [0.0.1] - 2026-11-07
-
-### Added
-
-- `@bigpixelrocket/uiok/styles.css`, the base stylesheet: the `--font-ui` and `--font-mono` stacks, the `--z-panel`, `--z-dialog`, and `--z-tooltip` scale, the `--frost` backdrop filter, and the `visually-hidden` utility class.
-- `VisuallyHidden`, a component for text that only assistive technology reads.
-
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.0.1...HEAD
-[0.0.1]: https://github.com/Bigpixelrocket/uiok/releases/tag/v0.0.1
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Bigpixelrocket/uiok/releases/tag/v0.1.0

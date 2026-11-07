@@ -1,8 +1,10 @@
 /**
  * The publish guard, run after `npm run build`: fails when a source map could
  * ship, when an `exports` target is missing from the tarball, when an area
- * does not resolve as `@bigpixelrocket/uiok/<area>`, or when a packed stylesheet imports one
- * that is not packed.
+ * does not resolve as `@bigpixelrocket/uiok/<area>`, when a packed stylesheet imports one
+ * that is not packed, or when a runtime asset a packed module names with
+ * `new URL('./…', import.meta.url)` (the terminal's WebAssembly and font), or
+ * a licence or notice that travels with them, is not packed.
  *
  * A source map is a `.map` file in `dist/` or in the file list
  * `npm pack --dry-run --json` reports, or a `sourceMappingURL` comment in a
@@ -88,6 +90,42 @@ for (const path of packed) {
     const target = relative(root, join(root, dirname(path), imported));
     if (!packed.has(target))
       problems.push(`${path}: imports ${imported}, missing from the tarball`);
+  }
+}
+
+// A runtime asset a packed module names with `new URL('./…', import.meta.url)`
+// must be packed beside it, or the consumer's bundler fails on it (or, under
+// native ESM, the fetch does).
+const assetReferences = [];
+for (const path of packed) {
+  if (!path.endsWith('.js')) continue;
+  const source = readFileSync(join(root, path), 'utf8');
+  for (const [, asset] of source.matchAll(
+    /new URL\(\s*['"](\.{1,2}\/[^'"]+)['"]\s*,\s*import\.meta\.url\s*\)/g
+  )) {
+    const target = relative(root, join(root, dirname(path), asset));
+    assetReferences.push(target);
+    if (!packed.has(target)) problems.push(`${path}: names ${asset}, missing from the tarball`);
+  }
+}
+
+// The terminal's engine, font, and the licences of the code they come from.
+const TERMINAL_ASSETS = [
+  'dist/terminal/ghostty/vendor/ghostty-vt.wasm',
+  'dist/terminal/ghostty/vendor/ghostty-effects.wasm',
+  'dist/terminal/ghostty/vendor/LICENSE',
+  'dist/terminal/ghostty/fonts/SymbolsNerdFontMono-Regular.woff2',
+  'dist/terminal/ghostty/fonts/LICENSE',
+  'dist/terminal/ghostty/LICENSE',
+  'NOTICE'
+];
+for (const path of TERMINAL_ASSETS) {
+  if (!packed.has(path))
+    problems.push(`${path}: terminal asset or notice missing from the tarball`);
+}
+for (const path of TERMINAL_ASSETS.filter((asset) => /\.(?:wasm|woff2)$/.test(asset))) {
+  if (!assetReferences.includes(path)) {
+    problems.push(`${path}: packed, but no module names it with new URL(…, import.meta.url)`);
   }
 }
 
