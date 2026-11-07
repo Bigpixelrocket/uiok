@@ -32,6 +32,9 @@ src/activity/ src/segmented/ src/keychord/ src/filter/  # ActivityBar, Segmented
 src/store/ src/clock/         # ValueStore, sameData/sameProps, useStableHandlers, keepUnchanged*; useClock
 src/dialog/                   # ModalDialog frame, DialogLegend footer and legendKeyAction (which slot a key runs), ConfirmDialog; dialog labels in src/labels/dialog.ts
 src/run/                      # RunHeader progress header and the RunProgress state and elapsed-time helpers
+src/listing/                  # Listing, Strip, Row, Cell, RowCursorContext, StateMark, PathCell, WellColumn, CurrentDot; listing.css is the whole listing look under .listing-root, panes included
+src/pane/                     # PanePathBar, PaneStatus, QuietAction, RowIconAction; usePaneKeys over PaneKeys (DOM readers) and PaneKeys.logic (key mapping)
+src/namecut/ src/text/        # NameCut with labelParts/nameParts; MarkedText with highlightSegments
 docs/components/<area>.md     # per area: purpose, props, example, keyboard behaviour, labels read
 test/colorLiterals.test.ts    # no colour literal in src/ outside the token blocks and the catalog; only ids and attributes imported from src/themes/
 test/api.test.ts              # every public export has a docblock (TypeScript checker over src/index.ts)

@@ -9,6 +9,7 @@
 
 import { DEFAULT_DIALOG_LABELS, type DialogLabels } from './dialog.js';
 import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
+import { DEFAULT_LISTING_LABELS, type ListingLabels } from './listing.js';
 
 /**
  * Every chrome string UIOK's components share across instances, grouped by
@@ -22,10 +23,13 @@ export interface UiokLabels {
   readonly keys: KeyLabels;
   /** Dialog leave verbs and a confirmation's list name (`ConfirmDialog`, `filterLeaveLabel`). */
   readonly dialog: DialogLabels;
+  /** A listing's column strip: the sorting label's accessible name (`Listing`, `Strip`). */
+  readonly listing: ListingLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
 export const DEFAULT_LABELS: UiokLabels = {
   keys: DEFAULT_KEY_LABELS,
-  dialog: DEFAULT_DIALOG_LABELS
+  dialog: DEFAULT_DIALOG_LABELS,
+  listing: DEFAULT_LISTING_LABELS
 };

@@ -10,9 +10,12 @@
 @import './activity/activity.css';
 @import './segmented/segmented.css';
 @import './keychord/keychord.css';
+@import './listing/listing.css';
 @import './filter/filter.css';
 @import './dialog/dialog.css';
 @import './run/run.css';
+@import './namecut/namecut.css';
+@import './text/text.css';
 
 :root {
   /* Surfaces that float over other content (sticky headers, cards,

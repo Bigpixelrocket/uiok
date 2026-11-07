@@ -33,10 +33,11 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 
 ## Groups and defaults
 
-| Group    | Interface      | Default                 | Read by                                                                                 |
-| -------- | -------------- | ----------------------- | --------------------------------------------------------------------------------------- |
-| `keys`   | `KeyLabels`    | `DEFAULT_KEY_LABELS`    | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
-| `dialog` | `DialogLabels` | `DEFAULT_DIALOG_LABELS` | `ConfirmDialog`, and, given it, `filterLeaveLabel`                                      |
+| Group     | Interface       | Default                  | Read by                                                                                 |
+| --------- | --------------- | ------------------------ | --------------------------------------------------------------------------------------- |
+| `keys`    | `KeyLabels`     | `DEFAULT_KEY_LABELS`     | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
+| `dialog`  | `DialogLabels`  | `DEFAULT_DIALOG_LABELS`  | `ConfirmDialog`, and, given it, `filterLeaveLabel`                                      |
+| `listing` | `ListingLabels` | `DEFAULT_LISTING_LABELS` | `Strip` and `Listing`, for a column label that sorts                                    |
 
 ### `keys`
 
@@ -62,6 +63,14 @@ The defaults are macOS's names and glyphs. An app on Windows or Linux supplies i
 | `affectedItems` | `(count: number) => string` | `Affected items` |
 
 `cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's list of paths, given how many it holds.
+
+### `listing`
+
+| Field    | Type                                                   | English default                                                                     |
+| -------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `sortBy` | `(column: string, direction: SortDirection) => string` | "Sort by Size", "Sort by Size, sorted ascending", "Sort by Size, sorted descending" |
+
+`SortDirection` is `'asc' | 'desc' | null`; null is a column the listing is not sorted by.
 
 ## Mapping an app's i18n
 
