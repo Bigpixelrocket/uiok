@@ -33,9 +33,10 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 
 ## Groups and defaults
 
-| Group  | Interface   | Default              | Read by                                                                                 |
-| ------ | ----------- | -------------------- | --------------------------------------------------------------------------------------- |
-| `keys` | `KeyLabels` | `DEFAULT_KEY_LABELS` | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
+| Group     | Interface       | Default                  | Read by                                                                                 |
+| --------- | --------------- | ------------------------ | --------------------------------------------------------------------------------------- |
+| `keys`    | `KeyLabels`     | `DEFAULT_KEY_LABELS`     | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
+| `listing` | `ListingLabels` | `DEFAULT_LISTING_LABELS` | `Strip` and `Listing`, for a column label that sorts                                    |
 
 ### `keys`
 
@@ -51,6 +52,14 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 A key missing from `names` is spoken as its capital ("N"); one missing from `keyGlyphs` is written as its capital.
 
 The defaults are macOS's names and glyphs. An app on Windows or Linux supplies its own, for example `modifiers: { alt: 'Alt', meta: 'Windows' }` and `modifierGlyphs: { ctrl: 'Ctrl+', alt: 'Alt+', shift: 'Shift+', meta: 'Win+' }`. Modifier order (Control, Option, Shift, Command) and the icons `KeyChord` draws for modifiers stay macOS's in this version.
+
+### `listing`
+
+| Field    | Type                                                   | English default                                                                     |
+| -------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `sortBy` | `(column: string, direction: SortDirection) => string` | "Sort by Size", "Sort by Size, sorted ascending", "Sort by Size, sorted descending" |
+
+`SortDirection` is `'asc' | 'desc' | null`; null is a column the listing is not sorted by.
 
 ## Mapping an app's i18n
 

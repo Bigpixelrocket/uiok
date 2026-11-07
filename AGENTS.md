@@ -30,6 +30,9 @@ src/tooltip/                  # TooltipLayer (mount once) and the tooltip() / de
 src/button/                   # Button (primary, tonal, neutral) and IconButton
 src/activity/ src/segmented/ src/keychord/ src/filter/  # ActivityBar, SegmentedChoice, KeyChord, FilterIcon and FilterEscape
 src/store/ src/clock/         # ValueStore, sameData/sameProps, useStableHandlers, keepUnchanged*; useClock
+src/listing/                  # Listing, Strip, Row, Cell, RowCursorContext, StateMark, PathCell, WellColumn, CurrentDot; listing.css is the whole listing look under .listing-root, panes included
+src/pane/                     # PanePathBar, PaneStatus, QuietAction, RowIconAction; usePaneKeys over PaneKeys (DOM readers) and PaneKeys.logic (key mapping)
+src/namecut/ src/text/        # NameCut with labelParts/nameParts; MarkedText with highlightSegments
 docs/components/<area>.md     # per area: purpose, props, example, keyboard behaviour, labels read
 test/colorLiterals.test.ts    # no colour literal in src/ outside the token blocks and the catalog; only ids and attributes imported from src/themes/
 test/api.test.ts              # every public export has a docblock (TypeScript checker over src/index.ts)
