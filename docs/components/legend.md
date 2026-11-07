@@ -7,12 +7,17 @@ A strip along a window's bottom edge that names what the keyboard does now: a do
 ```tsx
 import { KeyLegendStrip, type LegendPair, type LegendVerb } from 'uiok/legend';
 
-// The app's pair vocabulary and its labels, translated by the app.
-const PAIR_LABELS: Record<string, string> = {
-  upDown: t('legend.pair.upDown'), // "Up/Down"
-  previousNextPage: t('legend.pair.previousNextPage') // "Previous/Next Page"
+// The app's pair vocabulary, translated by the app each time the strip asks,
+// so a language switch reaches the pair labels too.
+const PAIR_LABEL_KEYS: Record<string, string> = {
+  upDown: 'legend.pair.upDown', // "Up/Down"
+  previousNextPage: 'legend.pair.previousNextPage' // "Previous/Next Page"
 };
-const pairLabel = (pair: LegendPair) => PAIR_LABELS[pair] ?? pair;
+const pairLabel = (pair: LegendPair) => {
+  const key = PAIR_LABEL_KEYS[pair];
+
+  return key === undefined ? pair : t(key);
+};
 
 const verbs: LegendVerb[] = [
   { label: t('verb.up'), chord: { key: 'ArrowUp' }, run: moveUp, pair: 'upDown' },

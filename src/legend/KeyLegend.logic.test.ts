@@ -57,6 +57,13 @@ describe('legendUnits', () => {
         entry('Down', { key: 'ArrowDown', meta: true }, 'upDown')
       ])
     ).toEqual(['Up', 'Copy', 'Down']);
+    expect(
+      labels([
+        entry('To Start', { key: 'ArrowUp', meta: true }, 'toStartEnd'),
+        entry('Copy', { key: 'c', meta: true }),
+        entry('To End', { key: 'ArrowDown', meta: true }, 'toStartEnd')
+      ])
+    ).toEqual(['To Start', 'Copy', 'To End']);
     // Keys that are not opposite, or opposite in reverse.
     expect(
       labels([
