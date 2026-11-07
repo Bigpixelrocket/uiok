@@ -1,0 +1,43 @@
+/* ---- Activity stripes (ActivityBar) ----
+
+   The bar of a run that works without reporting how far it has got: diagonal
+   stripes across the whole track, in the bar's own colour (--stripe-ink)
+   over a fainter band of it (--stripe-ground). They scroll left to right
+   while the run goes on and stand still in every other state. A container
+   that shows a paused run dims them by setting --stripe-ink and
+   --stripe-ground on the stripes. The stripe period is 12px across the
+   stripes, 12 / sin 45deg = 16.97px along the track, which is how far one
+   loop moves them, so the loop is seamless. */
+.indeterminate > .activity-stripes {
+  --stripe-ink: var(--accent);
+  width: 100%;
+  background-color: color-mix(in srgb, var(--stripe-ink) var(--stripe-ground, 38%), transparent);
+  background-image: repeating-linear-gradient(
+    -45deg,
+    var(--stripe-ink) 0 6px,
+    transparent 6px 12px
+  );
+  transition: none;
+}
+
+.indeterminate.moving > .activity-stripes {
+  animation: activity-stripes 0.9s linear infinite;
+}
+
+@keyframes activity-stripes {
+  from {
+    background-position: 0 0;
+  }
+
+  to {
+    background-position: 16.97px 0;
+  }
+}
+
+/* Reduced motion: the stripes stand still, and the caller's clock and counts
+   say the run is working. */
+@media (prefers-reduced-motion: reduce) {
+  .indeterminate.moving > .activity-stripes {
+    animation: none;
+  }
+}

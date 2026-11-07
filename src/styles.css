@@ -2,6 +2,14 @@
    component may rely on. It names no colour; colours are theme tokens, and a
    theme stylesheet defines them. Import it once, before any theme. */
 
+/* Component stylesheets, each beside its component. */
+@import './button/button.css';
+@import './tooltip/tooltip.css';
+@import './activity/activity.css';
+@import './segmented/segmented.css';
+@import './keychord/keychord.css';
+@import './filter/filter.css';
+
 :root {
   /* Surfaces that float over other content (sticky headers, cards,
      overlays) add --frost as a backdrop-filter so what scrolls under a
