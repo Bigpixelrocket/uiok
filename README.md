@@ -9,7 +9,7 @@ Pre-1.0. The package currently ships the base stylesheet (font stacks, the z-ind
 ## Install
 
 ```sh
-npm install uiok
+npm install @bigpixelrocket/uiok
 ```
 
 `react` and `react-dom` 19 are peer dependencies.
@@ -19,8 +19,8 @@ npm install uiok
 Import the stylesheet once at your app's entry, then use the components:
 
 ```tsx
-import 'uiok/styles.css';
-import { VisuallyHidden } from 'uiok';
+import '@bigpixelrocket/uiok/styles.css';
+import { VisuallyHidden } from '@bigpixelrocket/uiok';
 
 export function CloseButton({ onClose }: { onClose: () => void }) {
   return (

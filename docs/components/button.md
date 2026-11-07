@@ -1,12 +1,12 @@
-# Buttons (`uiok/button`)
+# Buttons (`@bigpixelrocket/uiok/button`)
 
 `Button` is the one text action button; `IconButton` is its square, icon-only sibling. Both look the same wherever they render because their stylesheet sets font, size, and box model.
 
 ## Example
 
 ```tsx
-import { Button, IconButton } from 'uiok/button';
-import { tooltip } from 'uiok/tooltip';
+import { Button, IconButton } from '@bigpixelrocket/uiok/button';
+import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 <Button variant="primary" onClick={save}>Save</Button>
 <Button size="small" variant="tonal">Install</Button>

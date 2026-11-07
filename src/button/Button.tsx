@@ -22,7 +22,7 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 /**
  * The one text action button, identical wherever it is drawn: styled only by
- * the `.button` rules in `uiok/styles.css`, which carry their own font so no
+ * the `.button` rules in `@bigpixelrocket/uiok/styles.css`, which carry their own font so no
  * surrounding stylesheet restyles them. `className` is for layout (width,
  * alignment), never for look. It is `type="button"` unless given another
  * type, so it never submits a form by accident.

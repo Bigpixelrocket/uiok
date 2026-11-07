@@ -1,4 +1,4 @@
-# Charts (`uiok/charts`)
+# Charts (`@bigpixelrocket/uiok/charts`)
 
 SVG charts painted from the theme's chart tokens, so they follow light, dark, and every theme without a colour of their own:
 
@@ -13,8 +13,8 @@ Series take `--chart-1` to `--chart-8` in turn and start over after the eighth. 
 ## Example
 
 ```tsx
-import { LineChart, PieChart, ResultChart, ScatterChart, svgMarkup, svgPng, tokenColour } from 'uiok/charts';
-import { useLabels } from 'uiok';
+import { LineChart, PieChart, ResultChart, ScatterChart, svgMarkup, svgPng, tokenColour } from '@bigpixelrocket/uiok/charts';
+import { useLabels } from '@bigpixelrocket/uiok';
 
 const count = new Intl.NumberFormat(locale);
 const clock = new Intl.DateTimeFormat(locale, { timeStyle: 'medium' });
@@ -142,7 +142,7 @@ Nothing is fetched: the SVG is loaded from its own `data:` URL. Writing the byte
 
 ## Styling
 
-`.line-chart`, `.line-*`, `.pie-chart`, `.pie-*`, `.scatter-chart`, `.scatter-*`, `.result-chart`, `.result-chart-*`, in `uiok/styles.css`.
+`.line-chart`, `.line-*`, `.pie-chart`, `.pie-*`, `.scatter-chart`, `.scatter-*`, `.result-chart`, `.result-chart-*`, in `@bigpixelrocket/uiok/styles.css`.
 
 ## Labels read
 

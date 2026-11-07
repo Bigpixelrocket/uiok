@@ -55,7 +55,7 @@ export interface DialogLegendProps {
  * holds the legend: `ModalDialog`, which renders it as its last child, or a
  * surface without a dialog frame (a palette), which binds them itself with
  * `legendKeyAction`. Styled by the `.dialog-legend` rules in
- * `uiok/styles.css`.
+ * `@bigpixelrocket/uiok/styles.css`.
  */
 export function DialogLegend({ legend, onLeave }: DialogLegendProps): ReactElement {
   const { leave, secondary = [], primary } = legend;

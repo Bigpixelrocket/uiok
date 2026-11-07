@@ -1,12 +1,12 @@
-# Run progress (`uiok/run`)
+# Run progress (`@bigpixelrocket/uiok/run`)
 
 `RunHeader` is the header a view watching work in progress opens with (a dialog following an install, a transfer, an export), so a run reads the same wherever it is watched. `RunProgress` helpers say where a run stands and how long it has taken.
 
 ## Example
 
 ```tsx
-import { useClock } from 'uiok/clock';
-import { isSettledRun, RunHeader, runClock, runElapsedMs } from 'uiok/run';
+import { useClock } from '@bigpixelrocket/uiok/clock';
+import { isSettledRun, RunHeader, runClock, runElapsedMs } from '@bigpixelrocket/uiok/run';
 
 // Ticks every second until the run settles.
 const now = useClock(!isSettledRun(state));

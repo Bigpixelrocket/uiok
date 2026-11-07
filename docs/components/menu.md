@@ -1,13 +1,18 @@
-# Menu (`uiok/menu`)
+# Menu (`@bigpixelrocket/uiok/menu`)
 
 The parts every filtered menu and palette shares: a fuzzy matcher, the rules for a refused keystroke and the cursor's moves, the trail of levels opened in place, the visual bell, and the menu look. UIOK draws no menu component of its own; the caller renders the rows with these classes and owns the state. `Palette` ([palette](palette.md)) is built on the same parts.
 
 ## Example
 
 ```tsx
-import { matchQuery, menuQueryRefused, moveMenuCursor, useBellBeat } from 'uiok/menu';
-import { FilterIcon } from 'uiok/filter';
-import { MarkedText } from 'uiok/text';
+import {
+  matchQuery,
+  menuQueryRefused,
+  moveMenuCursor,
+  useBellBeat
+} from '@bigpixelrocket/uiok/menu';
+import { FilterIcon } from '@bigpixelrocket/uiok/filter';
+import { MarkedText } from '@bigpixelrocket/uiok/text';
 
 const rowsFor = (query: string) =>
   items.flatMap((item) => {

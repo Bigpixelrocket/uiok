@@ -1,11 +1,11 @@
-# SegmentedChoice (`uiok/segmented`)
+# SegmentedChoice (`@bigpixelrocket/uiok/segmented`)
 
 One choice of several, drawn as a segmented control and announced as a radio group.
 
 ## Example
 
 ```tsx
-import { SegmentedChoice } from 'uiok/segmented';
+import { SegmentedChoice } from '@bigpixelrocket/uiok/segmented';
 
 <span id="view-label">View</span>
 <SegmentedChoice

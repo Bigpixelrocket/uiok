@@ -1,4 +1,4 @@
-# useClock (`uiok/clock`)
+# useClock (`@bigpixelrocket/uiok/clock`)
 
 The current time for labels that count ("5 seconds ago", "in 2 minutes"), rendering only when a label would read differently.
 
@@ -6,7 +6,7 @@ The current time for labels that count ("5 seconds ago", "in 2 minutes"), render
 
 ```tsx
 import { useCallback } from 'react';
-import { useClock } from 'uiok/clock';
+import { useClock } from '@bigpixelrocket/uiok/clock';
 
 const MINUTE = 60_000;
 

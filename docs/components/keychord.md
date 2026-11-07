@@ -1,11 +1,11 @@
-# KeyChord (`uiok/keychord`)
+# KeyChord (`@bigpixelrocket/uiok/keychord`)
 
 A keyboard chord drawn as a row of key caps, with the whole chord in words as its accessible name.
 
 ## Example
 
 ```tsx
-import { KeyChord } from 'uiok/keychord';
+import { KeyChord } from '@bigpixelrocket/uiok/keychord';
 
 <KeyChord chord={{ key: 'n', meta: true, shift: true }} /> // ⇧ ⌘ N, named "Shift Command N"
 <KeyChord chord={{ key: 'Escape' }} />                     // esc

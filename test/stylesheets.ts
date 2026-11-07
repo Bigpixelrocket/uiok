@@ -21,7 +21,7 @@ const IMPORT = /@import\s+(?:url\()?\s*['"]([^'"]+)['"]\s*\)?\s*;/g;
  * The text of a stylesheet under the repository root (`src/button/button.css`),
  * with each relative `@import` replaced by the imported sheet's text, at any
  * depth, so `readStylesheet('src/styles.css')` is the whole of what
- * `uiok/styles.css` delivers. jsdom does not follow `@import` in a `<style>`
+ * `@bigpixelrocket/uiok/styles.css` delivers. jsdom does not follow `@import` in a `<style>`
  * element, so a cascade test reads sheets through here.
  */
 export function readStylesheet(path: string): string {

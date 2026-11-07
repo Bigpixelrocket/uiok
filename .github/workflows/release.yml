@@ -1,4 +1,4 @@
-# Publishes uiok to npm when a GitHub Release is published. The release's tag
+# Publishes @bigpixelrocket/uiok to npm when a GitHub Release is published. The release's tag
 # must be `v` plus package.json's version. Publishing authenticates through npm
 # Trusted Publishing (OIDC), so the repository holds no npm token, and npm
 # attaches a provenance statement. See docs/releasing.md.

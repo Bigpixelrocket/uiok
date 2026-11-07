@@ -172,7 +172,7 @@ describe("an app's own tokens", () => {
     expect(sheet).not.toMatch(/\[data-theme-preview='[a-z-]+'\] \{[^}]*--app-/);
   });
 
-  it('can be written alone, for an app that imports uiok/styles.css', () => {
+  it('can be written alone, for an app that imports @bigpixelrocket/uiok/styles.css', () => {
     const sheet = themeStylesheet({ ...options, includeUiokTokens: false });
     const declared = [...sheet.matchAll(/^\s*(--[a-z0-9-]+|color-scheme):/gm)].map(
       (match) => match[1]
@@ -195,7 +195,7 @@ describe("an app's own tokens", () => {
     );
   });
 
-  it('may not redefine a custom property uiok/styles.css declares or reads', () => {
+  it('may not redefine a custom property @bigpixelrocket/uiok/styles.css declares or reads', () => {
     // The whole delivered sheet: the base, the theme tokens, every component's.
     const sheet = readStylesheet('src/styles.css').replace(/\/\*[\s\S]*?\*\//g, '');
     const names = new Set(

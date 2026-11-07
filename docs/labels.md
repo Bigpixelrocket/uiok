@@ -10,8 +10,8 @@ UIOK ships no i18n runtime. Copy reaches components two ways:
 Mount `UiokProvider` once near the root, next to `TooltipLayer`:
 
 ```tsx
-import 'uiok/styles.css';
-import { TooltipLayer, UiokProvider } from 'uiok';
+import '@bigpixelrocket/uiok/styles.css';
+import { TooltipLayer, UiokProvider } from '@bigpixelrocket/uiok';
 
 export function Root({ children }: { children: React.ReactNode }) {
   return (
@@ -155,7 +155,7 @@ A folded pair's label ("Up/Down") is not a label here: the app owns its pair voc
 Build the override from the app's translation function once per language:
 
 ```ts
-import type { UiokLabelsOverride } from 'uiok';
+import type { UiokLabelsOverride } from '@bigpixelrocket/uiok';
 
 export function uiokLabels(t: (key: string) => string): UiokLabelsOverride {
   return {

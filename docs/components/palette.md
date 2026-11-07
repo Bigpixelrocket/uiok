@@ -1,13 +1,13 @@
-# Palette (`uiok/palette`)
+# Palette (`@bigpixelrocket/uiok/palette`)
 
 A command palette's frame: `Palette`, the modal box over a backdrop, and `PaletteQuery`, its query row. The caller supplies the commands, filters them, keeps the cursor, and draws the rows, any notes, and a key legend inside, using the menu parts ([menu](menu.md)).
 
 ## Example
 
 ```tsx
-import { Palette, PaletteQuery } from 'uiok/palette';
-import { matchQuery, menuQueryRefused, moveMenuCursor } from 'uiok/menu';
-import { MarkedText } from 'uiok/text';
+import { Palette, PaletteQuery } from '@bigpixelrocket/uiok/palette';
+import { matchQuery, menuQueryRefused, moveMenuCursor } from '@bigpixelrocket/uiok/menu';
+import { MarkedText } from '@bigpixelrocket/uiok/text';
 
 const rowsFor = (query: string) =>
   commands

@@ -1,11 +1,11 @@
-# DataGrid (`uiok/grid`)
+# DataGrid (`@bigpixelrocket/uiok/grid`)
 
 A grid of rows of any count, drawn a screenful at a time under a header that stays put. Rows have one fixed height (22px), so the grid places any row without measuring it, and only the rows near the viewport are in the DOM. One cell is the cursor; the page's Copy copies it. Read only: the caller owns the data, the sort, the column order, and any edit.
 
 ## Example
 
 ```tsx
-import { DataGrid } from 'uiok/grid';
+import { DataGrid } from '@bigpixelrocket/uiok/grid';
 
 <DataGrid
   cell={(row, column) => {

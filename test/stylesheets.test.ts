@@ -1,5 +1,5 @@
 /**
- * The single-stylesheet contract: consumers import `uiok/styles.css` alone,
+ * The single-stylesheet contract: consumers import `@bigpixelrocket/uiok/styles.css` alone,
  * so every stylesheet under `src/` (a component's beside it, the generated
  * theme tokens) must be reached from `src/styles.css`.
  */
@@ -25,7 +25,7 @@ const componentSheets = readdirSync(SRC, { recursive: true, withFileTypes: true 
   .map((entry) => relative(SRC, join(entry.parentPath, entry.name)).split('\\').join('/'))
   .filter((path) => path !== 'styles.css');
 
-describe('uiok/styles.css', () => {
+describe('@bigpixelrocket/uiok/styles.css', () => {
   it('imports every stylesheet under src/', () => {
     const imported = stylesheetImports('src/styles.css').map((path) => path.replace(/^\.\//, ''));
 

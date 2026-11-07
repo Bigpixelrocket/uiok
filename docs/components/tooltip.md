@@ -1,12 +1,12 @@
-# Tooltip (`uiok/tooltip`)
+# Tooltip (`@bigpixelrocket/uiok/tooltip`)
 
 A hover tooltip the page draws itself, so it opens on a delay you control, looks like the rest of the UI, and can show a keyboard chord beside its title. One `TooltipLayer` serves every control; a control opts in through attributes.
 
 ## Example
 
 ```tsx
-import { chordGlyphs } from 'uiok/keyboard';
-import { TooltipLayer, describedTooltip, tooltip } from 'uiok/tooltip';
+import { chordGlyphs } from '@bigpixelrocket/uiok/keyboard';
+import { TooltipLayer, describedTooltip, tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 <IconButton aria-label="New Tab" {...tooltip('New Tab', chordGlyphs({ key: 't', meta: true }))}>
   <Plus />

@@ -1,7 +1,7 @@
 /**
  * UIOK's public API. Every export here is part of the package's contract and
  * carries a docblock; `test/api.test.ts` fails on one that does not. Each
- * area is also importable on its own as `uiok/<area>`.
+ * area is also importable on its own as `@bigpixelrocket/uiok/<area>`.
  */
 
 export { VisuallyHidden, type VisuallyHiddenProps } from './VisuallyHidden.js';

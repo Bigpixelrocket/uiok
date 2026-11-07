@@ -1,11 +1,11 @@
-# Key legend (`uiok/legend`)
+# Key legend (`@bigpixelrocket/uiok/legend`)
 
 A strip along a window's bottom edge that names what the keyboard does now: a dock of fn and the four modifiers at the left, lit while held, then every verb the app offers under its chord. Each verb is also a button that runs it. The logic behind it (`legendUnits`, `fittingUnits`, `moreLabel`, `moreListAction`) is exported for an app that draws a legend of its own.
 
 ## Example
 
 ```tsx
-import { KeyLegendStrip, type LegendPair, type LegendVerb } from 'uiok/legend';
+import { KeyLegendStrip, type LegendPair, type LegendVerb } from '@bigpixelrocket/uiok/legend';
 
 // The app's pair vocabulary, translated by the app each time the strip asks,
 // so a language switch reaches the pair labels too.

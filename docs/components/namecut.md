@@ -1,11 +1,11 @@
-# NameCut (`uiok/namecut`)
+# NameCut (`@bigpixelrocket/uiok/namecut`)
 
 A one-line label that names a file, cut so the end of the name stays visible: `Copying "Better.Call.Saul…CtrlHD.mkv" to "Seed…`. The cut is CSS, so it follows the width the line has.
 
 ## Example
 
 ```tsx
-import { labelParts, NameCut, nameParts } from 'uiok/namecut';
+import { labelParts, NameCut, nameParts } from '@bigpixelrocket/uiok/namecut';
 
 <NameCut parts={labelParts('Copying "Better.Call.Saul.S01E01.1080p.BluRay.CtrlHD.mkv" to "Seedbox"')} />
 <NameCut className="dialog-title" parts={nameParts(['"', { name: file }, '" already exists'])} />

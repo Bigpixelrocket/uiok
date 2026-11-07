@@ -1,5 +1,5 @@
 {
-  "name": "uiok",
+  "name": "@bigpixelrocket/uiok",
   "version": "0.0.1",
   "description": "A React UI library with a retro look: themeable design tokens and accessible components.",
   "keywords": [

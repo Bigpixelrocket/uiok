@@ -1,11 +1,11 @@
-# Keyboard (`uiok/keyboard`)
+# Keyboard (`@bigpixelrocket/uiok/keyboard`)
 
 Keyboard policy for an app that owns its keys, and how chords are printed and spoken. No components; everything here is plain functions over DOM events and elements.
 
 ## Chords
 
 ```ts
-import { chordGlyphs, chordSpoken, type Chord } from 'uiok/keyboard';
+import { chordGlyphs, chordSpoken, type Chord } from '@bigpixelrocket/uiok/keyboard';
 
 const newTab: Chord = { key: 't', meta: true };
 chordGlyphs(newTab); // "⌘T", for a tooltip or a menu
@@ -22,7 +22,10 @@ chordSpoken(newTab); // "Command T", for an accessible name
 A desktop or full-screen web app usually keeps Chromium's document keys away from the page: ⌘R reload, ⌘F find, ⌘P print, ⌘S save, ⌘U source, ⌘[ history, ⌘A select-all of the page, Backspace, and Space or Page Down scrolling the document. Install one capture listener on the window:
 
 ```ts
-import { cancelBrowserDocumentKey, shouldSuppressBrowserDocumentKey } from 'uiok/keyboard';
+import {
+  cancelBrowserDocumentKey,
+  shouldSuppressBrowserDocumentKey
+} from '@bigpixelrocket/uiok/keyboard';
 
 window.addEventListener(
   'keydown',

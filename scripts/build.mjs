@@ -1,7 +1,7 @@
 /**
  * Builds `dist/` from scratch: `tsc -p tsconfig.build.json` emits the ESM
  * modules and their declarations, then every stylesheet under `src/` is copied
- * to the same relative path, so `src/styles.css` ships as `uiok/styles.css`.
+ * to the same relative path, so `src/styles.css` ships as `@bigpixelrocket/uiok/styles.css`.
  */
 
 import { execFileSync } from 'node:child_process';

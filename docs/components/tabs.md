@@ -1,4 +1,4 @@
-# PageTabs (`uiok/tabs`)
+# PageTabs (`@bigpixelrocket/uiok/tabs`)
 
 The tab strip a page draws under its path bar: one tab per page of the level shown, the current one underlined. `pills` draws the smaller second strip a tab's own pages take under the first.
 
@@ -6,7 +6,7 @@ The tab strip a page draws under its path bar: one tab per page of the level sho
 
 ```tsx
 import { FileText, Settings, Users } from 'lucide-react';
-import { PageTabs } from 'uiok/tabs';
+import { PageTabs } from '@bigpixelrocket/uiok/tabs';
 
 <PageTabs
   current={page}
