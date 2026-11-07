@@ -1,0 +1,27 @@
+{
+  // Type-checks the documentation site and the library source it imports,
+  // resolved as Vite resolves them (`vite.config.ts` aliases). `npm run
+  // site:build` runs it; the library's own tsconfig.json leaves site/ out.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "types": ["vite/client", "node"],
+    "noEmit": true,
+    "paths": {
+      "@bigpixelrocket/uiok": ["../src/index.ts"],
+      "@bigpixelrocket/uiok/styles.css": ["../src/styles.css"],
+      "@bigpixelrocket/uiok/*": ["../src/*/index.ts"]
+    }
+  },
+  "include": ["src", "vite.config.ts"]
+}

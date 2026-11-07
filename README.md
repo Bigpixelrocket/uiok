@@ -1,5 +1,7 @@
 # UIOK
 
+Docs: https://bigpixelrocket.github.io/uiok/
+
 UIOK is a React UI library with a retro look: compact controls set in system and monospace type, with every colour drawn from a swappable theme. It is extracted from the desktop apps Bigpixelrocket builds, and it works in any React 19 app.
 
 ## Status
