@@ -7,9 +7,10 @@
  */
 
 // Each asset is a URL built from a relative string literal and the module's
-// own URL (import.meta.url): the standard form Vite, webpack 5, and Parcel
-// emit as files and native ESM resolves beside this module, so the path
-// must stay a literal (docs/components/terminal.md, Assets).
+// own URL (import.meta.url): the standard form Vite emits as files (tested by
+// npm run smoke:terminal; webpack 5 and Parcel document it too, untested) and
+// native ESM resolves beside this module, so the path must stay a literal
+// (docs/components/terminal.md, Assets).
 const GHOSTTY_WASM_URL = new URL('./vendor/ghostty-vt.wasm', import.meta.url);
 const GHOSTTY_EFFECTS_WASM_URL = new URL('./vendor/ghostty-effects.wasm', import.meta.url);
 

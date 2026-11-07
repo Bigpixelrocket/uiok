@@ -1,19 +1,24 @@
 UIOK (@bigpixelrocket/uiok)
 Copyright (c) 2026 Bigpixelrocket. Licensed under the MIT License (LICENSE).
 
-The terminal (@bigpixelrocket/uiok/terminal) ships third-party code and a
-font under their own licences, listed below. The font file in particular is
-not covered by UIOK's MIT License: it is distributed under the terms in
-section 3. Each vendored folder also carries its upstream LICENSE file.
+The terminal (@bigpixelrocket/uiok/terminal) ships third-party code, Unicode
+data, and a font under their own licences, listed below. The font file in
+particular is not covered by UIOK's MIT License: it is distributed under the
+terms in section 3. Each vendored folder also carries its upstream LICENSE
+file, except for the libraries compiled into the Ghostty WebAssembly, whose
+notices are in sections 1.1 to 1.3.
 
 ==============================================================================
 1. Ghostty (libghostty-vt)
 ==============================================================================
 
-File: dist/terminal/ghostty/vendor/ghostty-vt.wasm, built unmodified from
-Ghostty revision fb13fa9602f47590ccfaaea4cd8e178fac2ec8cc
-(https://github.com/ghostty-org/ghostty) by scripts/build-libghostty-vt.sh.
-Licence: MIT (dist/terminal/ghostty/vendor/LICENSE).
+File: dist/terminal/ghostty/vendor/ghostty-vt.wasm, built by
+scripts/build-libghostty-vt.sh from Ghostty revision
+fb13fa9602f47590ccfaaea4cd8e178fac2ec8cc
+(https://github.com/ghostty-org/ghostty) with no changes to its source.
+Besides Ghostty's own code, the file contains the libraries Ghostty compiles
+into libghostty-vt, which keep their own licences (sections 1.1 to 1.3).
+Ghostty's licence: MIT (dist/terminal/ghostty/vendor/LICENSE).
 
 Copyright (c) 2024 Mitchell Hashimoto, Ghostty contributors
 
@@ -35,6 +40,104 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 
+1.1 uucode
+
+Ghostty compiles uucode (https://github.com/jacobsandlund/uucode, commit
+ea62149739404a73c202b48a33bf6dd2af4bd9b0) into libghostty-vt for grapheme
+cluster break support. Licence: MIT.
+
+Copyright (c) 2026 Jacob Sandlund
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+of the Software, and to permit persons to whom the Software is furnished to do
+so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+1.2 Bjoern Hoehrmann's UTF-8 decoder
+
+uucode's UTF-8 decoder (src/utf8.zig) is adapted from Bjoern Hoehrmann's
+DFA-based decoder (https://bjoern.hoehrmann.de/utf-8/decoder/dfa/).
+Licence: MIT.
+
+Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+1.3 Unicode Character Database
+
+uucode's property tables, compiled into the file, are generated from the
+Unicode Character Database. Licence: Unicode License V3
+(https://www.unicode.org/license.txt).
+
+UNICODE LICENSE V3
+
+COPYRIGHT AND PERMISSION NOTICE
+
+Copyright © 1991-2025 Unicode, Inc.
+
+NOTICE TO USER: Carefully read the following legal agreement. BY
+DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING DATA FILES, AND/OR
+SOFTWARE, YOU UNEQUIVOCALLY ACCEPT, AND AGREE TO BE BOUND BY, ALL OF THE
+TERMS AND CONDITIONS OF THIS AGREEMENT. IF YOU DO NOT AGREE, DO NOT
+DOWNLOAD, INSTALL, COPY, DISTRIBUTE OR USE THE DATA FILES OR SOFTWARE.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of data files and any associated documentation (the "Data Files") or
+software and any associated documentation (the "Software") to deal in the
+Data Files or Software without restriction, including without limitation
+the rights to use, copy, modify, merge, publish, distribute, and/or sell
+copies of the Data Files or Software, and to permit persons to whom the
+Data Files or Software are furnished to do so, provided that either (a)
+this copyright and permission notice appear with all copies of the Data
+Files or Software, or (b) this copyright and permission notice appear in
+associated Documentation.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF ANY
+KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT OF
+THIRD PARTY RIGHTS.
+
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR HOLDERS INCLUDED IN THIS NOTICE
+BE LIABLE FOR ANY CLAIM, OR ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES,
+OR ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA
+FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall
+not be used in advertising or otherwise to promote the sale, use or other
+dealings in these Data Files or Software without prior written
+authorization of the copyright holder.
+
 ==============================================================================
 2. T3 Code
 ==============================================================================
@@ -43,7 +146,7 @@ The terminal engine adapter (src/terminal/ghostty/*.ts, shipped as
 dist/terminal/ghostty/*.js), scripts/build-libghostty-vt.sh, and the callback
 trampolines in scripts/ghostty-effects.zig (built into
 dist/terminal/ghostty/vendor/ghostty-effects.wasm) are adapted from T3 Code
-(https://github.com/pingdotgg/t3code, commit 54084ae).
+(https://github.com/pingdotgg/t3code).
 Licence: MIT (dist/terminal/ghostty/LICENSE).
 
 Copyright (c) 2026 T3 Tools Inc.

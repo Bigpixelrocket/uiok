@@ -113,7 +113,7 @@ The terminal loads three files that ship beside its modules in `dist/terminal/gh
 
 Each is named with `new URL('./…', import.meta.url)`:
 
-- **Vite** and **webpack 5** emit them as files and rewrite the URLs; `npm run smoke:terminal` builds a Vite app from the packed tarball and checks it. Vite inlines a file under 4 KiB as a `data:` URL, as it does the trampoline module; the terminal decodes that itself, so no `fetch` of `data:` is needed. In Vite's dev server, add the package to `optimizeDeps.exclude` (`optimizeDeps: { exclude: ['@bigpixelrocket/uiok'] }`): pre-bundling moves the modules away from their assets.
+- **Vite** emits them as files and rewrites the URLs; `npm run smoke:terminal` builds a Vite app from the packed tarball and checks it. **webpack 5** and **Parcel** document the same standard form but are untested. Vite inlines a file under 4 KiB as a `data:` URL, as it does the trampoline module; the terminal decodes that itself, so no `fetch` of `data:` is needed. In Vite's dev server, add the package to `optimizeDeps.exclude` (`optimizeDeps: { exclude: ['@bigpixelrocket/uiok'] }`): pre-bundling moves the modules away from their assets.
 - **Native ESM** (an import map, or serving `node_modules`) resolves the URLs beside each module.
 - **esbuild** leaves the expression as it is, so copy `node_modules/@bigpixelrocket/uiok/dist/terminal/ghostty/vendor` and `fonts` to the same paths beside the bundled module, or serve the package's `dist/` as is.
 
@@ -121,7 +121,7 @@ The page must allow WebAssembly compilation (`script-src 'wasm-unsafe-eval'` und
 
 ## Labels read
 
-The `terminal` group ([labels](../labels.md)): `menu` (the menu's accessible name), `copy` and `paste` (its items), `startFailed` (shown in place of a terminal that could not start), and `input` (the input element's name when the engine is started without one). A terminal's own name is its `ariaLabel`, and its chords are `menuChords`, both per instance.
+The `terminal` group ([labels](../labels.md)): `menu` (the menu's accessible name), `copy` and `paste` (its items), `startFailed` (shown in place of a terminal that could not start), `input` (the input element's name when the engine is started without one), and `scrollback` (the scrollbar's accessible name). A terminal's own name is its `ariaLabel`, and its chords are `menuChords`, both per instance.
 
 ## Updating the engine
 

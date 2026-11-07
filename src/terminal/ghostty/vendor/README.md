@@ -2,8 +2,9 @@
 
 WebAssembly built from source by `scripts/build-libghostty-vt.sh` with Zig 0.17.0 from
 mise, from Ghostty `fb13fa9602f47590ccfaaea4cd8e178fac2ec8cc`, the revision in `VERSION`. The script
-is adapted from T3 Code's `scripts/build-libghostty-wasm.sh` (commit `54084ae`, MIT, see
-`../LICENSE`). `LICENSE` here is Ghostty's.
+is adapted from T3 Code's `apps/web/scripts/build-libghostty-wasm.sh`
+(https://github.com/pingdotgg/t3code, MIT, see `../LICENSE`). `LICENSE` here is Ghostty's; the
+libraries Ghostty compiles into `ghostty-vt.wasm` are credited in the package's `NOTICE`.
 
 | File                   | Bytes   | SHA-256                                                            |
 | ---------------------- | ------- | ------------------------------------------------------------------ |
