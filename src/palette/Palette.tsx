@@ -114,6 +114,7 @@ export interface PaletteQueryProps {
   readonly value: string;
   /** The field's accessible name. */
   readonly label: string;
+  /** The field's placeholder. */
   readonly placeholder: string;
   /** The id of the listbox the field drives. */
   readonly listId: string;
@@ -129,7 +130,9 @@ export interface PaletteQueryProps {
   readonly refused: string | null;
   /** A tag at the field's end: what the rows act on. */
   readonly aside?: ReactNode;
+  /** The field's edits; the caller filters, refuses, and rings the bell. */
   readonly onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+  /** The field's keys; the caller moves the cursor, runs the pick, and holds Tab. */
   readonly onKeyDown: (event: KeyboardEvent<HTMLInputElement>) => void;
 }
 

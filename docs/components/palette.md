@@ -55,6 +55,8 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
           if (event.key === 'ArrowDown') setCursor(moveMenuCursor(cursor, 1, rows.length));
           if (event.key === 'ArrowUp') setCursor(moveMenuCursor(cursor, -1, rows.length));
           if (event.key === 'Enter' && cursor !== null) rows[cursor]?.command.run();
+          // Nothing else in the palette takes the focus.
+          if (event.key === 'Tab') event.preventDefault();
         }}
       />
       <div className="folder-menu-options" id={listId} role="listbox">
@@ -114,7 +116,7 @@ Render it inside the listing scope (`.listing-root`); the backdrop is `position:
 - Escape anywhere in the box calls `onClose`, except during an input method's composition. A field handler that wants Escape to clear a query first calls `preventDefault()` and `stopPropagation()`.
 - A press on the backdrop itself closes; a press inside the box (a row, the chip, a legend slot) is cancelled so the focus stays in the field. A press in the field is left alone, so the caret lands where it is pressed.
 - The level chip takes no focus (`tabIndex={-1}`); its tooltip names ← as the key that steps back, which the caller maps.
-- Tab is not contained: the field is the box's only stop. A caller that adds more stops contains Tab itself.
+- Tab is not contained: the frame leaves Tab alone, so from the field (the box's only stop) it would move the focus behind the palette. The caller's `onKeyDown` prevents Tab, as in the example, or contains it when it adds more stops.
 
 ## Styling
 

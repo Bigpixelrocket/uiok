@@ -83,6 +83,12 @@ describe('matchQuery', () => {
     // A negated anchored term excludes only where its anchor holds.
     expect(matchQuery('test-nav.ts', '!^nav')).not.toBeNull();
     expect(matchQuery('nav-test.ts', '!^nav')).toBeNull();
+    // A negated exact term excludes a contiguous hit only, not a scattered one.
+    expect(matchQuery('navigable.ts', "!'vig")).toBeNull();
+    expect(matchQuery('navigable.ts', "!'nvg")).not.toBeNull();
+    // A negated suffix term excludes only at the end.
+    expect(matchQuery('nav-test.ts', '!.ts$')).toBeNull();
+    expect(matchQuery('nav.ts-test', '!.ts$')).not.toBeNull();
   });
 
   it('applies smart case after removing query operators', () => {
