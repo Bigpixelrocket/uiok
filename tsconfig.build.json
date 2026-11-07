@@ -1,0 +1,19 @@
+{
+  // Emits the published `dist/`: one ESM module and declaration per source
+  // module, so bundlers can tree-shake. No source or declaration maps ever
+  // ship (`scripts/verify-pack.mjs`). Node types stay out, so a library
+  // module that reaches a Node built-in fails to build.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "types": [],
+    "rootDir": "src",
+    "outDir": "dist",
+    "declaration": true,
+    "declarationMap": false,
+    "sourceMap": false,
+    "inlineSourceMap": false
+  },
+  "include": ["src"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
+}
