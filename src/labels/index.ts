@@ -9,6 +9,7 @@ export { DEFAULT_LISTING_LABELS, type ListingLabels, type SortDirection } from '
 export { DEFAULT_PAGER_LABELS, type PagerLabels, type PagerStep } from './pager.js';
 export { DEFAULT_PALETTE_LABELS, type PaletteLabels } from './palette.js';
 export { DEFAULT_SELECT_ALL_LABELS, type SelectAllLabels } from './selectAll.js';
+export { DEFAULT_TERMINAL_LABELS, type TerminalLabels } from './terminal.js';
 export { DEFAULT_LABELS, type UiokLabels } from './UiokLabels.js';
 export {
   mergeLabels,
