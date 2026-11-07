@@ -1,0 +1,79 @@
+{
+  "name": "uiok",
+  "version": "0.0.1",
+  "description": "A React UI library with a retro look: themeable design tokens and accessible components.",
+  "keywords": [
+    "react",
+    "ui",
+    "components",
+    "design-tokens",
+    "themes",
+    "retro"
+  ],
+  "homepage": "https://github.com/Bigpixelrocket/uiok#readme",
+  "bugs": {
+    "url": "https://github.com/Bigpixelrocket/uiok/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Bigpixelrocket/uiok.git"
+  },
+  "license": "MIT",
+  "author": "Bigpixelrocket",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "verify:pack": "node scripts/verify-pack.mjs",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build && npm run verify:pack",
+    "prepublishOnly": "npm run check"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@testing-library/dom": "^10.4.1",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "eslint": "^10.7.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.7.0",
+    "jsdom": "^29.1.1",
+    "prettier": "3.9.8",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.64.0",
+    "vitest": "^4.1.10"
+  },
+  "engines": {
+    "node": ">=22.13.0"
+  },
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  }
+}
