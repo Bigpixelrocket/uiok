@@ -29,6 +29,7 @@ src/keyboard/                 # browser-key guard, overlay selectors and watchOv
 src/tooltip/                  # TooltipLayer (mount once) and the tooltip() / describedTooltip() attributes it reads
 src/button/                   # Button (primary, tonal, neutral) and IconButton
 src/activity/ src/segmented/ src/keychord/ src/filter/  # ActivityBar, SegmentedChoice, KeyChord, FilterIcon and FilterEscape
+src/legend/                   # KeyLegendStrip and legendUnits / fittingUnits / moreLabel / moreListAction; pair labels are the app's
 src/store/ src/clock/         # ValueStore, sameData/sameProps, useStableHandlers, keepUnchanged*; useClock
 src/dialog/                   # ModalDialog frame, DialogLegend footer and legendKeyAction (which slot a key runs), ConfirmDialog; dialog labels in src/labels/dialog.ts
 src/run/                      # RunHeader progress header and the RunProgress state and elapsed-time helpers

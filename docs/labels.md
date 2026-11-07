@@ -38,6 +38,7 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | `keys`    | `KeyLabels`     | `DEFAULT_KEY_LABELS`     | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
 | `charts`  | `ChartLabels`   | `DEFAULT_CHART_LABELS`   | `LineChart`, `ScatterChart`, `ResultChart`, and, given it, `tokenColour`, `svgPng`      |
 | `dialog`  | `DialogLabels`  | `DEFAULT_DIALOG_LABELS`  | `ConfirmDialog`, and, given it, `filterLeaveLabel`                                      |
+| `legend`  | `LegendLabels`  | `DEFAULT_LEGEND_LABELS`  | `KeyLegendStrip`, and, given it, `moreLabel`                                            |
 | `listing` | `ListingLabels` | `DEFAULT_LISTING_LABELS` | `Strip` and `Listing`, for a column label that sorts                                    |
 
 ### `keys`
@@ -81,6 +82,17 @@ Counts arrive as numbers, so the app formats them for its locale and picks the p
 | `affectedItems` | `(count: number) => string` | `Affected items` |
 
 `cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's list of paths, given how many it holds.
+
+### `legend`
+
+| Field     | Type                                      | English default                        |
+| --------- | ----------------------------------------- | -------------------------------------- |
+| `label`   | `string`                                  | `Keyboard shortcuts`                   |
+| `verbs`   | `string`                                  | `Verbs`                                |
+| `capName` | `(chord: string, verb: string) => string` | `` `${chord} ${verb}` ``: "Up Move Up" |
+| `more`    | `(count: number) => string`               | `1 more shortcut`, `3 more shortcuts`  |
+
+A folded pair's label ("Up/Down") is not a label here: the app owns its pair vocabulary and passes the labels to `KeyLegendStrip` (`docs/components/legend.md`).
 
 ### `listing`
 

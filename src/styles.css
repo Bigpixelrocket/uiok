@@ -12,6 +12,7 @@
 @import './keychord/keychord.css';
 @import './listing/listing.css';
 @import './filter/filter.css';
+@import './legend/legend.css';
 @import './dialog/dialog.css';
 @import './run/run.css';
 @import './namecut/namecut.css';

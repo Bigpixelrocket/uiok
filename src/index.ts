@@ -14,6 +14,7 @@ export * from './filter/index.js';
 export * from './keyboard/index.js';
 export * from './keychord/index.js';
 export * from './labels/index.js';
+export * from './legend/index.js';
 export * from './listing/index.js';
 export * from './namecut/index.js';
 export * from './pane/index.js';
