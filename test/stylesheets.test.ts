@@ -62,6 +62,12 @@ describe('uiok/styles.css', () => {
         <button class="icon-button" aria-label="Refresh"></button>
         <button class="segmented-choice-option" role="radio" aria-checked="false">Day</button>
         <button class="filter-escape"><kbd class="keychord">esc</kbd></button>
+        <nav class="pager"><button class="pager-step">Next</button></nav>
+        <button class="page-tab" role="tab" aria-selected="false">Rows</button>
+        <div class="data-grid"><button class="data-grid-label data-grid-sort">id</button>
+          <button class="data-grid-link">42</button></div>
+        <button class="date-picker-day" role="gridcell">7</button>
+        <label class="select-all-check"><input type="checkbox">Check all</label>
       </fieldset>`;
       const elements = [...document.querySelectorAll('fieldset *')];
       const matched = elements.flatMap((element) =>
