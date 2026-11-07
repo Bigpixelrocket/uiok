@@ -89,9 +89,20 @@ export function formatPicker(
   return kind === 'date' ? date : kind === 'time' ? time : `${date}${separator}${time}`;
 }
 
+/**
+ * Midnight UTC on a day, `monthIndex` counting from 0 and overflowing as
+ * `Date.UTC` does. Unlike `Date.UTC`, it keeps years 0 to 99 as written
+ * rather than moving them to 1900 to 1999.
+ */
+export function utcDay(year: number, monthIndex: number, day: number): Date {
+  const date = new Date(0);
+
+  date.setUTCFullYear(year, monthIndex, day);
+  return date;
+}
+
 /** The days in a month, 1 to 12. */
-export const daysIn = (year: number, month: number): number =>
-  new Date(Date.UTC(year, month, 0)).getUTCDate();
+export const daysIn = (year: number, month: number): number => utcDay(year, month, 0).getUTCDate();
 
 /**
  * The days a month's grid shows, a week a row from `firstDay` (1 Monday to
@@ -109,9 +120,9 @@ export function monthGrid(
   readonly inMonth: boolean;
 }[] {
   // getUTCDay counts Sunday as 0; `firstDay` counts it as 7.
-  const weekday = (new Date(Date.UTC(year, month - 1, 1)).getUTCDay() + 6) % 7;
+  const weekday = (utcDay(year, month - 1, 1).getUTCDay() + 6) % 7;
   const lead = (weekday - (firstDay - 1) + 7) % 7;
-  const start = Date.UTC(year, month - 1, 1 - lead);
+  const start = utcDay(year, month - 1, 1 - lead).getTime();
   const count = Math.ceil((lead + daysIn(year, month)) / 7) * 7;
 
   return Array.from({ length: count }, (_, index) => {

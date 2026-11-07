@@ -207,6 +207,58 @@ describe('the data grid’s cursor, sort, and edit', () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
+  it('keeps the keys on the grid after a press on a link', () => {
+    render(
+      <DataGrid
+        cell={(row, column) =>
+          column === 0 ? { text: `${row}` } : { text: `open ${row}`, onOpen: () => undefined }
+        }
+        columns={columns}
+        copyText={() => null}
+        label="Files"
+        rowCount={2}
+      />
+    );
+    const grid = screen.getByRole('grid');
+
+    expect(fireEvent.mouseDown(screen.getByRole('button', { name: 'open 0' }))).toBe(false);
+    expect(document.activeElement).toBe(grid);
+
+    fireEvent.keyDown(document.activeElement ?? document.body, { key: 'ArrowDown' });
+    expect(
+      document.getElementById(grid.getAttribute('aria-activedescendant') ?? '')?.textContent
+    ).toBe('0');
+  });
+
+  it('resizes a column added after it was drawn from the width it shows', () => {
+    const props = {
+      cell: () => ({ text: '' }),
+      copyText: () => null,
+      label: 'Files',
+      rowCount: 1
+    };
+    const { rerender } = render(<DataGrid {...props} columns={[{ label: 'name' }]} />);
+
+    rerender(
+      <DataGrid {...props} columns={[{ label: 'name' }, { label: 'a much longer heading' }]} />
+    );
+
+    const header = document.querySelector<HTMLElement>('.data-grid-header');
+    const widthOfSecond = (): number =>
+      parseFloat(header?.style.gridTemplateColumns.split(' ')[1] ?? '');
+    const drawn = widthOfSecond();
+    const handle = document.querySelectorAll<HTMLElement>('.data-grid-resize')[1];
+
+    if (handle === undefined) throw new Error('no resize handle for the added column');
+    // jsdom has no pointer capture.
+    Object.defineProperty(handle, 'setPointerCapture', { value: vi.fn() });
+    fireEvent.pointerDown(handle, { button: 0, clientX: 100 });
+    fireEvent.pointerMove(handle, { clientX: 130 });
+
+    expect(drawn).toBeGreaterThan(60);
+    expect(widthOfSecond()).toBe(drawn + 30);
+  });
+
   it('asks to edit an editable cell on a double-click and draws the editor where the caller says', () => {
     const onEdit = vi.fn();
     const host = document.createElement('div');

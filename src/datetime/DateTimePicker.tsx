@@ -12,6 +12,7 @@ import {
   nowParts,
   parsePicker,
   stepMonth,
+  utcDay,
   weekdayNames,
   type PickerKind,
   type PickerParts
@@ -119,7 +120,7 @@ export function DateTimePicker({
     month: 'long',
     year: 'numeric',
     timeZone: 'UTC'
-  }).format(new Date(Date.UTC(shown.year, shown.month - 1, 1)));
+  }).format(utcDay(shown.year, shown.month - 1, 1));
   const close = (): void => setOpen(false);
 
   return (

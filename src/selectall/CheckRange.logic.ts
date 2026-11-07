@@ -1,8 +1,9 @@
 /**
- * What a click on a row's checkbox leaves checked: a plain click turns its row alone; a Shift-click turns every
- * row from the one clicked last (`anchor`) to this one, in the list's
- * `order`, to the state the clicked row takes. A Shift-click with no
- * anchor, or one the list no longer shows, turns the row alone.
+ * What a click on a row's checkbox leaves checked: a plain click turns its
+ * row alone; a Shift-click turns every row from the one clicked last
+ * (`anchor`) to this one, in the list's `order`, to the state the clicked row
+ * takes. A Shift-click with no anchor, or one the list no longer shows, turns
+ * the row alone.
  */
 export function checkedAfterClick<K>(
   checked: ReadonlySet<K>,

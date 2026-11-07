@@ -460,7 +460,7 @@ export function DataGrid({
     const target = event.currentTarget;
     const startX = event.clientX;
     const key = keyOf(columns[column] ?? { label: '' }, column);
-    const startWidth = widths.get(key) ?? 0;
+    const startWidth = widthOf(columns[column] ?? { label: '' }, column);
 
     target.setPointerCapture(event.pointerId);
 
@@ -609,6 +609,11 @@ export function DataGrid({
                       return;
                     }
                     open?.();
+                  }}
+                  onMouseDown={(event) => {
+                    // A press leaves focus on the grid, so its keys keep working.
+                    event.preventDefault();
+                    viewport.current?.focus({ preventScroll: true });
                   }}
                   tabIndex={-1}
                   type="button"

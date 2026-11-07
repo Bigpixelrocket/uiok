@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatPicker, monthGrid, parsePicker, stepMonth } from './DateTimePicker.logic.js';
+import { daysIn, formatPicker, monthGrid, parsePicker, stepMonth } from './DateTimePicker.logic.js';
 
 describe('date and time picker', () => {
   it('reads a date, a time, and both, and refuses what it cannot show', () => {
@@ -45,5 +45,19 @@ describe('date and time picker', () => {
     expect(
       stepMonth({ year: 2026, month: 1, day: 5, hour: 0, minute: 0, second: 0, fraction: '' }, -1)
     ).toMatchObject({ year: 2025, month: 12 });
+  });
+
+  it('keeps years 1 to 99 in their own century', () => {
+    const first = new Date(0);
+
+    first.setUTCFullYear(99, 0, 1);
+
+    const days = monthGrid(99, 1, 1);
+    const inMonth = days.filter((day) => day.inMonth);
+
+    expect(inMonth).toHaveLength(31);
+    expect(inMonth.every((day) => day.year === 99 && day.month === 1)).toBe(true);
+    expect(days.findIndex((day) => day.inMonth)).toBe((first.getUTCDay() + 6) % 7);
+    expect(daysIn(4, 2)).toBe(29);
   });
 });
