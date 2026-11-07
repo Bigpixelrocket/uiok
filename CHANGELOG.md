@@ -28,7 +28,7 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - Filtered menus and palettes: the fuzzy matcher `matchQuery` with `hasQueryTerms` and `hasNegativeTerms`, the menu rules (`menuQueryRefused`, `moveMenuCursor`, `pickableCursor`, `movedPickableCursor`, and the level trail helpers), `useBellBeat`, and the menu look in `@bigpixelrocket/uiok/menu`; `Palette` and `PaletteQuery` in `@bigpixelrocket/uiok/palette`, whose words come from the new `palette` label group.
 - Charts (`@bigpixelrocket/uiok/charts`): `LineChart`, `PieChart`, `ScatterChart`, and `ResultChart` (bar, column, line, spline, area, pie, timeline, scatter; stackable), painted from the `--chart-*` tokens, and `tokenColour`, `svgMarkup`, and `svgPng` to save a chart as a picture. Their shared words are the `charts` label group (`ChartLabels`).
 - Each area is importable on its own as `@bigpixelrocket/uiok/<area>` (`@bigpixelrocket/uiok/button`, `@bigpixelrocket/uiok/keyboard`, …).
-- `lucide-react` 1.x is a peer dependency.
+- `lucide-react` 1.31 or later within 1.x is a peer dependency.
 
 [Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/Bigpixelrocket/uiok/releases/tag/v0.1.0

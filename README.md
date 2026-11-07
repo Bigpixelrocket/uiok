@@ -12,7 +12,7 @@ Pre-1.0; expect breaking changes in minor releases until 1.0. Version 0.1.0 ship
 npm install @bigpixelrocket/uiok
 ```
 
-`react` and `react-dom` 19 and `lucide-react` 1.x are peer dependencies.
+`react` and `react-dom` 19 and `lucide-react` 1.31 or later within 1.x are peer dependencies.
 
 ## Quick start
 
