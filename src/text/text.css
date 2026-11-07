@@ -1,0 +1,11 @@
+/* ---- Marked text (MarkedText) ----
+
+   Matched characters are tinted, never recoloured: a row name may already
+   carry a colour of its own (a file's kind), and repainting it would trade
+   that colour for the match. The tint sits behind whatever colour the name
+   has, so it composes with names that draw their own background too. Drawn
+   inside the listing scope (.listing-root). */
+:where(.listing-root) .name-hit {
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}

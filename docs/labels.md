@@ -33,10 +33,12 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 
 ## Groups and defaults
 
-| Group    | Interface     | Default                | Read by                                                                                 |
-| -------- | ------------- | ---------------------- | --------------------------------------------------------------------------------------- |
-| `keys`   | `KeyLabels`   | `DEFAULT_KEY_LABELS`   | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
-| `charts` | `ChartLabels` | `DEFAULT_CHART_LABELS` | `LineChart`, `ScatterChart`, `ResultChart`, and, given it, `tokenColour`, `svgPng`      |
+| Group     | Interface       | Default                  | Read by                                                                                 |
+| --------- | --------------- | ------------------------ | --------------------------------------------------------------------------------------- |
+| `keys`    | `KeyLabels`     | `DEFAULT_KEY_LABELS`     | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
+| `charts`  | `ChartLabels`   | `DEFAULT_CHART_LABELS`   | `LineChart`, `ScatterChart`, `ResultChart`, and, given it, `tokenColour`, `svgPng`      |
+| `dialog`  | `DialogLabels`  | `DEFAULT_DIALOG_LABELS`  | `ConfirmDialog`, and, given it, `filterLeaveLabel`                                      |
+| `listing` | `ListingLabels` | `DEFAULT_LISTING_LABELS` | `Strip` and `Listing`, for a column label that sorts                                    |
 
 ### `keys`
 
@@ -50,6 +52,8 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | `escapeCap`      | `string`                          | `esc`                                                                                                                |
 
 A key missing from `names` is spoken as its capital ("N"); one missing from `keyGlyphs` is written as its capital.
+
+The defaults are macOS's names and glyphs. An app on Windows or Linux supplies its own, for example `modifiers: { alt: 'Alt', meta: 'Windows' }` and `modifierGlyphs: { ctrl: 'Ctrl+', alt: 'Alt+', shift: 'Shift+', meta: 'Win+' }`. Modifier order (Control, Option, Shift, Command) and the icons `KeyChord` draws for modifiers stay macOS's in this version.
 
 ### `charts`
 
@@ -68,7 +72,23 @@ A key missing from `names` is spoken as its capital ("N"); one missing from `key
 
 Counts arrive as numbers, so the app formats them for its locale and picks the plural; the English defaults group digits as en-US does (1,024). Values and moments arrive already written by the chart's `format` and `timeText` props. `tokenColour` and `svgPng` run outside React, so they take the group as an argument (`useLabels().charts`) and fall back to English.
 
-The defaults are macOS's names and glyphs. An app on Windows or Linux supplies its own, for example `modifiers: { alt: 'Alt', meta: 'Windows' }` and `modifierGlyphs: { ctrl: 'Ctrl+', alt: 'Alt+', shift: 'Shift+', meta: 'Win+' }`. Modifier order (Control, Option, Shift, Command) and the icons `KeyChord` draws for modifiers stay macOS's in this version.
+### `dialog`
+
+| Field           | Type                        | English default  |
+| --------------- | --------------------------- | ---------------- |
+| `cancel`        | `string`                    | `Cancel`         |
+| `clear`         | `string`                    | `Clear`          |
+| `affectedItems` | `(count: number) => string` | `Affected items` |
+
+`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's list of paths, given how many it holds.
+
+### `listing`
+
+| Field    | Type                                                   | English default                                                                     |
+| -------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `sortBy` | `(column: string, direction: SortDirection) => string` | "Sort by Size", "Sort by Size, sorted ascending", "Sort by Size, sorted descending" |
+
+`SortDirection` is `'asc' | 'desc' | null`; null is a column the listing is not sorted by.
 
 ## Mapping an app's i18n
 
