@@ -175,10 +175,10 @@ export function Home() {
           <CopyButton text={INSTALL} />
         </div>
         <p>
-          <code>react</code>, <code>react-dom</code> 19, and <code>lucide-react</code> 1.x are peer
-          dependencies. The package is ESM only and ships one module per component, so a bundler
-          keeps only what you import; each area also has its own entry, such as{' '}
-          <code>@bigpixelrocket/uiok/grid</code>.
+          <code>react</code>, <code>react-dom</code> 19, and <code>lucide-react</code> 1.31 or later
+          within 1.x are peer dependencies. The package is ESM only and ships one module per
+          component, so a bundler keeps only what you import; each area also has its own entry, such
+          as <code>@bigpixelrocket/uiok/grid</code>.
         </p>
       </section>
 
