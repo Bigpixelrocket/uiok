@@ -78,8 +78,8 @@ function RenameDialog({ name, onRename, onCancel }) {
 
 ### Focus
 
-- A control that asks for focus as it mounts (`autoFocus` on a name field) keeps it; otherwise the dialog itself takes the focus, so Return and Escape work before anything is chosen. The dialog draws no focus ring.
-- Tab cycles the body controls and wraps at either end. From the dialog itself, Tab enters at the first control and Shift-Tab at the last. With nothing tabbable, the focus stays where it is. Disabled controls and the legend's slots are not Tab stops; a focusable scroll region (`tabindex="0"`) is.
+- A control that asks for focus as it mounts (`autoFocus` on a name field) keeps it, and so does a dialog portalled from inside it that opens in the same render (a confirmation shown at once); otherwise the dialog itself takes the focus, so Return and Escape work before anything is chosen. The dialog draws no focus ring.
+- Tab cycles the body controls and wraps at either end. From the dialog itself, Tab enters at the first control and Shift-Tab at the last. With nothing tabbable, the focus stays where it is. Disabled controls (those inside a disabled `<fieldset>` too), hidden inputs, and the legend's slots are not Tab stops, and Tab moves on past a control that refuses the focus (hidden by a stylesheet, inert); a focusable scroll region (`tabindex="0"`) is.
 - A dialog portalled from inside another answers its own keys only; the one under it hears nothing.
 
 ## The legend (`DialogLegendModel`)

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { Fragment, StrictMode } from 'react';
 import { createPortal } from 'react-dom';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -70,6 +71,79 @@ describe('ModalDialog', () => {
     // Backwards from the first control lands on the last enabled one, not OK.
     fireEvent.keyDown(input, { key: 'Tab', shiftKey: true });
     expect(document.activeElement).toBe(cancelButton);
+  });
+
+  it('moves Tab past a control disabled by its fieldset, either way', () => {
+    // A busy form disables its fields through the fieldset, not each control.
+    renderFrame(
+      <>
+        <button type="button">Back</button>
+        <fieldset disabled>
+          <input aria-label="Name" />
+        </fieldset>
+        <button type="button">Cancel</button>
+      </>
+    );
+    const back = screen.getByRole('button', { name: 'Back' });
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    // Not a Tab stop at all, so the cycle never even tries it.
+    const nameFocus = vi.spyOn(screen.getByRole('textbox'), 'focus');
+
+    back.focus();
+    fireEvent.keyDown(back, { key: 'Tab' });
+    expect(document.activeElement).toBe(cancelButton);
+
+    fireEvent.keyDown(cancelButton, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(back);
+    expect(nameFocus).not.toHaveBeenCalled();
+  });
+
+  it('moves Tab past a hidden input, either way', () => {
+    const { dialog } = renderFrame(
+      <>
+        <button type="button">Back</button>
+        <input name="id" type="hidden" value="7" />
+        <button type="button">Cancel</button>
+      </>
+    );
+    const back = screen.getByRole('button', { name: 'Back' });
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    // Not a Tab stop at all, so the cycle never even tries it.
+    const hiddenFocus = vi.spyOn(
+      dialog.querySelector('input[type="hidden"]') as HTMLInputElement,
+      'focus'
+    );
+
+    back.focus();
+    fireEvent.keyDown(back, { key: 'Tab' });
+    expect(document.activeElement).toBe(cancelButton);
+
+    fireEvent.keyDown(cancelButton, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(back);
+    expect(hiddenFocus).not.toHaveBeenCalled();
+  });
+
+  it('moves Tab on past a control that refuses the focus, instead of stalling on it', () => {
+    renderFrame(
+      <>
+        <button type="button">Back</button>
+        <button type="button">Hidden</button>
+        <button type="button">Cancel</button>
+      </>
+    );
+    const back = screen.getByRole('button', { name: 'Back' });
+    const hidden = screen.getByRole('button', { name: 'Hidden' });
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    // jsdom lays nothing out, so a control the browser will not focus
+    // (hidden by a stylesheet, inert) is stood in for by one that ignores focus().
+    vi.spyOn(hidden, 'focus').mockImplementation(() => undefined);
+
+    back.focus();
+    fireEvent.keyDown(back, { key: 'Tab' });
+    expect(document.activeElement).toBe(cancelButton);
+
+    fireEvent.keyDown(cancelButton, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(back);
   });
 
   it('keeps focus in a dialog with nothing tabbable instead of letting Tab reach the page', () => {
@@ -332,6 +406,39 @@ describe('ModalDialog legend', () => {
     expect(innerCancel).toHaveBeenCalledTimes(1);
     expect(outerCancel).not.toHaveBeenCalled();
   });
+
+  // StrictMode runs every mount effect, and its cleanup, twice.
+  it.each([
+    ['', Fragment],
+    [' under StrictMode', StrictMode]
+  ])(
+    'leaves the focus with a dialog portalled from inside it when both open at once%s',
+    (_, Wrapper) => {
+      const outerCancel = vi.fn();
+      const innerCancel = vi.fn();
+
+      render(
+        <Wrapper>
+          <ModalDialog labelId="outer-title" onCancel={outerCancel} title="Outer">
+            {createPortal(
+              <ModalDialog labelId="inner-title" onCancel={innerCancel} title="Inner">
+                <p>Remove it?</p>
+              </ModalDialog>,
+              document.body
+            )}
+          </ModalDialog>
+        </Wrapper>
+      );
+      const inner = screen.getByRole('dialog', { name: 'Inner' });
+
+      // React runs the inner dialog's mount effect first; the outer one must not take the focus back.
+      expect(inner.contains(document.activeElement)).toBe(true);
+
+      fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'Escape' });
+      expect(innerCancel).toHaveBeenCalledTimes(1);
+      expect(outerCancel).not.toHaveBeenCalled();
+    }
+  );
 
   it('keeps the top edge it opened at with pinTop, until the window resizes', () => {
     // jsdom lays nothing out, so the centred offset is stood in for.

@@ -1,5 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  createContext,
+  useCallback,
+  useContext,
   useEffect,
   useLayoutEffect,
   useRef,
@@ -34,30 +37,35 @@ const isFilledField = (target: EventTarget): boolean => {
 };
 
 /**
- * The controls Tab visits inside a dialog, in order. Disabled controls are
- * not tabbable, so they must not anchor the cycle, and neither is anything
- * taken out of the Tab order (the legend's slots); focusable scroll regions
- * (a long path list) join it so they stay reachable.
+ * The controls Tab visits inside a dialog, in order. Disabled controls
+ * (`:disabled`, so those inside a disabled fieldset too) and hidden inputs
+ * take no focus, so they must not anchor the cycle, and neither does
+ * anything taken out of the Tab order (the legend's slots); focusable scroll
+ * regions (a long path list) join it so they stay reachable.
  */
 const tabbableIn = (dialog: HTMLElement): HTMLElement[] => [
   ...dialog.querySelectorAll<HTMLElement>(
-    ':is(button, input, select, textarea):not([disabled]):not([tabindex="-1"]), a[href]:not([tabindex="-1"]), [tabindex="0"]'
+    ':is(button, input:not([type="hidden"]), select, textarea, a[href], [tabindex="0"]):not(:disabled):not([tabindex="-1"])'
   )
 ];
 
 /**
  * Keeps Tab inside `container`: Tab moves to its next control and Shift-Tab
  * to its previous one, wrapping at either end, so keyboard focus cannot
- * escape to what lies behind a modal surface. With nothing tabbable inside,
- * Tab stays put. Any other key passes through. For a modal surface that is
- * not a `ModalDialog` (a palette), called from its keydown handler.
+ * escape to what lies behind a modal surface. A control that refuses the
+ * focus (hidden by a stylesheet, inert) is passed over for the one after it
+ * in the same direction, each tried at most once, so Tab never stalls on
+ * it. With nothing tabbable inside, Tab stays put. Any other key passes
+ * through. For a modal surface that is not a `ModalDialog` (a palette),
+ * called from its keydown handler.
  */
 export const containTab = (event: KeyboardEvent<HTMLElement>, container: HTMLElement): void => {
   if (event.key !== 'Tab') {
     return;
   }
 
-  const active = event.currentTarget.ownerDocument.activeElement;
+  const { ownerDocument } = event.currentTarget;
+  const active = ownerDocument.activeElement;
   const focusable = tabbableIn(container);
 
   // With nothing tabbable (a progress dialog before its log has a line),
@@ -68,13 +76,32 @@ export const containTab = (event: KeyboardEvent<HTMLElement>, container: HTMLEle
     return;
   }
 
+  const count = focusable.length;
   const index = focusable.indexOf(active as HTMLElement);
   const delta = event.shiftKey ? -1 : 1;
   // From the container itself, Tab enters at the first control and Shift-Tab at the last.
-  const next = index === -1 ? (event.shiftKey ? focusable.length - 1 : 0) : index + delta;
+  const first = index === -1 ? (event.shiftKey ? count - 1 : 0) : index + delta;
 
-  focusable[(next + focusable.length) % focusable.length]?.focus();
+  // The browser's own move is prevented, so a candidate that ignores focus()
+  // would hold Tab where it is; try the next one until the focus moves.
+  for (let step = 0; step < count; step += 1) {
+    focusable[(((first + step * delta) % count) + count) % count]?.focus();
+
+    if (ownerDocument.activeElement !== active) {
+      return;
+    }
+  }
 };
+
+/**
+ * Lets a dialog rendered inside another (a confirmation portalled from its
+ * body) tell the enclosing one that it holds the focus: claim when it
+ * mounts, release when it unmounts. Child effects run first, so an inner
+ * dialog mounted in the same commit claims before the enclosing dialog's
+ * own mount effect would take the focus back. A dialog opened later on top,
+ * nested or not, is unaffected: the enclosing dialog has already mounted.
+ */
+const NestedFocusContext = createContext<((claim: boolean) => void) | null>(null);
 
 /** Props for {@link ModalDialog}; content renders below the title strip. */
 export interface ModalDialogProps {
@@ -173,6 +200,13 @@ export function ModalDialog({
   children
 }: ModalDialogProps): ReactElement {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const claimEnclosingFocus = useContext(NestedFocusContext);
+  // How many dialogs nested inside this one hold the focus; a count, since
+  // StrictMode mounts, cleans up, and mounts each effect again.
+  const nestedFocusClaims = useRef(0);
+  const claimNestedFocus = useCallback((claim: boolean): void => {
+    nestedFocusClaims.current += claim ? 1 : -1;
+  }, []);
   // The top edge the centred box opened at, in the backdrop; null while centred.
   const [pinnedTop, setPinnedTop] = useState<number | null>(null);
 
@@ -201,15 +235,28 @@ export function ModalDialog({
     return () => window.removeEventListener('resize', recentre);
   }, [pinTop]);
 
-  // A control that asked for focus as it mounted (a name field) keeps it;
-  // otherwise the dialog holds it, so Return and Escape reach it.
+  // A control that asked for focus as it mounted (a name field) keeps it, as
+  // does a dialog nested inside this one that mounted with it; otherwise the
+  // dialog holds it, so Return and Escape reach it.
   useEffect(() => {
     const dialog = dialogRef.current;
 
-    if (dialog && !dialog.contains(dialog.ownerDocument.activeElement)) {
+    if (
+      dialog &&
+      nestedFocusClaims.current === 0 &&
+      !dialog.contains(dialog.ownerDocument.activeElement)
+    ) {
       dialog.focus({ preventScroll: true });
     }
-  }, []);
+
+    if (!claimEnclosingFocus) {
+      return;
+    }
+
+    claimEnclosingFocus(true);
+
+    return () => claimEnclosingFocus(false);
+  }, [claimEnclosingFocus]);
 
   // Modal focus containment: Tab cycles inside the dialog so keyboard focus
   // cannot escape to the page behind the backdrop.
@@ -299,7 +346,7 @@ export function ModalDialog({
             </span>
           ) : null}
         </div>
-        {children}
+        <NestedFocusContext value={claimNestedFocus}>{children}</NestedFocusContext>
         {legend && <DialogLegend legend={legend} onLeave={onCancel} />}
       </div>
     </div>
