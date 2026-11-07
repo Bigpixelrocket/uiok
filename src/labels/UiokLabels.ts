@@ -7,6 +7,7 @@
  * value in it (`affectedItems(count)`), so a partial override merges cleanly.
  */
 
+import { DEFAULT_DIALOG_LABELS, type DialogLabels } from './dialog.js';
 import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
 
 /**
@@ -19,9 +20,12 @@ import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
 export interface UiokLabels {
   /** Key and modifier names, glyphs, and key cap words (`KeyChord`, `chordSpoken`). */
   readonly keys: KeyLabels;
+  /** Dialog leave verbs and a confirmation's list name (`ConfirmDialog`, `filterLeaveLabel`). */
+  readonly dialog: DialogLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
 export const DEFAULT_LABELS: UiokLabels = {
-  keys: DEFAULT_KEY_LABELS
+  keys: DEFAULT_KEY_LABELS,
+  dialog: DEFAULT_DIALOG_LABELS
 };

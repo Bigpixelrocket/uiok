@@ -518,8 +518,8 @@ function rule(selector: string, tokens: Readonly<Record<string, string>>, depth 
 /**
  * The custom properties `uiok/styles.css` declares or reads beside the theme
  * tokens: the base sheet's on `:root`, and the hooks a component stylesheet
- * reads (the activity stripes' colour), which an app token on `:root` would
- * otherwise reach.
+ * declares or reads (the activity stripes' colour, a dialog's tone and
+ * pinned top), which an app token on `:root` would otherwise reach.
  */
 const BASE_TOKEN_NAMES = [
   '--frost',
@@ -529,7 +529,10 @@ const BASE_TOKEN_NAMES = [
   '--z-dialog',
   '--z-tooltip',
   '--stripe-ink',
-  '--stripe-ground'
+  '--stripe-ground',
+  '--dialog-tone',
+  '--dialog-icon',
+  '--dialog-top'
 ] as const;
 
 /** Every token name uiok defines: the fixed tokens, those a theme sets, and the stylesheet's own. */

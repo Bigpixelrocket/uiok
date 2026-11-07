@@ -1,0 +1,190 @@
+/* ---- Progress header (RunHeader) ----
+
+   The header a view watching work in progress opens with: the state's
+   glyph and sentence, the big figure at the right edge, the optional bar,
+   and the facts. It keeps the surrounding dialog's type family, like the
+   frame; sizes, weights, and colours are its own. */
+.run-header {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.run-header-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: 8px;
+}
+
+/* 18px on the headline's 20px line. */
+.run-header-glyph {
+  width: 18px;
+  height: 18px;
+  margin-top: 1px;
+  stroke-width: 2;
+  color: var(--text-dim);
+}
+
+/* The running glyph turns in the accent; it stands still under reduced
+   motion (below), where the clock and the counts say the run is working. */
+.run-header[data-state='running'] .run-header-glyph {
+  color: var(--accent);
+  animation: run-header-spin 1s linear infinite;
+}
+
+@keyframes run-header-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* The done sentence keeps the plain text colour: a light theme's green can
+   miss 4.5:1 as text on the dialog surface, so only the glyph (and the bar)
+   carries it. The red meets 4.5:1 in every theme. */
+.run-header[data-state='done'] .run-header-glyph {
+  color: var(--success);
+}
+
+.run-header[data-state='failed'] .run-header-glyph,
+.run-header[data-state='failed'] .run-header-headline {
+  color: var(--danger);
+}
+
+.run-header-said {
+  min-width: 0;
+}
+
+.run-header-headline {
+  display: block;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 20px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.run-header-reason {
+  margin: 4px 0 0;
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* The figure reads live while the run goes on and dims once it is history
+   (or before it starts). */
+.run-header-figure {
+  color: var(--text);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.run-header:is(
+    [data-state='waiting'],
+    [data-state='done'],
+    [data-state='failed'],
+    [data-state='stopped']
+  )
+  .run-header-figure {
+  color: var(--text-dim);
+}
+
+.run-header-bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--cursor-bg);
+  overflow: hidden;
+}
+
+.run-header-fill {
+  height: 100%;
+  border-radius: 4px;
+  background: var(--accent);
+  transition: width 0.1s linear;
+}
+
+/* A bar that stopped short (paused, failed, or stopped) dims: it no longer
+   moves. Stripes dim through their own colour (below), which this fill
+   colour would otherwise paint over. */
+.run-header:is([data-state='paused'], [data-state='failed'], [data-state='stopped'])
+  .run-header-bar:not(.indeterminate)
+  .run-header-fill {
+  background: var(--text-dim);
+}
+
+/* The stripes of a run that stopped short stand still and dim, through the
+   hooks the activity stripes read. */
+.run-header:is([data-state='paused'], [data-state='failed'], [data-state='stopped'])
+  .indeterminate
+  > .activity-stripes {
+  --stripe-ink: var(--text-dim);
+  --stripe-ground: 16%;
+}
+
+.run-header[data-state='done'] .run-header-fill {
+  background: var(--success);
+}
+
+.run-header-facts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+/* Under a bar the facts sit closer to it than the bar sits to the
+   sentence: they describe the bar. */
+.run-header-bar + .run-header-facts {
+  margin-top: -2px;
+}
+
+/* Without a bar the facts line up under the sentence, past the glyph. */
+.run-header-facts.indented {
+  padding-left: 26px;
+}
+
+.run-header-fact {
+  flex: none;
+}
+
+.run-header-fact:first-child {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.run-header-fact + .run-header-fact::before {
+  content: '·';
+  margin-right: 8px;
+  color: var(--row-meta-text);
+}
+
+.run-header-fact code {
+  color: var(--text);
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .run-header[data-state='running'] .run-header-glyph {
+    animation: none;
+  }
+
+  .run-header-fill {
+    transition: none;
+  }
+}

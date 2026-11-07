@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Core components: `Button`, `IconButton`, `TooltipLayer` with `tooltip()` and `describedTooltip()`, `ActivityBar`, `SegmentedChoice`, `KeyChord`, `FilterIcon`, and `FilterEscape`, styled through `uiok/styles.css`.
 - Keyboard policy: `shouldSuppressBrowserDocumentKey`, `cancelBrowserDocumentKey`, `isKeyKept`, the `MODAL_SELECTOR` and `OVERLAY_SELECTOR` overlay contract, `watchOverlays`, `holdPageSelectAll`, and chord helpers (`chordSpoken`, `chordGlyphs`, `chordParts`).
 - Render helpers: `createValueStore`, `unheard`, `sameData`, `sameProps`, `useStableHandlers`, `keepUnchangedById`, `keepUnchangedBy`, and `useClock`.
+- Dialogs (`uiok/dialog`): `ModalDialog`, `DialogLegend` with `legendKeyAction`, `legendSignature`, and `filterLeaveLabel`, `ConfirmDialog`, and `containTab`; the `dialog` label group (`cancel`, `clear`, `affectedItems`). Run progress (`uiok/run`): `RunHeader`, `isSettledRun`, `runElapsedMs`, and `runClock`. See `docs/components/dialog.md` and `docs/components/run.md`.
 - Each area is importable on its own as `uiok/<area>` (`uiok/button`, `uiok/keyboard`, …).
 - `lucide-react` 1.x is a peer dependency.
 
