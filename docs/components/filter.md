@@ -8,7 +8,7 @@ The two marks around a filter field's input: `FilterIcon` at the start and `Filt
 import { FilterEscape, FilterIcon } from 'uiok/filter';
 
 <div className="listing-root">
-  <label className="filter-field">
+  <label>
     <FilterIcon />
     <input aria-label="Filter" value={query} onChange={(e) => setQuery(e.target.value)} />
     {query && <FilterEscape label="Clear filter" onEscape={() => setQuery('')} />}
@@ -28,7 +28,7 @@ import { FilterEscape, FilterIcon } from 'uiok/filter';
 
 ## Styling
 
-The rules apply inside the listing scope, `.listing-root`: `.filter-icon` is 20px wide, the width of a row's icon column, so the query lines up with row names; `.filter-escape .keychord` draws as a 16px key cap that lights on hover.
+The rules apply inside the listing scope, `.listing-root`: `.filter-icon` is 20px wide, the width of a row's icon column, so the query lines up with row names; `.filter-escape .keychord` draws as a 16px key cap that lights on hover. The field itself (the row that holds the marks and the input) is the app's to lay out; UIOK styles only the marks.
 
 ## Labels read
 

@@ -5,12 +5,17 @@ The current time for labels that count ("5 seconds ago", "in 2 minutes"), render
 ## Example
 
 ```tsx
+import { useCallback } from 'react';
 import { useClock } from 'uiok/clock';
 
 const MINUTE = 60_000;
-const nextMinute = (now: number) => (Math.floor(now / MINUTE) + 1) * MINUTE;
 
 function Since({ at, visible }: { at: number; visible: boolean }) {
+  // The label turns over a whole minute after `at`, not on the wall clock's minute.
+  const nextMinute = useCallback(
+    (now: number) => at + (Math.floor((now - at) / MINUTE) + 1) * MINUTE,
+    [at]
+  );
   const now = useClock(visible, nextMinute);
   return <span>{Math.floor((now - at) / MINUTE)} min ago</span>;
 }
