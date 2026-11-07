@@ -233,8 +233,8 @@ function cssFindings(file: string, source: string): number[] {
 
 /**
  * Whether `parent` passes `node`'s value through as its own: parentheses, a
- * type assertion, a non-null assertion, or a conditional's branch (not its
- * condition).
+ * type assertion, a non-null assertion, a conditional's branch (not its
+ * condition), or the default on the right of `??` or `||`.
  */
 function passesThrough(parent: ts.Node, node: ts.Node): boolean {
   return (
@@ -243,7 +243,12 @@ function passesThrough(parent: ts.Node, node: ts.Node): boolean {
     ts.isSatisfiesExpression(parent) ||
     ts.isTypeAssertionExpression(parent) ||
     ts.isNonNullExpression(parent) ||
-    (ts.isConditionalExpression(parent) && (parent.whenTrue === node || parent.whenFalse === node))
+    (ts.isConditionalExpression(parent) &&
+      (parent.whenTrue === node || parent.whenFalse === node)) ||
+    (ts.isBinaryExpression(parent) &&
+      parent.right === node &&
+      (parent.operatorToken.kind === ts.SyntaxKind.QuestionQuestionToken ||
+        parent.operatorToken.kind === ts.SyntaxKind.BarBarToken))
   );
 }
 
@@ -427,6 +432,9 @@ describe('colour literals in the library', () => {
       "  stroke: ('navy' satisfies string)! };"
     ].join('\n');
     expect(scriptFindings('x.ts', asserted)).toEqual([1, 2]);
+    // A named colour given as a default still sits under its key.
+    const defaults = ["const n = { color: tone ?? 'red',", "  fill: ink || 'black' };"].join('\n');
+    expect(scriptFindings('x.ts', defaults)).toEqual([1, 2]);
   });
 });
 

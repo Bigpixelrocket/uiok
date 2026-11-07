@@ -226,6 +226,25 @@ describe("an app's own tokens", () => {
     expect(themeStylesheet({ banner: 'See /* here' })).toMatch(/^\/\* See \/\* here \*\//);
   });
 
+  it('read CSS escapes and raw newlines as CSS does, so a quote cannot hide a separator', () => {
+    for (const value of [
+      '"a\\"b"; --accent: red !important; --app-y: "c\\"d"',
+      "'a\\'b'; --accent: red !important; --app-y: 'c\\'d'",
+      '"\\"";--accent:red !important;"',
+      '"x\n;--accent:red !important;\n"',
+      'a"',
+      'url("data:image/svg+xml;utf8,<svg>\n</svg>")'
+    ]) {
+      expect(() => themeStylesheet({ extraFixed: { '--app-x': value } }), value).toThrow(
+        'extraFixed gives --app-x a value'
+      );
+    }
+    const selector = '[a="\\""]{--accent:red}[b="';
+    expect(() => themeStylesheet({ extraBlocks: { [selector]: { '--app-gap': '2px' } } })).toThrow(
+      'is a selector that would end its rule early'
+    );
+  });
+
   it('may hold separators inside a string or url()', () => {
     const png = 'url(data:image/png;base64,AAAA)';
     const svg = 'url("data:image/svg+xml;utf8,<svg/>")';
@@ -236,6 +255,22 @@ describe("an app's own tokens", () => {
     expect(sheet).toContain(`  --app-png: ${png};\n`);
     expect(sheet).toContain(`  --app-svg: ${svg};\n`);
     expect(sheet).toContain("[data-x='a;b'] {\n  --app-gap: 2px;\n}");
+  });
+
+  it('may hold escaped quotes, a ) in a quoted url(), and a value over two lines', () => {
+    const values = [
+      '"a\\"b"',
+      'url("a)b.png")',
+      `url("data:image/svg+xml;utf8,<svg><g transform='rotate(45)'/></svg>")`,
+      'var(--app-w, 1px) !important',
+      '0 1px 2px var(--app-a),\n  0 2px 4px var(--app-b)'
+    ];
+    const sheet = themeStylesheet({
+      extraFixed: Object.fromEntries(values.map((value, index) => [`--app-v${index}`, value])),
+      extraBlocks: { '.md\\:wide': { '--app-gap': '2px' } }
+    });
+    values.forEach((value, index) => expect(sheet).toContain(`  --app-v${index}: ${value};\n`));
+    expect(sheet).toContain('.md\\:wide {\n  --app-gap: 2px;\n}');
   });
 });
 

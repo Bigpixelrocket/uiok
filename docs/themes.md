@@ -100,7 +100,7 @@ const css = themeStylesheet({
 | `includeUiokTokens`          | `true` (default) writes one combined sheet; `false` writes the app's tokens alone, dropping blocks that would be empty                                                                 |
 | `banner`                     | the opening comment                                                                                                                                                                    |
 
-An extra token must be a kebab-case custom property UIOK does not define; the generator throws otherwise, so an app cannot silently change a token UIOK's components read. No value or selector may hold `;`, `{`, `}`, `/*`, or `*/` outside a string or `url()`, nor the banner `*/`, since each would end its declaration, rule, or comment early. Commit the output and keep it fresh with a staleness test like `src/themes/themes.test.ts`.
+An extra token must be a kebab-case custom property UIOK does not define; the generator throws otherwise, so an app cannot silently change a token UIOK's components read. No value or selector may hold `;`, `{`, `}`, `/*`, or `*/` outside a string or `url()`, nor a string that spans lines, nor the banner `*/`, since each would end its declaration, rule, or comment early. Commit the output and keep it fresh with a staleness test like `src/themes/themes.test.ts`.
 
 ## Migrating from the app tokens
 

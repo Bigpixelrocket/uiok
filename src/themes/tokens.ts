@@ -534,12 +534,19 @@ const UIOK_TOKEN_NAMES: ReadonlySet<string> = new Set([
 
 /**
  * Whether `text` holds a sequence that would end a declaration, rule, or
- * comment early. Quoted strings and `url()` contents may hold any of them (a
- * data URI's `;base64`); a quote left open counts as unsafe.
+ * comment early. It masks what CSS reads as one token: a quoted string,
+ * which honours backslash escapes and ends at a raw newline (so a quoted
+ * `url("…")` may hold a `)`), an unquoted `url(…)` (a data URI's
+ * `;base64`), and an escaped character outside a string (`\:` in a
+ * selector). A separator, quote, lone backslash, or comment delimiter left
+ * over is unsafe; a raw newline outside a string is not.
  */
 function breaksOut(text: string): boolean {
-  const bare = text.replace(/"[^"]*"|'[^']*'|url\([^)]*\)/g, '');
-  return /[;{}"']|\/\*|\*\//.test(bare);
+  const bare = text.replace(
+    /"(?:[^"\\\n\r\f]|\\[^\n\r\f])*"|'(?:[^'\\\n\r\f]|\\[^\n\r\f])*'|url\((?!\s*["'])[^)"'\\]*\)|\\[^\n\r\f]/g,
+    ''
+  );
+  return /[;{}"'\\]|\/\*|\*\//.test(bare);
 }
 
 /**
