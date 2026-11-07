@@ -7,6 +7,7 @@
  * value in it (`affectedItems(count)`), so a partial override merges cleanly.
  */
 
+import { DEFAULT_CHART_LABELS, type ChartLabels } from './charts.js';
 import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
 
 /**
@@ -19,9 +20,12 @@ import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
 export interface UiokLabels {
   /** Key and modifier names, glyphs, and key cap words (`KeyChord`, `chordSpoken`). */
   readonly keys: KeyLabels;
+  /** Chart read-outs, the scatter chart's count and zoom words, and picture export messages (`uiok/charts`). */
+  readonly charts: ChartLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
 export const DEFAULT_LABELS: UiokLabels = {
-  keys: DEFAULT_KEY_LABELS
+  keys: DEFAULT_KEY_LABELS,
+  charts: DEFAULT_CHART_LABELS
 };

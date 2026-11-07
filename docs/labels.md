@@ -33,9 +33,10 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 
 ## Groups and defaults
 
-| Group  | Interface   | Default              | Read by                                                                                 |
-| ------ | ----------- | -------------------- | --------------------------------------------------------------------------------------- |
-| `keys` | `KeyLabels` | `DEFAULT_KEY_LABELS` | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
+| Group    | Interface     | Default                | Read by                                                                                 |
+| -------- | ------------- | ---------------------- | --------------------------------------------------------------------------------------- |
+| `keys`   | `KeyLabels`   | `DEFAULT_KEY_LABELS`   | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
+| `charts` | `ChartLabels` | `DEFAULT_CHART_LABELS` | `LineChart`, `ScatterChart`, `ResultChart`, and, given it, `tokenColour`, `svgPng`      |
 
 ### `keys`
 
@@ -49,6 +50,23 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | `escapeCap`      | `string`                          | `esc`                                                                                                                |
 
 A key missing from `names` is spoken as its capital ("N"); one missing from `keyGlyphs` is written as its capital.
+
+### `charts`
+
+| Field                 | Type                                                          | English default                                       |
+| --------------------- | ------------------------------------------------------------- | ----------------------------------------------------- |
+| `chart`               | `string`                                                      | Chart (an untitled `ResultChart`'s name)              |
+| `noValue`             | `string`                                                      | no value                                              |
+| `points`              | `(count: number) => string`                                   | 1 point, 10 points                                    |
+| `pointsShown`         | `(shown: number, count: number) => string`                    | 3 of 10 points                                        |
+| `resetZoom`           | `string`                                                      | Reset zoom                                            |
+| `time`                | `(time: string) => string`                                    | Time: 10:42:05                                        |
+| `seriesValue`         | `(series: string, value: string) => string`                   | reads: 12                                             |
+| `seriesCategoryValue` | `(series: string, category: string, value: string) => string` | sales, Tue: 5                                         |
+| `coloursUnreadable`   | `string`                                                      | The theme’s colors could not be read for the picture. |
+| `drawFailed`          | `string`                                                      | The picture could not be drawn.                       |
+
+Counts arrive as numbers, so the app formats them for its locale and picks the plural; the English defaults group digits as en-US does (1,024). Values and moments arrive already written by the chart's `format` and `timeText` props. `tokenColour` and `svgPng` run outside React, so they take the group as an argument (`useLabels().charts`) and fall back to English.
 
 The defaults are macOS's names and glyphs. An app on Windows or Linux supplies its own, for example `modifiers: { alt: 'Alt', meta: 'Windows' }` and `modifierGlyphs: { ctrl: 'Ctrl+', alt: 'Alt+', shift: 'Shift+', meta: 'Win+' }`. Modifier order (Control, Option, Shift, Command) and the icons `KeyChord` draws for modifiers stay macOS's in this version.
 

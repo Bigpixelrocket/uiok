@@ -1,0 +1,310 @@
+/* Charts (src/charts/). Series are painted --chart-1 to --chart-8 in turn,
+   mostly by the components on each mark; the rules here draw the chrome
+   around them from the other theme tokens.
+
+   PieChart: the pie, then a legend of each slice with its share; hovering
+   one lights the other. */
+.pie-chart {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin: 0;
+  color: var(--text);
+  font: 12px var(--font-ui);
+}
+
+.pie-slice {
+  stroke: var(--surface);
+  stroke-width: 1;
+  opacity: 0.9;
+}
+
+.pie-slice.lit {
+  opacity: 1;
+  stroke: var(--text);
+}
+
+.pie-legend {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pie-legend li {
+  display: flex;
+  white-space: nowrap;
+  align-items: center;
+  gap: 6px;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.pie-legend li.lit {
+  background: var(--hover-wash);
+}
+
+.pie-swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.pie-value {
+  color: var(--row-meta-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* LineChart: a frame as wide
+   as its cell, the plot's grid and frame, a line per series in the series
+   colours, the hover's guide and read-out, a dragged time range, and the
+   legend under it. */
+.line-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
+  color: var(--text);
+  font: 11px var(--font-ui);
+}
+
+.line-frame {
+  position: relative;
+  min-width: 0;
+}
+
+.line-svg {
+  display: block;
+}
+
+.line-grid {
+  stroke: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.line-tick text {
+  fill: var(--row-meta-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.line-axes {
+  fill: none;
+  stroke: var(--border-strong);
+}
+
+.line-series {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.line-guide {
+  stroke: var(--text-dim);
+  stroke-dasharray: 2 2;
+  pointer-events: none;
+}
+
+.line-plot {
+  fill: transparent;
+}
+
+.line-plot.selectable {
+  cursor: col-resize;
+}
+
+.line-selection {
+  fill: color-mix(in srgb, var(--accent) 14%, transparent);
+  stroke: var(--accent);
+  pointer-events: none;
+}
+
+.line-readout {
+  position: absolute;
+  top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  white-space: nowrap;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.line-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.line-legend li,
+.line-readout span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.line-swatch {
+  flex: none;
+  width: 10px;
+  height: 3px;
+  border-radius: 1px;
+}
+
+/* ScatterChart: a frame the
+   user resizes by its corner, the plot's grid and frame, the points in the
+   first series colour, the dragged zoom rectangle, and a caption with the
+   count and Reset zoom. */
+.scatter-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  color: var(--text);
+  font: 11px var(--font-ui);
+}
+
+.scatter-frame {
+  width: min(100%, 720px);
+  height: 380px;
+  min-width: 240px;
+  min-height: 180px;
+  overflow: hidden;
+  resize: both;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.scatter-svg {
+  display: block;
+}
+
+.scatter-grid {
+  stroke: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.scatter-tick text {
+  fill: var(--row-meta-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.scatter-axes {
+  fill: none;
+  stroke: var(--border-strong);
+}
+
+.scatter-plot {
+  fill: transparent;
+  cursor: crosshair;
+}
+
+.scatter-selection {
+  fill: color-mix(in srgb, var(--accent) 14%, transparent);
+  stroke: var(--accent);
+  pointer-events: none;
+}
+
+.scatter-point {
+  fill: var(--chart-1);
+  fill-opacity: 0.8;
+  stroke: var(--surface);
+  stroke-width: 1;
+  cursor: pointer;
+}
+
+.scatter-point:hover,
+.scatter-point:focus-visible,
+.scatter-point.lit {
+  fill-opacity: 1;
+  stroke: var(--text);
+  outline: none;
+}
+
+.scatter-title {
+  fill: var(--text-dim);
+  font-weight: 600;
+}
+
+.scatter-caption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--row-meta-text);
+}
+
+/* ResultChart, the chart of a table: its title, legend, axes and their
+   labels, grid, and marks in the chart tokens, drawn inside the SVG so its
+   picture saves whole, and a read-out of the value under the pointer. */
+.result-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  color: var(--text);
+  font: 11px var(--font-ui);
+}
+
+.result-chart svg {
+  display: block;
+  font: 11px var(--font-ui);
+}
+
+.result-chart-title {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.result-chart-legend,
+.result-chart-axis text {
+  fill: var(--row-meta-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.result-chart-axis-title {
+  fill: var(--text-dim);
+  font-weight: 600;
+}
+
+.result-chart-grid {
+  stroke: color-mix(in srgb, var(--border) 70%, transparent);
+}
+
+.result-chart-baseline {
+  stroke: var(--border-strong);
+}
+
+.result-chart-line {
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+.result-chart-area {
+  fill-opacity: 0.35;
+  stroke: none;
+}
+
+.result-chart-mark {
+  stroke: var(--surface);
+  stroke-width: 0.5;
+}
+
+.result-chart-mark:hover {
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.result-chart-readout {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--row-meta-text);
+  font-variant-numeric: tabular-nums;
+}

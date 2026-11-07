@@ -24,12 +24,13 @@ src/themes/tokens.ts          # palette-to-token rules, FIXED_TOKENS, PREVIEW_TO
 src/themes/attributes.ts      # wearThemes and subscribeThemeChange for the root attributes
 src/themes/themes.generated.css # the generated token stylesheet, committed; themes.test.ts fails when it is stale
 src/themes/tokens.test.ts     # contrast invariants in every theme; Latte and Mocha frozen in catppuccin-tokens.fixture.json
-src/labels/                   # UiokProvider, useLabels, mergeLabels; UiokLabels.ts composes one group per area (keys.ts); docs/labels.md
+src/labels/                   # UiokProvider, useLabels, mergeLabels; UiokLabels.ts composes one group per area (keys.ts, charts.ts); docs/labels.md
 src/keyboard/                 # browser-key guard, overlay selectors and watchOverlays (public contract), page select-all hold, chord words and glyphs
 src/tooltip/                  # TooltipLayer (mount once) and the tooltip() / describedTooltip() attributes it reads
 src/button/                   # Button (primary, tonal, neutral) and IconButton
 src/activity/ src/segmented/ src/keychord/ src/filter/  # ActivityBar, SegmentedChoice, KeyChord, FilterIcon and FilterEscape
 src/store/ src/clock/         # ValueStore, sameData/sameProps, useStableHandlers, keepUnchanged*; useClock
+src/charts/                   # Line, Pie, Scatter, and ResultChart over pure *.logic.ts geometry; Drawing.ts saves a chart as SVG or PNG; series colours --chart-1..8 (seriesColour.ts)
 docs/components/<area>.md     # per area: purpose, props, example, keyboard behaviour, labels read
 test/colorLiterals.test.ts    # no colour literal in src/ outside the token blocks and the catalog; only ids and attributes imported from src/themes/
 test/api.test.ts              # every public export has a docblock (TypeScript checker over src/index.ts)
