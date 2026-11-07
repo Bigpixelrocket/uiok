@@ -14,4 +14,5 @@ export * from './keychord/index.js';
 export * from './labels/index.js';
 export * from './segmented/index.js';
 export * from './store/index.js';
+export * from './themes/index.js';
 export * from './tooltip/index.js';

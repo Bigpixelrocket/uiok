@@ -1,6 +1,8 @@
-/* UIOK's base stylesheet: the tokens no theme changes and the utilities every
-   component may rely on. It names no colour; colours are theme tokens, and a
-   theme stylesheet defines them. Import it once, before any theme. */
+/* UIOK's base stylesheet: the theme tokens, the tokens no theme changes, and
+   the utilities every component may rely on. It names no colour itself;
+   colours are theme tokens, which themes.generated.css defines (docs/themes.md).
+   Import it once, before any stylesheet of the app's own. */
+@import './themes/themes.generated.css';
 
 /* Component stylesheets, each beside its component. */
 @import './button/button.css';
@@ -39,4 +41,30 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+/* A control that cannot act right now: a disabled field or button, a menu
+   row or an option marked aria-disabled, a label whose checkbox or field is
+   disabled. It keeps its place and its words, faded whole (words, icon, and
+   fill) to --disabled-opacity, and the pointer stays an arrow over it. Inside
+   one already faded it fades no further. :root weighs it over a page's own
+   cursor and opacity for a control; a control that hides its native input (a
+   switch, a radio row) keeps the input hidden with a heavier rule and fades
+   what it draws instead. A hover or cursor-row highlight leaves out a
+   disabled control in its own rule (:enabled, :not([aria-disabled='true'])). */
+:root
+  :is(
+    :is(button, input, select, textarea):disabled,
+    :is(button, [role^='menuitem'], [role='option'])[aria-disabled='true'],
+    label:is([data-disabled], :has(> :is(input, select, textarea):disabled))
+  ):not(
+    :where(
+        :is(button, input, select, textarea):disabled,
+        [aria-disabled='true'],
+        label:is([data-disabled], :has(> :is(input, select, textarea):disabled))
+      )
+      *
+  ) {
+  cursor: default;
+  opacity: var(--disabled-opacity);
 }
