@@ -1,0 +1,135 @@
+import type { LucideIcon } from 'lucide-react';
+import { useId, type ReactElement, type ReactNode } from 'react';
+
+import type { Chord } from '../keyboard/Keyboard.logic.js';
+import { useLabels } from '../labels/UiokProvider.js';
+import type { DialogLegendModel } from './DialogLegend.logic.js';
+import { ModalDialog } from './ModalDialog.js';
+
+/** Finder's Delete Immediately chord, which confirms a delete that cannot be undone. */
+const DELETE_IMMEDIATELY: Chord = { key: 'Backspace', meta: true, alt: true };
+
+/**
+ * A confirmation's tone: `danger` for a destructive action, `warning` for a
+ * question whose yes is the safe choice but still ends work, `primary` for
+ * a grant that changes nothing by itself.
+ */
+export type ConfirmTone = 'danger' | 'warning' | 'primary';
+
+/** Copy and callbacks for {@link ConfirmDialog}. */
+export interface ConfirmDialogProps {
+  /** What the action is, on the title strip. */
+  readonly title: string;
+  /** The consequence, as text or with a name set apart in bold (`<strong>`). */
+  readonly message: ReactNode;
+  /** The action's verb, the lit primary at the right edge. */
+  readonly confirmLabel: string;
+  /**
+   * The leave verb on Escape, named for what leaving keeps (Keep Editing);
+   * the `dialog.cancel` label unless given.
+   */
+  readonly cancelLabel?: string;
+  /** The action's icon, the one its trigger or menu row wears (a trash can for Move to Trash). */
+  readonly icon: LucideIcon;
+  /**
+   * Where the action happens, on the title strip's right edge
+   * (`~/Downloads`, or a group's dot and name); none when nothing says it.
+   */
+  readonly context?: ReactNode;
+  /**
+   * `danger` for destructive confirmations (the default): a red rule under
+   * the title and a red lit confirm. `warning` for a question whose yes is
+   * the safe choice but still ends work (cancelling a delete): an amber
+   * rule, with the confirm in the accent. `primary` for a grant that
+   * changes nothing by itself, which keeps the accent.
+   */
+  readonly tone?: ConfirmTone;
+  /** Every path the action touches, listed in full so the user confirms exactly those. */
+  readonly paths?: readonly string[];
+  /**
+   * A choice the confirmation carries, drawn under the message (keep an
+   * item's data or move it to the Trash). The caller holds its state and
+   * reads it in `onConfirm`; the confirm verb stays the same whatever is
+   * chosen.
+   */
+  readonly children?: ReactNode;
+  /** Extra class on the dialog box, for a body that needs its own width or layout. */
+  readonly className?: string;
+  /**
+   * True for a delete that cannot be undone (a volume with no Trash, a
+   * server, a database): the confirm verb stays at the right edge, lit, but
+   * moves off Return onto ⌥⌘⌫, Finder's Delete Immediately chord, and
+   * Return does nothing, so a Return pressed out of habit after ⌘⌫ never
+   * deletes anything for good.
+   */
+  readonly forGood?: boolean;
+  /** The confirm verb, on Return (or ⌥⌘⌫ with `forGood`) and its slot. */
+  readonly onConfirm: () => void;
+  /** Escape, the leave slot, and a press outside. */
+  readonly onCancel: () => void;
+}
+
+/**
+ * The one confirmation surface, for destructive, privileged, and
+ * side-effect-bearing actions: title, consequence, optional path list, an
+ * optional choice the caller draws, then the legend's esc Cancel (or the
+ * leave verb named) and the named action at the right edge, on Return, or
+ * on ⌥⌘⌫ with Return running nothing for a delete that cannot be undone
+ * (`forGood`). The message describes the dialog (`aria-describedby`), so a
+ * screen reader reads the consequence, and any name it holds, with the
+ * title. It carries its own type, margins, and box sizing, so it renders
+ * the same portalled to the body as inside any page. Styled by the
+ * `.confirm-dialog` rules in `uiok/styles.css`; reads the `dialog` labels.
+ */
+export function ConfirmDialog({
+  title,
+  message,
+  confirmLabel,
+  cancelLabel,
+  icon,
+  context,
+  tone = 'danger',
+  paths = [],
+  children,
+  className,
+  forGood = false,
+  onConfirm,
+  onCancel
+}: ConfirmDialogProps): ReactElement {
+  const labels = useLabels().dialog;
+  const labelId = useId();
+  const messageId = useId();
+  const legend: DialogLegendModel = {
+    leave: { label: cancelLabel ?? labels.cancel },
+    primary: forGood
+      ? { label: confirmLabel, chord: DELETE_IMMEDIATELY, onRun: onConfirm }
+      : { label: confirmLabel, onRun: onConfirm }
+  };
+
+  return (
+    <ModalDialog
+      className={className ? `confirm-dialog ${className}` : 'confirm-dialog'}
+      describedBy={messageId}
+      icon={icon}
+      labelId={labelId}
+      legend={legend}
+      onCancel={onCancel}
+      title={title}
+      titleAside={context}
+      tone={tone === 'primary' ? 'accent' : tone}
+    >
+      <p className="dialog-message" id={messageId}>
+        {message}
+      </p>
+      {/* Focusable so keyboard users can scroll a long list before confirming. */}
+      {paths.length > 0 && (
+        <ul aria-label={labels.affectedItems(paths.length)} className="dialog-paths" tabIndex={0}>
+          {paths.map((path) => (
+            <li key={path}>{path}</li>
+          ))}
+        </ul>
+      )}
+      {children}
+    </ModalDialog>
+  );
+}

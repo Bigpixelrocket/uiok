@@ -12,6 +12,9 @@
 @import './keychord/keychord.css';
 @import './listing/listing.css';
 @import './filter/filter.css';
+@import './legend/legend.css';
+@import './dialog/dialog.css';
+@import './run/run.css';
 @import './namecut/namecut.css';
 @import './text/text.css';
 @import './grid/grid.css';
@@ -19,6 +22,9 @@
 @import './pager/pager.css';
 @import './tabs/tabs.css';
 @import './selectall/selectall.css';
+@import './menu/menu.css';
+@import './palette/palette.css';
+@import './charts/charts.css';
 
 :root {
   /* Surfaces that float over other content (sticky headers, cards,

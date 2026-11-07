@@ -1,0 +1,203 @@
+/* ---- Menu look ----
+
+   A filtered menu: the floating surface, the query row with its count and
+   its visual bell, the options with the cursor row, headings, and notes. A
+   palette (palette.css) is the same surface over a backdrop. Scoped by
+   :where(.listing-root) like the listing look, so an app adjusts a piece
+   with one scoped selector whatever order the stylesheets load in. The
+   field's mark is .filter-icon (filter.css) and a matched character is
+   .name-hit (text.css). */
+
+/* A menu that drops below what opened it (a crumb, a field). It floats over
+   a listing's sticky column header (z-index 1) and an overlay inside the
+   pane (2). */
+:where(.listing-root) .folder-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  z-index: 3;
+  /* A completion menu's width; a menu that needs more sets its own. */
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow-menu);
+  font-weight: normal;
+}
+
+/* A menu's query row is a filter field: the icon stands over the rows'
+   icons (the menu's padding plus a row's put both 10px in), and the rule
+   under it is the accent a focused field wears, which a menu's always is. */
+:where(.listing-root) .folder-menu-query {
+  display: flex;
+  align-items: center;
+  height: 26px;
+  margin: -4px -4px 4px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--accent);
+  font-size: 12px;
+}
+
+/* The field keeps room for its placeholder, so a long target name gives way
+   before the words that say the field filters. */
+:where(.listing-root) .folder-menu-query input {
+  flex: 1;
+  min-width: 14ch;
+  height: 100%;
+  border: none;
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  caret-color: var(--accent);
+}
+
+:where(.listing-root) .folder-menu-query input:focus {
+  outline: none;
+}
+
+:where(.listing-root) .folder-menu-query input::placeholder {
+  color: var(--text-dim);
+}
+
+:where(.listing-root) .folder-menu-count {
+  margin-left: 1ch;
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+:where(.listing-root) .folder-menu-options {
+  /* The options' offset parent, so the cursor row scrolls into view here. */
+  position: relative;
+  max-height: 216px;
+  overflow-y: auto;
+}
+
+:where(.listing-root) .folder-menu-option {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  height: 24px;
+  padding: 0 8px 0 6px;
+  border-radius: 4px;
+  cursor: default;
+}
+
+:where(.listing-root) .folder-menu-option.cursor {
+  background: var(--cursor-row-bg);
+}
+
+:where(.listing-root) .folder-menu-note {
+  padding: 4px 8px;
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: 12px;
+}
+
+/* A group's name with a hairline running out from it on the same line, so a
+   group costs one short row and still reads as a break. */
+:where(.listing-root) .entry-menu-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 20px;
+  padding: 3px 6px 0 8px;
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+:where(.listing-root) .entry-menu-heading::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* A refused keystroke shoves the query sideways for one beat, the
+   wrong-password shake, and turns it red. The parity classes alternate
+   `bell-0` and `bell-1` on consecutive rings (useBellBeat), and the paired
+   keyframe names are identical on purpose: a changed animation-name is what
+   restarts a CSS animation, so every refused key shoves again. An app's own
+   filter field or cursor row may ring on the same keyframes. */
+:where(.listing-root) .folder-menu-query.bell-0 input {
+  animation:
+    row-nudge-a 240ms ease-in-out,
+    query-refused-a 280ms ease-out;
+}
+
+:where(.listing-root) .folder-menu-query.bell-1 input {
+  animation:
+    row-nudge-b 240ms ease-in-out,
+    query-refused-b 280ms ease-out;
+}
+
+/* Without motion a query keeps only its red. */
+@media (prefers-reduced-motion: reduce) {
+  :where(.listing-root) .folder-menu-query.bell-0 input {
+    animation: query-refused-a 280ms ease-out;
+  }
+
+  :where(.listing-root) .folder-menu-query.bell-1 input {
+    animation: query-refused-b 280ms ease-out;
+  }
+}
+
+@keyframes query-refused-a {
+  0%,
+  70% {
+    color: var(--danger);
+  }
+}
+
+@keyframes query-refused-b {
+  0%,
+  70% {
+    color: var(--danger);
+  }
+}
+
+@keyframes row-nudge-a {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  45% {
+    transform: translateX(5px);
+  }
+  70% {
+    transform: translateX(-3px);
+  }
+  85% {
+    transform: translateX(2px);
+  }
+}
+
+@keyframes row-nudge-b {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-5px);
+  }
+  45% {
+    transform: translateX(5px);
+  }
+  70% {
+    transform: translateX(-3px);
+  }
+  85% {
+    transform: translateX(2px);
+  }
+}

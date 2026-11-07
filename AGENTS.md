@@ -24,17 +24,22 @@ src/themes/tokens.ts          # palette-to-token rules, FIXED_TOKENS, PREVIEW_TO
 src/themes/attributes.ts      # wearThemes and subscribeThemeChange for the root attributes
 src/themes/themes.generated.css # the generated token stylesheet, committed; themes.test.ts fails when it is stale
 src/themes/tokens.test.ts     # contrast invariants in every theme; Latte and Mocha frozen in catppuccin-tokens.fixture.json
-src/labels/                   # UiokProvider, useLabels, mergeLabels; UiokLabels.ts composes one group per area (keys.ts); docs/labels.md
+src/labels/                   # UiokProvider, useLabels, mergeLabels; UiokLabels.ts composes one group per area (keys.ts, charts.ts); docs/labels.md
 src/keyboard/                 # browser-key guard, overlay selectors and watchOverlays (public contract), page select-all hold, chord words and glyphs
 src/tooltip/                  # TooltipLayer (mount once) and the tooltip() / describedTooltip() attributes it reads
 src/button/                   # Button (primary, tonal, neutral) and IconButton
 src/activity/ src/segmented/ src/keychord/ src/filter/  # ActivityBar, SegmentedChoice, KeyChord, FilterIcon and FilterEscape
+src/legend/                   # KeyLegendStrip and legendUnits / fittingUnits / moreLabel / moreListAction; pair labels are the app's
 src/store/ src/clock/         # ValueStore, sameData/sameProps, useStableHandlers, keepUnchanged*; useClock
+src/dialog/                   # ModalDialog frame, DialogLegend footer and legendKeyAction (which slot a key runs), ConfirmDialog; dialog labels in src/labels/dialog.ts
+src/run/                      # RunHeader progress header and the RunProgress state and elapsed-time helpers
 src/listing/                  # Listing, Strip, Row, Cell, RowCursorContext, StateMark, PathCell, WellColumn, CurrentDot; listing.css is the whole listing look under .listing-root, panes included
 src/pane/                     # PanePathBar, PaneStatus, QuietAction, RowIconAction; usePaneKeys over PaneKeys (DOM readers) and PaneKeys.logic (key mapping)
 src/namecut/ src/text/        # NameCut with labelParts/nameParts; MarkedText with highlightSegments
 src/grid/ src/datetime/       # DataGrid (virtualised rows, cursor cell, sort, resize, reorder, inline editor layer); DateTimePicker with parsePicker/formatPicker
 src/pager/ src/tabs/ src/selectall/ # Pager with page arithmetic and selectorPages; PageTabs; SelectAllBar with checkedAfterClick
+src/menu/ src/palette/        # matchQuery, MenuQuery.logic (refusal, cursor, level trails), useBellBeat, menu.css; Palette and PaletteQuery over them
+src/charts/                   # Line, Pie, Scatter, and ResultChart over pure *.logic.ts geometry; Drawing.ts saves a chart as SVG or PNG; series colours --chart-1..8 (seriesColour.ts)
 docs/components/<area>.md     # per area: purpose, props, example, keyboard behaviour, labels read
 test/colorLiterals.test.ts    # no colour literal in src/ outside the token blocks and the catalog; only ids and attributes imported from src/themes/
 test/api.test.ts              # every public export has a docblock (TypeScript checker over src/index.ts)

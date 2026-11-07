@@ -36,9 +36,13 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | Group       | Interface         | Default                     | Read by                                                                                 |
 | ----------- | ----------------- | --------------------------- | --------------------------------------------------------------------------------------- |
 | `keys`      | `KeyLabels`       | `DEFAULT_KEY_LABELS`        | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
-| `listing`   | `ListingLabels`   | `DEFAULT_LISTING_LABELS`    | `Strip` and `Listing`, for a column label that sorts                                    |
+| `charts`    | `ChartLabels`     | `DEFAULT_CHART_LABELS`      | `LineChart`, `ScatterChart`, `ResultChart`, and, given it, `tokenColour`, `svgPng`      |
 | `dateTime`  | `DateTimeLabels`  | `DEFAULT_DATE_TIME_LABELS`  | `DateTimePicker`                                                                        |
+| `dialog`    | `DialogLabels`    | `DEFAULT_DIALOG_LABELS`     | `ConfirmDialog`, and, given it, `filterLeaveLabel`                                      |
+| `legend`    | `LegendLabels`    | `DEFAULT_LEGEND_LABELS`     | `KeyLegendStrip`, and, given it, `moreLabel`                                            |
+| `listing`   | `ListingLabels`   | `DEFAULT_LISTING_LABELS`    | `Strip` and `Listing`, for a column label that sorts                                    |
 | `pager`     | `PagerLabels`     | `DEFAULT_PAGER_LABELS`      | `Pager`                                                                                 |
+| `palette`   | `PaletteLabels`   | `DEFAULT_PALETTE_LABELS`    | `PaletteQuery`: the level chip and a refused keystroke                                  |
 | `selectAll` | `SelectAllLabels` | `DEFAULT_SELECT_ALL_LABELS` | `SelectAllBar`                                                                          |
 
 ### `keys`
@@ -56,13 +60,22 @@ A key missing from `names` is spoken as its capital ("N"); one missing from `key
 
 The defaults are macOS's names and glyphs. An app on Windows or Linux supplies its own, for example `modifiers: { alt: 'Alt', meta: 'Windows' }` and `modifierGlyphs: { ctrl: 'Ctrl+', alt: 'Alt+', shift: 'Shift+', meta: 'Win+' }`. Modifier order (Control, Option, Shift, Command) and the icons `KeyChord` draws for modifiers stay macOS's in this version.
 
-### `listing`
+### `charts`
 
-| Field    | Type                                                   | English default                                                                     |
-| -------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| `sortBy` | `(column: string, direction: SortDirection) => string` | "Sort by Size", "Sort by Size, sorted ascending", "Sort by Size, sorted descending" |
+| Field                 | Type                                                          | English default                                       |
+| --------------------- | ------------------------------------------------------------- | ----------------------------------------------------- |
+| `chart`               | `string`                                                      | Chart (an untitled `ResultChart`'s name)              |
+| `noValue`             | `string`                                                      | no value                                              |
+| `points`              | `(count: number) => string`                                   | 1 point, 10 points                                    |
+| `pointsShown`         | `(shown: number, count: number) => string`                    | 3 of 10 points                                        |
+| `resetZoom`           | `string`                                                      | Reset zoom                                            |
+| `time`                | `(time: string) => string`                                    | Time: 10:42:05                                        |
+| `seriesValue`         | `(series: string, value: string) => string`                   | reads: 12                                             |
+| `seriesCategoryValue` | `(series: string, category: string, value: string) => string` | sales, Tue: 5                                         |
+| `coloursUnreadable`   | `string`                                                      | The theme’s colors could not be read for the picture. |
+| `drawFailed`          | `string`                                                      | The picture could not be drawn.                       |
 
-`SortDirection` is `'asc' | 'desc' | null`; null is a column the listing is not sorted by.
+Counts arrive as numbers, so the app formats them for its locale and picks the plural; the English defaults group digits as en-US does (1,024). Values and moments arrive already written by the chart's `format` and `timeText` props. `tokenColour` and `svgPng` run outside React, so they take the group as an argument (`useLabels().charts`) and fall back to English.
 
 ### `dateTime`
 
@@ -80,6 +93,35 @@ The defaults are macOS's names and glyphs. An app on Windows or Linux supplies i
 | `now`           | `string` | Now                                                                               |
 | `done`          | `string` | Done                                                                              |
 
+### `dialog`
+
+| Field           | Type                        | English default  |
+| --------------- | --------------------------- | ---------------- |
+| `cancel`        | `string`                    | `Cancel`         |
+| `clear`         | `string`                    | `Clear`          |
+| `affectedItems` | `(count: number) => string` | `Affected items` |
+
+`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's list of paths, given how many it holds.
+
+### `legend`
+
+| Field     | Type                                      | English default                        |
+| --------- | ----------------------------------------- | -------------------------------------- |
+| `label`   | `string`                                  | `Keyboard shortcuts`                   |
+| `verbs`   | `string`                                  | `Verbs`                                |
+| `capName` | `(chord: string, verb: string) => string` | `` `${chord} ${verb}` ``: "Up Move Up" |
+| `more`    | `(count: number) => string`               | `1 more shortcut`, `3 more shortcuts`  |
+
+A folded pair's label ("Up/Down") is not a label here: the app owns its pair vocabulary and passes the labels to `KeyLegendStrip` (`docs/components/legend.md`).
+
+### `listing`
+
+| Field    | Type                                                   | English default                                                                     |
+| -------- | ------------------------------------------------------ | ----------------------------------------------------------------------------------- |
+| `sortBy` | `(column: string, direction: SortDirection) => string` | "Sort by Size", "Sort by Size, sorted ascending", "Sort by Size, sorted descending" |
+
+`SortDirection` is `'asc' | 'desc' | null`; null is a column the listing is not sorted by.
+
 ### `pager`
 
 | Field                              | Type                                        | English default                                        |
@@ -91,6 +133,14 @@ The defaults are macOS's names and glyphs. An app on Windows or Linux supplies i
 | `pageOption`                       | `(page: number, pages: number) => string`   | "3 of 1,200", English digit grouping                   |
 
 `kind` is the `Pager`'s prop, "items" by default. An app whose language inflects the noun by its sentence passes a code (`kind="rows"`) and maps it inside these functions. `PagerStep` is `'begin' | 'previous' | 'next' | 'end'`.
+
+### `palette`
+
+| Field            | Type                        | English default                                                               |
+| ---------------- | --------------------------- | ----------------------------------------------------------------------------- |
+| `back`           | `string`                    | Back (the level chip's tooltip)                                               |
+| `backFrom`       | `(level: string) => string` | "Back from Formats" (the level chip's accessible name)                        |
+| `nothingMatches` | `(query: string) => string` | "nothing matches “dox”" (said in the count's place after a refused keystroke) |
 
 ### `selectAll`
 
