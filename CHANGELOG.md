@@ -6,8 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-07
+
+The first published version. The package is published to npm as `@bigpixelrocket/uiok`: install it with `npm install @bigpixelrocket/uiok` and import from `@bigpixelrocket/uiok` and `@bigpixelrocket/uiok/<area>`.
+
 ### Added
 
+- `@bigpixelrocket/uiok/styles.css`, the base stylesheet: the `--font-ui` and `--font-mono` stacks, the `--z-panel`, `--z-dialog`, and `--z-tooltip` scale, the `--frost` backdrop filter, and the `visually-hidden` utility class.
+- `VisuallyHidden`, a component for text that only assistive technology reads.
 - Themes: 18 light and dark themes as generated colour tokens inside `@bigpixelrocket/uiok/styles.css`, chosen with `data-light-theme` and `data-dark-theme` on the root element (`wearThemes`, `subscribeThemeChange`). The catalog, colour helpers, token rules, and `themeStylesheet()`, whose options let an app derive and emit tokens of its own, are exported. See `docs/themes.md`.
 - `@bigpixelrocket/uiok/styles.css` declares `color-scheme: light dark` and fades every disabled control to `--disabled-opacity`.
 - `UiokProvider`, `useLabels`, and `mergeLabels`: shared chrome strings (`UiokLabels`), English by default, with key names and glyphs in the `keys` group.
@@ -24,16 +30,5 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Each area is importable on its own as `@bigpixelrocket/uiok/<area>` (`@bigpixelrocket/uiok/button`, `@bigpixelrocket/uiok/keyboard`, …).
 - `lucide-react` 1.x is a peer dependency.
 
-### Changed
-
-- The package is published to npm as `@bigpixelrocket/uiok`: install it with `npm install @bigpixelrocket/uiok` and import from `@bigpixelrocket/uiok` and `@bigpixelrocket/uiok/<area>`. The unscoped name `uiok` was never published.
-
-## [0.0.1] - 2026-11-07
-
-### Added
-
-- `@bigpixelrocket/uiok/styles.css`, the base stylesheet: the `--font-ui` and `--font-mono` stacks, the `--z-panel`, `--z-dialog`, and `--z-tooltip` scale, the `--frost` backdrop filter, and the `visually-hidden` utility class.
-- `VisuallyHidden`, a component for text that only assistive technology reads.
-
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.0.1...HEAD
-[0.0.1]: https://github.com/Bigpixelrocket/uiok/releases/tag/v0.0.1
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Bigpixelrocket/uiok/releases/tag/v0.1.0

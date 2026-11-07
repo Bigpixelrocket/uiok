@@ -579,7 +579,7 @@ function extraTokens(
       throw new Error(`${source} names ${name}, which is not a kebab-case custom property.`);
     }
     if (UIOK_TOKEN_NAMES.has(name)) {
-      throw new Error(`${source} redefines ${name}, a token uiok defines.`);
+      throw new Error(`${source} redefines ${name}, a token UIOK defines.`);
     }
     if (breaksOut(value)) {
       throw new Error(`${source} gives ${name} a value that would end its declaration early.`);
