@@ -1,0 +1,115 @@
+/* ---- Date and time picker (DateTimePicker) ----
+
+   A button beside its field, and the panel it opens under it. */
+.date-picker {
+  position: relative;
+  display: inline-flex;
+}
+
+.date-picker-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: var(--z-panel);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: max-content;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: var(--shadow-menu);
+  font: 12px/1.4 var(--font-ui);
+}
+
+.date-picker-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.date-picker-days {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.date-picker-week {
+  display: grid;
+  grid-template-columns: repeat(7, 28px);
+  gap: 2px;
+}
+
+.date-picker-weekday {
+  color: var(--text-dim);
+  font-size: 11px;
+  text-align: center;
+}
+
+.date-picker-day {
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.date-picker-day:hover {
+  background: var(--hover-wash);
+}
+
+.date-picker-day.outside {
+  color: var(--row-meta-text);
+}
+
+.date-picker-day.current {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.date-picker-time {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.date-picker-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--text-dim);
+}
+
+/* A time field: a well in the ground, ringed in the accent when focused. */
+.date-picker-input {
+  width: 7ch;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--ground);
+  color: var(--text);
+  font: inherit;
+  transition:
+    border-color 120ms,
+    box-shadow 120ms;
+}
+
+.date-picker-input:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.date-picker-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}

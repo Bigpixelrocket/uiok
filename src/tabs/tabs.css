@@ -1,0 +1,64 @@
+/* ---- Page tabs (PageTabs) ----
+
+   The level's pages as tabs under a path bar, the current one underlined
+   in the accent. */
+.page-tabs {
+  flex: none;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 28px;
+  padding: 0 6px;
+  overflow-x: auto;
+  box-sizing: border-box;
+  border-bottom: 1px solid var(--border);
+  scrollbar-width: none;
+}
+
+.page-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--text-dim);
+  font: 12px var(--font-ui);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.page-tab:hover:enabled {
+  background: var(--hover-wash);
+  color: var(--text);
+}
+
+.page-tab[aria-selected='true'] {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.page-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+/* The second strip, a tab's own pages: rounded pills on a shorter row, the current one washed. */
+.page-tabs.pills {
+  height: 26px;
+  padding: 3px 6px;
+  gap: 4px;
+}
+
+.page-tabs.pills .page-tab {
+  padding: 0 8px;
+  border-bottom: none;
+  border-radius: 999px;
+  font-size: 11px;
+}
+
+.page-tabs.pills .page-tab[aria-selected='true'] {
+  background: var(--cursor-row-bg);
+}

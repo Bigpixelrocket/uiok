@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Render helpers: `createValueStore`, `unheard`, `sameData`, `sameProps`, `useStableHandlers`, `keepUnchangedById`, `keepUnchangedBy`, and `useClock`.
 - Listings and panes: `Listing`, `Strip`, `Row`, `Cell`, `RowCursorContext`, `StateMark`, `PathCell`, `WellColumn`, `CurrentDot`, and column widths (`column`, `ACTION_COLUMN`, `iconLinksColumn`, `linksColumn`) in `uiok/listing`; `PanePathBar`, `PaneStatus`, `QuietAction`, `RowIconAction`, `RowLinkLookContext`, and the two-pane keyboard `usePaneKeys` with `paneKeyAction` and its DOM helpers in `uiok/pane`. Styled under the `.listing-root` scope; a sorting column's accessible name comes from the new `listing` label group.
 - `NameCut` with `labelParts` and `nameParts` (`uiok/namecut`), and `MarkedText` with `highlightSegments` (`uiok/text`).
+- Data widgets: `DataGrid` with its row-window and cursor rules (`uiok/grid`); `DateTimePicker` with `parsePicker` and `formatPicker`, ISO 8601 by default and replaceable through `format` and `parse` (`uiok/datetime`); `Pager` with `pageCount`, `clampPage`, `pageSlice`, `pageOf`, and `selectorPages` (`uiok/pager`); `PageTabs` (`uiok/tabs`); `SelectAllBar` with `checkedAfterClick` (`uiok/selectall`). Their shared words come from the new `dateTime`, `pager`, and `selectAll` label groups.
 - Each area is importable on its own as `uiok/<area>` (`uiok/button`, `uiok/keyboard`, …).
 - `lucide-react` 1.x is a peer dependency.
 

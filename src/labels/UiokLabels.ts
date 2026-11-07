@@ -7,8 +7,11 @@
  * value in it (`affectedItems(count)`), so a partial override merges cleanly.
  */
 
+import { DEFAULT_DATE_TIME_LABELS, type DateTimeLabels } from './dateTime.js';
 import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
 import { DEFAULT_LISTING_LABELS, type ListingLabels } from './listing.js';
+import { DEFAULT_PAGER_LABELS, type PagerLabels } from './pager.js';
+import { DEFAULT_SELECT_ALL_LABELS, type SelectAllLabels } from './selectAll.js';
 
 /**
  * Every chrome string UIOK's components share across instances, grouped by
@@ -22,10 +25,19 @@ export interface UiokLabels {
   readonly keys: KeyLabels;
   /** A listing's column strip: the sorting label's accessible name (`Listing`, `Strip`). */
   readonly listing: ListingLabels;
+  /** A date and time picker's month steps, time fields, buttons, and name locale (`DateTimePicker`). */
+  readonly dateTime: DateTimeLabels;
+  /** A long list's pager: its steps and its page menu (`Pager`). */
+  readonly pager: PagerLabels;
+  /** A select-all bar's checkbox and lead-in (`SelectAllBar`). */
+  readonly selectAll: SelectAllLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
 export const DEFAULT_LABELS: UiokLabels = {
   keys: DEFAULT_KEY_LABELS,
-  listing: DEFAULT_LISTING_LABELS
+  listing: DEFAULT_LISTING_LABELS,
+  dateTime: DEFAULT_DATE_TIME_LABELS,
+  pager: DEFAULT_PAGER_LABELS,
+  selectAll: DEFAULT_SELECT_ALL_LABELS
 };

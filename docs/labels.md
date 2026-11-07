@@ -33,10 +33,13 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 
 ## Groups and defaults
 
-| Group     | Interface       | Default                  | Read by                                                                                 |
-| --------- | --------------- | ------------------------ | --------------------------------------------------------------------------------------- |
-| `keys`    | `KeyLabels`     | `DEFAULT_KEY_LABELS`     | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
-| `listing` | `ListingLabels` | `DEFAULT_LISTING_LABELS` | `Strip` and `Listing`, for a column label that sorts                                    |
+| Group       | Interface         | Default                     | Read by                                                                                 |
+| ----------- | ----------------- | --------------------------- | --------------------------------------------------------------------------------------- |
+| `keys`      | `KeyLabels`       | `DEFAULT_KEY_LABELS`        | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
+| `listing`   | `ListingLabels`   | `DEFAULT_LISTING_LABELS`    | `Strip` and `Listing`, for a column label that sorts                                    |
+| `dateTime`  | `DateTimeLabels`  | `DEFAULT_DATE_TIME_LABELS`  | `DateTimePicker`                                                                        |
+| `pager`     | `PagerLabels`     | `DEFAULT_PAGER_LABELS`      | `Pager`                                                                                 |
+| `selectAll` | `SelectAllLabels` | `DEFAULT_SELECT_ALL_LABELS` | `SelectAllBar`                                                                          |
 
 ### `keys`
 
@@ -60,6 +63,42 @@ The defaults are macOS's names and glyphs. An app on Windows or Linux supplies i
 | `sortBy` | `(column: string, direction: SortDirection) => string` | "Sort by Size", "Sort by Size, sorted ascending", "Sort by Size, sorted descending" |
 
 `SortDirection` is `'asc' | 'desc' | null`; null is a column the listing is not sorted by.
+
+### `dateTime`
+
+| Field           | Type     | English default                                                                   |
+| --------------- | -------- | --------------------------------------------------------------------------------- |
+| `locale`        | `string` | `en-US`: the BCP 47 locale month and weekday names are written in, through `Intl` |
+| `previousMonth` | `string` | Previous month                                                                    |
+| `nextMonth`     | `string` | Next month                                                                        |
+| `hour`          | `string` | Hour                                                                              |
+| `minute`        | `string` | Minute                                                                            |
+| `second`        | `string` | Second                                                                            |
+| `millisecond`   | `string` | Millisecond (a fraction of up to 3 digits)                                        |
+| `microsecond`   | `string` | Microsecond (4 to 6 digits)                                                       |
+| `today`         | `string` | Today                                                                             |
+| `now`           | `string` | Now                                                                               |
+| `done`          | `string` | Done                                                                              |
+
+### `pager`
+
+| Field                              | Type                                        | English default                                        |
+| ---------------------------------- | ------------------------------------------- | ------------------------------------------------------ |
+| `begin`, `previous`, `next`, `end` | `string`                                    | Begin, Previous, Next, End (a step's word and tooltip) |
+| `pages`                            | `(kind: string) => string`                  | "Pages of rows" (the pager's accessible name)          |
+| `page`                             | `(kind: string) => string`                  | "Page of rows" (the page menu's accessible name)       |
+| `step`                             | `(step: PagerStep, kind: string) => string` | "Next page of rows"                                    |
+| `pageOption`                       | `(page: number, pages: number) => string`   | "3 of 1,200", English digit grouping                   |
+
+`kind` is the `Pager`'s prop, "items" by default. An app whose language inflects the noun by its sentence passes a code (`kind="rows"`) and maps it inside these functions. `PagerStep` is `'begin' | 'previous' | 'next' | 'end'`.
+
+### `selectAll`
+
+| Field          | Type     | English default                                                 |
+| -------------- | -------- | --------------------------------------------------------------- |
+| `checkAll`     | `string` | Check all                                                       |
+| `withSelected` | `string` | With selected:                                                  |
+| `label`        | `string` | With selected (the bar's accessible name when it is given none) |
 
 ## Mapping an app's i18n
 

@@ -1,0 +1,206 @@
+/* ---- Data grid (DataGrid) ----
+
+   Rows of one height on a scrolling well, under a header that stays put,
+   cells cut to their column with an ellipsis, the cursor cell ringed in the
+   accent. */
+.data-grid {
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--ground);
+  color: var(--text);
+  font: 12px/22px var(--font-mono);
+  box-sizing: border-box;
+}
+
+.data-grid:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+.data-grid-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  background: var(--surface-header);
+  border-bottom: 1px solid var(--border);
+}
+
+.data-grid-heading {
+  position: relative;
+  min-width: 0;
+  padding: 0 8px;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.data-grid-sort {
+  display: inline-flex;
+  gap: 4px;
+  max-width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.data-grid-sort:hover {
+  color: var(--text);
+}
+
+.data-grid-arrow {
+  font-size: 9px;
+}
+
+.data-grid-resize {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  border-right: 1px solid var(--border);
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.data-grid-body {
+  position: relative;
+}
+
+.data-grid-row {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: grid;
+  width: max-content;
+  min-width: 100%;
+  height: 22px;
+}
+
+.data-grid-row:nth-child(even) {
+  background: color-mix(in srgb, var(--text) 3%, transparent);
+}
+
+.data-grid-cell {
+  min-width: 0;
+  padding: 0 8px;
+  overflow: hidden;
+  border-right: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.data-grid-cell.align-right,
+.data-grid-heading.align-right {
+  text-align: right;
+}
+
+.data-grid-cell.cursor {
+  background: var(--cursor-row-bg);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.data-grid-action {
+  display: flex;
+  align-items: center;
+  padding: 0 6px;
+}
+
+/* A row's controls before its cells: a checkbox and compact icon actions. */
+.data-grid-lead {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 0 4px;
+  border-right: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+
+.data-grid-lead input[type='checkbox'] {
+  margin: 0 4px 0 2px;
+}
+
+/* A cell whose value opens something: a linked record, a download. */
+.data-grid-link {
+  max-width: 100%;
+  padding: 0;
+  overflow: hidden;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.data-grid-link:hover:enabled {
+  text-decoration-color: var(--accent);
+}
+
+/* The row under the pointer, a marked row, and a marked column. */
+.data-grid.pointer .data-grid-row:hover {
+  background: var(--hover-wash);
+}
+
+.data-grid-row.marked,
+.data-grid-row.marked:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.data-grid-cell.marked,
+.data-grid-heading.marked {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+/* A header that drags to a new place, and where it lands. */
+.data-grid-heading.draggable {
+  cursor: grab;
+}
+
+.data-grid-heading.dragging {
+  opacity: 0.5;
+}
+
+.data-grid-heading.drop-before {
+  box-shadow: inset 2px 0 0 var(--accent);
+}
+
+.data-grid-heading.drop-after {
+  box-shadow: inset -2px 0 0 var(--accent);
+}
+
+.data-grid-arrow small {
+  margin-left: 1px;
+  font-size: 9px;
+}
+
+/* Inline edit: the editor drawn over its cell in a layer of its own, so the
+   grid's scrolling box never cuts it, above a dialog the grid sits in and
+   under the tooltip; and a value edited but not saved yet (a cell whose
+   className holds cell-edited). */
+.data-grid-editor {
+  position: fixed;
+  z-index: calc(var(--z-dialog) + 1);
+  box-sizing: border-box;
+  font: 12px/1.4 var(--font-ui);
+  white-space: normal;
+  cursor: auto;
+}
+
+.data-grid-cell.cell-edited {
+  background: color-mix(in srgb, var(--warning) 16%, transparent);
+}
