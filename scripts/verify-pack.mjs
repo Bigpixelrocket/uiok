@@ -24,7 +24,7 @@ if (built.length === 0) problems.push('dist/ is empty; run npm run build first')
 for (const file of built) {
   const path = relative(root, file);
   if (file.endsWith('.map')) problems.push(`${path}: source map in dist/`);
-  else if (/[#@] sourceMappingURL=/.test(readFileSync(file, 'utf8'))) {
+  else if (/[#@]\s*sourceMappingURL=/.test(readFileSync(file, 'utf8'))) {
     problems.push(`${path}: sourceMappingURL comment`);
   }
 }
