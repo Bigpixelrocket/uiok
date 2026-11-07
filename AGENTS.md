@@ -29,6 +29,7 @@ src/keyboard/                 # browser-key guard, overlay selectors and watchOv
 src/tooltip/                  # TooltipLayer (mount once) and the tooltip() / describedTooltip() attributes it reads
 src/button/                   # Button (primary, tonal, neutral) and IconButton
 src/activity/ src/segmented/ src/keychord/ src/filter/  # ActivityBar, SegmentedChoice, KeyChord, FilterIcon and FilterEscape
+src/legend/                   # KeyLegendStrip and legendUnits / fittingUnits / moreLabel / moreListAction; pair labels are the app's
 src/store/ src/clock/         # ValueStore, sameData/sameProps, useStableHandlers, keepUnchanged*; useClock
 docs/components/<area>.md     # per area: purpose, props, example, keyboard behaviour, labels read
 test/colorLiterals.test.ts    # no colour literal in src/ outside the token blocks and the catalog; only ids and attributes imported from src/themes/

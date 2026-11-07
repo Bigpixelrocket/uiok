@@ -12,6 +12,7 @@ export * from './filter/index.js';
 export * from './keyboard/index.js';
 export * from './keychord/index.js';
 export * from './labels/index.js';
+export * from './legend/index.js';
 export * from './segmented/index.js';
 export * from './store/index.js';
 export * from './themes/index.js';

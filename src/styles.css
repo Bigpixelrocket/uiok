@@ -11,6 +11,7 @@
 @import './segmented/segmented.css';
 @import './keychord/keychord.css';
 @import './filter/filter.css';
+@import './legend/legend.css';
 
 :root {
   /* Surfaces that float over other content (sticky headers, cards,

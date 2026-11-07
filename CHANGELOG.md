@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - Core components: `Button`, `IconButton`, `TooltipLayer` with `tooltip()` and `describedTooltip()`, `ActivityBar`, `SegmentedChoice`, `KeyChord`, `FilterIcon`, and `FilterEscape`, styled through `uiok/styles.css`.
 - Keyboard policy: `shouldSuppressBrowserDocumentKey`, `cancelBrowserDocumentKey`, `isKeyKept`, the `MODAL_SELECTOR` and `OVERLAY_SELECTOR` overlay contract, `watchOverlays`, `holdPageSelectAll`, and chord helpers (`chordSpoken`, `chordGlyphs`, `chordParts`).
 - Render helpers: `createValueStore`, `unheard`, `sameData`, `sameProps`, `useStableHandlers`, `keepUnchangedById`, `keepUnchangedBy`, and `useClock`.
+- Key legend: `KeyLegendStrip`, a strip of the verbs the keyboard offers under a dock of held modifiers, with app-supplied pair labels, and the `legendUnits`, `fittingUnits`, `moreLabel`, and `moreListAction` rules (`uiok/legend`, `docs/components/legend.md`). Its chrome strings are the `legend` label group.
 - Each area is importable on its own as `uiok/<area>` (`uiok/button`, `uiok/keyboard`, …).
 - `lucide-react` 1.x is a peer dependency.
 

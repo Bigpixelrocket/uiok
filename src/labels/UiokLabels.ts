@@ -8,6 +8,7 @@
  */
 
 import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
+import { DEFAULT_LEGEND_LABELS, type LegendLabels } from './legend.js';
 
 /**
  * Every chrome string UIOK's components share across instances, grouped by
@@ -19,9 +20,12 @@ import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
 export interface UiokLabels {
   /** Key and modifier names, glyphs, and key cap words (`KeyChord`, `chordSpoken`). */
   readonly keys: KeyLabels;
+  /** A key legend strip's own name, its verb group, paired cap names, and overflow count (`KeyLegendStrip`, `moreLabel`). */
+  readonly legend: LegendLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
 export const DEFAULT_LABELS: UiokLabels = {
-  keys: DEFAULT_KEY_LABELS
+  keys: DEFAULT_KEY_LABELS,
+  legend: DEFAULT_LEGEND_LABELS
 };

@@ -33,9 +33,10 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 
 ## Groups and defaults
 
-| Group  | Interface   | Default              | Read by                                                                                 |
-| ------ | ----------- | -------------------- | --------------------------------------------------------------------------------------- |
-| `keys` | `KeyLabels` | `DEFAULT_KEY_LABELS` | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
+| Group    | Interface      | Default                 | Read by                                                                                 |
+| -------- | -------------- | ----------------------- | --------------------------------------------------------------------------------------- |
+| `keys`   | `KeyLabels`    | `DEFAULT_KEY_LABELS`    | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
+| `legend` | `LegendLabels` | `DEFAULT_LEGEND_LABELS` | `KeyLegendStrip`, and, given it, `moreLabel`                                            |
 
 ### `keys`
 
@@ -51,6 +52,17 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 A key missing from `names` is spoken as its capital ("N"); one missing from `keyGlyphs` is written as its capital.
 
 The defaults are macOS's names and glyphs. An app on Windows or Linux supplies its own, for example `modifiers: { alt: 'Alt', meta: 'Windows' }` and `modifierGlyphs: { ctrl: 'Ctrl+', alt: 'Alt+', shift: 'Shift+', meta: 'Win+' }`. Modifier order (Control, Option, Shift, Command) and the icons `KeyChord` draws for modifiers stay macOS's in this version.
+
+### `legend`
+
+| Field     | Type                                      | English default                        |
+| --------- | ----------------------------------------- | -------------------------------------- |
+| `label`   | `string`                                  | `Keyboard shortcuts`                   |
+| `verbs`   | `string`                                  | `Verbs`                                |
+| `capName` | `(chord: string, verb: string) => string` | `` `${chord} ${verb}` ``: "Up Move Up" |
+| `more`    | `(count: number) => string`               | `1 more shortcut`, `3 more shortcuts`  |
+
+A folded pair's label ("Up/Down") is not a label here: the app owns its pair vocabulary and passes the labels to `KeyLegendStrip` (`docs/components/legend.md`).
 
 ## Mapping an app's i18n
 
