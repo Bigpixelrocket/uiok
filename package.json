@@ -30,7 +30,11 @@
       "default": "./dist/index.js"
     },
     "./styles.css": "./dist/styles.css",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./*": {
+      "types": "./dist/*/index.d.ts",
+      "default": "./dist/*/index.js"
+    }
   },
   "files": [
     "dist",
@@ -48,6 +52,7 @@
     "prepublishOnly": "npm run check"
   },
   "peerDependencies": {
+    "lucide-react": "^1.31.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
@@ -62,6 +67,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "globals": "^17.7.0",
     "jsdom": "^29.1.1",
+    "lucide-react": "^1.70.0",
     "prettier": "3.9.8",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

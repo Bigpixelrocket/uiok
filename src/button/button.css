@@ -1,0 +1,95 @@
+/* ---- Buttons (Button, IconButton) ----
+
+   The one action button and its icon-only sibling, identical wherever they
+   are drawn: they carry their own font, size, and box model, so no
+   surrounding stylesheet restyles them, and a consumer never overrides them
+   (a layout class may set width or alignment only). Tiers: primary for a
+   view's one main action, tonal for a row's routine positive action, neutral
+   for the rest. Hover is the glass edge: a lit top edge and a touch of
+   brightness on fills, a frosted wash on outlines; a press sinks the face. */
+.button,
+.icon-button {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-sizing: border-box;
+  height: 28px;
+  margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  transition:
+    background-color 120ms,
+    border-color 120ms,
+    box-shadow 120ms,
+    color 120ms,
+    filter 120ms;
+}
+
+.button {
+  padding: 0 12px;
+}
+
+.button-small {
+  height: 24px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.icon-button {
+  width: 28px;
+  padding: 0;
+  color: var(--text-dim);
+}
+
+.icon-button-small {
+  width: 24px;
+  height: 24px;
+}
+
+.button-primary {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.button-tonal {
+  border-color: var(--tonal-border);
+  background: var(--tonal);
+  color: var(--on-tonal);
+}
+
+.button-primary:hover:enabled:not([aria-disabled='true']) {
+  box-shadow: var(--hover-lit);
+  filter: brightness(1.08);
+}
+
+.button-tonal:hover:enabled:not([aria-disabled='true']) {
+  box-shadow: var(--hover-lit);
+  filter: brightness(var(--tonal-hover-brightness));
+}
+
+:is(.button-neutral, .icon-button):hover:enabled:not([aria-disabled='true']) {
+  background: var(--hover-wash);
+  box-shadow: var(--hover-frost);
+  color: var(--text);
+}
+
+:is(.button, .icon-button):active:enabled:not([aria-disabled='true']) {
+  box-shadow: var(--shadow-pressed);
+  filter: brightness(0.94);
+}
+
+:is(.button, .icon-button):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}

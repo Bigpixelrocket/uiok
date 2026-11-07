@@ -10,6 +10,8 @@ import { readFileSync } from 'node:fs';
 
 import { describe, expect, it } from 'vitest';
 
+import { readStylesheet } from '../../test/stylesheets.js';
+
 import {
   DEFAULT_DARK_THEME,
   DEFAULT_LIGHT_THEME,
@@ -193,13 +195,17 @@ describe("an app's own tokens", () => {
     );
   });
 
-  it('may not redefine a token the base stylesheet declares', () => {
-    const base = readFileSync(new URL('../styles.css', import.meta.url), 'utf8').replace(
-      /\/\*[\s\S]*?\*\//g,
-      ''
+  it('may not redefine a custom property uiok/styles.css declares or reads', () => {
+    // The whole delivered sheet: the base, the theme tokens, every component's.
+    const sheet = readStylesheet('src/styles.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const names = new Set(
+      [...sheet.matchAll(/(--[a-z0-9-]+)\s*:|var\(\s*(--[a-z0-9-]+)/g)].map(
+        (match) => match[1] ?? match[2] ?? ''
+      )
     );
-    const names = [...base.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((match) => match[1] ?? '');
-    expect(names.length).toBeGreaterThan(0);
+    // A component's hook and the base sheet's tokens are among them.
+    expect(names).toContain('--stripe-ground');
+    expect(names).toContain('--z-tooltip');
     for (const name of names) {
       expect(() => themeStylesheet({ extraFixed: { [name]: '0' } })).toThrow(
         `extraFixed redefines ${name}`

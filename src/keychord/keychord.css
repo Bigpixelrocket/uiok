@@ -1,0 +1,41 @@
+/* ---- Key chord (KeyChord) ----
+
+   A chord as a row of keys, drawn in key legends, menus, settings, and a
+   dialog's legend. One grid for every key: an 11px icon or a 10px letter in
+   the same 12px box, so a modifier sits at the cap height of the mono text
+   beside it. The chord itself has no frame; a surface that draws it as a key
+   cap adds the border and ground around .keychord. */
+.keychord {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font: inherit;
+}
+
+.key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 12px;
+  height: 12px;
+}
+
+.key-icon {
+  width: 11px;
+  height: 11px;
+  display: block;
+}
+
+/* Mono capitals sit above the optical centre of their em box; nudge them onto the icon centre. */
+.key-letter {
+  font: 600 10px/12px var(--font-mono);
+  padding-top: 1px;
+  box-sizing: border-box;
+}
+
+.key-word {
+  width: auto;
+  padding: 0 1px;
+  font: 600 9px/12px var(--font-mono);
+  letter-spacing: 0.02em;
+}

@@ -1,0 +1,49 @@
+/* ---- Segmented choice (SegmentedChoice) ----
+
+   One choice of several: a tinted track with the chosen segment raised, each
+   segment as wide as its words. It carries its whole look, so it draws the
+   same in a dialog and on a page. */
+.segmented-choice {
+  box-sizing: border-box;
+  display: inline-flex;
+  flex: none;
+  gap: 2px;
+  margin: 0;
+  padding: 2px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.segmented-choice-option {
+  box-sizing: border-box;
+  flex: none;
+  height: 22px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: 11.5px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.segmented-choice-option:hover:enabled:not([aria-disabled='true']) {
+  color: var(--text);
+}
+
+.segmented-choice-option[aria-checked='true'] {
+  background: linear-gradient(var(--hover-wash), transparent), var(--surface);
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    0 0 0 0.5px var(--border-strong),
+    var(--shadow-segment);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.segmented-choice-option:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}

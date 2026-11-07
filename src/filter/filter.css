@@ -1,0 +1,42 @@
+/* ---- Filter field marks (FilterIcon, FilterEscape) ----
+
+   Drawn inside the listing scope (.listing-root), where a filter field sits
+   over the rows it narrows. */
+
+/* The key that leaves a filter field (FilterEscape), drawn as a plain key
+   cap; the field's mark is .filter-icon. */
+.listing-root .filter-escape {
+  flex: none;
+  display: inline-flex;
+  margin-left: 8px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+.listing-root .filter-escape .keychord {
+  box-sizing: border-box;
+  height: 16px;
+  padding: 0 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--bg-panel);
+  color: var(--text);
+}
+
+.listing-root .filter-escape:hover:enabled:not([aria-disabled='true']) .keychord {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border-strong));
+  background: linear-gradient(var(--hover-wash), transparent) var(--bg-panel);
+}
+
+/* A filter field's mark (FilterIcon), as wide as a row's icon column so the
+   query starts over the names. */
+:where(.listing-root) .filter-icon {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  width: 20px;
+  color: var(--accent);
+}
