@@ -7,12 +7,17 @@
  * `base: './'` keeps every asset URL relative, so the same build serves from
  * GitHub Pages' project path (/uiok/) and from `vite preview`; pages are
  * hash routes, so no server rewrite is needed.
+ *
+ * `renderedDocs` renders each markdown doc under docs/ to HTML at build time
+ * for `?doc` imports, so no markdown parser ships to the browser.
  */
 
 import { fileURLToPath } from 'node:url';
 
 import react from '@vitejs/plugin-react';
 import { defineConfig } from 'vite';
+
+import { renderedDocs } from './render-docs.ts';
 
 const site = fileURLToPath(new URL('.', import.meta.url));
 const repo = fileURLToPath(new URL('..', import.meta.url));
@@ -21,7 +26,7 @@ const source = fileURLToPath(new URL('../src/', import.meta.url));
 export default defineConfig({
   root: site,
   base: './',
-  plugins: [react()],
+  plugins: [renderedDocs(repo), react()],
   resolve: {
     alias: [
       { find: /^@bigpixelrocket\/uiok\/styles\.css$/, replacement: `${source}styles.css` },

@@ -189,6 +189,33 @@ a {
   padding: 32px 40px 64px;
 }
 
+/* The main region takes the focus only from code (a page change, the skip
+   link) as the start of the reading order; it is not a control, so it draws
+   no ring. */
+.site-main:focus {
+  outline: none;
+}
+
+/* Hidden until the keyboard reaches it, then drawn over the header. */
+.skip-link {
+  position: fixed;
+  top: 8px;
+  left: 8px;
+  z-index: calc(var(--z-panel) + 1);
+  padding: 6px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font: 12px var(--font-mono);
+  text-decoration: none;
+  transform: translateY(calc(-100% - 16px));
+}
+
+.skip-link:focus {
+  transform: none;
+}
+
 .site-legend {
   position: fixed;
   right: 0;

@@ -51,7 +51,22 @@ export function CommandPalette({ label, placeholder, commands, onClose }: Comman
   const inputRef = useRef<HTMLInputElement>(null);
   const rows = rowsFor(commands, query);
 
-  useLayoutEffect(() => inputRef.current?.focus(), []);
+  // The palette takes the focus while open and hands it back to whatever held it before, so
+  // Escape or a press outside does not drop it on the page's body. A command that opens another
+  // page moves the focus on from there.
+  useLayoutEffect(() => {
+    const before = document.activeElement;
+    inputRef.current?.focus();
+    return () => {
+      if (before instanceof HTMLElement && before.isConnected) before.focus();
+    };
+  }, []);
+
+  // The cursor's row stays in view as the arrows move it past the list's edge.
+  useLayoutEffect(() => {
+    if (cursor === null) return;
+    document.getElementById(`${listId}-${cursor}`)?.scrollIntoView?.({ block: 'nearest' });
+  }, [cursor, query, listId]);
 
   const run = (command: Command) => {
     onClose();
@@ -82,6 +97,8 @@ export function CommandPalette({ label, placeholder, commands, onClose }: Comman
           setCursor(0);
         }}
         onKeyDown={(event) => {
+          // Keys that compose a character with an input method are the method's own.
+          if (event.nativeEvent.isComposing) return;
           if (event.key === 'ArrowDown') {
             event.preventDefault();
             setCursor(moveMenuCursor(cursor, 1, rows.length));

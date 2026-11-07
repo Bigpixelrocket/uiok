@@ -5,7 +5,7 @@
  */
 
 import { Menu, Search } from 'lucide-react';
-import { useEffect, useId, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 
 import {
   DARK_THEME_IDS,
@@ -54,10 +54,19 @@ export function App() {
   const appearanceLabel = useId();
   const page = PAGES.find((candidate) => candidate.route === route) ?? PAGES[0];
 
+  const mainRef = useRef<HTMLElement>(null);
+  const shownPage = useRef(page);
+
   useEffect(() => {
     setMenuOpen(false);
     window.scrollTo(0, 0);
     document.title = page === undefined || page.route === '/' ? 'UIOK' : `${page.title} · UIOK`;
+    // A move to another page takes the focus to its content, so it does not stay on a nav link
+    // that may now be hidden; the first page load leaves the focus where the browser puts it.
+    if (shownPage.current !== page) {
+      shownPage.current = page;
+      mainRef.current?.focus({ preventScroll: true });
+    }
   }, [page]);
 
   const verbs: readonly LegendVerb[] = useMemo(
@@ -117,6 +126,17 @@ export function App() {
     <SiteThemeContext value={theme}>
       <UiokProvider>
         <div className="shell" data-menu={menuOpen ? 'open' : 'closed'}>
+          {/* The hash is the route, so the skip link moves the focus itself rather than linking. */}
+          <a
+            className="skip-link"
+            href="#main"
+            onClick={(event) => {
+              event.preventDefault();
+              mainRef.current?.focus();
+            }}
+          >
+            Skip to content
+          </a>
           <header className="site-header">
             <IconButton
               aria-expanded={menuOpen}
@@ -133,6 +153,7 @@ export function App() {
               <span className="brand-name">UIOK</span>
             </a>
             <button
+              aria-label="Find a page"
               className="find-button"
               onClick={() => setFinding(true)}
               type="button"
@@ -189,7 +210,7 @@ export function App() {
               </section>
             ))}
           </nav>
-          <main className="site-main">
+          <main className="site-main" id="main" ref={mainRef} tabIndex={-1}>
             {page === undefined ? null : <page.Page key={page.route} />}
           </main>
           <footer className="site-legend">

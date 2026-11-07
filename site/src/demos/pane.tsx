@@ -3,7 +3,8 @@
  * (`usePaneKeys`): ↑ ↓ Home End move the active pane's cursor, ← and →
  * switch panes, Return opens a server or a service's logs, ⌘⏎ starts or
  * stops the cursor's service. The legend under it reads what the cursor
- * row offers. Click into the demo to give it the keys.
+ * row offers. Click into the demo to give it the keys; they return to the
+ * page when the focus leaves it.
  */
 
 import { FileText, Play, Server, Square } from 'lucide-react';
@@ -177,6 +178,10 @@ export function PaneDemo() {
         className="listing-root pane-demo"
         onFocus={() => setShown(true)}
         onPointerDown={() => setShown(true)}
+        // The demo holds the keys only while the focus is in it, so the page scrolls again after.
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) setShown(false);
+        }}
         ref={panes.rootRef}
       >
         <aside

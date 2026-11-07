@@ -6,7 +6,7 @@
  */
 
 import { Folder } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { FilterIcon } from '@bigpixelrocket/uiok/filter';
@@ -44,9 +44,16 @@ function FolderMenu({
   const [bell, setBell] = useState(0);
   const beat = useBellBeat(bell);
   const input = useRef<HTMLInputElement>(null);
+  const list = useRef<HTMLDivElement>(null);
   const rows = rowsFor(query);
 
   useEffect(() => input.current?.focus(), []);
+
+  // The cursor's row stays in view as the arrows move it past the list's edge.
+  useLayoutEffect(() => {
+    if (cursor === null) return;
+    list.current?.children[cursor]?.scrollIntoView?.({ block: 'nearest' });
+  }, [cursor, query]);
 
   return (
     <div
@@ -68,6 +75,8 @@ function FolderMenu({
             setCursor(0);
           }}
           onKeyDown={(event) => {
+            // Keys that compose a character with an input method are the method's own.
+            if (event.nativeEvent.isComposing) return;
             if (event.key === 'ArrowDown') {
               event.preventDefault();
               setCursor(moveMenuCursor(cursor, 1, rows.length));
@@ -97,7 +106,7 @@ function FolderMenu({
           {rows.length}/{ITEMS.length}
         </span>
       </div>
-      <div className="folder-menu-options" role="listbox" aria-label="Files">
+      <div className="folder-menu-options" ref={list} role="listbox" aria-label="Files">
         {rows.map((row, index) => (
           <div
             aria-selected={index === cursor}

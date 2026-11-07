@@ -17,11 +17,13 @@
     "skipLibCheck": true,
     "types": ["vite/client", "node"],
     "noEmit": true,
+    // vite.config.ts imports render-docs.ts with its extension, as Vite's native config loader needs.
+    "allowImportingTsExtensions": true,
     "paths": {
       "@bigpixelrocket/uiok": ["../src/index.ts"],
       "@bigpixelrocket/uiok/styles.css": ["../src/styles.css"],
       "@bigpixelrocket/uiok/*": ["../src/*/index.ts"]
     }
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src", "vite.config.ts", "render-docs.ts"]
 }

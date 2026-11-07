@@ -58,6 +58,7 @@ tsconfig.json                 # strict, NodeNext; type-checks src, test, and con
 tsconfig.build.json           # emits dist/: one .js and .d.ts per module, no maps, no Node types
 vitest.config.ts              # jsdom by default; a suite opts into node with `@vitest-environment node`
 site/                         # the docs site (Vite + React, never packed): imports ../src through the @bigpixelrocket/uiok aliases in site/vite.config.ts, renders docs/**/*.md at build time
+site/render-docs.ts           # the Vite plugin behind `?doc` imports: marked renders a doc to HTML at build time and rewrites its links to site routes; site/src/docs.d.ts types the import
 site/src/pages.tsx            # the page list: hand-listed guides, then one page per docs/components/<area>.md (found by import.meta.glob)
 site/src/demos/<area>.tsx     # an area's live demo, registered by area name in site/src/demos/index.ts
 site/src/site.css             # the site's layout and prose, painted with theme tokens only
