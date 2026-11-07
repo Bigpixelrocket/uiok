@@ -20,6 +20,8 @@ npm ci
 | `npm run build`        | Builds `dist/`: ESM modules, declarations, and stylesheets.                   |
 | `npm run verify:pack`  | Fails if a source map or a missing `exports` target would reach the tarball.  |
 | `npm run check`        | Runs all of the above in order; CI runs it on every pull request and on main. |
+| `npm run site:dev`     | Serves the documentation site from source with hot reload.                    |
+| `npm run site:build`   | Builds the site into `site/dist` and fails if a source map lands there.       |
 
 ## Pull requests
 

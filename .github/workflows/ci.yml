@@ -1,5 +1,6 @@
 # Runs the full gate (`npm run check`: typecheck, lint, formatting, tests,
-# build, and the publish guard) on every pull request and every push to main.
+# build, and the publish guard) and builds the documentation site on every
+# pull request and every push to main.
 
 name: CI
 
@@ -30,3 +31,5 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      # The documentation site builds from the same source, with no source maps.
+      - run: npm run site:build

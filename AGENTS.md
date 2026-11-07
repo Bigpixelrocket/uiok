@@ -7,7 +7,7 @@ UIOK is an open-source (MIT) React 19 UI library published to npm as `@bigpixelr
 - Give every exported symbol a docblock; `test/api.test.ts` fails on an undocumented export of `src/index.ts`.
 - Ship no source maps or declaration maps. `tsconfig.build.json` turns them off and `scripts/verify-pack.mjs` fails the gate if one reaches `dist/` or the tarball.
 - Import local modules with the `.js` extension (`./VisuallyHidden.js`); the package is ESM only and `tsc` emits imports as written.
-- Run `npm run check` before pushing; CI runs the same command.
+- Run `npm run check` and `npm run site:build` before pushing; CI runs both.
 - Title commits and pull requests with Conventional Commits; pull requests are squash-merged. Note consumer-visible changes under `Unreleased` in `CHANGELOG.md`.
 
 ## Architecture
@@ -57,7 +57,14 @@ NOTICE                        # third-party licences of the terminal's engine, a
 tsconfig.json                 # strict, NodeNext; type-checks src, test, and configs without emitting
 tsconfig.build.json           # emits dist/: one .js and .d.ts per module, no maps, no Node types
 vitest.config.ts              # jsdom by default; a suite opts into node with `@vitest-environment node`
-.github/workflows/ci.yml      # npm ci and npm run check on pull requests and main
+site/                         # the docs site (Vite + React, never packed): imports ../src through the @bigpixelrocket/uiok aliases in site/vite.config.ts, renders docs/**/*.md at build time
+site/render-docs.ts           # the Vite plugin behind `?doc` imports: marked renders a doc to HTML at build time and rewrites its links to site routes; site/src/docs.d.ts types the import
+site/src/pages.tsx            # the page list: hand-listed guides, then one page per docs/components/<area>.md (found by import.meta.glob)
+site/src/demos/<area>.tsx     # an area's live demo, registered by area name in site/src/demos/index.ts
+site/src/site.css             # the site's layout and prose, painted with theme tokens only
+site/verify-dist.mjs          # fails npm run site:build if site/dist holds a source map
+.github/workflows/ci.yml      # npm ci, npm run check, and npm run site:build on pull requests and main
+.github/workflows/pages.yml   # on push to main: builds the site and deploys site/dist to GitHub Pages
 .github/workflows/release.yml # on a published GitHub Release: tag check, gate, npm publish via Trusted Publishing
 docs/releasing.md             # how to cut a release and the one-time npm setup
 docs/themes.md                # how themes work, the attribute contract, tokens by role, app tokens, the migration renames
@@ -65,4 +72,4 @@ docs/themes.md                # how themes work, the attribute contract, tokens 
 
 `package.json` `exports` maps `.` (`dist/index.js` and its types), `./styles.css`, `./package.json`, and the pattern `./*` to `dist/<area>/index.js` and `index.d.ts`, so a new `src/<area>/index.ts` is importable as `@bigpixelrocket/uiok/<area>` with no exports change. A new stylesheet is imported from `src/styles.css`; any other public file needs its own `exports` entry. `verify-pack.mjs` checks each. A runtime asset (the terminal's WebAssembly and font) is named with `new URL('./…', import.meta.url)` from the module beside it, never a bundler-specific `?url` import, and `build.mjs` copies it into `dist/`.
 
-To add an area: create `src/<area>/` with an `index.ts` barrel (a docblock on every export), put its CSS beside it and `@import` it from `src/styles.css`, add one `export *` line to `src/index.ts`, write `docs/components/<area>.md`, and add any shared chrome strings as a label group (`docs/labels.md`). Per-instance copy is a prop. `lucide-react` is a peer dependency for icons.
+To add an area: create `src/<area>/` with an `index.ts` barrel (a docblock on every export), put its CSS beside it and `@import` it from `src/styles.css`, add one `export *` line to `src/index.ts`, write `docs/components/<area>.md`, and add any shared chrome strings as a label group (`docs/labels.md`). Per-instance copy is a prop. The doc becomes a page of the docs site on its own; give it a live demo in `site/src/demos/<area>.tsx` and one line in `site/src/demos/index.ts`, then check it with `npm run site:dev`. The site keeps to the library's rules: theme tokens for every colour, the library's components unrestyled, no source maps in `site/dist`. `lucide-react` is a peer dependency for icons.
