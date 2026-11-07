@@ -8,6 +8,7 @@
  */
 
 import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
+import { DEFAULT_LISTING_LABELS, type ListingLabels } from './listing.js';
 
 /**
  * Every chrome string UIOK's components share across instances, grouped by
@@ -19,9 +20,12 @@ import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
 export interface UiokLabels {
   /** Key and modifier names, glyphs, and key cap words (`KeyChord`, `chordSpoken`). */
   readonly keys: KeyLabels;
+  /** A listing's column strip: the sorting label's accessible name (`Listing`, `Strip`). */
+  readonly listing: ListingLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
 export const DEFAULT_LABELS: UiokLabels = {
-  keys: DEFAULT_KEY_LABELS
+  keys: DEFAULT_KEY_LABELS,
+  listing: DEFAULT_LISTING_LABELS
 };

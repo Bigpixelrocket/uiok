@@ -529,7 +529,13 @@ const BASE_TOKEN_NAMES = [
   '--z-dialog',
   '--z-tooltip',
   '--stripe-ink',
-  '--stripe-ground'
+  '--stripe-ground',
+  '--pane-columns-height',
+  '--pane-path-height',
+  '--pane-column-gap',
+  '--pane-row-inset',
+  '--pane-grid',
+  '--warning-text'
 ] as const;
 
 /** Every token name uiok defines: the fixed tokens, those a theme sets, and the stylesheet's own. */
