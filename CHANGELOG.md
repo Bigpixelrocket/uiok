@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+### Added
+
+- Themes: 18 light and dark themes as generated colour tokens inside `uiok/styles.css`, chosen with `data-light-theme` and `data-dark-theme` on the root element (`wearThemes`, `subscribeThemeChange`). The catalog, colour helpers, token rules, and `themeStylesheet()`, whose options let an app derive and emit tokens of its own, are exported. See `docs/themes.md`.
+- `uiok/styles.css` declares `color-scheme: light dark` and fades every disabled control to `--disabled-opacity`.
+
 ## [0.0.1] - 2026-11-07
 
 ### Added

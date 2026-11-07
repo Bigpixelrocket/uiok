@@ -4,3 +4,4 @@
  */
 
 export { VisuallyHidden, type VisuallyHiddenProps } from './VisuallyHidden.js';
+export * from './themes/index.js';
