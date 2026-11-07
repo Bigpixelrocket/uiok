@@ -37,6 +37,7 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | --------- | --------------- | ------------------------ | --------------------------------------------------------------------------------------- |
 | `keys`    | `KeyLabels`     | `DEFAULT_KEY_LABELS`     | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
 | `listing` | `ListingLabels` | `DEFAULT_LISTING_LABELS` | `Strip` and `Listing`, for a column label that sorts                                    |
+| `palette` | `PaletteLabels` | `DEFAULT_PALETTE_LABELS` | `PaletteQuery`: the level chip and a refused keystroke                                  |
 
 ### `keys`
 
@@ -60,6 +61,14 @@ The defaults are macOS's names and glyphs. An app on Windows or Linux supplies i
 | `sortBy` | `(column: string, direction: SortDirection) => string` | "Sort by Size", "Sort by Size, sorted ascending", "Sort by Size, sorted descending" |
 
 `SortDirection` is `'asc' | 'desc' | null`; null is a column the listing is not sorted by.
+
+### `palette`
+
+| Field            | Type                        | English default                                                               |
+| ---------------- | --------------------------- | ----------------------------------------------------------------------------- |
+| `back`           | `string`                    | Back (the level chip's tooltip)                                               |
+| `backFrom`       | `(level: string) => string` | "Back from Formats" (the level chip's accessible name)                        |
+| `nothingMatches` | `(query: string) => string` | "nothing matches “dox”" (said in the count's place after a refused keystroke) |
 
 ## Mapping an app's i18n
 

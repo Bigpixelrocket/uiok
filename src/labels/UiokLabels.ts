@@ -9,6 +9,7 @@
 
 import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
 import { DEFAULT_LISTING_LABELS, type ListingLabels } from './listing.js';
+import { DEFAULT_PALETTE_LABELS, type PaletteLabels } from './palette.js';
 
 /**
  * Every chrome string UIOK's components share across instances, grouped by
@@ -22,10 +23,13 @@ export interface UiokLabels {
   readonly keys: KeyLabels;
   /** A listing's column strip: the sorting label's accessible name (`Listing`, `Strip`). */
   readonly listing: ListingLabels;
+  /** A palette's query row: the level chip and a refused keystroke (`PaletteQuery`). */
+  readonly palette: PaletteLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
 export const DEFAULT_LABELS: UiokLabels = {
   keys: DEFAULT_KEY_LABELS,
-  listing: DEFAULT_LISTING_LABELS
+  listing: DEFAULT_LISTING_LABELS,
+  palette: DEFAULT_PALETTE_LABELS
 };
