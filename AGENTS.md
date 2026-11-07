@@ -36,6 +36,7 @@ src/run/                      # RunHeader progress header and the RunProgress st
 src/listing/                  # Listing, Strip, Row, Cell, RowCursorContext, StateMark, PathCell, WellColumn, CurrentDot; listing.css is the whole listing look under .listing-root, panes included
 src/pane/                     # PanePathBar, PaneStatus, QuietAction, RowIconAction; usePaneKeys over PaneKeys (DOM readers) and PaneKeys.logic (key mapping)
 src/namecut/ src/text/        # NameCut with labelParts/nameParts; MarkedText with highlightSegments
+src/menu/ src/palette/        # matchQuery, MenuQuery.logic (refusal, cursor, level trails), useBellBeat, menu.css; Palette and PaletteQuery over them
 src/charts/                   # Line, Pie, Scatter, and ResultChart over pure *.logic.ts geometry; Drawing.ts saves a chart as SVG or PNG; series colours --chart-1..8 (seriesColour.ts)
 docs/components/<area>.md     # per area: purpose, props, example, keyboard behaviour, labels read
 test/colorLiterals.test.ts    # no colour literal in src/ outside the token blocks and the catalog; only ids and attributes imported from src/themes/

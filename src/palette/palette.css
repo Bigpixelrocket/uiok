@@ -1,0 +1,159 @@
+/* ---- Palette look (Palette, PaletteQuery) ----
+
+   A palette: one list over the page. It is the menu surface (menu.css) over
+   a backdrop, closing on a dialog's key legend. Scoped by
+   :where(.listing-root) like the listing look. */
+
+/* The backdrop takes the whole window, as a dialog's does, so nothing behind
+   it can take the keys while the palette is open. */
+:where(.listing-root) .palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-dialog);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 104px 16px 16px;
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+}
+
+:where(.listing-root) .folder-menu.palette {
+  position: static;
+  /* The listing's face, whatever face the app's root sets. */
+  font-family: var(--font-mono);
+  font-size: 13px;
+  /* Room for a row's name and its context, and for a legend's four slots. */
+  width: 600px;
+  max-width: 100%;
+  max-height: 100%;
+  box-shadow: var(--shadow-dialog);
+}
+
+:where(.listing-root) .palette .folder-menu-query {
+  flex: none;
+}
+
+/* A dialog's key legend footer at the palette's foot, its hairline run out
+   to the palette's edges. */
+:where(.listing-root) .palette > .dialog-legend {
+  margin: 4px -4px -4px;
+}
+
+:where(.listing-root) .palette .folder-menu-options {
+  flex: 0 1 auto;
+  /* Never squeezed below a row, however short the window. */
+  min-height: 24px;
+  max-height: 420px;
+}
+
+:where(.listing-root) .palette-text {
+  display: flex;
+  align-items: baseline;
+  gap: 1.5ch;
+  min-width: 0;
+}
+
+:where(.listing-root) .palette-text .row-name {
+  flex: 0 1 auto;
+  min-width: 3ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* What a row says after its name: where an item is, or what a command does.
+   A long path gives way at its start, so the folder it ends in stays; the
+   text itself still reads left to right inside a <bdi>. */
+:where(.listing-root) .palette-context {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--row-meta-text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  direction: rtl;
+  text-align: left;
+}
+
+:where(.listing-root) .palette-context > bdi {
+  direction: ltr;
+}
+
+:where(.listing-root) .palette-trail {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding-left: 8px;
+}
+
+/* What a row says after its name when that is a sentence or a command line
+   rather than a path: it reads and gives way at its end. */
+:where(.listing-root) .palette-context.palette-sentence {
+  direction: ltr;
+}
+
+/* A row's end in the listing's meta tone: versions, a count, a chord. */
+:where(.listing-root) .palette-meta {
+  display: inline-flex;
+  align-items: center;
+  color: var(--row-meta-text);
+  font-size: 12px;
+  white-space: pre;
+}
+
+/* The notes under a palette's list, ruled off from it, their text over
+   the rows' names; a failure among them in the danger tone. */
+:where(.listing-root) .palette-notes {
+  margin: 4px -4px 0;
+  padding: 4px 4px 0;
+  border-top: 1px solid var(--border);
+}
+
+:where(.listing-root) .palette-notes .folder-menu-note {
+  margin: 0;
+  padding: 3px 8px 3px 26px;
+}
+
+:where(.listing-root) .palette-notes .palette-failure {
+  color: var(--danger);
+}
+
+/* A refused keystroke, said where the count stands; a long refused paste
+   gives way to the field rather than pushing past the palette's edge. */
+:where(.listing-root) .palette-refused {
+  min-width: 0;
+  overflow: hidden;
+  margin-left: 1ch;
+  text-overflow: ellipsis;
+  color: var(--warning);
+  font-family: var(--font-ui);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+/* The level the list shows, a chip before the query that steps back out
+   when pressed. */
+:where(.listing-root) .palette-level {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+  padding: 1px 6px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border-strong));
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+:where(.listing-root) .palette-level:hover:enabled {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+:where(.listing-root) .palette-level:focus-visible {
+  outline: none;
+}

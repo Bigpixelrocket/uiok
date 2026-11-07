@@ -17,6 +17,8 @@
 @import './run/run.css';
 @import './namecut/namecut.css';
 @import './text/text.css';
+@import './menu/menu.css';
+@import './palette/palette.css';
 @import './charts/charts.css';
 
 :root {
