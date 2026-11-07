@@ -211,7 +211,7 @@ describe("an app's own tokens", () => {
     expect(() =>
       themeStylesheet({ extraTokens: () => ({ '--app-tone': 'red; --accent: red !important' }) })
     ).toThrow('extraTokens(catppuccin-latte) gives --app-tone a value');
-    for (const value of ['a{', 'a}', 'a /* b', 'b */ a']) {
+    for (const value of ['a{', 'a}', 'a /* b', 'b */ a', 'url(a;b', '"a;b']) {
       expect(() => themeStylesheet({ extraFixed: { '--app-x': value } })).toThrow(
         'extraFixed gives --app-x a value'
       );
@@ -224,6 +224,18 @@ describe("an app's own tokens", () => {
     expect(() => themeStylesheet({ banner: 'Covers src/**/*.css' })).toThrow('banner holds */');
     // A comment opener alone stays inside the banner's comment.
     expect(themeStylesheet({ banner: 'See /* here' })).toMatch(/^\/\* See \/\* here \*\//);
+  });
+
+  it('may hold separators inside a string or url()', () => {
+    const png = 'url(data:image/png;base64,AAAA)';
+    const svg = 'url("data:image/svg+xml;utf8,<svg/>")';
+    const sheet = themeStylesheet({
+      extraFixed: { '--app-png': png, '--app-svg': svg },
+      extraBlocks: { "[data-x='a;b']": { '--app-gap': '2px' } }
+    });
+    expect(sheet).toContain(`  --app-png: ${png};\n`);
+    expect(sheet).toContain(`  --app-svg: ${svg};\n`);
+    expect(sheet).toContain("[data-x='a;b'] {\n  --app-gap: 2px;\n}");
   });
 });
 

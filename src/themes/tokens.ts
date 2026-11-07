@@ -452,9 +452,9 @@ export function previewTokens(theme: Theme): Readonly<Record<string, string>> {
  * the same themes and written under the same selectors, so it ships one
  * stylesheet rather than a second copy of every theme block. Each extra
  * token must be a custom property (`--name`) that uiok does not define. No
- * value or selector may hold a semicolon, a brace, or a comment delimiter,
- * nor the banner a comment's end, since each would end its declaration,
- * rule, or comment early.
+ * value or selector may hold a semicolon, a brace, or a comment delimiter
+ * outside a string or url(), nor the banner a comment's end, since each would
+ * end its declaration, rule, or comment early.
  */
 export interface ThemeStylesheetOptions {
   /**
@@ -532,9 +532,14 @@ const UIOK_TOKEN_NAMES: ReadonlySet<string> = new Set([
   ...BASE_TOKEN_NAMES
 ]);
 
-/** Whether `text` holds a sequence that would end a declaration, rule, or comment early. */
+/**
+ * Whether `text` holds a sequence that would end a declaration, rule, or
+ * comment early. Quoted strings and `url()` contents may hold any of them (a
+ * data URI's `;base64`); a quote left open counts as unsafe.
+ */
 function breaksOut(text: string): boolean {
-  return /[;{}]|\/\*|\*\//.test(text);
+  const bare = text.replace(/"[^"]*"|'[^']*'|url\([^)]*\)/g, '');
+  return /[;{}"']|\/\*|\*\//.test(bare);
 }
 
 /**
