@@ -199,6 +199,8 @@ export interface GhosttyTerminalSurfaceOptions {
   readonly readOnly?: boolean;
   /** Accessible name of the input element of an interactive surface. */
   readonly inputLabel?: string;
+  /** Accessible name of the scrollbar; `scrollbar` is public, so a host renames it in place. */
+  readonly scrollbackLabel?: string;
   /** Keystrokes, pastes, IME text, mouse reports, and the terminal's own replies. */
   readonly onData: (data: string) => void;
   /** Settled grid size changes, debounced while a resize is in progress. */
@@ -383,7 +385,10 @@ export class GhosttyTerminalSurface {
     const scrollbar = document.createElement('div');
     scrollbar.className = 'terminal-scrollbar';
     scrollbar.setAttribute('role', 'scrollbar');
-    scrollbar.setAttribute('aria-label', 'Scrollback');
+    scrollbar.setAttribute(
+      'aria-label',
+      options.scrollbackLabel ?? DEFAULT_TERMINAL_LABELS.scrollback
+    );
     scrollbar.setAttribute('aria-orientation', 'vertical');
     scrollbar.tabIndex = 0;
     scrollbar.hidden = true;

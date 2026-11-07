@@ -1,8 +1,8 @@
 /**
  * The words every terminal repeats: its menu's accessible name and items,
- * the line that stands in for a terminal that could not start, and the
- * input element's fallback name. A terminal's own name is its `ariaLabel`
- * prop.
+ * the line that stands in for a terminal that could not start, the input
+ * element's fallback name, and its scrollbar's name. A terminal's own name
+ * is its `ariaLabel` prop.
  */
 export interface TerminalLabels {
   /** The accessible name of the menu a secondary click opens: "Terminal". */
@@ -18,6 +18,8 @@ export interface TerminalLabels {
    * one (`Terminal` always passes its `ariaLabel`): "Terminal input".
    */
   readonly input: string;
+  /** The accessible name of the scrollbar over the terminal's history: "Scrollback". */
+  readonly scrollback: string;
 }
 
 /** English terminal words: the `terminal` group `UiokProvider` starts from. */
@@ -26,5 +28,6 @@ export const DEFAULT_TERMINAL_LABELS: TerminalLabels = {
   copy: 'Copy',
   paste: 'Paste',
   startFailed: 'Could not start the terminal.',
-  input: 'Terminal input'
+  input: 'Terminal input',
+  scrollback: 'Scrollback'
 };

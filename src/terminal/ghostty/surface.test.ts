@@ -53,8 +53,14 @@ describe('GhosttyTerminalSurface', () => {
       hidden = false;
       tabIndex = -1;
       private readonly captures = new Set<number>();
+      private readonly attributes = new Map<string, string>();
 
-      setAttribute() {}
+      setAttribute(name: string, value: string) {
+        this.attributes.set(name, value);
+      }
+      getAttribute(name: string) {
+        return this.attributes.get(name) ?? null;
+      }
       append(...children: TerminalTestElement[]) {
         for (const child of children) child.parentElement = this;
         this.children.push(...children);
@@ -874,6 +880,20 @@ describe('GhosttyTerminalSurface', () => {
       surface.write('\x1b[?2004h');
       harness.clipboardEvent(input, 'paste', 'echo hi\n');
       expect(harness.onData.mock.calls).toEqual([['ls -la\r'], ['\x1b[200~echo hi\n\x1b[201~']]);
+    });
+  });
+
+  describe('accessibility', () => {
+    it('names the input and the scrollbar in English unless told otherwise', async () => {
+      const harness = createHarness();
+      const english = await harness.create();
+      expect(english.input?.getAttribute('aria-label')).toBe('Terminal input');
+      expect(english.scrollbar.getAttribute('aria-label')).toBe('Scrollback');
+      english.dispose();
+
+      const named = await harness.create({ inputLabel: 'Shell', scrollbackLabel: 'Verlauf' });
+      expect(named.input?.getAttribute('aria-label')).toBe('Shell');
+      expect(named.scrollbar.getAttribute('aria-label')).toBe('Verlauf');
     });
   });
 

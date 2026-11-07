@@ -20,6 +20,7 @@ const engine = vi.hoisted(() => {
     readonly options: GhosttyTerminalSurfaceOptions;
     readonly mount: HTMLElement;
     readonly input: HTMLTextAreaElement | null;
+    readonly scrollbar: HTMLDivElement;
     readonly calls: string[] = [];
     disposed = false;
     selection = '';
@@ -29,6 +30,12 @@ const engine = vi.hoisted(() => {
       this.options = options;
       this.input = options.readOnly === true ? null : document.createElement('textarea');
       if (this.input !== null) mount.append(this.input);
+      this.scrollbar = document.createElement('div');
+      this.scrollbar.setAttribute('role', 'scrollbar');
+      if (options.scrollbackLabel !== undefined) {
+        this.scrollbar.setAttribute('aria-label', options.scrollbackLabel);
+      }
+      mount.append(this.scrollbar);
     }
 
     enqueue(data: string) {
@@ -403,6 +410,30 @@ describe('Terminal', () => {
     expect(readOnly.disposed).toBe(true);
     const interactive = await ready();
     expect(interactive.options.readOnly).toBe(false);
+  });
+
+  it('names the scrollbar from the labels, and renames it when they change', async () => {
+    const shell = (scrollback?: string) => (
+      <UiokProvider labels={scrollback === undefined ? {} : { terminal: { scrollback } }}>
+        <Terminal ariaLabel="Shell" onInput={() => {}} />
+      </UiokProvider>
+    );
+    const { rerender, unmount } = render(shell());
+    const surface = await ready();
+    expect(surface.options.scrollbackLabel).toBe('Scrollback');
+    expect(screen.getByRole('scrollbar', { name: 'Scrollback' })).toBe(surface.scrollbar);
+
+    rerender(shell('Verlauf'));
+    expect(screen.getByRole('scrollbar', { name: 'Verlauf' })).toBe(surface.scrollbar);
+    expect(engine.state.surfaces).toHaveLength(1);
+    unmount();
+
+    // A change while the engine loads names the scrollbar once it is ready.
+    const loading = render(shell('Verlauf'));
+    loading.rerender(shell('Historique'));
+    const later = await ready();
+    expect(later.options.scrollbackLabel).toBe('Verlauf');
+    expect(screen.getByRole('scrollbar', { name: 'Historique' })).toBe(later.scrollbar);
   });
 
   describe('menu', () => {

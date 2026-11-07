@@ -255,6 +255,7 @@ export function Terminal({
     actionForKey
   });
   const ariaLabelRef = useRef(ariaLabel);
+  const scrollbackLabelRef = useRef(labels.scrollback);
   const scrollbackLines = useContext(TerminalScrollbackContext);
   // Read when the engine starts; the effect below hands it later changes.
   const scrollbackLinesRef = useRef(scrollbackLines);
@@ -264,8 +265,10 @@ export function Terminal({
   useLayoutEffect(() => {
     callbacksRef.current = { onInput, onResize, onConsumed, onBell, actionForKey };
     ariaLabelRef.current = ariaLabel;
+    scrollbackLabelRef.current = labels.scrollback;
     scrollbackLinesRef.current = scrollbackLines;
     surfaceRef.current?.input?.setAttribute('aria-label', ariaLabel);
+    surfaceRef.current?.scrollbar.setAttribute('aria-label', labels.scrollback);
   });
 
   // A running engine follows the length; one still loading reads it when ready.
@@ -358,6 +361,7 @@ export function Terminal({
       scrollbackLines: startLines,
       readOnly,
       inputLabel: ariaLabelRef.current,
+      scrollbackLabel: scrollbackLabelRef.current,
       onData: (data) => callbacksRef.current.onInput?.(data),
       onResize: (cols, rows) => callbacksRef.current.onResize?.({ cols, rows }),
       onParsed: (units) => callbacksRef.current.onConsumed?.(units),
@@ -384,8 +388,9 @@ export function Terminal({
         }
         surface = created;
         surfaceRef.current = created;
-        // The appearance and the length may have changed while the engine loaded.
+        // The appearance, the length, and the labels may have changed while the engine loaded.
         created.setTheme(readTheme(mount));
+        created.scrollbar.setAttribute('aria-label', scrollbackLabelRef.current);
         if (scrollbackLinesRef.current !== startLines) {
           created.setScrollbackLines(scrollbackLinesRef.current);
         }

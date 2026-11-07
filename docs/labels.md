@@ -160,6 +160,7 @@ A folded pair's label ("Up/Down") is not a label here: the app owns its pair voc
 | `paste`       | `string` | Paste                                                                            |
 | `startFailed` | `string` | Could not start the terminal.                                                    |
 | `input`       | `string` | Terminal input (the input element's name when the engine is started without one) |
+| `scrollback`  | `string` | Scrollback (the scrollbar's accessible name)                                     |
 
 A terminal's own name is its `ariaLabel` prop, and the chords its menu shows are its `menuChords` prop (`docs/components/terminal.md`).
 
