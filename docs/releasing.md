@@ -25,14 +25,14 @@ A failed run publishes nothing. Fix the cause on `main`, delete the release and 
 
 The package is `@bigpixelrocket/uiok`, owned by the `bigpixelrocket` npm organization; its `@bigpixelrocket:developers` team has read-write access. npm can only trust a workflow for a package that already exists, so the first version is published by hand.
 
-1. Publish `0.0.1` from a clean checkout of `main`, signed in to an npm account in the `@bigpixelrocket:developers` team:
+1. Publish `0.1.0` from a clean checkout of `main`, signed in to an npm account in the `@bigpixelrocket:developers` team:
 
    ```sh
    npm ci
    npm publish --no-provenance --access public
    ```
 
-   `prepublishOnly` runs `npm run check` first. `--no-provenance` overrides `publishConfig.provenance`, since provenance can only be generated in CI. `--access public` is required for a scoped package, which npm would otherwise publish as private.
+   `prepublishOnly` runs `npm run check` first. `--no-provenance` overrides `publishConfig.provenance`, since provenance can only be generated in CI. `publishConfig.access` already makes the scoped package public, so `--access public` only states that explicitly.
 
 2. Open the package settings at https://www.npmjs.com/package/@bigpixelrocket/uiok/access, find **Trusted Publisher**, choose **GitHub Actions**, and enter:
    - Organization or user: `Bigpixelrocket`
@@ -45,8 +45,8 @@ The package is `@bigpixelrocket/uiok`, owned by the `bigpixelrocket` npm organiz
 4. Tag the commit you published so tags and npm versions line up. Push the tag alone rather than creating a GitHub Release, which would run the workflow against a version npm already has:
 
    ```sh
-   git tag v0.0.1 <commit>
-   git push origin v0.0.1
+   git tag v0.1.0 <commit>
+   git push origin v0.1.0
    ```
 
 Every later version publishes through the workflow.
