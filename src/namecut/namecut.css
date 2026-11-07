@@ -1,0 +1,67 @@
+/* ---- Names cut in their middle (NameCut) ----
+
+   A long name's head and the words after the name give way together, each
+   in proportion to its length: the head down to its ellipsis, the words
+   after at their end. The words before the name give way at their end only
+   once those two have gone as far as they go, and the name's tail, its
+   ending kept in view behind an ellipsis at its front, only once those words
+   have gone too, so the line always ends in view. A short name is never
+   cut in its middle: it joins the words around it (nameParts).
+   Each tier's shrink factor dwarfs the next one's
+   by far more than any width it could hold, so a later tier loses nothing
+   while an earlier one can still give. */
+.name-cut {
+  display: flex;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.name-cut-line {
+  display: flex;
+  min-width: 0;
+  white-space: pre;
+}
+
+/* A head that has to give way keeps room for a character and its ellipsis. */
+.name-cut-head {
+  flex: 0 10000000000 auto;
+  min-width: 2ch;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.name-cut-rest {
+  flex: 0 10000000000 auto;
+  min-width: calc-size(max-content, min(size, 2ch));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.name-cut-text {
+  flex: 0 100000 auto;
+  min-width: calc-size(max-content, min(size, 2ch));
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The tail's box runs right to left so its ellipsis lands at its front; the
+   name inside is a left-to-right isolate (<bdi dir="ltr">), so a
+   right-to-left run, its stops, and its closing quote keep the order the
+   head and the whole name read in. */
+.name-cut-tail {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  direction: rtl;
+  text-overflow: ellipsis;
+}
+
+/* The spoken copy of the line is not selected twice with the drawn one. */
+.name-cut > .visually-hidden {
+  user-select: none;
+}
+
+/* In a title strip's context, the line sits at the strip's right edge. */
+.dialog-context > .name-cut {
+  justify-content: flex-end;
+}

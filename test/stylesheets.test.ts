@@ -45,11 +45,13 @@ describe('uiok/styles.css', () => {
   it('leaves a disabled control out of every hover and press highlight', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     // Each rule's selector as if the pointer were over and pressing everything.
+    // A rule that names the pointer only inside :not() draws a control at
+    // rest, no highlight, so it is left out.
     const pointerRules = [...document.styleSheets]
       .flatMap((sheet) => [...sheet.cssRules])
       .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
       .map((rule) => rule.selectorText)
-      .filter((selector) => /:(?:hover|active)\b/.test(selector))
+      .filter((selector) => /:(?:hover|active)\b/.test(selector.replace(/:not\([^()]*\)/g, '')))
       .map((selector) => selector.replace(/:(?:hover|active)\b/g, ''));
     const highlighted = (disabled: boolean): string[] => {
       // A fieldset disables what it holds, so no control here takes its own prop.

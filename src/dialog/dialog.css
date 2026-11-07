@@ -1,0 +1,283 @@
+/* ---- Modal dialogs (ModalDialog) ----
+
+   The backdrop covers the whole window: fixed to the viewport, not to the
+   page, so nothing outside the dialog can be reached until it closes, the
+   way a native sheet blocks its window. It paints nothing: a dialog is part
+   of the context it asks about (the file being renamed, the record being
+   added), so the page stays readable behind it. Only the box itself lifts. */
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  /* Above any docked panel (--z-panel) so the panel cannot steal clicks. */
+  z-index: var(--z-dialog);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The frosted wash, for overlays that replace the page rather than ask
+   about it (a shortcuts list, settings): the window ground at half strength
+   over a heavy blur, so each theme keeps its own tone and the page ghosts
+   through. */
+.dialog-backdrop.frosted {
+  background: color-mix(in srgb, var(--bg) 50%, transparent);
+  -webkit-backdrop-filter: blur(36px) saturate(180%);
+  backdrop-filter: blur(36px) saturate(180%);
+  animation: dialog-wash-in 160ms ease-out;
+}
+
+.dialog {
+  /* The tone (ModalDialog's `tone`): the title strip's rule, and in a
+     destructive dialog the lit primary; the icon wears the same colour, with
+     the primary colour for the accent. */
+  --dialog-tone: var(--accent);
+  --dialog-icon: var(--primary);
+  box-sizing: border-box;
+  width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  overflow: hidden;
+  /* Children are inset 12px; the title strip and the legend reach across
+     the box and the legend closes it at the bottom. */
+  padding: 0 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-dialog);
+  animation: dialog-settle 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.dialog[data-tone='danger'] {
+  --dialog-tone: var(--danger);
+  --dialog-icon: var(--danger);
+}
+
+.dialog[data-tone='warning'] {
+  --dialog-tone: var(--warning);
+  --dialog-icon: var(--warning);
+}
+
+/* A dialog that grows while it is open (ModalDialog's `pinTop`) keeps the
+   top edge it opened at, centred, and grows downward. */
+.dialog[data-pinned] {
+  align-self: flex-start;
+  margin-top: var(--dialog-top);
+}
+
+/* The dialog holds the focus only so its keys work; it is not a control. */
+.dialog:focus {
+  outline: none;
+}
+
+/* The wash fades in and the dialog settles from a few pixels above; a cut to
+   a blurred window reads as a glitch. */
+@keyframes dialog-wash-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-settle {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog-backdrop.frosted,
+  .dialog {
+    animation: none;
+  }
+}
+
+/* The title strip: crust, ruled in the tone, with the verb's icon, the
+   title, and where the dialog acts pushed to the right edge. */
+.dialog > .dialog-heading {
+  box-sizing: border-box;
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  margin: 0 -12px;
+  padding: 0 12px 0 10px;
+  border-bottom: 1px solid var(--dialog-tone);
+  /* The box's own corner inside its border, so the crust keeps the curve
+     in a dialog that lets a popup hang past its edge. */
+  border-radius: 7px 7px 0 0;
+  background: var(--surface-header);
+}
+
+.dialog-icon {
+  flex: none;
+  width: 15px;
+  height: 15px;
+  stroke-width: 2;
+  color: var(--dialog-icon);
+}
+
+.dialog h2 {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dialog-context {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--row-meta-text);
+  font-size: 12px;
+  font-weight: normal;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Dialog key legend (DialogLegend) ----
+
+   A hairline over the body surface, the secondary slots from the left edge,
+   the primary alone at the right edge. A slot is its key cap and its verb,
+   with no border or fill of its own and no focus ring: its key is the
+   keyboard's way to it. Its holder runs the hairline out to its own edges:
+   the dialog frame here, a palette in its own sheet. */
+.dialog-legend {
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  flex: none;
+  align-items: center;
+  gap: 2px;
+  min-height: 34px;
+  padding: 0 6px;
+  border-top: 1px solid var(--border);
+}
+
+.dialog > .dialog-legend {
+  margin: 0 -12px -12px;
+}
+
+.legend-slot {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: 6px;
+  box-sizing: border-box;
+  min-height: 24px;
+  max-width: 100%;
+  margin: 0;
+  padding: 0 7px 0 4px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  white-space: normal;
+}
+
+.legend-slot:hover:enabled {
+  background: var(--hover-wash);
+  box-shadow: var(--hover-frost);
+}
+
+.dialog-legend .legend-slot:focus-visible {
+  outline: none;
+}
+
+.legend-slot-key {
+  display: inline-flex;
+}
+
+/* A slot's chord drawn as one plain key cap. */
+.legend-slot .keychord {
+  box-sizing: border-box;
+  height: 18px;
+  min-width: 20px;
+  justify-content: center;
+  padding: 0 4px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  color: var(--text);
+  background: var(--bg-panel);
+}
+
+.legend-primary {
+  margin-left: auto;
+  font-weight: 600;
+}
+
+/* The verb Return runs is lit like a held key; a destructive one in the
+   danger colour, verb and all. */
+.legend-primary .keychord {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.dialog[data-tone='danger'] .legend-primary {
+  color: var(--danger);
+}
+
+.dialog[data-tone='danger'] .legend-primary .keychord {
+  border-color: var(--danger);
+  background: var(--danger);
+}
+
+/* ---- Confirmation dialog (ConfirmDialog) ----
+
+   The dialog carries its own type, reset margins, and border-box sizing,
+   because a caller may portal it to the body, outside every page root; it
+   must render identically wherever it is drawn. */
+.confirm-dialog {
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+
+.confirm-dialog,
+.confirm-dialog * {
+  box-sizing: border-box;
+}
+
+.confirm-dialog h2,
+.confirm-dialog p,
+.confirm-dialog ul {
+  margin: 0;
+}
+
+.dialog-message {
+  color: var(--text-dim);
+  overflow-wrap: break-word;
+}
+
+/* A name the message sets apart (the item a delete asks about) reads in the text colour. */
+.dialog-message strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+/* A batch lists every affected path; long selections scroll. */
+.dialog-paths {
+  margin: 8px 0 0;
+  padding: 6px 8px;
+  max-height: 160px;
+  overflow: auto;
+  list-style: none;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.dialog-paths li {
+  overflow-wrap: anywhere;
+}

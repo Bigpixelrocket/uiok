@@ -7,8 +7,11 @@
  * value in it (`affectedItems(count)`), so a partial override merges cleanly.
  */
 
+import { DEFAULT_CHART_LABELS, type ChartLabels } from './charts.js';
+import { DEFAULT_DIALOG_LABELS, type DialogLabels } from './dialog.js';
 import { DEFAULT_KEY_LABELS, type KeyLabels } from './keys.js';
 import { DEFAULT_LEGEND_LABELS, type LegendLabels } from './legend.js';
+import { DEFAULT_LISTING_LABELS, type ListingLabels } from './listing.js';
 
 /**
  * Every chrome string UIOK's components share across instances, grouped by
@@ -20,12 +23,21 @@ import { DEFAULT_LEGEND_LABELS, type LegendLabels } from './legend.js';
 export interface UiokLabels {
   /** Key and modifier names, glyphs, and key cap words (`KeyChord`, `chordSpoken`). */
   readonly keys: KeyLabels;
+  /** Chart read-outs, the scatter chart's count and zoom words, and picture export messages (`uiok/charts`). */
+  readonly charts: ChartLabels;
+  /** Dialog leave verbs and a confirmation's list name (`ConfirmDialog`, `filterLeaveLabel`). */
+  readonly dialog: DialogLabels;
   /** A key legend strip's own name, its verb group, paired cap names, and overflow count (`KeyLegendStrip`, `moreLabel`). */
   readonly legend: LegendLabels;
+  /** A listing's column strip: the sorting label's accessible name (`Listing`, `Strip`). */
+  readonly listing: ListingLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
 export const DEFAULT_LABELS: UiokLabels = {
   keys: DEFAULT_KEY_LABELS,
-  legend: DEFAULT_LEGEND_LABELS
+  charts: DEFAULT_CHART_LABELS,
+  dialog: DEFAULT_DIALOG_LABELS,
+  legend: DEFAULT_LEGEND_LABELS,
+  listing: DEFAULT_LISTING_LABELS
 };
