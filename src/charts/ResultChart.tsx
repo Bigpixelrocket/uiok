@@ -176,23 +176,31 @@ function ResultChartDrawing({
   if (type === 'pie') {
     const first = series[0];
     const r = Math.max(10, Math.min(plotWidth, plotHeight) / 2 - 4);
-    const arcs = pieArcs(
-      categories.map((label, at) => ({ label, value: Math.max(0, first?.values[at] ?? 0) })),
-      r
-    );
+    const slices = categories.map((label, at) => ({
+      label,
+      value: Math.max(0, first?.values[at] ?? 0)
+    }));
+    const arcs = pieArcs(slices, r);
+    // pieArcs leaves out slices of nothing, so each arc maps back to the
+    // category it came from; the legend and the read-out go by category.
+    const kept = slices.flatMap((slice, at) => (slice.value > 0 ? [at] : []));
 
     plot.push(
       <g key="pie" transform={`translate(${plotWidth / 2} ${plotHeight / 2})`}>
-        {arcs.map((arc, at) => (
-          <path
-            className="result-chart-mark"
-            d={arc.path}
-            fill={colour(at)}
-            data-at={at}
-            data-series={0}
-            key={at}
-          />
-        ))}
+        {arcs.map((arc, at) => {
+          const category = kept[at] ?? at;
+
+          return (
+            <path
+              className="result-chart-mark"
+              d={arc.path}
+              fill={colour(category)}
+              data-at={category}
+              data-series={0}
+              key={category}
+            />
+          );
+        })}
       </g>
     );
   } else if (type === 'column' || type === 'bar') {

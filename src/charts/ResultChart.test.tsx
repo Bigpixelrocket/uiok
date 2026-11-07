@@ -61,4 +61,32 @@ describe('the result chart’s read-out', () => {
     fireEvent.pointerOver(pie.querySelector('path[data-at="1"]') as Element);
     expect(readout(pie)).toBe('Tue: 5');
   });
+
+  it('draws and reads a pie slice as its own category when an earlier one has nothing', () => {
+    const { container } = render(
+      <ResultChart
+        categories={['zero', 'positive']}
+        height={300}
+        series={[{ name: 'amount', values: [0, 5] }]}
+        stacked={false}
+        title=""
+        type="pie"
+        width={500}
+        xLabel=""
+        xValues={[]}
+        yLabel=""
+      />
+    );
+    const slices = container.querySelectorAll('path.result-chart-mark');
+    const swatch = [...container.querySelectorAll('.result-chart-legend')]
+      .find((label) => label.textContent === 'positive')
+      ?.parentElement?.querySelector('rect');
+
+    expect(slices).toHaveLength(1);
+    expect(slices[0]?.getAttribute('data-at')).toBe('1');
+    expect(swatch).toBeTruthy();
+    expect(slices[0]?.getAttribute('fill')).toBe(swatch?.getAttribute('fill'));
+    fireEvent.pointerOver(slices[0] as Element);
+    expect(readout(container)).toBe('positive: 5');
+  });
 });

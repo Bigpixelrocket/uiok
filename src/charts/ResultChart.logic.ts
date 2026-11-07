@@ -131,7 +131,13 @@ export function splinePath(points: readonly ([number, number] | null)[]): string
         const before = slopes[at - 1] ?? 0;
         const after = slopes[at] ?? 0;
 
-        return before * after <= 0 ? 0 : (before + after) / 2;
+        if (before * after <= 0) return 0;
+
+        // Fritsch-Carlson limit: a tangent past three times the gentler
+        // slope would carry the curve beyond a neighbour's value.
+        const limit = 3 * Math.min(Math.abs(before), Math.abs(after));
+
+        return Math.sign(before) * Math.min(Math.abs((before + after) / 2), limit);
       });
       let path = `M${fixed(first[0])} ${fixed(first[1])}`;
 

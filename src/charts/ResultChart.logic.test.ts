@@ -42,4 +42,27 @@ describe('the chart of a table', () => {
     expect(shownLabels(100, 400, 40)).toEqual(new Set([0, 10, 20, 30, 40, 50, 60, 70, 80, 90]));
     expect(cutLabel('a long category name', 8)).toBe('a long …');
   });
+
+  it('keeps each spline segment within its end points when the slopes differ', () => {
+    const points: [number, number][] = [
+      [0, 0],
+      [1, 1],
+      [2, 100]
+    ];
+    const segments = [...splinePath(points).matchAll(/C(\S+) (\S+) (\S+) (\S+) (\S+) (\S+)/g)];
+
+    expect(segments).toHaveLength(2);
+    segments.forEach((segment, at) => {
+      const [, y0] = points[at] as [number, number];
+      const [, y1] = points[at + 1] as [number, number];
+      const low = Math.min(y0, y1);
+      const high = Math.max(y0, y1);
+
+      // Control points inside the segment's range keep the whole Bezier inside it.
+      for (const y of [Number(segment[2]), Number(segment[4])]) {
+        expect(y).toBeGreaterThanOrEqual(low);
+        expect(y).toBeLessThanOrEqual(high);
+      }
+    });
+  });
 });
