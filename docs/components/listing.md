@@ -1,4 +1,4 @@
-# Listing (`uiok/listing`)
+# Listing (`@bigpixelrocket/uiok/listing`)
 
 Tables in the listing look: a ruled column strip over 24px rows in the monospace face, a cursor row that the keys and the pointer share, and cells for states, paths, and terminal output. `CurrentDot` marks the current item in a list. Panes, their path bar, status line, and compact controls are in [pane](pane.md); the same stylesheet draws both.
 
@@ -25,8 +25,8 @@ Rules are scoped with `:where(.listing-root)`, so each weighs one class less tha
 A `Listing` takes the listing's monospace face from an enclosing `.pane-list`; outside one it inherits the surrounding font.
 
 ```tsx
-import { ACTION_COLUMN, Cell, column, Listing, Row, StateMark } from 'uiok/listing';
-import { QuietAction } from 'uiok/pane';
+import { ACTION_COLUMN, Cell, column, Listing, Row, StateMark } from '@bigpixelrocket/uiok/listing';
+import { QuietAction } from '@bigpixelrocket/uiok/pane';
 
 <div className="listing-root">
   <div className="pane-list">

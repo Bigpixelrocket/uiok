@@ -1,12 +1,12 @@
-# Pane (`uiok/pane`)
+# Pane (`@bigpixelrocket/uiok/pane`)
 
 The frame around a listing: a path bar it opens with, a status line it closes with, the compact controls inside them and in listing rows, and the keyboard of a sidebar beside a page. Styled by the listing look under `.listing-root` ([listing](listing.md)).
 
 ## Example
 
 ```tsx
-import { Listing, RowCursorContext } from 'uiok/listing';
-import { NO_MAIN_VERBS, PanePathBar, PaneStatus, paneKeyAction, QuietAction, usePaneKeys, verbControl, paneRow } from 'uiok/pane';
+import { Listing, RowCursorContext } from '@bigpixelrocket/uiok/listing';
+import { NO_MAIN_VERBS, PanePathBar, PaneStatus, paneKeyAction, QuietAction, usePaneKeys, verbControl, paneRow } from '@bigpixelrocket/uiok/pane';
 
 function View() {
   const panes = usePaneKeys({

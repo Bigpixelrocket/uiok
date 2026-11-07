@@ -3,7 +3,7 @@
  * palettes, the rules that derive every colour token from a palette, the
  * stylesheet generator an app extends with tokens of its own, and the
  * attribute helpers a page wears its themes with. The generated stylesheet
- * itself ships inside `uiok/styles.css`.
+ * itself ships inside `@bigpixelrocket/uiok/styles.css`.
  */
 
 export { subscribeThemeChange, wearThemes } from './attributes.js';

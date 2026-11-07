@@ -79,7 +79,7 @@ export interface ConfirmDialogProps {
  * screen reader reads the consequence, and any name it holds, with the
  * title. It carries its own type, margins, and box sizing, so it renders
  * the same portalled to the body as inside any page. Styled by the
- * `.confirm-dialog` rules in `uiok/styles.css`; reads the `dialog` labels.
+ * `.confirm-dialog` rules in `@bigpixelrocket/uiok/styles.css`; reads the `dialog` labels.
  */
 export function ConfirmDialog({
   title,

@@ -1,11 +1,11 @@
-# DateTimePicker (`uiok/datetime`)
+# DateTimePicker (`@bigpixelrocket/uiok/datetime`)
 
 The button beside a date or time field that opens a picker under it: a month's days, the previous and next month, Today or Now, and for a time its hour, minute, second, and optional fraction. The field stays the caller's, so a user can still type any value; the picker only writes what it picks.
 
 ## Example
 
 ```tsx
-import { DateTimePicker } from 'uiok/datetime';
+import { DateTimePicker } from '@bigpixelrocket/uiok/datetime';
 
 <input value={due} onChange={(event) => setDue(event.target.value)} />
 <DateTimePicker kind="date" label="Pick the due date" onChange={setDue} value={due} />
@@ -14,7 +14,7 @@ import { DateTimePicker } from 'uiok/datetime';
 A store that joins date and time with a space instead of ISO's `T`:
 
 ```tsx
-import { DateTimePicker, formatPicker } from 'uiok/datetime';
+import { DateTimePicker, formatPicker } from '@bigpixelrocket/uiok/datetime';
 
 <DateTimePicker
   format={(kind, parts, fraction) => formatPicker(kind, parts, fraction, ' ')}

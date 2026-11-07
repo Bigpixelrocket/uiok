@@ -1,11 +1,11 @@
-# Pager (`uiok/pager`)
+# Pager (`@bigpixelrocket/uiok/pager`)
 
 The pager of a long list: Begin and Previous, a menu of page numbers, then Next and End. It draws nothing for a list of one page. Below 200 pages the menu lists every page; above, it lists both ends, even steps across the list, every page within ten of the current one, and pages at doubling distances from it (`selectorPages`).
 
 ## Example
 
 ```tsx
-import { Pager, pageCount, pageSlice } from 'uiok/pager';
+import { Pager, pageCount, pageSlice } from '@bigpixelrocket/uiok/pager';
 
 const pages = pageCount(rows.length, 50);
 const shown = pageSlice(rows, page, 50);

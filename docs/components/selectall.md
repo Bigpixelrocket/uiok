@@ -1,11 +1,11 @@
-# SelectAllBar (`uiok/selectall`)
+# SelectAllBar (`@bigpixelrocket/uiok/selectall`)
 
 The footer of a list whose rows have checkboxes: Check all, then "With selected:" and the list's bulk actions. The checkbox is ticked when every row is, ticked and mixed when some are, clear when none are, and disabled when the list offers no row to check. `checkedAfterClick` gives the rows themselves Shift-click ranges.
 
 ## Example
 
 ```tsx
-import { checkedAfterClick, SelectAllBar } from 'uiok/selectall';
+import { checkedAfterClick, SelectAllBar } from '@bigpixelrocket/uiok/selectall';
 
 const onRowClick = (id: string, shift: boolean) => {
   setChecked(checkedAfterClick(checked, visibleIds, anchor, id, shift));

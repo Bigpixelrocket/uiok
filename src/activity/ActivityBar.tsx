@@ -20,7 +20,7 @@ export interface ActivityBarProps {
  * that works without reporting how far it has got. The stripes scroll while
  * the run goes on and stand still once it waits, pauses, or settles; with
  * reduced motion they never scroll, and the caller's words and clock say
- * that it is working (the `.activity-stripes` rules in `uiok/styles.css`).
+ * that it is working (the `.activity-stripes` rules in `@bigpixelrocket/uiok/styles.css`).
  * An indeterminate bar has no value for assistive technology, which reads
  * it as busy while it moves.
  *

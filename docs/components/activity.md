@@ -1,11 +1,11 @@
-# ActivityBar (`uiok/activity`)
+# ActivityBar (`@bigpixelrocket/uiok/activity`)
 
 A progress bar that shows a fill for a known fraction, or moving diagonal stripes for work that reports no fraction.
 
 ## Example
 
 ```tsx
-import { ActivityBar } from 'uiok/activity';
+import { ActivityBar } from '@bigpixelrocket/uiok/activity';
 
 <ActivityBar
   className="upload-track"

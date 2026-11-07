@@ -17,24 +17,24 @@ Publishing a GitHub Release publishes the package to npm. The release workflow (
    gh release create vX.Y.Z --repo Bigpixelrocket/uiok --target main --title vX.Y.Z --notes-file <notes.md>
    ```
 
-4. Watch the Release workflow run under the repository's Actions tab, then confirm the version and its provenance badge on https://www.npmjs.com/package/uiok.
+4. Watch the Release workflow run under the repository's Actions tab, then confirm the version and its provenance badge on https://www.npmjs.com/package/@bigpixelrocket/uiok.
 
 A failed run publishes nothing. Fix the cause on `main`, delete the release and its tag, and create them again.
 
 ## One-time setup
 
-npm can only trust a workflow for a package that already exists, so the first version is published by hand.
+The package is `@bigpixelrocket/uiok`, owned by the `bigpixelrocket` npm organization; its `@bigpixelrocket:developers` team has read-write access. npm can only trust a workflow for a package that already exists, so the first version is published by hand.
 
-1. Publish `0.0.1` from a clean checkout of `main`, signed in to the npm account that will own the package:
+1. Publish `0.0.1` from a clean checkout of `main`, signed in to an npm account in the `@bigpixelrocket:developers` team:
 
    ```sh
    npm ci
-   npm publish --access public --no-provenance
+   npm publish --no-provenance --access public
    ```
 
-   `prepublishOnly` runs `npm run check` first. `--no-provenance` overrides `publishConfig.provenance`, since provenance can only be generated in CI.
+   `prepublishOnly` runs `npm run check` first. `--no-provenance` overrides `publishConfig.provenance`, since provenance can only be generated in CI. `--access public` is required for a scoped package, which npm would otherwise publish as private.
 
-2. On npmjs.com, open the package's **Settings**, find **Trusted Publisher**, choose **GitHub Actions**, and enter:
+2. Open the package settings at https://www.npmjs.com/package/@bigpixelrocket/uiok/access, find **Trusted Publisher**, choose **GitHub Actions**, and enter:
    - Organization or user: `Bigpixelrocket`
    - Repository: `uiok`
    - Workflow filename: `release.yml`

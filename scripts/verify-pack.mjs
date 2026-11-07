@@ -1,7 +1,7 @@
 /**
  * The publish guard, run after `npm run build`: fails when a source map could
  * ship, when an `exports` target is missing from the tarball, when an area
- * does not resolve as `uiok/<area>`, or when a packed stylesheet imports one
+ * does not resolve as `@bigpixelrocket/uiok/<area>`, or when a packed stylesheet imports one
  * that is not packed.
  *
  * A source map is a `.map` file in `dist/` or in the file list
@@ -80,7 +80,7 @@ for (const area of areas) {
 }
 
 // A packed stylesheet's relative @import must land on a packed stylesheet,
-// or a consumer's bundler fails on uiok/styles.css.
+// or a consumer's bundler fails on @bigpixelrocket/uiok/styles.css.
 for (const path of packed) {
   if (!path.endsWith('.css')) continue;
   const source = readFileSync(join(root, path), 'utf8');

@@ -1,11 +1,11 @@
-# Filter field marks (`uiok/filter`)
+# Filter field marks (`@bigpixelrocket/uiok/filter`)
 
 The two marks around a filter field's input: `FilterIcon` at the start and `FilterEscape`, a pressable Escape key cap, at the end.
 
 ## Example
 
 ```tsx
-import { FilterEscape, FilterIcon } from 'uiok/filter';
+import { FilterEscape, FilterIcon } from '@bigpixelrocket/uiok/filter';
 
 <div className="listing-root">
   <label>

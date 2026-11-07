@@ -8,7 +8,7 @@ export type VisuallyHiddenProps = ComponentPropsWithRef<'span'>;
  * for an icon-only control, a live announcement, or a description another
  * element names through `aria-describedby`.
  *
- * Renders a `<span>` with the `visually-hidden` class from `uiok/styles.css`,
+ * Renders a `<span>` with the `visually-hidden` class from `@bigpixelrocket/uiok/styles.css`,
  * which keeps it in the accessibility tree while clipping it to nothing on
  * screen. A `className` passed in is added alongside that class.
  */

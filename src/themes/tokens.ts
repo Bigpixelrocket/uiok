@@ -464,7 +464,7 @@ export interface ThemeStylesheetOptions {
   readonly banner?: string;
   /**
    * Whether the stylesheet holds uiok's own tokens as well as the app's (the
-   * default). An app that imports `uiok/styles.css`, which already carries
+   * default). An app that imports `@bigpixelrocket/uiok/styles.css`, which already carries
    * them, sets `false` to write its own tokens alone under the same
    * selectors, so no token is declared twice; a block left with nothing to
    * declare is dropped.
@@ -516,7 +516,7 @@ function rule(selector: string, tokens: Readonly<Record<string, string>>, depth 
 }
 
 /**
- * The custom properties `uiok/styles.css` declares or reads beside the theme
+ * The custom properties `@bigpixelrocket/uiok/styles.css` declares or reads beside the theme
  * tokens: the base sheet's on `:root`, and the hooks a component stylesheet
  * declares or reads (the activity stripes' colour, a dialog's tone and
  * pinned top), which an app token on `:root` would otherwise reach.

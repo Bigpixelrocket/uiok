@@ -1,4 +1,4 @@
-# Dialogs (`uiok/dialog`)
+# Dialogs (`@bigpixelrocket/uiok/dialog`)
 
 Every modal dialog shares one frame and one footer: a title strip that says what the dialog does and where, the body, and a key legend that says how to leave and how to commit. The legend reads as part of the keyboard, not as a web form.
 
@@ -11,7 +11,7 @@ Every modal dialog shares one frame and one footer: a title strip that says what
 ```tsx
 import { useId, useState } from 'react';
 import { FilePen, Trash2 } from 'lucide-react';
-import { ConfirmDialog, ModalDialog } from 'uiok/dialog';
+import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
 
 function RenameDialog({ name, onRename, onCancel }) {
   const labelId = useId();
@@ -73,7 +73,7 @@ function RenameDialog({ name, onRename, onCancel }) {
 
 - The box is the surface colour with a strong hairline, radius 8, and a soft lift, centred over a clear backdrop that covers the whole viewport (`--z-dialog`), so the page stays readable behind it. `frosted` washes and blurs the window instead.
 - The title strip is 34px of `--surface-header`, ruled at the bottom in the tone: the icon, the title at 12px, and the context pushed to the right edge.
-- `aria-modal="true"` is the overlay contract's modal cue (`MODAL_SELECTOR` in `uiok/keyboard`), which an app shell reads to mute its own chords while a dialog is open.
+- `aria-modal="true"` is the overlay contract's modal cue (`MODAL_SELECTOR` in `@bigpixelrocket/uiok/keyboard`), which an app shell reads to mute its own chords while a dialog is open.
 - A caller sets a dialog's size and body layout through `className`, never the frame's look.
 
 ### Focus

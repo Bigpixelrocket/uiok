@@ -1,4 +1,4 @@
-# Store and render economy (`uiok/store`)
+# Store and render economy (`@bigpixelrocket/uiok/store`)
 
 Small tools that keep large views from rendering more than they must.
 
@@ -7,7 +7,7 @@ Small tools that keep large views from rendering more than they must.
 A value held outside React state. Only components that subscribe with `useSyncExternalStore` render when it changes; the component that owns the store does not.
 
 ```tsx
-import { createValueStore, unheard, type ValueStore } from 'uiok/store';
+import { createValueStore, unheard, type ValueStore } from '@bigpixelrocket/uiok/store';
 import { useSyncExternalStore } from 'react';
 
 const cursor = createValueStore(0);

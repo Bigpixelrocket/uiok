@@ -27,7 +27,7 @@ import { DEFAULT_SELECT_ALL_LABELS, type SelectAllLabels } from './selectAll.js'
 export interface UiokLabels {
   /** Key and modifier names, glyphs, and key cap words (`KeyChord`, `chordSpoken`). */
   readonly keys: KeyLabels;
-  /** Chart read-outs, the scatter chart's count and zoom words, and picture export messages (`uiok/charts`). */
+  /** Chart read-outs, the scatter chart's count and zoom words, and picture export messages (`@bigpixelrocket/uiok/charts`). */
   readonly charts: ChartLabels;
   /** A date and time picker's month steps, time fields, buttons, and name locale (`DateTimePicker`). */
   readonly dateTime: DateTimeLabels;

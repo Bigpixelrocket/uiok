@@ -68,7 +68,7 @@ export interface RunHeaderProps {
  * once the run failed, so each change of state is announced once; the
  * figure sits outside it, so a ticking clock is never read out, and so does
  * a sentence that ticks too, given an `announcement` to say instead. Styled
- * by the `.run-header` rules in `uiok/styles.css`; the type family is the
+ * by the `.run-header` rules in `@bigpixelrocket/uiok/styles.css`; the type family is the
  * surrounding dialog's own, like the frame around it.
  */
 export function RunHeader({

@@ -180,7 +180,7 @@ export interface ModalDialogProps {
  * With `pinTop` the box keeps the top edge it opened at. Dialogs supply
  * only their content and verbs.
  *
- * Styled by the `.dialog-backdrop` and `.dialog` rules in `uiok/styles.css`
+ * Styled by the `.dialog-backdrop` and `.dialog` rules in `@bigpixelrocket/uiok/styles.css`
  * (`docs/components/dialog.md`); a caller sets only a dialog's size and its
  * body's layout, through `className`.
  */

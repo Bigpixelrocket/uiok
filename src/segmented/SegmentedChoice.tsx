@@ -18,7 +18,7 @@ export interface SegmentedChoiceProps<T extends string | number | null> {
  * One choice of several, drawn as a segmented control and announced as a
  * radio group: one Tab stop (the checked segment), and the arrow keys move
  * the choice, wrapping at the ends, with the focus following it. Its look is
- * its own (`.segmented-choice` in `uiok/styles.css`), so it draws the same
+ * its own (`.segmented-choice` in `@bigpixelrocket/uiok/styles.css`), so it draws the same
  * in a dialog and on a page.
  */
 export function SegmentedChoice<T extends string | number | null>({
