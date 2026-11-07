@@ -7,6 +7,7 @@
 export { VisuallyHidden, type VisuallyHiddenProps } from './VisuallyHidden.js';
 export * from './activity/index.js';
 export * from './button/index.js';
+export * from './charts/index.js';
 export * from './clock/index.js';
 export * from './dialog/index.js';
 export * from './filter/index.js';

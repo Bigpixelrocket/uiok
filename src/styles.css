@@ -16,6 +16,7 @@
 @import './run/run.css';
 @import './namecut/namecut.css';
 @import './text/text.css';
+@import './charts/charts.css';
 
 :root {
   /* Surfaces that float over other content (sticky headers, cards,
