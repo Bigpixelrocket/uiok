@@ -17,7 +17,8 @@
     "skipLibCheck": true,
     "types": ["vite/client", "node"],
     "noEmit": true,
-    // vite.config.ts imports render-docs.ts with its extension, as Vite's native config loader needs.
+    // vite.config.ts imports render-docs.ts with its extension: Vite 8 warns about an
+    // extensionless import there, which its future native config loader will not resolve.
     "allowImportingTsExtensions": true,
     "paths": {
       "@bigpixelrocket/uiok": ["../src/index.ts"],

@@ -178,6 +178,18 @@ export function PaneDemo() {
         className="listing-root pane-demo"
         onFocus={() => setShown(true)}
         onPointerDown={() => setShown(true)}
+        // A press on a part that takes no focus (a path bar, the status line) would move the
+        // focus out to the page and take the keys with it; it keeps them in the active pane.
+        onMouseDown={(event) => {
+          const root = event.currentTarget;
+          const target = event.target instanceof Element ? event.target : null;
+          const focusable = target?.closest(
+            'button, input, select, textarea, summary, a[href], [tabindex]'
+          );
+          if (focusable != null && root.contains(focusable)) return;
+          event.preventDefault();
+          if (!root.contains(document.activeElement)) panes.focusPane(panes.activePane);
+        }}
         // The demo holds the keys only while the focus is in it, so the page scrolls again after.
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget)) setShown(false);

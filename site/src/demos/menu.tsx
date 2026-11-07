@@ -75,8 +75,9 @@ function FolderMenu({
             setCursor(0);
           }}
           onKeyDown={(event) => {
-            // Keys that compose a character with an input method are the method's own.
-            if (event.nativeEvent.isComposing) return;
+            // Keys that compose a character with an input method are the method's own. Safari
+            // ends the composition before the confirming Return's keydown, marked key code 229.
+            if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
             if (event.key === 'ArrowDown') {
               event.preventDefault();
               setCursor(moveMenuCursor(cursor, 1, rows.length));
