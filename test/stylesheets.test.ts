@@ -1,8 +1,7 @@
 /**
  * The single-stylesheet contract: consumers import `uiok/styles.css` alone,
- * so every component stylesheet beside its component must be reached from
- * `src/styles.css`. Theme stylesheets under `src/themes/` ship on their own
- * terms and are left to their own tests.
+ * so every stylesheet under `src/` (a component's beside it, the generated
+ * theme tokens) must be reached from `src/styles.css`.
  */
 
 import { readdirSync } from 'node:fs';
@@ -20,14 +19,14 @@ import {
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
-/** Component stylesheets: every `.css` under `src/` but the base sheet and the themes. */
+/** Every `.css` under `src/` but the base sheet itself. */
 const componentSheets = readdirSync(SRC, { recursive: true, withFileTypes: true })
   .filter((entry) => entry.isFile() && entry.name.endsWith('.css'))
   .map((entry) => relative(SRC, join(entry.parentPath, entry.name)).split('\\').join('/'))
-  .filter((path) => path !== 'styles.css' && !path.startsWith('themes/'));
+  .filter((path) => path !== 'styles.css');
 
 describe('uiok/styles.css', () => {
-  it('imports every component stylesheet', () => {
+  it('imports every stylesheet under src/', () => {
     const imported = stylesheetImports('src/styles.css').map((path) => path.replace(/^\.\//, ''));
 
     expect(componentSheets.length).toBeGreaterThan(0);

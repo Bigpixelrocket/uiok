@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, readStylesheet } from '../../test/stylesheets.js';
 import { Button } from './Button.js';
 import { IconButton } from './IconButton.js';
 
@@ -37,6 +38,30 @@ describe('Button', () => {
     expect(screen.getByRole('button', { name: 'Install' }).className).toBe(
       'button button-tonal button-small wide'
     );
+  });
+});
+
+describe('a disabled Button or IconButton', () => {
+  it('fades to --disabled-opacity under an arrow, over its own pointer', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <>
+        <Button disabled variant="primary">
+          Save
+        </Button>
+        <IconButton aria-label="Refresh" disabled>
+          <svg aria-hidden="true" />
+        </IconButton>
+        <Button>Close</Button>
+      </>
+    );
+
+    for (const name of ['Save', 'Refresh']) {
+      const style = getComputedStyle(screen.getByRole('button', { name }));
+      expect(style.cursor, name).toBe('default');
+      expect(style.opacity, name).toBe('var(--disabled-opacity)');
+    }
+    expect(getComputedStyle(screen.getByRole('button', { name: 'Close' })).cursor).toBe('pointer');
   });
 });
 

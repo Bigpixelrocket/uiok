@@ -515,17 +515,24 @@ function rule(selector: string, tokens: Readonly<Record<string, string>>, depth 
   return `${indent}${selector} {\n${declarations(tokens, `${indent}  `)}\n${indent}}`;
 }
 
-/** The custom properties `src/styles.css` declares on `:root`, beside the theme tokens. */
+/**
+ * The custom properties `uiok/styles.css` declares or reads beside the theme
+ * tokens: the base sheet's on `:root`, and the hooks a component stylesheet
+ * reads (the activity stripes' colour), which an app token on `:root` would
+ * otherwise reach.
+ */
 const BASE_TOKEN_NAMES = [
   '--frost',
   '--font-mono',
   '--font-ui',
   '--z-panel',
   '--z-dialog',
-  '--z-tooltip'
+  '--z-tooltip',
+  '--stripe-ink',
+  '--stripe-ground'
 ] as const;
 
-/** Every token name uiok defines: the fixed tokens, those a theme sets, and the base stylesheet's. */
+/** Every token name uiok defines: the fixed tokens, those a theme sets, and the stylesheet's own. */
 const UIOK_TOKEN_NAMES: ReadonlySet<string> = new Set([
   ...Object.keys(FIXED_TOKENS),
   ...Object.keys(themeTokens(DEFAULT_LIGHT_THEME)),
