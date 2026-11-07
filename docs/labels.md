@@ -36,6 +36,7 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | Group     | Interface       | Default                  | Read by                                                                                 |
 | --------- | --------------- | ------------------------ | --------------------------------------------------------------------------------------- |
 | `keys`    | `KeyLabels`     | `DEFAULT_KEY_LABELS`     | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
+| `dialog`  | `DialogLabels`  | `DEFAULT_DIALOG_LABELS`  | `ConfirmDialog`, and, given it, `filterLeaveLabel`                                      |
 | `listing` | `ListingLabels` | `DEFAULT_LISTING_LABELS` | `Strip` and `Listing`, for a column label that sorts                                    |
 
 ### `keys`
@@ -52,6 +53,16 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 A key missing from `names` is spoken as its capital ("N"); one missing from `keyGlyphs` is written as its capital.
 
 The defaults are macOS's names and glyphs. An app on Windows or Linux supplies its own, for example `modifiers: { alt: 'Alt', meta: 'Windows' }` and `modifierGlyphs: { ctrl: 'Ctrl+', alt: 'Alt+', shift: 'Shift+', meta: 'Win+' }`. Modifier order (Control, Option, Shift, Command) and the icons `KeyChord` draws for modifiers stay macOS's in this version.
+
+### `dialog`
+
+| Field           | Type                        | English default  |
+| --------------- | --------------------------- | ---------------- |
+| `cancel`        | `string`                    | `Cancel`         |
+| `clear`         | `string`                    | `Clear`          |
+| `affectedItems` | `(count: number) => string` | `Affected items` |
+
+`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's list of paths, given how many it holds.
 
 ### `listing`
 
