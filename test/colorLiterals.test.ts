@@ -231,8 +231,29 @@ function cssFindings(file: string, source: string): number[] {
   return lines;
 }
 
-/** The name an object key, JSX attribute, or assignment target gives the string it holds. */
-function colorKeyOf(node: ts.Node): string | undefined {
+/**
+ * Whether `parent` passes `node`'s value through as its own: parentheses, a
+ * type assertion, a non-null assertion, or a conditional's branch (not its
+ * condition).
+ */
+function passesThrough(parent: ts.Node, node: ts.Node): boolean {
+  return (
+    ts.isParenthesizedExpression(parent) ||
+    ts.isAsExpression(parent) ||
+    ts.isSatisfiesExpression(parent) ||
+    ts.isTypeAssertionExpression(parent) ||
+    ts.isNonNullExpression(parent) ||
+    (ts.isConditionalExpression(parent) && (parent.whenTrue === node || parent.whenFalse === node))
+  );
+}
+
+/**
+ * The name an object key, JSX attribute, or assignment target gives the
+ * string it holds, through any wrapper that passes the string on unchanged.
+ */
+function colorKeyOf(literal: ts.Node): string | undefined {
+  let node = literal;
+  while (node.parent !== undefined && passesThrough(node.parent, node)) node = node.parent;
   const parent = node.parent;
   if (parent === undefined) return undefined;
   if (ts.isJsxAttribute(parent)) return parent.name.getText();
@@ -389,6 +410,23 @@ describe('colour literals in the library', () => {
     expect(
       scriptFindings('x.ts', 'const f = { r: 30, g: 30, b: 46 };\nconst g = { r, g: 1, b: 2 };')
     ).toEqual([1]);
+
+    // A named colour behind a conditional or a type assertion still sits under
+    // its key; one in a conditional's condition or under another key does not.
+    const wrapped = [
+      "const h = <i style={{ color: active ? 'red' : (",
+      "  'blue'",
+      ') }} />;',
+      "const i = { background: 'white' as const };",
+      "const k = { color: 'red' === tone ? 'var(--a)' : 'var(--b)' };",
+      "const l = { label: active ? 'red' : 'blue' };"
+    ].join('\n');
+    expect(scriptFindings('x.tsx', wrapped)).toEqual([1, 2, 4]);
+    const asserted = [
+      "const m = { fill: <const>'black',",
+      "  stroke: ('navy' satisfies string)! };"
+    ].join('\n');
+    expect(scriptFindings('x.ts', asserted)).toEqual([1, 2]);
   });
 });
 

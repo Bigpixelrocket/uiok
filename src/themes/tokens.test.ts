@@ -192,6 +192,39 @@ describe("an app's own tokens", () => {
       'not a kebab-case custom property'
     );
   });
+
+  it('may not redefine a token the base stylesheet declares', () => {
+    const base = readFileSync(new URL('../styles.css', import.meta.url), 'utf8').replace(
+      /\/\*[\s\S]*?\*\//g,
+      ''
+    );
+    const names = [...base.matchAll(/(--[a-z0-9-]+)\s*:/g)].map((match) => match[1] ?? '');
+    expect(names.length).toBeGreaterThan(0);
+    for (const name of names) {
+      expect(() => themeStylesheet({ extraFixed: { [name]: '0' } })).toThrow(
+        `extraFixed redefines ${name}`
+      );
+    }
+  });
+
+  it('may not end a declaration, rule, or comment early', () => {
+    expect(() =>
+      themeStylesheet({ extraTokens: () => ({ '--app-tone': 'red; --accent: red !important' }) })
+    ).toThrow('extraTokens(catppuccin-latte) gives --app-tone a value');
+    for (const value of ['a{', 'a}', 'a /* b', 'b */ a']) {
+      expect(() => themeStylesheet({ extraFixed: { '--app-x': value } })).toThrow(
+        'extraFixed gives --app-x a value'
+      );
+    }
+    for (const selector of ['.a { color: red } .b', '.a;', '.a /* x */', '.a}']) {
+      expect(() =>
+        themeStylesheet({ extraBlocks: { [selector]: { '--app-gap': '2px' } } })
+      ).toThrow(`extraBlocks['${selector}'] is a selector`);
+    }
+    expect(() => themeStylesheet({ banner: 'Covers src/**/*.css' })).toThrow('banner holds */');
+    // A comment opener alone stays inside the banner's comment.
+    expect(themeStylesheet({ banner: 'See /* here' })).toMatch(/^\/\* See \/\* here \*\//);
+  });
 });
 
 describe('overrides', () => {

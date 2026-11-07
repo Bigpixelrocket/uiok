@@ -451,7 +451,10 @@ export function previewTokens(theme: Theme): Readonly<Record<string, string>> {
  * What an app adds to the theme stylesheet: tokens of its own, derived from
  * the same themes and written under the same selectors, so it ships one
  * stylesheet rather than a second copy of every theme block. Each extra
- * token must be a custom property (`--name`) that uiok does not define.
+ * token must be a custom property (`--name`) that uiok does not define. No
+ * value or selector may hold a semicolon, a brace, or a comment delimiter,
+ * nor the banner a comment's end, since each would end its declaration,
+ * rule, or comment early.
  */
 export interface ThemeStylesheetOptions {
   /**
@@ -512,26 +515,46 @@ function rule(selector: string, tokens: Readonly<Record<string, string>>, depth 
   return `${indent}${selector} {\n${declarations(tokens, `${indent}  `)}\n${indent}}`;
 }
 
-/** Every token name uiok defines: the fixed tokens and those a theme sets. */
+/** The custom properties `src/styles.css` declares on `:root`, beside the theme tokens. */
+const BASE_TOKEN_NAMES = [
+  '--frost',
+  '--font-mono',
+  '--font-ui',
+  '--z-panel',
+  '--z-dialog',
+  '--z-tooltip'
+] as const;
+
+/** Every token name uiok defines: the fixed tokens, those a theme sets, and the base stylesheet's. */
 const UIOK_TOKEN_NAMES: ReadonlySet<string> = new Set([
   ...Object.keys(FIXED_TOKENS),
-  ...Object.keys(themeTokens(DEFAULT_LIGHT_THEME))
+  ...Object.keys(themeTokens(DEFAULT_LIGHT_THEME)),
+  ...BASE_TOKEN_NAMES
 ]);
 
+/** Whether `text` holds a sequence that would end a declaration, rule, or comment early. */
+function breaksOut(text: string): boolean {
+  return /[;{}]|\/\*|\*\//.test(text);
+}
+
 /**
- * `extra`, checked to add only custom properties uiok leaves undefined, so an
- * app token can never silently replace a token uiok's components read.
+ * `extra`, checked to add only custom properties uiok leaves undefined, each
+ * with a value confined to its declaration, so an app token can never
+ * silently replace a token uiok's components read.
  */
 function extraTokens(
   extra: Readonly<Record<string, string>>,
   source: string
 ): Readonly<Record<string, string>> {
-  for (const name of Object.keys(extra)) {
+  for (const [name, value] of Object.entries(extra)) {
     if (!/^--[a-z0-9-]+$/.test(name)) {
       throw new Error(`${source} names ${name}, which is not a kebab-case custom property.`);
     }
     if (UIOK_TOKEN_NAMES.has(name)) {
       throw new Error(`${source} redefines ${name}, a token uiok defines.`);
+    }
+    if (breaksOut(value)) {
+      throw new Error(`${source} gives ${name} a value that would end its declaration early.`);
     }
   }
   return extra;
@@ -549,6 +572,9 @@ function extraTokens(
  */
 export function themeStylesheet(options: ThemeStylesheetOptions = {}): string {
   const { banner = BANNER, includeUiokTokens = true, extraFixed = {}, extraBlocks = {} } = options;
+  if (banner.includes('*/')) {
+    throw new Error('banner holds */, which would end its comment early.');
+  }
   const own = (tokens: Readonly<Record<string, string>>) => (includeUiokTokens ? tokens : {});
   const tokensOf = (theme: Theme): Readonly<Record<string, string>> => {
     const tokens = themeTokens(theme);
@@ -576,9 +602,12 @@ export function themeStylesheet(options: ThemeStylesheetOptions = {}): string {
       ...extraTokens(extraFixed, 'extraFixed'),
       ...tokensOf(DEFAULT_LIGHT_THEME)
     }),
-    ...Object.entries(extraBlocks).flatMap(([selector, tokens]) =>
-      block(selector, extraTokens(tokens, `extraBlocks['${selector}']`))
-    ),
+    ...Object.entries(extraBlocks).flatMap(([selector, tokens]) => {
+      if (breaksOut(selector)) {
+        throw new Error(`extraBlocks['${selector}'] is a selector that would end its rule early.`);
+      }
+      return block(selector, extraTokens(tokens, `extraBlocks['${selector}']`));
+    }),
     ...media('(prefers-color-scheme: dark)', block(':root', tokensOf(DEFAULT_DARK_THEME), 1)),
     ...media('(prefers-color-scheme: light)', themed('light')),
     ...media('(prefers-color-scheme: dark)', themed('dark')),
