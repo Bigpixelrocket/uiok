@@ -22,38 +22,42 @@ Rules are scoped with `:where(.listing-root)`, so each weighs one class less tha
 
 ## Example
 
+A `Listing` takes the listing's monospace face from an enclosing `.pane-list`; outside one it inherits the surrounding font.
+
 ```tsx
 import { ACTION_COLUMN, Cell, column, Listing, Row, StateMark } from 'uiok/listing';
 import { QuietAction } from 'uiok/pane';
 
 <div className="listing-root">
-  <Listing
-    columns={[
-      { label: 'State' },
-      { label: 'Size', align: 'right', sort },
-      { label: 'Action', hidden: true }
-    ]}
-    grid={`20px minmax(0, 1fr) ${column(10)} ${column(8)} ${ACTION_COLUMN}`}
-    title="Services"
-  >
-    {services.map((service) => (
-      <Row key={service.id} name={service.name} onOpen={() => open(service)} rowKey={service.id}>
-        <Cell>
-          <StateMark tone={service.tone} word={service.state} />
-        </Cell>
-        <Cell align="right">{service.size}</Cell>
-        <Cell className="pane-action-cell">
-          <QuietAction
-            icon={Play}
-            label={`Start ${service.name}`}
-            onClick={() => start(service)}
-            verb="toggle"
-            word="Start"
-          />
-        </Cell>
-      </Row>
-    ))}
-  </Listing>
+  <div className="pane-list">
+    <Listing
+      columns={[
+        { label: 'State' },
+        { label: 'Size', align: 'right', sort },
+        { label: 'Action', hidden: true }
+      ]}
+      grid={`20px minmax(0, 1fr) ${column(10)} ${column(8)} ${ACTION_COLUMN}`}
+      title="Services"
+    >
+      {services.map((service) => (
+        <Row key={service.id} name={service.name} onOpen={() => open(service)} rowKey={service.id}>
+          <Cell>
+            <StateMark tone={service.tone} word={service.state} />
+          </Cell>
+          <Cell align="right">{service.size}</Cell>
+          <Cell className="pane-action-cell">
+            <QuietAction
+              icon={Play}
+              label={`Start ${service.name}`}
+              onClick={() => start(service)}
+              verb="toggle"
+              word="Start"
+            />
+          </Cell>
+        </Row>
+      ))}
+    </Listing>
+  </div>
 </div>;
 ```
 
@@ -61,7 +65,7 @@ import { QuietAction } from 'uiok/pane';
 
 - `Listing` (`ListingProps`): `title` (the strip's first label), `label` (the table's accessible name, `title` by default), `grid` (the `--pane-grid` template, or a function of the row links' look), `columns` (`ListingColumn[]`), `className`, `empty` (a line said instead of the rows; the listing is then a `section`, not a table), `titleSort` and `titleLabel` (the first column's sort and label), and the rows.
 - `Strip` (`StripProps`): the ruled column strip alone, for a section over something that is not rows. `table` makes it a header row, `heading` makes its name an `h3`.
-- `ListingColumn`: `label` (the column's label and key), `hidden` (said to screen readers only, as over an action column), `align: 'right'` (numbers), `control` (a control in the label's place, such as a `.pane-strip-link` "Update all"), and `sort` (`ColumnSort`: `direction` `'asc' | 'desc' | null`, and `onSort`).
+- `ListingColumn`: `label` (the column's label and key), `hidden` (said to screen readers only, as over an action column), `align: 'right'` (numbers), `control` (a control in the label's place, such as a `.pane-strip-link` "Update all"), and `sort` (`ColumnSort`: `direction` (`SortDirection`: `'asc' | 'desc' | null`), and `onSort`).
 - `Row` (`RowProps`): `rowKey` (its `data-row-key`), `mark` (the icon), `name`, `nameClass`, `className`, `onOpen` (a click anywhere but its controls), `tabbable` (keep its controls in the Tab order), `focusable` and `entry` (the row itself is a Tab stop).
 - `Cell` (`CellProps`): `align`, `className`, and `tip`, the whole text of a cell cut short, as its tooltip and accessible description.
 - `StateMark` (`StateMarkProps`): a dot in the state's tone (`StateTone`: `ready`, `warning`, `danger`, `busy`, `muted`) and its word; `busy` draws a spinner instead of the dot.

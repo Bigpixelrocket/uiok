@@ -5,6 +5,7 @@
  * current one in a list.
  */
 
+export { type SortDirection } from '../labels/listing.js';
 export { CurrentDot, type CurrentDotProps } from './CurrentDot.js';
 export {
   ACTION_COLUMN,

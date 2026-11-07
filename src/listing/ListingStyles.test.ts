@@ -87,6 +87,18 @@ describe('the listing look', () => {
     expect(getComputedStyle(document.querySelector('.row') as Element).height).toBe('28px');
     document.body.innerHTML = '';
   });
+
+  it('turns a busy mark, and holds it still under reduced motion', () => {
+    expect(sheet).toMatch(
+      /:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot\s*\{[^}]*animation:\s*pane-state-pulse /
+    );
+    expect(sheet).toMatch(
+      /:where\(\.listing-root\) \.pane-state-busy\s*\{[^}]*animation:\s*pane-state-spin /
+    );
+    expect(sheet).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot,\s*:where\(\.listing-root\) \.pane-state-busy\s*\{\s*animation:\s*none;/
+    );
+  });
 });
 
 describe("the frame's compact controls", () => {

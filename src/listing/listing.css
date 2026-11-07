@@ -720,6 +720,15 @@
   }
 }
 
+/* Reduced motion: a busy mark stands still, and its accent and word still say
+   the work is running. */
+@media (prefers-reduced-motion: reduce) {
+  :where(.listing-root) .pane-tone-busy > .pane-state-dot,
+  :where(.listing-root) .pane-state-busy {
+    animation: none;
+  }
+}
+
 :where(.listing-root) .row .pane-state.pane-tone-ready {
   color: var(--success);
 }
