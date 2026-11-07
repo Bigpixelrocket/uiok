@@ -26,7 +26,7 @@
   color: var(--text);
 }
 
-.listing-root .filter-escape:hover .keychord {
+.listing-root .filter-escape:hover:enabled:not([aria-disabled='true']) .keychord {
   border-color: color-mix(in srgb, var(--accent) 50%, var(--border-strong));
   background: linear-gradient(var(--hover-wash), transparent) var(--bg-panel);
 }
