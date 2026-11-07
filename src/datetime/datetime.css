@@ -61,7 +61,7 @@
   cursor: pointer;
 }
 
-.date-picker-day:hover {
+.date-picker-day:hover:enabled {
   background: var(--hover-wash);
 }
 

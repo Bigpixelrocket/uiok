@@ -55,7 +55,7 @@
   cursor: pointer;
 }
 
-.data-grid-sort:hover {
+.data-grid-sort:hover:enabled {
   color: var(--text);
 }
 
