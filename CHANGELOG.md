@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-11-08
+
+### Added
+
+- `legibleOn` and `firstLegible`, the WCAG contrast picks UIOK's own tokens are derived with, exported from `@bigpixelrocket/uiok` and `@bigpixelrocket/uiok/themes` so an app can derive legible tokens of its own for `themeStylesheet()`. See `docs/themes.md`.
+- `seriesColour`, the `--chart-1` to `--chart-8` token a series index is drawn in, exported from `@bigpixelrocket/uiok/charts` so a series drawn outside the charts matches theirs.
+
+### Fixed
+
+- `DateTimePicker` widens a fraction field of more than three digits to fit them, so six digits of microseconds show whole; a millisecond field keeps its width.
+
 ## [0.1.1] - 2026-11-08
 
 ### Changed
@@ -37,6 +48,7 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Bigpixelrocket/uiok/releases/tag/v0.1.0

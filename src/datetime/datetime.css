@@ -102,6 +102,14 @@
     box-shadow 120ms;
 }
 
+/* A fraction field of more digits than 7ch shows whole (microseconds) is
+   as wide as its --date-picker-digits, plus a ch for the caret, its padding,
+   and its border, so it fits whether the page sizes boxes by content or
+   border. */
+.date-picker-input.long {
+  width: calc((var(--date-picker-digits) + 1) * 1ch + 18px);
+}
+
 .date-picker-input:focus-visible {
   outline: none;
   border-color: var(--accent);

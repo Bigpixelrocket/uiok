@@ -102,6 +102,33 @@ const css = themeStylesheet({
 
 An extra token must be a kebab-case custom property UIOK does not define; the generator throws otherwise, so an app cannot silently change a token UIOK's components read. No value or selector may hold `;`, `{`, `}`, `/*`, or `*/` outside a string or `url()`, nor a string that spans lines, nor the banner `*/`, since each would end its declaration, rule, or comment early. Commit the output and keep it fresh with a staleness test like `src/themes/themes.test.ts`.
 
+### Colour helpers
+
+These helpers from `@bigpixelrocket/uiok` (or `@bigpixelrocket/uiok/themes`) derive new colours inside `extraTokens` the way UIOK's own rules do. They take six-digit lowercase hex colours (`Hex`), the form every palette entry takes, and throw when they read any other form. A theme token is typed as a plain string and some hold `rgb()` or `var()`, so derive from the palette, or pass a token you know holds hex as `Hex`:
+
+| Helper                                     | What it gives                                                                                                                                                                                 |
+| ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `mix(a, b, share)`                         | `share` percent of `a` over `b`, as CSS `color-mix(in srgb)` mixes                                                                                                                            |
+| `translucent(hex, opacity)`                | `hex` at `opacity` percent, as `rgb(r g b / opacity%)`                                                                                                                                        |
+| `contrast(a, b)`, `luminance(hex)`         | the WCAG 2 contrast ratio (1 to 21) and relative luminance                                                                                                                                    |
+| `legibleOn(color, grounds, ratio)`         | `color` when it keeps `ratio` on every ground, else `color` mixed toward black over a light first ground (white over a dark one) just far enough to keep it; black or white when nothing does |
+| `firstLegible(candidates, grounds, ratio)` | the first candidate that keeps `ratio` on every ground, else the last; order candidates quietest first                                                                                        |
+| `rgbOf(hex)`, `hexOf(rgb)`                 | a colour's channels and back                                                                                                                                                                  |
+
+Use a ratio of 4.5 for text and 3 for a mark read by shape alone, as UIOK's tokens do. A tag whose text must read on its own tinted fill:
+
+```ts
+import { legibleOn, mix, themeStylesheet } from '@bigpixelrocket/uiok';
+
+const css = themeStylesheet({
+  includeUiokTokens: false,
+  extraTokens: (theme) => {
+    const tag = mix(theme.palette.peach, theme.palette.base, 18);
+    return { '--tag-bg': tag, '--tag-text': legibleOn(theme.palette.peach, [tag], 4.5) };
+  }
+});
+```
+
 ## Migrating from the app tokens
 
 Apps moving onto UIOK's themes rename these tokens in their CSS and script, and rename the catalog field `tabGroups` to `groups` and the type `TabGroupHue` to `GroupHue`:

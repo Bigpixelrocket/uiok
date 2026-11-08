@@ -19,7 +19,9 @@ export {
 } from './catalog.js';
 export {
   contrast,
+  firstLegible,
   hexOf,
+  legibleOn,
   luminance,
   mix,
   rgbOf,
