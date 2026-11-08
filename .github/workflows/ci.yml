@@ -1,6 +1,7 @@
 # Runs the full gate (`npm run check`: typecheck, lint, formatting, tests,
 # build, and the publish guard) and builds the documentation site on every
-# pull request and every push to main.
+# pull request and every push to main. On a pull request it first checks that
+# a change to the published package bumps the version (scripts/version.mjs).
 
 name: CI
 
@@ -25,10 +26,18 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          # The version check diffs against the pull request's base commit.
+          fetch-depth: 0
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: npm
+      # The base commit reaches the script through the environment, never the shell's text.
+      - name: Check the version bump
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: node scripts/version.mjs check "$BASE_SHA"
       - run: npm ci
       - run: npm run check
       # The documentation site builds from the same source, with no source maps.

@@ -1,17 +1,23 @@
-# Publishes @bigpixelrocket/uiok to npm when a GitHub Release is published. The release's tag
-# must be `v` plus package.json's version. Publishing authenticates through npm
-# Trusted Publishing (OIDC), so the repository holds no npm token, and npm
-# attaches a provenance statement. See docs/releasing.md.
+# Releases @bigpixelrocket/uiok from main. When package.json's version is not on
+# npm yet, runs the gate and publishes it; once npm has it, creates the matching
+# `v<version>` tag and GitHub Release, with that version's CHANGELOG.md section
+# as notes. Each step checks before it acts, so a push that changes no version
+# does nothing, and a manual re-run (workflow_dispatch) finishes what a failed
+# run left. Publishing authenticates through npm Trusted Publishing (OIDC),
+# which trusts this workflow by its filename, so the repository holds no npm
+# token, and npm attaches a provenance statement. See docs/releasing.md.
 
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: read
 
+# One release at a time; a newer push waits rather than cancelling a publish.
 concurrency:
   group: release
   cancel-in-progress: false
@@ -19,11 +25,15 @@ concurrency:
 jobs:
   publish:
     name: Publish to npm
+    # A manual run releases main and nothing else.
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
       contents: read
       id-token: write
+    outputs:
+      version: ${{ steps.npm.outputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -32,17 +42,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
-
-      # The tag reaches the script through the environment, never the shell's text.
-      - name: Check the tag matches package.json
-        env:
-          TAG: ${{ github.event.release.tag_name }}
-        run: |
-          expected="v$(node -p "require('./package.json').version")"
-          if [ "$TAG" != "$expected" ]; then
-            echo "::error::Release tag $TAG does not match package.json ($expected)."
-            exit 1
-          fi
 
       # Trusted Publishing needs npm 11.5.1 or newer.
       - name: Ensure npm supports Trusted Publishing
@@ -55,8 +54,100 @@ jobs:
           fi
           npm --version
 
-      - run: npm ci
-      - run: npm run check
+      # npm answers a version it does not have with E404; any other failure
+      # stops the run rather than passing for "not published".
+      - name: Check whether npm has this version
+        id: npm
+        run: |
+          package="$(node -p "require('./package.json').name")"
+          version="$(node -p "require('./package.json').version")"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          if found="$(npm view "$package@$version" version 2> "$RUNNER_TEMP/npm-view.log")"; then
+            :
+          elif grep -q 'E404' "$RUNNER_TEMP/npm-view.log"; then
+            found=''
+          else
+            cat "$RUNNER_TEMP/npm-view.log" >&2
+            echo "::error::Could not ask npm whether $package@$version is published."
+            exit 1
+          fi
+          if [ "$found" = "$version" ]; then
+            echo "$package@$version is already on npm."
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # Publishing below npm's latest would move latest back to it.
+          latest="$(npm view "$package" dist-tags.latest)"
+          if ! node scripts/version.mjs exceeds "$latest"; then
+            echo "::error::$version is not on npm and not above npm's latest ($latest). Bump the version on main past $latest."
+            exit 1
+          fi
+          echo "published=false" >> "$GITHUB_OUTPUT"
+
+      - if: steps.npm.outputs.published == 'false'
+        run: npm ci
+      - if: steps.npm.outputs.published == 'false'
+        run: npm run check
 
       # The gate just ran, so lifecycle scripts (prepublishOnly) are skipped.
-      - run: npm publish --provenance --access public --ignore-scripts
+      - if: steps.npm.outputs.published == 'false'
+        run: npm publish --provenance --access public --ignore-scripts
+
+  # Runs only once npm has the version, so a tag never names an unpublished one.
+  release:
+    name: Create the GitHub Release
+    needs: publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      # The version and commit reach the script through the environment, never
+      # the shell's text. The tag names the commit npm published from (its
+      # gitHead, which provenance also names), not a later push that finished
+      # the release; the pushed commit stands in only when npm recorded none.
+      # A tag that already exists is reused as it is.
+      - name: Create the tag and release unless they exist
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          VERSION: ${{ needs.publish.outputs.version }}
+          PUSHED: ${{ github.sha }}
+        run: |
+          tag="v$VERSION"
+          if gh release view "$tag" --json tagName > /dev/null 2> "$RUNNER_TEMP/gh.log"; then
+            echo "Release $tag already exists."
+            exit 0
+          fi
+          if ! grep -q 'release not found' "$RUNNER_TEMP/gh.log"; then
+            cat "$RUNNER_TEMP/gh.log" >&2
+            echo "::error::Could not look up release $tag."
+            exit 1
+          fi
+          # Tag the commit npm published from. npm can take a few minutes to serve
+          # a version the publish job just uploaded, so keep asking for up to 5.
+          package="$(node -p "require('./package.json').name")"
+          for attempt in $(seq 30); do
+            if target="$(npm view "$package@$VERSION" gitHead 2> "$RUNNER_TEMP/npm-view.log")"; then
+              break
+            fi
+            if [ "$attempt" = 30 ]; then
+              cat "$RUNNER_TEMP/npm-view.log" >&2
+              echo "::error::Could not read the commit npm published $package@$VERSION from."
+              exit 1
+            fi
+            sleep 10
+          done
+          if [ -z "$target" ]; then
+            echo "::warning::npm recorded no gitHead for $package@$VERSION; tagging $PUSHED."
+            target="$PUSHED"
+          fi
+          node scripts/version.mjs notes > "$RUNNER_TEMP/notes.md"
+          gh release create "$tag" --target "$target" --title "$tag" --notes-file "$RUNNER_TEMP/notes.md"
