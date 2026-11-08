@@ -125,7 +125,7 @@ The `terminal` group ([labels](../labels.md)): `menu` (the menu's accessible nam
 
 ## Updating the engine
 
-`scripts/build-libghostty-vt.sh` builds both WebAssembly files from source with Zig from mise; the trampolines come from `scripts/ghostty-effects.zig`. Every build starts from an empty Zig cache, so the same revision and Zig give the same bytes. To update: install the Zig that Ghostty's `build.zig.zon` asks for (`mise install zig@<version>`) and set `ZIG_VERSION` in the script, write the new revision to `src/terminal/ghostty/vendor/VERSION`, run the script, update the table in `vendor/README.md` from its output, adapt `runtime.ts` and `core.ts` to any change in upstream's `include/ghostty/vt/*.h`, and run `npx vitest run src/terminal`. `runtimeAbi.test.ts` fails when the engine's embedded revision drifts from `VERSION` or its layouts from what the adapter reads. CI does not run the build.
+`scripts/build-libghostty-vt.sh` builds both WebAssembly files from source with Zig from mise; the trampolines come from `scripts/ghostty-effects.zig`. Every build starts from an empty Zig cache, so the same revision and Zig give the same bytes. To update: pin the Zig that Ghostty's `build.zig.zon` asks for in `mise.toml` (`mise use zig@<version>` at the repository root, which also updates `mise.lock`), write the new revision to `src/terminal/ghostty/vendor/VERSION`, run the script, update the table in `vendor/README.md` from its output, adapt `runtime.ts` and `core.ts` to any change in upstream's `include/ghostty/vt/*.h`, and run `npx vitest run src/terminal`. `runtimeAbi.test.ts` fails when the engine's embedded revision drifts from `VERSION` or its layouts from what the adapter reads. CI does not run the build.
 
 ## Licences
 

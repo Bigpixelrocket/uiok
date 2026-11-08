@@ -2,9 +2,10 @@
 
 ## Setup
 
-Use the Node version in `.nvmrc` (the current LTS) and npm:
+[mise](https://mise.jdx.dev) installs the Node version pinned in `mise.toml` (and the Zig that `scripts/build-libghostty-vt.sh` needs). In a new clone, trust the config once, install, then install dependencies with npm:
 
 ```sh
+mise trust && mise install
 npm ci
 ```
 

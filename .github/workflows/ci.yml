@@ -28,10 +28,13 @@ jobs:
           persist-credentials: false
           # The version check diffs against the pull request's base commit.
           fetch-depth: 0
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      # Node (and every tool in mise.toml) at the versions in mise.lock.
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
+      # npm's download cache, keyed on the lockfile.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          node-version-file: .nvmrc
-          cache: npm
+          path: ~/.npm
+          key: npm-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('package-lock.json') }}
       # The base commit reaches the script through the environment, never the shell's text.
       - name: Check the version bump
         if: github.event_name == 'pull_request'

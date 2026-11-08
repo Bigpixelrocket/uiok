@@ -7,3 +7,6 @@ site/dist
 *.log
 .env
 .env.*
+mise.local.toml
+mise.*.local.toml
+mise.local.lock
