@@ -104,7 +104,7 @@ An extra token must be a kebab-case custom property UIOK does not define; the ge
 
 ### Colour helpers
 
-These helpers from `@bigpixelrocket/uiok` (or `@bigpixelrocket/uiok/themes`) derive new colours inside `extraTokens` the way UIOK's own rules do. They take six-digit lowercase hex colours (`Hex`), the form every palette entry takes, and throw on any other form. A theme token is typed as a plain string and some hold `rgb()` or `var()`, so derive from the palette, or pass a token you know holds hex as `Hex`:
+These helpers from `@bigpixelrocket/uiok` (or `@bigpixelrocket/uiok/themes`) derive new colours inside `extraTokens` the way UIOK's own rules do. They take six-digit lowercase hex colours (`Hex`), the form every palette entry takes, and throw when they read any other form. A theme token is typed as a plain string and some hold `rgb()` or `var()`, so derive from the palette, or pass a token you know holds hex as `Hex`:
 
 | Helper                                     | What it gives                                                                                                                                                                                 |
 | ------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

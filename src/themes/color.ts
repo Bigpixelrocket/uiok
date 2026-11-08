@@ -86,8 +86,8 @@ function legibleOnAll(tone: Hex, grounds: readonly Hex[], ratio: number): boolea
  * The first of `candidates` that keeps a WCAG contrast of at least `ratio`
  * on every one of `grounds`, else the last candidate, which a caller orders
  * as the strongest; white when `candidates` is empty. Picks the quietest
- * tone of a ramp that still reads: `firstLegible([overlay0, overlay1,
- * subtext0], [panel], 4.5)`.
+ * tone of a ramp that still reads: `firstLegible([palette.overlay0,
+ * palette.overlay1, palette.subtext0], [palette.base], 4.5)`.
  */
 export function firstLegible(
   candidates: readonly Hex[],

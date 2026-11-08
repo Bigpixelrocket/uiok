@@ -56,7 +56,7 @@ The button opens and closes the panel. In the panel, Tab moves through its contr
 
 ## Styling
 
-`.date-picker`, `.date-picker-panel` (at `--z-panel`), `.date-picker-head`, `.date-picker-days`, `.date-picker-week`, `.date-picker-weekday`, `.date-picker-day` (`.outside`, `.current`), `.date-picker-time`, `.date-picker-field`, `.date-picker-input`, `.date-picker-foot`.
+`.date-picker`, `.date-picker-panel` (at `--z-panel`), `.date-picker-head`, `.date-picker-days`, `.date-picker-week`, `.date-picker-weekday`, `.date-picker-day` (`.outside`, `.current`), `.date-picker-time`, `.date-picker-field`, `.date-picker-input` (`.long`), `.date-picker-foot`. A fraction field of more than three digits is `.long` and sets `--date-picker-digits` to its digit count, which its width reads.
 
 ## Labels read
 
