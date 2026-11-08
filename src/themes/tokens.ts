@@ -27,7 +27,15 @@ import {
   type Theme,
   type ThemePalette
 } from './catalog.js';
-import { contrast, luminance, mix, translucent, type Hex } from './color.js';
+import {
+  contrast,
+  firstLegible,
+  legibleOn,
+  luminance,
+  mix,
+  translucent,
+  type Hex
+} from './color.js';
 import { THEME_ATTRIBUTES, THEME_PREVIEW_ATTRIBUTE, type ThemeAppearance } from './ids.js';
 
 const WHITE: Hex = '#ffffff';
@@ -88,35 +96,6 @@ const BY_APPEARANCE: Readonly<
     terminalSelection: 28
   }
 };
-
-/** Whether `tone` keeps `ratio` on every one of `grounds`. */
-function legibleOnAll(tone: Hex, grounds: readonly Hex[], ratio: number): boolean {
-  return grounds.every((ground) => contrast(tone, ground) >= ratio);
-}
-
-/**
- * The first of `candidates` that keeps `ratio` on every one of `grounds`,
- * else the last, the strongest.
- */
-function firstLegible(candidates: readonly Hex[], grounds: readonly Hex[], ratio: number): Hex {
-  return (
-    candidates.find((tone) => legibleOnAll(tone, grounds, ratio)) ?? candidates.at(-1) ?? WHITE
-  );
-}
-
-/**
- * `color` moved away from `grounds` (toward black over light grounds, white
- * over dark ones, judged by the first) a percent at a time until it keeps
- * `ratio` on every one of them.
- */
-function legibleOn(color: Hex, grounds: readonly Hex[], ratio: number): Hex {
-  const away = luminance(grounds[0] ?? WHITE) > 0.18 ? BLACK : WHITE;
-  for (let share = 100; share > 0; share -= 1) {
-    const tone = mix(color, away, share);
-    if (legibleOnAll(tone, grounds, ratio)) return tone;
-  }
-  return away;
-}
 
 /**
  * The text colour for a fill: white or the palette's darkest neutral,
@@ -519,7 +498,8 @@ function rule(selector: string, tokens: Readonly<Record<string, string>>, depth 
  * The custom properties `@bigpixelrocket/uiok/styles.css` declares or reads beside the theme
  * tokens: the base sheet's on `:root`, and the hooks a component stylesheet
  * declares or reads (the activity stripes' colour, a dialog's tone and
- * pinned top), which an app token on `:root` would otherwise reach.
+ * pinned top, a date picker fraction field's digit count), which an app
+ * token on `:root` would otherwise reach.
  */
 const BASE_TOKEN_NAMES = [
   '--frost',
@@ -538,6 +518,7 @@ const BASE_TOKEN_NAMES = [
   '--pane-column-gap',
   '--pane-row-inset',
   '--pane-grid',
+  '--date-picker-digits',
   '--warning-text'
 ] as const;
 

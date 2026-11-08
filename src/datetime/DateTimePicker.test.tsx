@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
 import { DateTimePicker } from './DateTimePicker.js';
 import { formatPicker } from './DateTimePicker.logic.js';
@@ -97,6 +98,32 @@ describe('DateTimePicker', () => {
     expect(onChange).toHaveBeenLastCalledWith('2026-10-01 14:05:09.250000');
     // A datetime stays open after a day, for its time.
     expect(screen.getByRole('dialog')).toBeDefined();
+  });
+
+  it('widens a fraction field past three digits to its digit count, and keeps a shorter one at 7ch', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const { rerender } = render(
+      <DateTimePicker fraction={6} kind="time" label="Pick" onChange={() => undefined} value="" />
+    );
+
+    open('Pick');
+    const micro = screen.getByRole('textbox', { name: 'Microsecond' });
+
+    expect(micro.style.getPropertyValue('--date-picker-digits')).toBe('6');
+    expect(declaredValues(micro, 'width').at(-1)).toBe(
+      'calc((var(--date-picker-digits) + 1) * 1ch + 18px)'
+    );
+
+    rerender(
+      <DateTimePicker fraction={3} kind="time" label="Pick" onChange={() => undefined} value="" />
+    );
+    const milli = screen.getByRole('textbox', { name: 'Millisecond' });
+
+    expect(milli.style.getPropertyValue('--date-picker-digits')).toBe('');
+    expect(declaredValues(milli, 'width')).toEqual(['7ch']);
+    expect(declaredValues(screen.getByRole('spinbutton', { name: 'Hour' }), 'width')).toEqual([
+      '7ch'
+    ]);
   });
 
   it('shows only the time fields for a time, named by them', () => {

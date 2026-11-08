@@ -1,8 +1,10 @@
 /**
  * The colour arithmetic the theme tokens are derived with: sRGB hex colours,
- * mixes, translucent forms, and WCAG 2 contrast ratios. Pure, with no DOM, so
- * the token generator, tests, and a host process that paints a window's
- * ground before any stylesheet loads can share it.
+ * mixes, translucent forms, WCAG 2 contrast ratios, and the picks of a tone
+ * that keeps a ratio (`firstLegible`, `legibleOn`). Pure, with no DOM, so the
+ * token generator, an app deriving tokens of its own, tests, and a host
+ * process that paints a window's ground before any stylesheet loads can
+ * share it.
  */
 
 /** An opaque colour as six lowercase hex digits, the form every palette entry takes. */
@@ -70,4 +72,46 @@ export function luminance(hex: Hex): number {
 export function contrast(a: Hex, b: Hex): number {
   const [light, dark] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return ((light ?? 0) + 0.05) / ((dark ?? 0) + 0.05);
+}
+
+const WHITE: Hex = '#ffffff';
+const BLACK: Hex = '#000000';
+
+/** Whether `tone` keeps `ratio` on every one of `grounds`. */
+function legibleOnAll(tone: Hex, grounds: readonly Hex[], ratio: number): boolean {
+  return grounds.every((ground) => contrast(tone, ground) >= ratio);
+}
+
+/**
+ * The first of `candidates` that keeps a WCAG contrast of at least `ratio`
+ * on every one of `grounds`, else the last candidate, which a caller orders
+ * as the strongest; white when `candidates` is empty. Picks the quietest
+ * tone of a ramp that still reads: `firstLegible([overlay0, overlay1,
+ * subtext0], [panel], 4.5)`.
+ */
+export function firstLegible(
+  candidates: readonly Hex[],
+  grounds: readonly Hex[],
+  ratio: number
+): Hex {
+  return (
+    candidates.find((tone) => legibleOnAll(tone, grounds, ratio)) ?? candidates.at(-1) ?? WHITE
+  );
+}
+
+/**
+ * `color` itself when it keeps a WCAG contrast of at least `ratio` on every
+ * one of `grounds`, else `color` mixed toward black (over a light first
+ * ground) or white (over a dark one) a percent at a time until it does, so
+ * the hue survives as far as legibility allows; pure black or white when no
+ * mix keeps `ratio`. 4.5 suits text, 3 a mark read by shape alone:
+ * `legibleOn(palette.red, [tokens['--surface']], 4.5)`.
+ */
+export function legibleOn(color: Hex, grounds: readonly Hex[], ratio: number): Hex {
+  const away = luminance(grounds[0] ?? WHITE) > 0.18 ? BLACK : WHITE;
+  for (let share = 100; share > 0; share -= 1) {
+    const tone = mix(color, away, share);
+    if (legibleOnAll(tone, grounds, ratio)) return tone;
+  }
+  return away;
 }

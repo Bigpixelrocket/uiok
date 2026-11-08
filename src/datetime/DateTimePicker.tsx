@@ -1,5 +1,5 @@
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
-import { useEffect, useId, useRef, useState, type ReactElement } from 'react';
+import { useEffect, useId, useRef, useState, type CSSProperties, type ReactElement } from 'react';
 
 import { Button } from '../button/Button.js';
 import { IconButton } from '../button/IconButton.js';
@@ -24,6 +24,13 @@ const TIME_FIELDS = [
   { part: 'minute', max: 59 },
   { part: 'second', max: 59 }
 ] as const;
+
+/**
+ * The most fraction digits a time field's own width shows whole; a longer
+ * fraction field (microseconds) widens to its digit count (`.long`, with
+ * `--date-picker-digits`).
+ */
+const SHORT_FRACTION = 3;
 
 /** A time field's label. */
 const timeFieldLabel = (
@@ -242,13 +249,20 @@ export function DateTimePicker({
                 <label className="date-picker-field">
                   {fraction > 3 ? labels.microsecond : labels.millisecond}
                   <input
-                    className="date-picker-input"
+                    className={
+                      fraction > SHORT_FRACTION ? 'date-picker-input long' : 'date-picker-input'
+                    }
                     inputMode="numeric"
                     onChange={(event) =>
                       write({
                         ...base,
                         fraction: event.currentTarget.value.replace(/\D/gu, '').slice(0, fraction)
                       })
+                    }
+                    style={
+                      fraction > SHORT_FRACTION
+                        ? ({ '--date-picker-digits': fraction } as CSSProperties)
+                        : undefined
                     }
                     value={base.fraction.padEnd(fraction, '0').slice(0, fraction)}
                   />

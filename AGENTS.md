@@ -18,7 +18,7 @@ src/styles.css                # base stylesheet, shipped as @bigpixelrocket/uiok
 src/VisuallyHidden.tsx        # a root-level component, its test beside it (VisuallyHidden.test.tsx)
 src/<area>/index.ts           # an area's public surface, importable as @bigpixelrocket/uiok/<area>; modules, tests, and its .css sit beside it
 src/themes/ids.ts             # theme ids, names, appearances, the data-light-theme / data-dark-theme / data-theme-preview attributes
-src/themes/color.ts           # hex parsing, sRGB mixes, translucent forms, WCAG contrast
+src/themes/color.ts           # hex parsing, sRGB mixes, translucent forms, WCAG contrast, legibleOn / firstLegible (exported for app tokens)
 src/themes/catalog.ts         # one palette per theme, with its upstream credit and any hand-tuned overrides
 src/themes/tokens.ts          # palette-to-token rules, FIXED_TOKENS, PREVIEW_TOKENS, themeStylesheet() and its app extension options
 src/themes/attributes.ts      # wearThemes and subscribeThemeChange for the root attributes

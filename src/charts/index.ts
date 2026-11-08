@@ -1,7 +1,8 @@
 /**
  * Charts drawn in SVG from the theme's chart tokens: `LineChart`,
  * `PieChart`, `ScatterChart`, and `ResultChart` for a table of rows, plus
- * the helpers that save a chart as a picture.
+ * the helpers that save a chart as a picture, and `seriesColour` for a
+ * series drawn outside them.
  */
 
 export { svgMarkup, svgPng, tokenColour } from './Drawing.js';
@@ -18,3 +19,4 @@ export {
 } from './ResultChart.logic.js';
 export type { ScatterAxis, ScatterAxisKind } from './Scatter.logic.js';
 export { ScatterChart, type ScatterChartProps, type ScatterPoint } from './ScatterChart.js';
+export { seriesColour } from './seriesColour.js';
