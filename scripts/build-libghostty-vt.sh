@@ -40,10 +40,11 @@ resolve_zig() {
     die "mise is required to provide Zig; install it with 'brew install mise'"
   # Ghostty's build.zig.zon names the minimum Zig; mise.toml pins it. Read the
   # pin from that file directly: without it, `mise which` would resolve a
-  # global Zig instead.
+  # global Zig instead. On failure mise prints the cause above our message: no
+  # zig key, a malformed file, or a mise too old for `config get`.
   local pin
-  pin="$(mise config get --file "${REPO_DIR}/mise.toml" tools.zig 2>/dev/null)" ||
-    die "${REPO_DIR}/mise.toml pins no Zig; add one with 'mise use zig@<version>' there"
+  pin="$(mise config get --file "${REPO_DIR}/mise.toml" tools.zig)" ||
+    die "could not read the Zig pin from ${REPO_DIR}/mise.toml (mise's error is above); if it pins none, add one with 'mise use zig@<version>' there"
   # mise prints its own reason on failure, such as an untrusted config.
   ZIG="$(cd "${REPO_DIR}" && mise which zig)" ||
     die "mise could not provide Zig ${pin}; run 'mise trust && mise install' in ${REPO_DIR}"
