@@ -6,9 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-### Added
+## [0.1.1] - 2026-11-08
 
-- Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
+### Changed
+
+- The package's npm homepage now links to the documentation site at https://bigpixelrocket.github.io/uiok/.
 
 ## [0.1.0] - 2026-11-07
 
@@ -33,6 +35,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - Charts (`@bigpixelrocket/uiok/charts`): `LineChart`, `PieChart`, `ScatterChart`, and `ResultChart` (bar, column, line, spline, area, pie, timeline, scatter; stackable), painted from the `--chart-*` tokens, and `tokenColour`, `svgMarkup`, and `svgPng` to save a chart as a picture. Their shared words are the `charts` label group (`ChartLabels`).
 - Each area is importable on its own as `@bigpixelrocket/uiok/<area>` (`@bigpixelrocket/uiok/button`, `@bigpixelrocket/uiok/keyboard`, …).
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
+- Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Bigpixelrocket/uiok/releases/tag/v0.1.0

@@ -1,6 +1,6 @@
 {
   "name": "@bigpixelrocket/uiok",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A React UI library with a retro look: themeable design tokens and accessible components.",
   "keywords": [
     "react",
@@ -10,7 +10,7 @@
     "themes",
     "retro"
   ],
-  "homepage": "https://github.com/Bigpixelrocket/uiok#readme",
+  "homepage": "https://bigpixelrocket.github.io/uiok/",
   "bugs": {
     "url": "https://github.com/Bigpixelrocket/uiok/issues"
   },
