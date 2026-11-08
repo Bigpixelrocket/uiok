@@ -105,7 +105,7 @@ export function firstLegible(
  * ground) or white (over a dark one) a percent at a time until it does, so
  * the hue survives as far as legibility allows; pure black or white when no
  * mix keeps `ratio`. 4.5 suits text, 3 a mark read by shape alone:
- * `legibleOn(palette.red, [tokens['--surface']], 4.5)`.
+ * `legibleOn(palette.red, [palette.base], 4.5)`.
  */
 export function legibleOn(color: Hex, grounds: readonly Hex[], ratio: number): Hex {
   const away = luminance(grounds[0] ?? WHITE) > 0.18 ? BLACK : WHITE;
