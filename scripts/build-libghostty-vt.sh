@@ -6,8 +6,9 @@
 #   ghostty-vt.wasm       libghostty-vt at the Ghostty commit in vendor/VERSION
 #   ghostty-effects.wasm  the callback trampolines in ghostty-effects.zig
 #
-# Zig comes from mise at ZIG_VERSION. Every build starts from an empty local
-# Zig cache, so two runs at the same pin give byte-identical artifacts.
+# Zig comes from mise at the version pinned in the repository's mise.toml and
+# mise.lock. Every build starts from an empty local Zig cache, so two runs at
+# the same pin give byte-identical artifacts.
 #
 # Adapted from T3 Code's apps/web/scripts/build-libghostty-wasm.sh and
 # ghostty-write-pty.zig (https://github.com/pingdotgg/t3code), MIT,
@@ -16,10 +17,8 @@
 
 set -euo pipefail
 
-# Ghostty's build.zig.zon names the minimum Zig; change both pins together.
-ZIG_VERSION="0.17.0"
-
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
 VENDOR_DIR="$(cd "${SCRIPT_DIR}/../src/terminal/ghostty/vendor" && pwd)"
 GHOSTTY_REVISION="$(tr -d '[:space:]' < "${VENDOR_DIR}/VERSION")"
 GHOSTTY_SOURCE_DIR="${GHOSTTY_SOURCE_DIR:-${HOME}/.cache/uiok/ghostty-${GHOSTTY_REVISION:0:12}}"
@@ -38,16 +37,22 @@ die() {
 
 resolve_zig() {
   command -v mise >/dev/null 2>&1 ||
-    die "mise is required to provide Zig ${ZIG_VERSION}; install it with 'brew install mise'"
-  local zig_dir
-  zig_dir="$(mise where "zig@${ZIG_VERSION}" 2>/dev/null)" ||
-    die "Zig ${ZIG_VERSION} is not installed; run 'mise install zig@${ZIG_VERSION}'"
-  ZIG="${zig_dir}/zig"
-  [[ -x "${ZIG}" ]] || die "mise reports Zig ${ZIG_VERSION} at ${zig_dir}, but ${ZIG} is missing"
-  local version
-  version="$("${ZIG}" version)"
-  [[ "${version}" == "${ZIG_VERSION}" ]] ||
-    die "expected Zig ${ZIG_VERSION} from mise, found ${version} at ${ZIG}"
+    die "mise is required to provide Zig; install it with 'brew install mise'"
+  # Ghostty's build.zig.zon names the minimum Zig; mise.toml pins it. Read the
+  # pin from that file directly: without it, `mise which` would resolve a
+  # global Zig instead.
+  local pin
+  pin="$(mise config get --file "${REPO_DIR}/mise.toml" tools.zig 2>/dev/null)" ||
+    die "${REPO_DIR}/mise.toml pins no Zig; add one with 'mise use zig@<version>' there"
+  # mise prints its own reason on failure, such as an untrusted config.
+  ZIG="$(cd "${REPO_DIR}" && mise which zig)" ||
+    die "mise could not provide Zig ${pin}; run 'mise trust && mise install' in ${REPO_DIR}"
+  [[ -x "${ZIG}" ]] || die "mise reports Zig at ${ZIG}, but it is not executable"
+  ZIG_VERSION="$("${ZIG}" version)"
+  # Byte-identical builds need exactly the pinned Zig, not a mise.local.toml
+  # override or whatever a fuzzy pin resolves to.
+  [[ "${ZIG_VERSION}" == "${pin}" ]] ||
+    die "mise.toml pins Zig ${pin}, but mise resolved ${ZIG_VERSION} at ${ZIG}"
 }
 
 ensure_ghostty_source() {

@@ -2,9 +2,10 @@
 
 ## Setup
 
-Use the Node version in `.nvmrc` (the current LTS) and npm:
+[mise](https://mise.jdx.dev) installs the Node version pinned in `mise.toml` (and the Zig that `scripts/build-libghostty-vt.sh` needs). In a new clone, trust the config once, install, then install dependencies with npm:
 
 ```sh
+mise trust && mise install
 npm ci
 ```
 
@@ -28,5 +29,5 @@ npm ci
 - Branch from `main` and keep each pull request to one purpose.
 - Title pull requests and commits with [Conventional Commits](https://www.conventionalcommits.org/): `feat: add Tooltip`, `fix: keep focus in ModalDialog`, `chore: update dependencies`.
 - Pull requests are squash-merged, so the title becomes the commit on `main`.
-- A pull request that changes the published package (`src/` other than tests and fixtures, `NOTICE`, the build, or a `package.json` field a consumer sees) raises the version by one step and documents it: run `npm version patch --no-git-tag-version` (`minor` for a breaking change before 1.0), then add a `## [X.Y.Z] - YYYY-MM-DD` section listing the changes, and its link reference, to `CHANGELOG.md`. CI checks this; run `node scripts/version.mjs check origin/main` to check it locally. Merging releases the new version to npm (`docs/releasing.md`).
+- A pull request that changes the published package (`src/` other than tests, fixtures, and Markdown, `NOTICE`, the build, or a `package.json` field a consumer sees) raises the version by one step and documents it: run `npm version patch --no-git-tag-version` (`minor` for a breaking change before 1.0), then add a `## [X.Y.Z] - YYYY-MM-DD` section listing the changes, and its link reference, to `CHANGELOG.md`. CI checks this; run `node scripts/version.mjs check origin/main` to check it locally. Merging releases the new version to npm (`docs/releasing.md`).
 - `npm run check` must pass.

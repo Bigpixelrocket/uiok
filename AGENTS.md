@@ -54,8 +54,9 @@ scripts/build.mjs             # cleans dist/, runs tsc -p tsconfig.build.json, c
 scripts/verify-pack.mjs       # no source maps; every exports target packed; each area resolves as @bigpixelrocket/uiok/<area>; packed @imports resolve; every new URL('./…', import.meta.url) asset, the terminal's licences, and NOTICE packed
 scripts/smoke-terminal.mjs    # npm run smoke:terminal: packs, installs into a Vite app, builds, checks the terminal's assets are emitted; needs the network, not in check or CI
 scripts/version.mjs           # check: CI's version-bump rule for pull requests; notes: a version's CHANGELOG.md section; exceeds: release.yml's no-downgrade guard; types for its tests in version.d.mts, tests in test/version.test.ts
-scripts/build-libghostty-vt.sh # builds the terminal's WebAssembly from Ghostty source and ghostty-effects.zig with Zig from mise; not run in CI
+scripts/build-libghostty-vt.sh # builds the terminal's WebAssembly from Ghostty source and ghostty-effects.zig with the Zig in mise.toml; not run in CI
 NOTICE                        # third-party licences of the terminal's engine, adapter, and font, shipped in the package
+mise.toml, mise.lock          # Node and Zig pins; `mise trust && mise install` in a new clone, and CI installs from the lock
 tsconfig.json                 # strict, NodeNext; type-checks src, test, and configs without emitting
 tsconfig.build.json           # emits dist/: one .js and .d.ts per module, no maps, no Node types
 vitest.config.ts              # jsdom by default; a suite opts into node with `@vitest-environment node`

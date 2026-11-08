@@ -38,9 +38,15 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Node (and every tool in mise.toml) at the versions in mise.lock.
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
+        with:
+          # The publish job has never restored an Actions cache; keep it that way.
+          cache: false
+      # With no node-version, setup-node installs nothing and only writes the
+      # registry's .npmrc, so npm publish keeps the config it has always had.
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: .nvmrc
           registry-url: https://registry.npmjs.org
 
       # Trusted Publishing needs npm 11.5.1 or newer.
@@ -105,9 +111,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      # Node (and every tool in mise.toml) at the versions in mise.lock.
+      - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
-          node-version-file: .nvmrc
+          # Like the publish job, this job holds write access; it restores no Actions cache.
+          cache: false
 
       # The version and commit reach the script through the environment, never
       # the shell's text. The tag names the commit npm published from (its

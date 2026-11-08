@@ -20,8 +20,8 @@ libraries Ghostty compiles into `ghostty-vt.wasm` are credited in the package's 
 
 Every build starts from an empty local Zig cache, so the same revision and Zig give these exact bytes.
 
-To update: install the Zig that Ghostty's `build.zig.zon` asks for (`mise install zig@<version>`)
-and set `ZIG_VERSION` in the script to it, write the new revision to `VERSION`, run
+To update: pin the Zig that Ghostty's `build.zig.zon` asks for in the repository's `mise.toml`
+(`mise use zig@<version>` at the repository root, which also updates `mise.lock`), write the new revision to `VERSION`, run
 `scripts/build-libghostty-vt.sh`, update the table from its output, adapt `../runtime.ts`
 and `../core.ts` to any change in upstream's `include/ghostty/vt/*.h`, and run
 `npx vitest run src/terminal`.

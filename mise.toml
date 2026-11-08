@@ -1,0 +1,8 @@
+[tools]
+node = "26.13"
+# scripts/build-libghostty-vt.sh builds the terminal's WebAssembly with exactly
+# this version; Ghostty's build.zig.zon names the minimum.
+zig = "0.17.0"
+
+[settings]
+lockfile = true
