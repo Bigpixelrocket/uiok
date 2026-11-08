@@ -56,7 +56,7 @@ scripts/smoke-terminal.mjs    # npm run smoke:terminal: packs, installs into a V
 scripts/version.mjs           # check: CI's version-bump rule for pull requests; notes: a version's CHANGELOG.md section; exceeds: release.yml's no-downgrade guard; types for its tests in version.d.mts, tests in test/version.test.ts
 scripts/build-libghostty-vt.sh # builds the terminal's WebAssembly from Ghostty source and ghostty-effects.zig with the Zig in mise.toml; not run in CI
 NOTICE                        # third-party licences of the terminal's engine, adapter, and font, shipped in the package
-mise.toml, mise.lock         # Node and Zig pins; `mise trust && mise install` in a new clone, and CI installs from the lock
+mise.toml, mise.lock          # Node and Zig pins; `mise trust && mise install` in a new clone, and CI installs from the lock
 tsconfig.json                 # strict, NodeNext; type-checks src, test, and configs without emitting
 tsconfig.build.json           # emits dist/: one .js and .d.ts per module, no maps, no Node types
 vitest.config.ts              # jsdom by default; a suite opts into node with `@vitest-environment node`
