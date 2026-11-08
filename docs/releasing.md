@@ -1,25 +1,24 @@
 # Releasing
 
-Publishing a GitHub Release publishes the package to npm. The release workflow (`.github/workflows/release.yml`) checks that the release tag is `v` plus the `package.json` version, runs `npm run check`, and runs `npm publish --provenance --access public`. It authenticates through npm Trusted Publishing (OIDC), so the repository stores no npm token.
+Merging a version bump to `main` releases it. A pull request that changes the published package raises `version` in `package.json` by one step (the next patch, minor, or major) and adds a dated `CHANGELOG.md` section listing its changes; CI's version check (`scripts/version.mjs`) fails the pull request otherwise. Pull requests that change only docs, the site, tests, or CI keep the version.
 
-## Cut a release
+## The release workflow
 
-1. On a branch, set the version and move the `Unreleased` entries in `CHANGELOG.md` under a new heading for it:
+Every push to `main` runs `.github/workflows/release.yml`:
 
-   ```sh
-   npm version <patch|minor|major> --no-git-tag-version
-   ```
+1. If npm already has `package.json`'s version, it skips to step 3. If the version is not above npm's `latest`, it fails rather than publish a downgrade.
+2. Otherwise it runs `npm run check` and `npm publish --provenance --access public`. It authenticates through npm Trusted Publishing (OIDC), so the repository stores no npm token, and npm attaches a provenance statement.
+3. If the GitHub Release `vX.Y.Z` does not exist yet, it creates it, and the tag with it on the commit npm published from, using the version's `CHANGELOG.md` section as the notes.
 
-2. Open a pull request titled `chore: release vX.Y.Z` and squash-merge it once CI passes.
-3. Create the release from `main`, tagging the merge commit:
+Each step checks before it acts, so a push without a version change does nothing. Runs queue one at a time, and GitHub keeps only the newest waiting run: a version whose pending Release run was cancelled by a later push is folded into the next, and the version in that push is the one published. Confirm a release under the repository's Actions tab, then check the version and its provenance badge on https://www.npmjs.com/package/@bigpixelrocket/uiok.
 
-   ```sh
-   gh release create vX.Y.Z --repo Bigpixelrocket/uiok --target main --title vX.Y.Z --notes-file <notes.md>
-   ```
+## When a run fails
 
-4. Watch the Release workflow run under the repository's Actions tab, then confirm the version and its provenance badge on https://www.npmjs.com/package/@bigpixelrocket/uiok.
+- **The failure was transient** (a registry or GitHub outage): open the Release workflow under the Actions tab and run it again, or start it with **Run workflow** on `main`. It publishes and releases whatever is still missing for the version `main` has now; an older version that `main` has moved past stays unreleased.
+- **The gate failed on test or CI code**: fix it in a pull request that changes no shipped file and keeps the version. The push that merges it publishes the same version.
+- **The gate failed on the package itself, or the published package is wrong**: fix it in a new pull request with the next patch version. npm never accepts the same version twice, so a version that reached npm stays as it is; when the failed version never reached npm, move its `CHANGELOG.md` entries into the new section.
 
-A failed run publishes nothing. Fix the cause on `main`, delete the release and its tag, and create them again.
+Leave tags and releases to the workflow. A tag created by hand is reused as it is by the next run, even when it names another commit.
 
 ## One-time setup
 
@@ -42,11 +41,11 @@ The package is `@bigpixelrocket/uiok`, owned by the `bigpixelrocket` npm organiz
 
 3. In the same settings, under **Publishing access**, require two-factor authentication and disallow tokens, so only the trusted workflow can publish.
 
-4. Tag the commit you published so tags and npm versions line up. Push the tag alone rather than creating a GitHub Release, which would run the workflow against a version npm already has:
+4. Tag the commit you published so tags and npm versions line up:
 
    ```sh
    git tag v0.1.0 <commit>
    git push origin v0.1.0
    ```
 
-Every later version publishes through the workflow.
+Every later version publishes through the workflow, which npm trusts by its filename: renaming `release.yml` breaks publishing until the Trusted Publisher entry is updated.

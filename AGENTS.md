@@ -8,7 +8,8 @@ UIOK is an open-source (MIT) React 19 UI library published to npm as `@bigpixelr
 - Ship no source maps or declaration maps. `tsconfig.build.json` turns them off and `scripts/verify-pack.mjs` fails the gate if one reaches `dist/` or the tarball.
 - Import local modules with the `.js` extension (`./VisuallyHidden.js`); the package is ESM only and `tsc` emits imports as written.
 - Run `npm run check` and `npm run site:build` before pushing; CI runs both.
-- Title commits and pull requests with Conventional Commits; pull requests are squash-merged. Note consumer-visible changes under `Unreleased` in `CHANGELOG.md`.
+- Title commits and pull requests with Conventional Commits; pull requests are squash-merged.
+- Bump the version in every pull request that changes the published package (`shipsInPackage` and `packageJsonChanges` in `scripts/version.mjs`), by exactly one step: `npm version <patch|minor> --no-git-tag-version`, which updates package-lock.json too (before 1.0, `minor` for a breaking change and `patch` for anything else; from 1.0, `major`, `minor`, `patch` for breaking, feature, fix). Then add a dated `## [X.Y.Z] - YYYY-MM-DD` section listing the changes, with its link reference, to `CHANGELOG.md`; leave `[Unreleased]` empty and point its link at `compare/vX.Y.Z...HEAD`. CI's `Check` enforces this; `node scripts/version.mjs check origin/main` runs it locally. Bump by hand too when a `tsconfig.json` or TypeScript change alters `dist/`, which the check cannot see. If `main` takes your version first, rebase and bump again. Merging publishes to npm and creates the tag and GitHub Release (`docs/releasing.md`), so never create either by hand.
 
 ## Architecture
 
@@ -52,6 +53,7 @@ test/setup.ts                 # Testing Library cleanup after each test; calls n
 scripts/build.mjs             # cleans dist/, runs tsc -p tsconfig.build.json, copies src/**/*.css, *.wasm, *.woff2, and vendored LICENSE files
 scripts/verify-pack.mjs       # no source maps; every exports target packed; each area resolves as @bigpixelrocket/uiok/<area>; packed @imports resolve; every new URL('./…', import.meta.url) asset, the terminal's licences, and NOTICE packed
 scripts/smoke-terminal.mjs    # npm run smoke:terminal: packs, installs into a Vite app, builds, checks the terminal's assets are emitted; needs the network, not in check or CI
+scripts/version.mjs           # check: CI's version-bump rule for pull requests; notes: a version's CHANGELOG.md section; exceeds: release.yml's no-downgrade guard; types for its tests in version.d.mts, tests in test/version.test.ts
 scripts/build-libghostty-vt.sh # builds the terminal's WebAssembly from Ghostty source and ghostty-effects.zig with Zig from mise; not run in CI
 NOTICE                        # third-party licences of the terminal's engine, adapter, and font, shipped in the package
 tsconfig.json                 # strict, NodeNext; type-checks src, test, and configs without emitting
@@ -63,10 +65,10 @@ site/src/pages.tsx            # the page list: hand-listed guides, then one page
 site/src/demos/<area>.tsx     # an area's live demo, registered by area name in site/src/demos/index.ts
 site/src/site.css             # the site's layout and prose, painted with theme tokens only
 site/verify-dist.mjs          # fails npm run site:build if site/dist holds a source map
-.github/workflows/ci.yml      # npm ci, npm run check, and npm run site:build on pull requests and main
+.github/workflows/ci.yml      # job Check (the required status): version check on pull requests, then npm ci, npm run check, npm run site:build; also on main
 .github/workflows/pages.yml   # on push to main: builds the site and deploys site/dist to GitHub Pages
-.github/workflows/release.yml # on a published GitHub Release: tag check, gate, npm publish via Trusted Publishing
-docs/releasing.md             # how to cut a release and the one-time npm setup
+.github/workflows/release.yml # on push to main: if npm lacks package.json's version, gate and npm publish via Trusted Publishing (npm trusts this filename); then the v<version> tag and GitHub Release
+docs/releasing.md             # the automatic release, recovering a failed run, and the one-time npm setup
 docs/themes.md                # how themes work, the attribute contract, tokens by role, app tokens, the migration renames
 ```
 
