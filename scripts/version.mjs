@@ -36,8 +36,8 @@ const RELEASE_VERSION = /^(\d+)\.(\d+)\.(\d+)$/;
 
 /**
  * Whether a changed path reaches the published package: anything under
- * `src/` but the tests and fixtures `tsconfig.build.json` and
- * `scripts/build.mjs` leave out, and the files in `SHIPPED_FILES`.
+ * `src/` but the tests, fixtures, and Markdown notes `tsconfig.build.json`
+ * and `scripts/build.mjs` leave out, and the files in `SHIPPED_FILES`.
  * README.md and CHANGELOG.md ship too, but describe the package rather than
  * change it; package.json is judged field by field (`packageJsonChanges`).
  * tsconfig.json, the lockfile, and devDependencies count as tooling, though
@@ -45,7 +45,7 @@ const RELEASE_VERSION = /^(\d+)\.(\d+)\.(\d+)$/;
  * bump by hand when one of them changes what `dist/` holds.
  */
 export function shipsInPackage(path) {
-  if (path.startsWith('src/')) return !/\.test\.tsx?$|\.fixture\.[^/]+$/.test(path);
+  if (path.startsWith('src/')) return !/\.test\.tsx?$|\.fixture\.[^/]+$|\.md$/.test(path);
   return SHIPPED_FILES.includes(path);
 }
 

@@ -85,6 +85,7 @@ describe('shipsInPackage', () => {
     expect(shipsInPackage('tsconfig.build.json')).toBe(true);
     expect(shipsInPackage('src/button/Button.test.tsx')).toBe(false);
     expect(shipsInPackage('src/themes/catppuccin-tokens.fixture.json')).toBe(false);
+    expect(shipsInPackage('src/terminal/ghostty/vendor/README.md')).toBe(false);
     expect(shipsInPackage('docs/components/button.md')).toBe(false);
     expect(shipsInPackage('site/src/pages.tsx')).toBe(false);
     expect(shipsInPackage('README.md')).toBe(false);
