@@ -498,7 +498,8 @@ function rule(selector: string, tokens: Readonly<Record<string, string>>, depth 
  * The custom properties `@bigpixelrocket/uiok/styles.css` declares or reads beside the theme
  * tokens: the base sheet's on `:root`, and the hooks a component stylesheet
  * declares or reads (the activity stripes' colour, a dialog's tone and
- * pinned top, a date picker fraction field's digit count), which an app
+ * pinned top, a date picker fraction field's digit count, a tab strip's
+ * edge fades), which an app
  * token on `:root` would otherwise reach.
  */
 const BASE_TOKEN_NAMES = [
@@ -519,6 +520,8 @@ const BASE_TOKEN_NAMES = [
   '--pane-row-inset',
   '--pane-grid',
   '--date-picker-digits',
+  '--page-tabs-fade-start',
+  '--page-tabs-fade-end',
   '--warning-text'
 ] as const;
 
