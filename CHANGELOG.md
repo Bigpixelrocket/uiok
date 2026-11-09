@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-11-09
+
+### Fixed
+
+- `PageTabs` shows when a strip too narrow for its tabs hides some: it fades each edge with tabs past it and marks the strip `data-overflow` (`start`, `end`, or both). It also keeps the current tab in view when it first draws tabs and whenever `current` or the tabs change, scrolling only the strip, smoothly unless the reader prefers reduced motion. See `docs/components/tabs.md`.
+
 ## [0.1.2] - 2026-11-08
 
 ### Added
@@ -48,7 +54,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/Bigpixelrocket/uiok/releases/tag/v0.1.0

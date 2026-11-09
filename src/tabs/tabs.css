@@ -1,7 +1,8 @@
 /* ---- Page tabs (PageTabs) ----
 
    The level's pages as tabs under a path bar, the current one underlined
-   in the accent. */
+   in the accent. A strip too narrow for its tabs scrolls sideways and
+   fades each edge that hides tabs (PageTabs sets data-overflow). */
 .page-tabs {
   flex: none;
   display: flex;
@@ -13,6 +14,29 @@
   box-sizing: border-box;
   border-bottom: 1px solid var(--border);
   scrollbar-width: none;
+}
+
+/* The fade is a mask, so it shows whatever lies under the strip; a mask
+   reads only alpha, and --text is opaque in every theme. Its 24px matches
+   EDGE_FADE in PageTabs.tsx, which scrolls the current tab clear of it. */
+.page-tabs[data-overflow] {
+  --page-tabs-fade-start: 0px;
+  --page-tabs-fade-end: 0px;
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    var(--text) var(--page-tabs-fade-start),
+    var(--text) calc(100% - var(--page-tabs-fade-end)),
+    transparent
+  );
+}
+
+.page-tabs[data-overflow~='start'] {
+  --page-tabs-fade-start: 24px;
+}
+
+.page-tabs[data-overflow~='end'] {
+  --page-tabs-fade-end: 24px;
 }
 
 .page-tab {

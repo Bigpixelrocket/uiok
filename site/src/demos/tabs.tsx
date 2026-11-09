@@ -1,11 +1,11 @@
-/** A page tab strip and its smaller pill strip; Left and Right move between tabs. */
+/** A page tab strip and its smaller pill strip; Left and Right move between tabs, and a narrow window fades the edges that hide tabs. */
 
-import { Database, FileText, Gauge, Settings, Shield, Users } from 'lucide-react';
+import { Bell, Database, FileText, Gauge, Search, Settings, Shield, Users } from 'lucide-react';
 import { useState } from 'react';
 
 import { PageTabs } from '@bigpixelrocket/uiok/tabs';
 
-type Page = 'overview' | 'members' | 'settings';
+type Page = 'overview' | 'members' | 'settings' | 'alerts' | 'search';
 type Setting = 'general' | 'security' | 'storage';
 
 /** The page tabs page's demo. */
@@ -21,7 +21,9 @@ export function TabsDemo() {
         tabs={[
           { id: 'overview', label: 'Overview', icon: FileText },
           { id: 'members', label: 'Members', icon: Users },
-          { id: 'settings', label: 'Settings', icon: Settings }
+          { id: 'settings', label: 'Settings', icon: Settings },
+          { id: 'alerts', label: 'Alerts', icon: Bell },
+          { id: 'search', label: 'Search', icon: Search }
         ]}
       />
       {page === 'settings' ? (

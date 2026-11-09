@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { useRef, type KeyboardEvent, type ReactElement } from 'react';
+import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type ReactElement } from 'react';
 
 import type { LinkLook } from '../pane/PaneActions.js';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
@@ -12,6 +12,64 @@ export interface PageTab<Id extends string> {
   readonly label: string;
   /** The tab's icon. */
   readonly icon: LucideIcon;
+}
+
+/**
+ * How far the strip's edge fade reaches, in pixels; `tabs.css` draws the
+ * fade this wide, and a tab scrolled into view clears it.
+ */
+const EDGE_FADE = 24;
+
+/**
+ * Marks the sides of `strip` that hide tabs past its edge as
+ * `data-overflow="start end"` (either, both, or the attribute removed), so
+ * `tabs.css` fades those edges and a reader can tell more tabs are there.
+ */
+function markOverflow(strip: HTMLElement): void {
+  const sides: string[] = [];
+
+  if (strip.scrollLeft > 1) sides.push('start');
+  if (strip.scrollLeft + strip.clientWidth < strip.scrollWidth - 1) sides.push('end');
+  if (sides.length === 0) strip.removeAttribute('data-overflow');
+  else strip.setAttribute('data-overflow', sides.join(' '));
+}
+
+/**
+ * The tab of `strip` whose id is `id`, if it draws one. The id is compared
+ * rather than put in a selector, so any string is a safe id, and no
+ * `instanceof` check ties the lookup to this window's realm (a strip
+ * rendered into an iframe's document has that window's elements).
+ */
+function tabOf(strip: HTMLElement, id: string): HTMLElement | null {
+  for (const tab of strip.querySelectorAll<HTMLElement>('[data-page-tab]')) {
+    if (tab.dataset.pageTab === id) return tab;
+  }
+  return null;
+}
+
+/**
+ * Scrolls `strip` sideways, and only `strip`, so `tab` sits clear of the
+ * edge fade, or as near as the scroll allows; a tab already clear stays
+ * put. Smooth unless `instant` or the reader prefers reduced motion.
+ */
+function revealTab(strip: HTMLElement, tab: HTMLElement, instant: boolean): void {
+  const bounds = strip.getBoundingClientRect();
+  const box = tab.getBoundingClientRect();
+  const before = box.left - (bounds.left + EDGE_FADE);
+  const after = box.right - (bounds.right - EDGE_FADE);
+  // A tab wider than the clear span shows its start.
+  const wanted = before < 0 ? before : after > 0 ? Math.min(after, before) : 0;
+  // Within the scroll there is: an end tab needs no move into the padding.
+  const by = Math.max(
+    -strip.scrollLeft,
+    Math.min(wanted, strip.scrollWidth - strip.clientWidth - strip.scrollLeft)
+  );
+
+  if (by === 0) return;
+  const still =
+    instant || (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
+
+  strip.scrollBy({ left: by, behavior: still ? 'instant' : 'smooth' });
 }
 
 /** Props for {@link PageTabs}, over the type of its tab ids. */
@@ -39,6 +97,11 @@ export interface PageTabsProps<Id extends string> {
  * keep those keys from any listing cursor around it; Tab enters on the
  * current tab. `pills` draws the second, smaller strip a tab's own pages
  * take under the first.
+ *
+ * A strip too narrow for its tabs scrolls sideways: it fades each edge that
+ * hides tabs (`data-overflow`), and keeps the current tab in view when it
+ * first draws and whenever `current` or the tabs change, scrolling only
+ * the strip, never the page.
  */
 export function PageTabs<Id extends string>({
   label,
@@ -50,6 +113,40 @@ export function PageTabs<Id extends string>({
 }: PageTabsProps<Id>): ReactElement {
   const strip = useRef<HTMLDivElement>(null);
   const focusable = current ?? tabs[0]?.id ?? null;
+  const drawn = useRef(false);
+  // The tabs drawn, as a value that changes only when they do, not with
+  // each new array a caller passes.
+  const ids = JSON.stringify(tabs.map((tab) => tab.id));
+
+  // The edge fade follows scrolling, resizing (a tab's look or font
+  // included), and the tabs drawn.
+  useEffect(() => {
+    const element = strip.current;
+    if (element === null) return;
+    const mark = (): void => markOverflow(element);
+    const resizes = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mark);
+
+    mark();
+    element.addEventListener('scroll', mark, { passive: true });
+    resizes?.observe(element);
+    for (const tab of element.children) resizes?.observe(tab);
+    return () => {
+      element.removeEventListener('scroll', mark);
+      resizes?.disconnect();
+    };
+  }, [ids]);
+
+  // The current tab stays in view: at once, before the first paint, when
+  // the strip first draws tabs, then smoothly as it or the tabs change.
+  useLayoutEffect(() => {
+    const element = strip.current;
+    if (element === null) return;
+    const instant = !drawn.current;
+    const tab = current === null ? null : tabOf(element, current);
+
+    if (element.children.length > 0) drawn.current = true;
+    if (tab !== null) revealTab(element, tab, instant);
+  }, [current, ids]);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
@@ -63,7 +160,7 @@ export function PageTabs<Id extends string>({
     event.stopPropagation();
     if (next === undefined) return;
     onSelect(next.id);
-    strip.current?.querySelector<HTMLElement>(`[data-page-tab="${next.id}"]`)?.focus();
+    if (strip.current !== null) tabOf(strip.current, next.id)?.focus();
   };
 
   return (

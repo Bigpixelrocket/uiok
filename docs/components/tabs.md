@@ -35,13 +35,17 @@ import { PageTabs } from '@bigpixelrocket/uiok/tabs';
 
 Each tab carries `data-page-tab="<id>"`.
 
+## Overflow
+
+A strip too narrow for its tabs scrolls sideways, its scrollbar hidden. Each edge that hides tabs fades out over 24px, so a reader can tell more tabs lie past it: the strip carries `data-overflow` with `start`, `end`, or both, and drops the attribute when every tab fits. The current tab is kept in view and clear of the fade when the strip first draws its tabs (at once, before it paints) and whenever `current` or the tabs change (smoothly, or at once under `prefers-reduced-motion: reduce`). Only the strip scrolls, never the page.
+
 ## Keyboard
 
 A tablist with roving focus: one Tab stop, the current tab (the first when none is current). Left and Right move to the neighbouring tab and open it, stopping at the ends; the strip keeps those keys from any listing cursor around it.
 
 ## Styling
 
-`.page-tabs` (`.pills`), `.page-tab` (`[aria-selected='true']` is current).
+`.page-tabs` (`.pills`, `[data-overflow~='start']`, `[data-overflow~='end']`), `.page-tab` (`[aria-selected='true']` is current).
 
 ## Labels read
 
