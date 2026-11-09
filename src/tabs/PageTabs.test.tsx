@@ -115,6 +115,25 @@ describe('PageTabs', () => {
     expect(onSelect).toHaveBeenCalledWith('back\\slash');
     expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Slashed' }));
   });
+
+  it("moves the focus between tabs drawn into another window's document", () => {
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const frameDocument = frame.contentDocument as Document;
+    const container = frameDocument.createElement('div');
+    frameDocument.body.append(container);
+
+    try {
+      render(<Strip initial="overview" onSelect={() => undefined} />, { container });
+      const [overview, members] = container.querySelectorAll<HTMLElement>('[role="tab"]');
+
+      overview?.focus();
+      fireEvent.keyDown(overview as HTMLElement, { key: 'ArrowRight' });
+      expect(frameDocument.activeElement).toBe(members);
+    } finally {
+      frame.remove();
+    }
+  });
 });
 
 type Wide = 'overview' | 'members' | 'settings' | 'alerts' | 'search';

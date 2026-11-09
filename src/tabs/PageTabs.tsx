@@ -35,12 +35,14 @@ function markOverflow(strip: HTMLElement): void {
 }
 
 /**
- * The tab of `strip` whose id is `id`, if it draws one; compared rather
- * than put in a selector, so any string is a safe id.
+ * The tab of `strip` whose id is `id`, if it draws one. The id is compared
+ * rather than put in a selector, so any string is a safe id, and no
+ * `instanceof` check ties the lookup to this window's realm (a strip
+ * rendered into an iframe's document has that window's elements).
  */
 function tabOf(strip: HTMLElement, id: string): HTMLElement | null {
-  for (const tab of strip.children) {
-    if (tab instanceof HTMLElement && tab.dataset.pageTab === id) return tab;
+  for (const tab of strip.querySelectorAll<HTMLElement>('[data-page-tab]')) {
+    if (tab.dataset.pageTab === id) return tab;
   }
   return null;
 }
