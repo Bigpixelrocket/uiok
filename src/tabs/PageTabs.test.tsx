@@ -99,6 +99,22 @@ describe('PageTabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Settings' }));
     expect(onSelect).toHaveBeenCalledWith('settings');
   });
+
+  it('finds tabs whose ids hold quotes and backslashes', () => {
+    const onSelect = vi.fn();
+    const odd: readonly PageTab<string>[] = [
+      { id: 'say "hi"', label: 'Quoted', icon: FileText },
+      { id: 'back\\slash', label: 'Slashed', icon: Users }
+    ];
+
+    render(<PageTabs current='say "hi"' label="Pages" onSelect={onSelect} tabs={odd} />);
+    const quoted = screen.getByRole('tab', { name: 'Quoted' });
+
+    quoted.focus();
+    fireEvent.keyDown(quoted, { key: 'ArrowRight' });
+    expect(onSelect).toHaveBeenCalledWith('back\\slash');
+    expect(document.activeElement).toBe(screen.getByRole('tab', { name: 'Slashed' }));
+  });
 });
 
 type Wide = 'overview' | 'members' | 'settings' | 'alerts' | 'search';
@@ -222,6 +238,32 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Search' }));
 
     expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ left: 112, behavior: 'instant' });
+  });
+
+  it('shows the current tab at once when the tabs arrive after the strip mounts', () => {
+    const { rerender } = render(
+      <PageTabs current="search" label="Pages" onSelect={() => undefined} tabs={[]} />
+    );
+
+    expect(scrollBy).not.toHaveBeenCalled();
+    rerender(
+      <PageTabs current="search" label="Pages" onSelect={() => undefined} tabs={WIDE_TABS} />
+    );
+    expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ left: 112, behavior: 'instant' });
+  });
+
+  it('leaves the strip where the reader scrolled it when the same tabs draw again', () => {
+    const { rerender } = render(
+      <PageTabs current="search" label="Pages" onSelect={() => undefined} tabs={WIDE_TABS} />
+    );
+
+    expect(scrollBy).toHaveBeenCalledTimes(1);
+    // The reader scrolls back to the start; a new array of the same tabs follows.
+    layout.scrollLeft = 0;
+    rerender(
+      <PageTabs current="search" label="Pages" onSelect={() => undefined} tabs={[...WIDE_TABS]} />
+    );
+    expect(scrollBy).toHaveBeenCalledTimes(1);
   });
 
   it('scrolls back to a tab that becomes current behind the start edge', () => {

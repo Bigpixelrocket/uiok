@@ -37,7 +37,7 @@ Each tab carries `data-page-tab="<id>"`.
 
 ## Overflow
 
-A strip too narrow for its tabs scrolls sideways, its scrollbar hidden. Each edge that hides tabs fades out over 24px, so a reader can tell more tabs lie past it: the strip carries `data-overflow` with `start`, `end`, or both, and drops the attribute when every tab fits. The current tab is kept in view and clear of the fade when the strip mounts (at once) and whenever `current` changes (smoothly, or at once under `prefers-reduced-motion: reduce`). Only the strip scrolls, never the page.
+A strip too narrow for its tabs scrolls sideways, its scrollbar hidden. Each edge that hides tabs fades out over 24px, so a reader can tell more tabs lie past it: the strip carries `data-overflow` with `start`, `end`, or both, and drops the attribute when every tab fits. The current tab is kept in view and clear of the fade when the strip first draws its tabs (at once, before it paints) and whenever `current` or the tabs change (smoothly, or at once under `prefers-reduced-motion: reduce`). Only the strip scrolls, never the page.
 
 ## Keyboard
 

@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { useEffect, useRef, type KeyboardEvent, type ReactElement } from 'react';
+import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type ReactElement } from 'react';
 
 import type { LinkLook } from '../pane/PaneActions.js';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
@@ -35,9 +35,20 @@ function markOverflow(strip: HTMLElement): void {
 }
 
 /**
+ * The tab of `strip` whose id is `id`, if it draws one; compared rather
+ * than put in a selector, so any string is a safe id.
+ */
+function tabOf(strip: HTMLElement, id: string): HTMLElement | null {
+  for (const tab of strip.children) {
+    if (tab instanceof HTMLElement && tab.dataset.pageTab === id) return tab;
+  }
+  return null;
+}
+
+/**
  * Scrolls `strip` sideways, and only `strip`, so `tab` sits clear of the
- * edge fade, or as near as the scroll allows; a tab already clear stays put. Smooth unless `instant` or the
- * reader prefers reduced motion.
+ * edge fade, or as near as the scroll allows; a tab already clear stays
+ * put. Smooth unless `instant` or the reader prefers reduced motion.
  */
 function revealTab(strip: HTMLElement, tab: HTMLElement, instant: boolean): void {
   const bounds = strip.getBoundingClientRect();
@@ -87,8 +98,8 @@ export interface PageTabsProps<Id extends string> {
  *
  * A strip too narrow for its tabs scrolls sideways: it fades each edge that
  * hides tabs (`data-overflow`), and keeps the current tab in view when it
- * mounts and whenever `current` changes, scrolling only the strip, never
- * the page.
+ * first draws and whenever `current` or the tabs change, scrolling only
+ * the strip, never the page.
  */
 export function PageTabs<Id extends string>({
   label,
@@ -100,9 +111,13 @@ export function PageTabs<Id extends string>({
 }: PageTabsProps<Id>): ReactElement {
   const strip = useRef<HTMLDivElement>(null);
   const focusable = current ?? tabs[0]?.id ?? null;
-  const mounted = useRef(false);
+  const drawn = useRef(false);
+  // The tabs drawn, as a value that changes only when they do, not with
+  // each new array a caller passes.
+  const ids = JSON.stringify(tabs.map((tab) => tab.id));
 
-  // The edge fade follows scrolling, resizing, and the tabs drawn.
+  // The edge fade follows scrolling, resizing (a tab's look or font
+  // included), and the tabs drawn.
   useEffect(() => {
     const element = strip.current;
     if (element === null) return;
@@ -117,18 +132,19 @@ export function PageTabs<Id extends string>({
       element.removeEventListener('scroll', mark);
       resizes?.disconnect();
     };
-  }, [tabs, look]);
+  }, [ids]);
 
-  // The current tab stays in view: at once on mount, then as it changes.
-  useEffect(() => {
+  // The current tab stays in view: at once, before the first paint, when
+  // the strip first draws tabs, then smoothly as it or the tabs change.
+  useLayoutEffect(() => {
     const element = strip.current;
-    const instant = !mounted.current;
+    if (element === null) return;
+    const instant = !drawn.current;
+    const tab = current === null ? null : tabOf(element, current);
 
-    mounted.current = true;
-    if (element === null || current === null) return;
-    const tab = element.querySelector<HTMLElement>(`[data-page-tab="${current}"]`);
+    if (element.children.length > 0) drawn.current = true;
     if (tab !== null) revealTab(element, tab, instant);
-  }, [current]);
+  }, [current, ids]);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
     if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
@@ -142,7 +158,7 @@ export function PageTabs<Id extends string>({
     event.stopPropagation();
     if (next === undefined) return;
     onSelect(next.id);
-    strip.current?.querySelector<HTMLElement>(`[data-page-tab="${next.id}"]`)?.focus();
+    if (strip.current !== null) tabOf(strip.current, next.id)?.focus();
   };
 
   return (

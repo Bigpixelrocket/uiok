@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
-- `PageTabs` shows when a strip too narrow for its tabs hides some: it fades each edge with tabs past it and marks the strip `data-overflow` (`start`, `end`, or both). It also keeps the current tab in view when it mounts and whenever `current` changes, scrolling only the strip, smoothly unless the reader prefers reduced motion. See `docs/components/tabs.md`.
+- `PageTabs` shows when a strip too narrow for its tabs hides some: it fades each edge with tabs past it and marks the strip `data-overflow` (`start`, `end`, or both). It also keeps the current tab in view when it first draws tabs and whenever `current` or the tabs change, scrolling only the strip, smoothly unless the reader prefers reduced motion. See `docs/components/tabs.md`.
 
 ## [0.1.2] - 2026-11-08
 
