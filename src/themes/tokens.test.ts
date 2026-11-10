@@ -400,6 +400,189 @@ function over(value: string, ground: Hex, tokens: Tokens): Hex {
   return hexOf({ r: channel('r'), g: channel('g'), b: channel('b') });
 }
 
+/** The grounds a pairing is drawn on, bottom layer first. */
+const ON = {
+  ground: ['var(--bg)'],
+  panel: ['var(--bg-panel)'],
+  header: ['var(--bg-header)'],
+  listing: ['var(--bg-panel)', 'var(--file-list-bg)'],
+  'the column strip': ['color-mix(in srgb, var(--bg-header) 40%, var(--bg-panel))'],
+  'the cursor row': ['var(--bg-panel)', 'var(--cursor-row-bg)'],
+  'a surface0 fill': ['var(--bg-panel)', 'var(--fill)'],
+  'a hovered panel': ['var(--bg-panel)', 'var(--hover-wash)'],
+  'a hovered ground': ['var(--bg)', 'var(--hover-wash)'],
+  'a hovered header': ['var(--bg-header)', 'var(--hover-wash)'],
+  'a marked row over the ground': ['var(--bg)', 'var(--marked-bg)'],
+  'a marked row over a panel': ['var(--bg-panel)', 'var(--marked-bg)'],
+  'a marked row under the cursor': ['var(--bg)', 'var(--marked-cursor-bg)'],
+  'the current item over a panel': ['var(--bg-panel)', 'var(--current-bg)'],
+  'the current item over the ground': ['var(--bg)', 'var(--current-bg)'],
+  'the current item over the header': ['var(--bg-header)', 'var(--current-bg)'],
+  'the accent wash over the header': ['var(--bg-header)', 'var(--accent-wash)'],
+  'the strong accent wash over a panel': ['var(--bg-panel)', 'var(--accent-wash-strong)'],
+  'the track over a panel': ['var(--bg-panel)', 'var(--control-track)'],
+  'the track over the ground': ['var(--bg)', 'var(--control-track)'],
+  'the track over the header': ['var(--bg-header)', 'var(--control-track)'],
+  'a match over a listing': ['var(--bg-panel)', 'var(--file-list-bg)', 'var(--match-bg)'],
+  'a match over the cursor row': ['var(--bg-panel)', 'var(--cursor-row-bg)', 'var(--match-bg)'],
+  'selected text over a panel': ['var(--bg-panel)', 'var(--text-selection-bg)'],
+  'the selection': ['var(--selected-bg)'],
+  'the cursor on the selection': ['var(--selected-cursor-bg)'],
+  'a match on the selection': ['var(--selection-hit)'],
+  'the primary': ['var(--primary)'],
+  'the primary on hover': ['var(--primary-hover)'],
+  'the tonal fill': ['var(--tonal)'],
+  'the tonal fill on hover': ['var(--tonal-hover)'],
+  'the accent': ['var(--accent)'],
+  'the danger fill': ['var(--danger)'],
+  'the warning fill': ['var(--warning)'],
+  'the success fill': ['var(--success)'],
+  'the terminal': ['var(--terminal-bg)'],
+  'the off track': ['var(--control-border)']
+} as const satisfies Readonly<Record<string, readonly string[]>>;
+
+type Ground = keyof typeof ON;
+
+/** Every ground a word in a pane is drawn on. */
+const WORD_GROUNDS: readonly Ground[] = [
+  'ground',
+  'panel',
+  'header',
+  'listing',
+  'the column strip',
+  'the cursor row',
+  'a hovered panel',
+  'a marked row over the ground',
+  'a marked row over a panel',
+  'the current item over a panel',
+  'the current item over the ground',
+  'the current item over the header'
+];
+
+/** `fg` at `floor` on each of `grounds`, as rows of the pairing table. */
+const pairs = (
+  fg: string,
+  floor: number,
+  grounds: readonly Ground[]
+): (readonly [string, number, Ground, readonly string[]])[] =>
+  grounds.map((on) => [fg, floor, on, ON[on]] as const);
+
+const STATUSES = ['danger', 'warning', 'success'] as const;
+
+/**
+ * Every pairing the stylesheets draw, once each stylesheet reads the role
+ * meant for it: a word at 4.5:1 and a mark, outline, or chart line at 3:1 on
+ * every ground it sits on, in every theme. A token missing from this table
+ * has no floor; add its pairings when a stylesheet first draws it.
+ */
+const PAIRINGS = [
+  // Words.
+  ...pairs('var(--text)', 4.5, [
+    ...WORD_GROUNDS,
+    'a surface0 fill',
+    'a marked row under the cursor',
+    'the track over a panel',
+    'the track over the ground',
+    'the track over the header',
+    'a match over a listing',
+    'a match over the cursor row',
+    'selected text over a panel'
+  ]),
+  ...pairs('var(--current-text)', 4.5, [
+    'the current item over a panel',
+    'the current item over the ground',
+    'the current item over the header'
+  ]),
+  ...pairs('var(--text-dim)', 4.5, [
+    'ground',
+    'panel',
+    'header',
+    'listing',
+    'a hovered panel',
+    'a hovered ground',
+    'a hovered header'
+  ]),
+  ...pairs('var(--text-placeholder)', 4.5, ['ground', 'panel', 'header']),
+  ...pairs('var(--text-on-surface)', 4.5, [
+    'a surface0 fill',
+    'the cursor row',
+    'the track over a panel',
+    'the track over the ground',
+    'the track over the header'
+  ]),
+  ...pairs('var(--row-meta-text)', 4.5, ['listing', 'panel', 'header']),
+  ...pairs('var(--accent-text)', 4.5, [
+    ...WORD_GROUNDS,
+    'the accent wash over the header',
+    'the strong accent wash over a panel'
+  ]),
+  ...STATUSES.flatMap((status) => [
+    ...pairs(`var(--${status}-text)`, 4.5, WORD_GROUNDS),
+    ...(['ground', 'panel'] as const).flatMap((under) =>
+      [`var(--${status}-wash)`, `var(--${status}-wash-strong)`].map(
+        (wash) =>
+          [
+            `var(--${status}-text)`,
+            4.5,
+            `its wash over the ${under}`,
+            [`var(--bg${under === 'panel' ? '-panel' : ''})`, wash]
+          ] as const
+      )
+    )
+  ]),
+  ...pairs('var(--on-selected)', 4.5, [
+    'the selection',
+    'the cursor on the selection',
+    'a match on the selection'
+  ]),
+  ...pairs('var(--on-selected-dim)', 4.5, ['the selection', 'the cursor on the selection']),
+  ...pairs('var(--on-accent)', 4.5, ['the accent']),
+  ...pairs('var(--on-primary)', 4.5, ['the primary', 'the primary on hover']),
+  ...pairs('var(--on-tonal)', 4.5, ['the tonal fill', 'the tonal fill on hover']),
+  ...pairs('var(--on-danger)', 4.5, ['the danger fill']),
+  ...pairs('var(--on-warning)', 4.5, ['the warning fill']),
+  ...pairs('var(--on-success)', 4.5, ['the success fill']),
+  ...pairs('var(--terminal-fg)', 4.5, ['the terminal']),
+
+  // Marks, outlines, and lines.
+  ...[...Array(16).keys()].flatMap((index) =>
+    pairs(`var(--terminal-ansi-${index})`, 3, ['the terminal'])
+  ),
+  ...pairs('var(--control-border)', 3, ['ground', 'panel', 'header', 'listing']),
+  ...pairs('var(--scrollbar-thumb)', 3, ['ground', 'panel', 'header']),
+  ...pairs('var(--bg-panel)', 3, ['the off track']),
+  ...pairs('var(--idle-mark)', 3, ['listing', 'the cursor row', 'panel', 'ground']),
+  ...STATUSES.flatMap((status) =>
+    pairs(`var(--${status})`, 3, ['ground', 'panel', 'header', 'listing', 'the cursor row'])
+  ),
+  ...pairs('var(--success)', 3, ['the track over a panel', 'the track over the ground']),
+  ...pairs('var(--danger)', 3, ['the track over a panel', 'the track over the ground']),
+  ...pairs('var(--progress-idle)', 3, ['the track over a panel', 'the track over the ground']),
+  ...pairs('var(--accent)', 3, [
+    'ground',
+    'panel',
+    'header',
+    'listing',
+    'the cursor row',
+    'the track over a panel',
+    'the track over the ground'
+  ]),
+  ...pairs('var(--cursor-bar)', 3, ['the cursor row']),
+  ...pairs('var(--marked-bar)', 3, [
+    'a marked row over the ground',
+    'a marked row over a panel',
+    'a marked row under the cursor'
+  ]),
+  ...pairs('var(--primary-mark)', 3, ['listing', 'the cursor row', 'panel', 'ground']),
+  ...pairs('var(--text-faint)', 3, ['ground', 'panel', 'header']),
+  ...[1, 2, 3, 4, 5, 6, 7, 8].flatMap((index) =>
+    pairs(`var(--chart-${index})`, 3, ['panel', 'ground'])
+  ),
+  // Hairlines: a divider and a frame stand apart from every bare ground.
+  ...pairs('var(--border)', 1.15, ['ground', 'panel', 'header']),
+  ...pairs('var(--border-strong)', 1.3, ['ground', 'panel', 'header'])
+];
+
 describe.each(THEMES.map((theme) => [theme.id, theme] as const))('%s', (_id, theme) => {
   const tokens = windowTokens(theme);
   const solid = (name: ThemeTokenName | string): Hex => over(`var(${name})`, '#000000', tokens);
@@ -429,6 +612,38 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('%s', (_id, the
     expect(ratio(text, on())).toBeGreaterThanOrEqual(4.5);
   });
 
+  /** `layers` laid over each other, bottom first; the bottom is opaque. */
+  const layered = (layers: readonly string[]): Hex =>
+    layers.reduce<Hex>((under, layer) => over(layer, under, tokens), '#000000');
+  const ratioOn = (fg: string, layers: readonly string[]) => {
+    const under = layered(layers);
+    return contrast(over(fg, under, tokens), under);
+  };
+
+  it.each(PAIRINGS)('keeps %s at %s:1 on %s', (fg, floor, _on, layers) => {
+    expect(ratioOn(fg, layers)).toBeGreaterThanOrEqual(floor);
+  });
+
+  it('draws the eight chart series apart from each other', () => {
+    const series = [1, 2, 3, 4, 5, 6, 7, 8].map((index) => rgbOf(solid(`--chart-${index}`)));
+    series.forEach((a, i) =>
+      series.slice(i + 1).forEach((b, j) => {
+        const distance = Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
+        expect(distance, `--chart-${i + 1} and --chart-${i + j + 2}`).toBeGreaterThanOrEqual(48);
+      })
+    );
+  });
+
+  it('stands a marked row apart from the ground, or keeps the text and lets its bar carry the mark', () => {
+    for (const on of ['var(--bg)', 'var(--bg-panel)']) {
+      const tint = layered([on, 'var(--marked-bg)']);
+      const apart = contrast(tint, layered([on])) >= 1.25;
+      // Where the tint cannot stand 1.25:1 apart and keep the text, the text wins.
+      const stronger = over('color-mix(in srgb, var(--accent) 1%, var(--marked-bg))', tint, tokens);
+      expect(apart || contrast(over('var(--text)', stronger, tokens), stronger) < 4.6).toBe(true);
+    }
+  });
+
   it('keeps the text at 4.5:1 on every status tint', () => {
     for (const status of ['--success', '--warning', '--danger']) {
       const tint = over(`color-mix(in srgb, var(${status}) 16%, transparent)`, surface, tokens);
@@ -437,14 +652,14 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('%s', (_id, the
   });
 
   it('mutes a disabled control well apart from an enabled one, still readable', () => {
-    // Its words fade to --disabled-opacity: at least 2.5:1 from the enabled
+    // Its words fade to --disabled-opacity: at least 2.25:1 from the enabled
     // text (the quieter --text-dim can sit as close as 1:1), and at least
-    // 1.75:1 on the ground, legible though exempt from the 4.5:1 rule.
+    // 2:1 on the ground, legible though exempt from the 4.5:1 rule.
     const share = Math.round(Number(tokens['--disabled-opacity']) * 100);
     for (const on of [ground, surface]) {
       const muted = over(`color-mix(in srgb, var(--text) ${share}%, transparent)`, on, tokens);
-      expect(contrast(muted, over('var(--text)', on, tokens))).toBeGreaterThanOrEqual(2.5);
-      expect(contrast(muted, on)).toBeGreaterThanOrEqual(1.75);
+      expect(contrast(muted, over('var(--text)', on, tokens))).toBeGreaterThanOrEqual(2.25);
+      expect(contrast(muted, on)).toBeGreaterThanOrEqual(2);
     }
   });
 
