@@ -15,7 +15,8 @@ UIOK is an open-source (MIT) React 19 UI library published to npm as `@bigpixelr
 
 ```text
 src/index.ts                  # the public API: one `export * from './<area>/index.js'` line per area
-src/styles.css                # base stylesheet, shipped as @bigpixelrocket/uiok/styles.css: imports the theme tokens and one sheet per component; tokens no theme changes, utilities, the disabled-control rule
+src/styles.css                # base stylesheet, shipped as @bigpixelrocket/uiok/styles.css: imports the theme tokens, tokens.css, and one sheet per component; the zero-weight focus ring, the .hit-target utility, uiok-spin and uiok-pulse, the disabled-control rule
+src/tokens.css                # the tokens no theme changes: type, space, radius, line, motion, height, focus, icon, and z-index scales, and the reduced-motion rule over the durations (docs/tokens.md)
 src/VisuallyHidden.tsx        # a root-level component, its test beside it (VisuallyHidden.test.tsx)
 src/<area>/index.ts           # an area's public surface, importable as @bigpixelrocket/uiok/<area>; modules, tests, and its .css sit beside it
 src/themes/ids.ts             # theme ids, names, appearances, the data-light-theme / data-dark-theme / data-theme-preview attributes
@@ -49,6 +50,7 @@ test/fileFetch.ts             # serves the terminal's vendored WebAssembly to fe
 test/cancelKey.test.ts        # no library module writes the ⌘. chord; Escape is the one cancel key
 test/stylesheets.ts           # CSS test helpers: readStylesheet (follows @import), applyStylesheets, declaredValues
 test/stylesheets.test.ts      # src/styles.css imports every component stylesheet
+test/tokenValues.test.ts      # no raw font size, weight, line height, radius, z-index, duration, easing, or space in a stylesheet where a scale token exists; exceptions listed with reasons
 test/setup.ts                 # Testing Library cleanup after each test; calls no app code
 scripts/build.mjs             # cleans dist/, runs tsc -p tsconfig.build.json, copies src/**/*.css, *.wasm, *.woff2, and vendored LICENSE files
 scripts/verify-pack.mjs       # no source maps; every exports target packed; each area resolves as @bigpixelrocket/uiok/<area>; packed @imports resolve; every new URL('./…', import.meta.url) asset, the terminal's licences, and NOTICE packed
@@ -71,6 +73,7 @@ site/verify-dist.mjs          # fails npm run site:build if site/dist holds a so
 .github/workflows/release.yml # on push to main: if npm lacks package.json's version, gate and npm publish via Trusted Publishing (npm trusts this filename); then the v<version> tag and GitHub Release
 docs/releasing.md             # the automatic release, recovering a failed run, and the one-time npm setup
 docs/themes.md                # how themes work, the attribute contract, tokens by role, app tokens, the migration renames
+docs/tokens.md                # the scale tokens: each step's role, the spacing relationships, focus geometry, and the exceptions
 ```
 
 `package.json` `exports` maps `.` (`dist/index.js` and its types), `./styles.css`, `./package.json`, and the pattern `./*` to `dist/<area>/index.js` and `index.d.ts`, so a new `src/<area>/index.ts` is importable as `@bigpixelrocket/uiok/<area>` with no exports change. A new stylesheet is imported from `src/styles.css`; any other public file needs its own `exports` entry. `verify-pack.mjs` checks each. A runtime asset (the terminal's WebAssembly and font) is named with `new URL('./…', import.meta.url)` from the module beside it, never a bundler-specific `?url` import, and `build.mjs` copies it into `dist/`.

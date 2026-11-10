@@ -23,7 +23,7 @@
   background: color-mix(in srgb, var(--bg) 50%, transparent);
   -webkit-backdrop-filter: blur(36px) saturate(180%);
   backdrop-filter: blur(36px) saturate(180%);
-  animation: dialog-wash-in 160ms ease-out;
+  animation: dialog-wash-in var(--duration-base) var(--ease-out);
 }
 
 .dialog {
@@ -35,17 +35,17 @@
   box-sizing: border-box;
   width: 360px;
   background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-lg);
   overflow: hidden;
   /* Children are inset 12px; the title strip and the legend reach across
      the box and the legend closes it at the bottom. */
-  padding: 0 12px 12px;
+  padding: 0 var(--space-6) var(--space-6);
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-6);
   box-shadow: var(--shadow-dialog);
-  animation: dialog-settle 200ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: dialog-settle var(--duration-base) var(--ease-out);
 }
 
 .dialog[data-tone='danger'] {
@@ -99,22 +99,21 @@
   display: flex;
   flex: none;
   align-items: center;
-  gap: 8px;
-  height: 34px;
-  margin: 0 -12px;
-  padding: 0 12px 0 10px;
-  border-bottom: 1px solid var(--dialog-tone);
-  /* The box's own corner inside its border, so the crust keeps the curve
-     in a dialog that lets a popup hang past its edge. */
-  border-radius: 7px 7px 0 0;
+  gap: var(--space-4);
+  height: var(--bar-height-lg);
+  margin: 0 calc(-1 * var(--space-6));
+  padding: 0 var(--space-6) 0 var(--space-5);
+  border-bottom: var(--line) solid var(--dialog-tone);
+  /* The box's own corner inside its 1px border, so the crust keeps the
+     curve in a dialog that lets a popup hang past its edge. */
+  border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
   background: var(--surface-header);
 }
 
 .dialog-icon {
   flex: none;
-  width: 15px;
-  height: 15px;
-  stroke-width: 2;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
   color: var(--dialog-icon);
 }
 
@@ -123,8 +122,8 @@
   min-width: 0;
   margin: 0;
   overflow: hidden;
-  font-size: 12px;
-  font-weight: 600;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-strong);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -134,8 +133,8 @@
   min-width: 0;
   overflow: hidden;
   color: var(--row-meta-text);
-  font-size: 12px;
-  font-weight: normal;
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-regular);
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -154,33 +153,33 @@
   flex-wrap: wrap;
   flex: none;
   align-items: center;
-  gap: 2px;
-  min-height: 34px;
-  padding: 0 6px;
-  border-top: 1px solid var(--border);
+  gap: var(--space-1);
+  min-height: var(--bar-height-lg);
+  padding: 0 var(--space-3);
+  border-top: var(--line) solid var(--border);
 }
 
 .dialog > .dialog-legend {
-  margin: 0 -12px -12px;
+  margin: 0 calc(-1 * var(--space-6)) calc(-1 * var(--space-6));
 }
 
 .legend-slot {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-3);
   box-sizing: border-box;
-  min-height: 24px;
+  min-height: var(--control-height-sm);
   max-width: 100%;
   margin: 0;
-  padding: 0 7px 0 4px;
+  padding: 0 var(--space-3) 0 var(--space-2);
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text);
   cursor: pointer;
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-small);
   white-space: normal;
 }
 
@@ -197,22 +196,22 @@
   display: inline-flex;
 }
 
-/* A slot's chord drawn as one plain key cap. */
+/* A slot's chord drawn as one plain key cap, glyph-sized (18px). */
 .legend-slot .keychord {
   box-sizing: border-box;
   height: 18px;
   min-width: 20px;
   justify-content: center;
-  padding: 0 4px;
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
+  padding: 0 var(--space-2);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-sm);
   color: var(--text);
   background: var(--bg-panel);
 }
 
 .legend-primary {
   margin-left: auto;
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
 }
 
 /* The verb Return runs is lit like a held key; a destructive one in the
@@ -240,7 +239,7 @@
 .confirm-dialog {
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--font-size-body);
 }
 
 .confirm-dialog,
@@ -262,19 +261,19 @@
 /* A name the message sets apart (the item a delete asks about) reads in the text colour. */
 .dialog-message strong {
   color: var(--text);
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
 }
 
 /* A batch lists every affected path; long selections scroll. */
 .dialog-paths {
-  margin: 8px 0 0;
-  padding: 6px 8px;
+  margin: var(--space-4) 0 0;
+  padding: var(--space-3) var(--space-4);
   max-height: 160px;
   overflow: auto;
   list-style: none;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  font-size: 12px;
+  border: var(--line) solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-small);
   color: var(--text-dim);
 }
 

@@ -2,29 +2,34 @@
 
    One choice of several: a tinted track with the chosen segment raised, each
    segment as wide as its words. It carries its whole look, so it draws the
-   same in a dialog and on a page. */
+   same in a dialog and on a page. Its outer height is a control height,
+   small by default; a form of regular controls sets --segmented-height to
+   var(--control-height) so the track matches the fields beside it. Each
+   segment is the track less its 2px inset on both sides, its corner
+   concentric with the track's. */
 .segmented-choice {
   box-sizing: border-box;
   display: inline-flex;
   flex: none;
-  gap: 2px;
+  gap: var(--space-1);
+  height: var(--segmented-height, var(--control-height-sm));
   margin: 0;
-  padding: 2px;
-  border-radius: 7px;
+  padding: var(--space-1);
+  border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--text) 7%, transparent);
 }
 
 .segmented-choice-option {
   box-sizing: border-box;
   flex: none;
-  height: 22px;
-  padding: 0 12px;
+  height: calc(var(--segmented-height, var(--control-height-sm)) - 2 * var(--space-1));
+  padding: 0 var(--space-6);
   border: none;
-  border-radius: 5px;
+  border-radius: calc(var(--radius-md) - var(--space-1));
   background: transparent;
   color: var(--text-dim);
   font-family: var(--font-ui);
-  font-size: 11.5px;
+  font-size: var(--font-size-small);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -37,13 +42,14 @@
   background: linear-gradient(var(--hover-wash), transparent), var(--surface);
   box-shadow:
     inset 0 1px 0 var(--glass-edge),
-    0 0 0 0.5px var(--border-strong),
+    0 0 0 var(--line) var(--border-strong),
     var(--shadow-segment);
   color: var(--text);
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
 }
 
 .segmented-choice-option:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  /* The track clips nothing, but an outside ring would cross the segment
+     beside it: the ring sits inside the segment. */
+  outline-offset: var(--focus-offset-inset);
 }

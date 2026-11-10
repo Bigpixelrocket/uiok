@@ -9,23 +9,23 @@
    .name-hit (text.css). */
 
 /* A menu that drops below what opened it (a crumb, a field). It floats over
-   a listing's sticky column header (z-index 1) and an overlay inside the
-   pane (2). */
+   a listing's sticky column header (--z-raised) and an overlay inside the
+   pane (--z-local-overlay). */
 :where(.listing-root) .folder-menu {
   position: absolute;
-  top: calc(100% + 5px);
+  top: calc(100% + var(--space-2));
   left: 0;
-  z-index: 3;
+  z-index: var(--z-menu);
   /* A completion menu's width; a menu that needs more sets its own. */
   width: 300px;
   display: flex;
   flex-direction: column;
-  padding: 4px;
+  padding: var(--space-2);
   background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-lg);
   box-shadow: var(--shadow-menu);
-  font-weight: normal;
+  font-weight: var(--font-weight-regular);
 }
 
 /* A menu's query row is a filter field: the icon stands over the rows'
@@ -34,11 +34,11 @@
 :where(.listing-root) .folder-menu-query {
   display: flex;
   align-items: center;
-  height: 26px;
-  margin: -4px -4px 4px;
-  padding: 0 10px;
-  border-bottom: 1px solid var(--accent);
-  font-size: 12px;
+  height: var(--bar-height);
+  margin: calc(-1 * var(--space-2)) calc(-1 * var(--space-2)) var(--space-2);
+  padding: 0 var(--space-5);
+  border-bottom: var(--line) solid var(--accent);
+  font-size: var(--font-size-small);
 }
 
 /* The field keeps room for its placeholder, so a long target name gives way
@@ -66,7 +66,7 @@
   margin-left: 1ch;
   color: var(--text-dim);
   font-family: var(--font-ui);
-  font-size: 11px;
+  font-size: var(--font-size-caption);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
@@ -80,11 +80,11 @@
 
 :where(.listing-root) .folder-menu-option {
   display: grid;
-  grid-template-columns: 20px minmax(0, 1fr) auto;
+  grid-template-columns: var(--icon-column) minmax(0, 1fr) auto;
   align-items: center;
-  height: 24px;
-  padding: 0 8px 0 6px;
-  border-radius: 4px;
+  height: var(--row-height);
+  padding: 0 var(--space-4) 0 var(--space-3);
+  border-radius: var(--radius-sm);
   cursor: default;
 }
 
@@ -93,10 +93,10 @@
 }
 
 :where(.listing-root) .folder-menu-note {
-  padding: 4px 8px;
+  padding: var(--space-2) var(--space-4);
   color: var(--text-dim);
   font-family: var(--font-ui);
-  font-size: 12px;
+  font-size: var(--font-size-small);
 }
 
 /* A group's name with a hairline running out from it on the same line, so a
@@ -104,20 +104,20 @@
 :where(.listing-root) .entry-menu-heading {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-4);
   height: 20px;
-  padding: 3px 6px 0 8px;
+  padding: var(--space-1) var(--space-3) 0 var(--space-4);
   color: var(--text-dim);
   font-family: var(--font-ui);
-  font-size: 10.5px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-strong);
+  letter-spacing: var(--tracking-caps);
 }
 
 :where(.listing-root) .entry-menu-heading::after {
   content: '';
   flex: 1;
-  height: 1px;
+  height: var(--line);
   background: var(--border);
 }
 
@@ -126,27 +126,28 @@
    `bell-0` and `bell-1` on consecutive rings (useBellBeat), and the paired
    keyframe names are identical on purpose: a changed animation-name is what
    restarts a CSS animation, so every refused key shoves again. An app's own
-   filter field or cursor row may ring on the same keyframes. */
+   filter field or cursor row may ring on the same keyframes. The shake and
+   the red share --duration-slow, so they end together. */
 :where(.listing-root) .folder-menu-query.bell-0 input {
   animation:
-    row-nudge-a 240ms ease-in-out,
-    query-refused-a 280ms ease-out;
+    row-nudge-a var(--duration-slow) var(--ease-in-out),
+    query-refused-a var(--duration-slow) var(--ease-out);
 }
 
 :where(.listing-root) .folder-menu-query.bell-1 input {
   animation:
-    row-nudge-b 240ms ease-in-out,
-    query-refused-b 280ms ease-out;
+    row-nudge-b var(--duration-slow) var(--ease-in-out),
+    query-refused-b var(--duration-slow) var(--ease-out);
 }
 
 /* Without motion a query keeps only its red. */
 @media (prefers-reduced-motion: reduce) {
   :where(.listing-root) .folder-menu-query.bell-0 input {
-    animation: query-refused-a 280ms ease-out;
+    animation: query-refused-a var(--duration-slow) var(--ease-out);
   }
 
   :where(.listing-root) .folder-menu-query.bell-1 input {
-    animation: query-refused-b 280ms ease-out;
+    animation: query-refused-b var(--duration-slow) var(--ease-out);
   }
 }
 

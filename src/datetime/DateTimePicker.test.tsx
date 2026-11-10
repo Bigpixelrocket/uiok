@@ -111,7 +111,7 @@ describe('DateTimePicker', () => {
 
     expect(micro.style.getPropertyValue('--date-picker-digits')).toBe('6');
     expect(declaredValues(micro, 'width').at(-1)).toBe(
-      'calc((var(--date-picker-digits) + 1) * 1ch + 18px)'
+      'calc((var(--date-picker-digits) + 1) * 1ch + 2 * var(--space-4) + 2px)'
     );
 
     rerender(

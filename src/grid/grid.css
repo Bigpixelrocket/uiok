@@ -8,44 +8,48 @@
   width: max-content;
   max-width: 100%;
   overflow: auto;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
   background: var(--ground);
   color: var(--text);
-  font: 12px/22px var(--font-mono);
+  /* Text sits on the row's own height, so a line is a row. */
+  font: var(--font-size-small)/var(--row-height-dense) var(--font-mono);
   box-sizing: border-box;
 }
 
-.data-grid:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+/* The grid scrolls and clips: its ring, and the rings of the sort labels in
+   its sticky header and the links in its cut cells, sit inside. */
+.data-grid:focus-visible,
+.data-grid-sort:focus-visible,
+.data-grid-link:focus-visible {
+  outline-offset: var(--focus-offset-inset);
 }
 
 .data-grid-header {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-raised);
   display: grid;
   width: max-content;
   min-width: 100%;
   background: var(--surface-header);
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--line) solid var(--border);
 }
 
 .data-grid-heading {
   position: relative;
   min-width: 0;
-  padding: 0 8px;
+  padding: 0 var(--space-4);
   overflow: hidden;
   color: var(--text-dim);
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .data-grid-sort {
   display: inline-flex;
-  gap: 4px;
+  gap: var(--space-2);
   max-width: 100%;
   padding: 0;
   border: none;
@@ -60,7 +64,7 @@
 }
 
 .data-grid-arrow {
-  font-size: 9px;
+  font-size: var(--font-size-key-word);
 }
 
 .data-grid-resize {
@@ -69,7 +73,7 @@
   right: 0;
   width: 6px;
   height: 100%;
-  border-right: 1px solid var(--border);
+  border-right: var(--line) solid var(--border);
   cursor: col-resize;
   touch-action: none;
 }
@@ -85,7 +89,7 @@
   display: grid;
   width: max-content;
   min-width: 100%;
-  height: 22px;
+  height: var(--row-height-dense);
 }
 
 .data-grid-row:nth-child(even) {
@@ -94,9 +98,9 @@
 
 .data-grid-cell {
   min-width: 0;
-  padding: 0 8px;
+  padding: 0 var(--space-4);
   overflow: hidden;
-  border-right: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  border-right: var(--line) solid color-mix(in srgb, var(--border) 60%, transparent);
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: default;
@@ -115,20 +119,20 @@
 .data-grid-action {
   display: flex;
   align-items: center;
-  padding: 0 6px;
+  padding: 0 var(--space-3);
 }
 
 /* A row's controls before its cells: a checkbox and compact icon actions. */
 .data-grid-lead {
   display: flex;
   align-items: center;
-  gap: 2px;
-  padding: 0 4px;
-  border-right: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+  gap: var(--space-1);
+  padding: 0 var(--space-2);
+  border-right: var(--line) solid color-mix(in srgb, var(--border) 60%, transparent);
 }
 
 .data-grid-lead input[type='checkbox'] {
-  margin: 0 4px 0 2px;
+  margin: 0 var(--space-2) 0 var(--space-1);
 }
 
 /* A cell whose value opens something: a linked record, a download. */
@@ -176,16 +180,16 @@
 }
 
 .data-grid-heading.drop-before {
-  box-shadow: inset 2px 0 0 var(--accent);
+  box-shadow: inset var(--line-strong) 0 0 var(--accent);
 }
 
 .data-grid-heading.drop-after {
-  box-shadow: inset -2px 0 0 var(--accent);
+  box-shadow: inset calc(-1 * var(--line-strong)) 0 0 var(--accent);
 }
 
 .data-grid-arrow small {
   margin-left: 1px;
-  font-size: 9px;
+  font-size: var(--font-size-key-word);
 }
 
 /* Inline edit: the editor drawn over its cell in a layer of its own, so the
@@ -194,9 +198,9 @@
    className holds cell-edited). */
 .data-grid-editor {
   position: fixed;
-  z-index: calc(var(--z-dialog) + 1);
+  z-index: var(--z-dialog-popover);
   box-sizing: border-box;
-  font: 12px/1.4 var(--font-ui);
+  font: var(--font-size-small)/var(--line-height-prose) var(--font-ui);
   white-space: normal;
   cursor: auto;
 }

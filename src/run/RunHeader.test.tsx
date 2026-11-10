@@ -111,7 +111,7 @@ describe('the progress header look', () => {
 
   it('turns the running glyph, and stands it still under reduced motion', () => {
     expect(styles).toMatch(
-      /\.run-header\[data-state='running'\] \.run-header-glyph\s*\{[^}]*animation:\s*run-header-spin /
+      /\.run-header\[data-state='running'\] \.run-header-glyph\s*\{[^}]*animation:\s*uiok-spin /
     );
     expect(styles).toMatch(
       /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.run-header\[data-state='running'\] \.run-header-glyph\s*\{\s*animation:\s*none;/

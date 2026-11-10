@@ -8,7 +8,7 @@
 .keychord {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   font: inherit;
 }
 
@@ -26,9 +26,12 @@
   display: block;
 }
 
+/* Key caps are glyph-sized, never a pointer target by themselves: their 12px
+   box and line are the key's own geometry, not a type scale step. */
+
 /* Mono capitals sit above the optical centre of their em box; nudge them onto the icon centre. */
 .key-letter {
-  font: 600 10px/12px var(--font-mono);
+  font: var(--font-weight-strong) var(--font-size-key)/12px var(--font-mono);
   padding-top: 1px;
   box-sizing: border-box;
 }
@@ -36,6 +39,6 @@
 .key-word {
   width: auto;
   padding: 0 1px;
-  font: 600 9px/12px var(--font-mono);
+  font: var(--font-weight-strong) var(--font-size-key-word)/12px var(--font-mono);
   letter-spacing: 0.02em;
 }

@@ -6,6 +6,6 @@
    has, so it composes with names that draw their own background too. Drawn
    inside the listing scope (.listing-root). */
 :where(.listing-root) .name-hit {
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: color-mix(in srgb, var(--accent) 22%, transparent);
 }

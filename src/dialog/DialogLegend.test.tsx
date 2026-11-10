@@ -54,7 +54,7 @@ describe('the dialog legend look', () => {
     const [leaveCap, primaryCap] = [...document.querySelectorAll('.keychord')];
 
     expect(declaredValues(leaveCap as Element, 'border')).toContain(
-      '1px solid var(--border-strong)'
+      'var(--line) solid var(--border-strong)'
     );
     expect(declaredValues(primaryCap as Element, 'background').at(-1)).toBe('var(--accent)');
 

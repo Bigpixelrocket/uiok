@@ -8,7 +8,7 @@
   display: flex;
   flex: none;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-3);
   min-width: 0;
 }
 
@@ -16,15 +16,14 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: start;
-  column-gap: 8px;
+  column-gap: var(--space-4);
 }
 
-/* 18px on the headline's 20px line. */
+/* A large icon centred on the headline's line. */
 .run-header-glyph {
-  width: 18px;
-  height: 18px;
-  margin-top: 1px;
-  stroke-width: 2;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  margin-top: calc((var(--line-height-body) - var(--icon-lg)) / 2);
   color: var(--text-dim);
 }
 
@@ -32,13 +31,7 @@
    motion (below), where the clock and the counts say the run is working. */
 .run-header[data-state='running'] .run-header-glyph {
   color: var(--accent);
-  animation: run-header-spin 1s linear infinite;
-}
-
-@keyframes run-header-spin {
-  to {
-    transform: rotate(360deg);
-  }
+  animation: uiok-spin var(--duration-spin) linear infinite;
 }
 
 /* The done sentence keeps the plain text colour: a light theme's green can
@@ -61,18 +54,18 @@
   display: block;
   overflow: hidden;
   color: var(--text);
-  font-size: 14px;
-  font-weight: 600;
-  line-height: 20px;
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-strong);
+  line-height: var(--line-height-body);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .run-header-reason {
-  margin: 4px 0 0;
+  margin: var(--space-2) 0 0;
   color: var(--text);
-  font-size: 12px;
-  line-height: 1.5;
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-prose);
   overflow-wrap: anywhere;
 }
 
@@ -80,10 +73,10 @@
    (or before it starts). */
 .run-header-figure {
   color: var(--text);
-  font-size: 18px;
+  font-size: var(--font-size-figure);
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  line-height: 20px;
+  font-weight: var(--font-weight-strong);
+  line-height: var(--line-height-body);
   white-space: nowrap;
 }
 
@@ -99,16 +92,16 @@
 
 .run-header-bar {
   height: 8px;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--cursor-bg);
   overflow: hidden;
 }
 
 .run-header-fill {
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: var(--accent);
-  transition: width 0.1s linear;
+  transition: width var(--duration-fast) linear;
 }
 
 /* A bar that stopped short (paused, failed, or stopped) dims: it no longer
@@ -136,25 +129,26 @@
 .run-header-facts {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-4);
   min-width: 0;
   overflow: hidden;
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: var(--font-size-small);
   font-variant-numeric: tabular-nums;
-  line-height: 18px;
+  line-height: var(--line-height-prose);
   white-space: nowrap;
 }
 
 /* Under a bar the facts sit closer to it than the bar sits to the
    sentence: they describe the bar. */
 .run-header-bar + .run-header-facts {
-  margin-top: -2px;
+  margin-top: calc(-1 * var(--space-1));
 }
 
-/* Without a bar the facts line up under the sentence, past the glyph. */
+/* Without a bar the facts line up under the sentence, past the glyph and
+   the column gap. */
 .run-header-facts.indented {
-  padding-left: 26px;
+  padding-left: calc(var(--icon-lg) + var(--space-4));
 }
 
 .run-header-fact {
@@ -170,7 +164,7 @@
 
 .run-header-fact + .run-header-fact::before {
   content: '·';
-  margin-right: 8px;
+  margin-right: var(--space-4);
   color: var(--row-meta-text);
 }
 
@@ -182,9 +176,5 @@
 @media (prefers-reduced-motion: reduce) {
   .run-header[data-state='running'] .run-header-glyph {
     animation: none;
-  }
-
-  .run-header-fill {
-    transition: none;
   }
 }

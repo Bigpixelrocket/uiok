@@ -1,8 +1,10 @@
-/* UIOK's base stylesheet: the theme tokens, the tokens no theme changes, and
+/* UIOK's base stylesheet: the theme tokens, the tokens no theme changes
+   (tokens.css: sizes, spaces, corners, timings, heights, layers, focus), and
    the utilities every component may rely on. It names no colour itself;
    colours are theme tokens, which themes.generated.css defines (docs/themes.md).
    Import it once, before any stylesheet of the app's own. */
 @import './themes/themes.generated.css';
+@import './tokens.css';
 
 /* Component stylesheets, each beside its component. */
 @import './button/button.css';
@@ -27,22 +29,50 @@
 @import './charts/charts.css';
 @import './terminal/terminal.css';
 
-:root {
-  /* Surfaces that float over other content (sticky headers, cards,
-     overlays) add --frost as a backdrop-filter so what scrolls under a
-     translucent layer blurs. */
-  --frost: blur(24px) saturate(160%);
-  --font-mono: 'SF Mono', ui-monospace, Menlo, monospace;
-  --font-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+/* A focusable element that the keyboard reached: one ring from the focus
+   tokens. :where() gives it no weight, so a component that must draw its
+   ring inside a clipping parent changes only outline-offset, and a host's
+   own rule wins over it. A container focused by script (tabindex="-1")
+   draws no ring here. */
+:where(
+  button,
+  a[href],
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex]:not([tabindex^='-'])
+):focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset);
+}
 
-  /* Z-index scale. Overlay layering is decided here once, not with
-     per-component magic numbers:
-     - --z-panel: floating panels inside a page;
-     - --z-dialog: modal dialogs and their backdrops, above every panel;
-     - --z-tooltip: the hover tooltip, above a dialog whose controls it names. */
-  --z-panel: 10;
-  --z-dialog: 20;
-  --z-tooltip: 30;
+/* A pointer target at least --hit-target square, whatever the drawn size:
+   the pseudo-element grows the hit area around a small control without
+   moving it. A control already that size gains nothing. Where neighbours
+   sit closer than the growth (pager steps 2px apart), a component limits
+   the growth to the block axis. */
+.hit-target {
+  position: relative;
+}
+
+.hit-target::after {
+  position: absolute;
+  inset: min(0px, calc((100% - var(--hit-target)) / 2));
+  content: '';
+}
+
+/* One turn and one breath, shared by every spinner and pulse. */
+@keyframes uiok-spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
+@keyframes uiok-pulse {
+  50% {
+    opacity: 0.35;
+  }
 }
 
 /* Kept in the accessibility tree but off screen, for text that only assistive

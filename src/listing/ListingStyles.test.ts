@@ -59,10 +59,14 @@ const paneControls = `
 
 describe('the listing look', () => {
   it('is declared under the listing scope with its metrics', () => {
-    expect(sheet).toMatch(/:where\(\.listing-root\) \.row\s*\{[^}]*height:\s*24px;/);
-    expect(sheet).toMatch(/\.listing-root\s*\{[^}]*--pane-columns-height:\s*22px;/);
-    expect(sheet).toMatch(/\.listing-root\s*\{[^}]*--pane-path-height:\s*26px;/);
-    expect(sheet).toMatch(/:where\(\.listing-root\) \.pane-status\s*\{[^}]*height:\s*26px;/);
+    expect(sheet).toMatch(/:where\(\.listing-root\) \.row\s*\{[^}]*height:\s*var\(--row-height\);/);
+    expect(sheet).toMatch(
+      /\.listing-root\s*\{[^}]*--pane-columns-height:\s*var\(--row-height-dense\);/
+    );
+    expect(sheet).toMatch(/\.listing-root\s*\{[^}]*--pane-path-height:\s*var\(--bar-height\);/);
+    expect(sheet).toMatch(
+      /:where\(\.listing-root\) \.pane-status\s*\{[^}]*height:\s*var\(--bar-height\);/
+    );
   });
 
   it('draws a pane with the base metrics, which an app class beside the scope keeps', () => {
@@ -74,9 +78,10 @@ describe('the listing look', () => {
     const plain = measured(document.getElementById('plain') as Element);
 
     expect(measured(document.getElementById('app') as Element)).toEqual(plain);
-    expect(plain['.row']?.[0]).toBe('24px');
-    expect(plain['.pane-status']?.[0]).toBe('26px');
-    expect(plain['.pane-list']?.[1]).toBe('13px');
+    // jsdom resolves no var(), so a metric reads as the token it is drawn from.
+    expect(plain['.row']?.[0]).toBe('var(--row-height)');
+    expect(plain['.pane-status']?.[0]).toBe('var(--bar-height)');
+    expect(plain['.pane-list']?.[1]).toBe('var(--font-size-body)');
     document.body.innerHTML = '';
   });
 
@@ -90,10 +95,10 @@ describe('the listing look', () => {
 
   it('turns a busy mark, and holds it still under reduced motion', () => {
     expect(sheet).toMatch(
-      /:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot\s*\{[^}]*animation:\s*pane-state-pulse /
+      /:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot\s*\{[^}]*animation:\s*uiok-pulse /
     );
     expect(sheet).toMatch(
-      /:where\(\.listing-root\) \.pane-state-busy\s*\{[^}]*animation:\s*pane-state-spin /
+      /:where\(\.listing-root\) \.pane-state-busy\s*\{[^}]*animation:\s*uiok-spin /
     );
     expect(sheet).toMatch(
       /@media \(prefers-reduced-motion: reduce\)\s*\{\s*:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot,\s*:where\(\.listing-root\) \.pane-state-busy\s*\{\s*animation:\s*none;/
@@ -109,20 +114,24 @@ describe("the frame's compact controls", () => {
     const act = getComputedStyle(document.querySelector('.pane-act') as Element);
     const icon = getComputedStyle(document.querySelector('.pane-icon-act') as Element);
 
+    // jsdom resolves no var(), so a metric reads as the token it is drawn from.
     expect([
       act.getPropertyValue('height'),
-      act.getPropertyValue('padding-left'),
       icon.getPropertyValue('width'),
       icon.getPropertyValue('height')
-    ]).toEqual(['20px', '4px', '22px', '20px']);
+    ]).toEqual(['var(--control-height-xs)', '22px', 'var(--control-height-xs)']);
+    // jsdom drops a padding shorthand that holds var(), so read the rule.
+    expect(sheet).toMatch(
+      /:where\(\.listing-root\) \.pane-act \{[^}]*padding: 0 var\(--space-3\) 0 var\(--space-2\);/
+    );
     document.body.innerHTML = '';
   });
 
-  it("keep their ring inside, weighing more than a host's own button ring", () => {
+  it("keep their ring on their edge, weighing more than a host's own button ring", () => {
     // A host's own button ring, such as `.my-view button:focus-visible`,
     // weighs two classes and an element; the look's weighs three classes.
     expect(sheet).toMatch(
-      /^\.listing-root :is\(\.pane-act, \.pane-icon-act\):focus-visible \{[^}]*outline-offset: -2px;/m
+      /^\.listing-root :is\(\.pane-act, \.pane-icon-act\):focus-visible \{[^}]*outline-offset: var\(--focus-offset-flush\);/m
     );
 
     applyStylesheets(
@@ -133,7 +142,7 @@ describe("the frame's compact controls", () => {
     const act = document.querySelector('.pane-act') as HTMLButtonElement;
 
     act.focus();
-    expect(getComputedStyle(act).outlineOffset).toBe('-2px');
+    expect(getComputedStyle(act).outlineOffset).toBe('var(--focus-offset-flush)');
     document.body.innerHTML = '';
   });
 

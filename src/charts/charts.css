@@ -7,10 +7,10 @@
 .pie-chart {
   display: flex;
   align-items: flex-start;
-  gap: 16px;
+  gap: var(--space-8);
   margin: 0;
   color: var(--text);
-  font: 12px var(--font-ui);
+  font: var(--font-size-small) var(--font-ui);
 }
 
 .pie-slice {
@@ -26,7 +26,7 @@
 
 .pie-legend {
   display: grid;
-  gap: 2px;
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -36,9 +36,9 @@
   display: flex;
   white-space: nowrap;
   align-items: center;
-  gap: 6px;
-  padding: 1px 4px;
-  border-radius: 3px;
+  gap: var(--space-3);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
 }
 
 .pie-legend li.lit {
@@ -49,7 +49,7 @@
   flex: none;
   width: 10px;
   height: 10px;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
 }
 
 .pie-value {
@@ -64,11 +64,11 @@
 .line-chart {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-2);
   min-width: 0;
   margin: 0;
   color: var(--text);
-  font: 11px var(--font-ui);
+  font: var(--font-size-caption) var(--font-ui);
 }
 
 .line-frame {
@@ -123,13 +123,13 @@
 
 .line-readout {
   position: absolute;
-  top: 8px;
+  top: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  padding: 4px 6px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: var(--line) solid var(--border);
+  border-radius: var(--radius-sm);
   background: var(--surface);
   white-space: nowrap;
   pointer-events: none;
@@ -139,7 +139,7 @@
 .line-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 10px;
+  gap: var(--space-1) var(--space-5);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -149,14 +149,14 @@
 .line-readout span {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--space-2);
 }
 
 .line-swatch {
   flex: none;
   width: 10px;
   height: 3px;
-  border-radius: 1px;
+  border-radius: var(--radius-xs);
 }
 
 /* ScatterChart: a frame the
@@ -166,10 +166,10 @@
 .scatter-chart {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--space-3);
   margin: 0;
   color: var(--text);
-  font: 11px var(--font-ui);
+  font: var(--font-size-caption) var(--font-ui);
 }
 
 .scatter-frame {
@@ -179,8 +179,8 @@
   min-height: 180px;
   overflow: hidden;
   resize: both;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: var(--line) solid var(--border);
+  border-radius: var(--radius-md);
 }
 
 .scatter-svg {
@@ -221,22 +221,29 @@
 }
 
 .scatter-point:hover,
-.scatter-point:focus-visible,
 .scatter-point.lit {
   fill-opacity: 1;
   stroke: var(--text);
+}
+
+/* A point is a circle the outline cannot follow: the focus ring is its
+   stroke, in the ring's width and colour. */
+.scatter-point:focus-visible {
+  fill-opacity: 1;
+  stroke: var(--accent);
+  stroke-width: var(--focus-ring-width);
   outline: none;
 }
 
 .scatter-title {
   fill: var(--text-dim);
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
 }
 
 .scatter-caption {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-6);
   color: var(--row-meta-text);
 }
 
@@ -246,21 +253,21 @@
 .result-chart {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-2);
   margin: 0;
   color: var(--text);
-  font: 11px var(--font-ui);
+  font: var(--font-size-caption) var(--font-ui);
 }
 
 .result-chart svg {
   display: block;
-  font: 11px var(--font-ui);
+  font: var(--font-size-caption) var(--font-ui);
 }
 
 .result-chart-title {
   fill: var(--text);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-strong);
 }
 
 .result-chart-legend,
@@ -271,7 +278,7 @@
 
 .result-chart-axis-title {
   fill: var(--text-dim);
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
 }
 
 .result-chart-grid {

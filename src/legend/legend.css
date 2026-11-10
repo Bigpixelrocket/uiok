@@ -12,10 +12,10 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 34px;
-  flex: 0 0 34px;
-  padding: 0 8px 0 10px;
-  border-top: 1px solid var(--border);
+  height: var(--bar-height-lg);
+  flex: 0 0 var(--bar-height-lg);
+  padding: 0 var(--space-4) 0 var(--space-5);
+  border-top: var(--line) solid var(--border);
   background: var(--surface-header);
 }
 
@@ -29,10 +29,10 @@
 
 .keylegend-dock {
   display: inline-flex;
-  gap: 3px;
-  margin-right: 12px;
-  padding-right: 12px;
-  border-right: 1px solid var(--border-strong);
+  gap: var(--space-1);
+  margin-right: var(--space-6);
+  padding-right: var(--space-6);
+  border-right: var(--line) solid var(--border-strong);
 }
 
 /* The dock only shows what is held, so its keys are drawn as keys, not
@@ -43,19 +43,19 @@
   justify-content: center;
   box-sizing: border-box;
   width: 24px;
-  height: 20px;
+  height: var(--control-height-xs);
   padding: 0;
-  border: 1px solid var(--border-strong);
-  border-bottom-width: 2px;
-  border-radius: 4px;
+  border: var(--line) solid var(--border-strong);
+  border-bottom-width: var(--line-strong);
+  border-radius: var(--radius-sm);
   background: var(--bg-panel);
   color: var(--text-dim);
   cursor: default;
 }
 
 .keylegend-dock .keylegend-key .key-icon {
-  width: 12px;
-  height: 12px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .keylegend-dock .keylegend-key.held {
@@ -68,12 +68,7 @@
    is wider than the modifier glyphs because it is a word. */
 .keylegend-dock .keylegend-dock-fn {
   width: 28px;
-  font: 11px var(--font-mono);
-}
-
-.keylegend-verbs button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+  font: var(--font-size-caption) var(--font-mono);
 }
 
 .keylegend-verbs {
@@ -87,15 +82,15 @@
 .keylegend-verbs button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 24px;
-  padding: 0 7px 0 4px;
+  gap: var(--space-3);
+  height: var(--control-height-sm);
+  padding: 0 var(--space-3) 0 var(--space-2);
   background: none;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-small);
   white-space: nowrap;
   cursor: pointer;
 }
@@ -107,32 +102,34 @@
 
 /* Two directions of one action in one slot: each key cap is its own button,
    lit alone under the pointer, and the shared label is not a target. The
-   caps keep a plain slot's spacing: 4px in, 6px apart, 6px to the label. */
+   caps keep a plain slot's spacing: 4px in, 6px apart, 6px to the label,
+   each cap padded by half the 6px icon-to-label step. */
 .keylegend-pair {
   display: inline-flex;
   align-items: center;
-  height: 24px;
-  padding: 0 7px 0 1px;
+  height: var(--control-height-sm);
+  padding: 0 var(--space-3) 0 calc(var(--space-2) - var(--space-3) / 2);
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--font-size-small);
   white-space: nowrap;
 }
 
 .keylegend-verbs .keylegend-cap {
   gap: 0;
-  padding: 0 3px;
+  padding: 0 calc(var(--space-3) / 2);
 }
 
 .keylegend-pair-label {
-  margin-left: 3px;
+  margin-left: calc(var(--space-3) / 2);
 }
 
+/* Key caps are glyph-sized (18px), not controls. */
 .keylegend .keychord {
   height: 18px;
   min-width: 20px;
   justify-content: center;
-  padding: 0 4px;
-  border-radius: 4px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 14%, transparent);
 }
@@ -144,5 +141,5 @@
   box-sizing: border-box;
   color: var(--text);
   background: var(--bg-panel);
-  border: 1px solid var(--border-strong);
+  border: var(--line) solid var(--border-strong);
 }

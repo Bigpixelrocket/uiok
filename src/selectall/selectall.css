@@ -6,23 +6,18 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 10px;
+  gap: var(--space-3) var(--space-5);
 }
 
 .select-all-check {
   display: inline-flex;
-  gap: 7px;
+  gap: var(--space-3);
   align-items: center;
 }
 
 .select-all-check input {
   margin: 0;
   accent-color: var(--accent);
-}
-
-.select-all-check input:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
 }
 
 .select-all-with {

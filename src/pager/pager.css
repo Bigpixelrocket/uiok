@@ -6,7 +6,7 @@
 .pager {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .pager-step {
@@ -14,11 +14,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 20px;
+  position: relative;
+  width: var(--control-height-xs);
+  height: var(--control-height-xs);
   padding: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-dim);
   cursor: pointer;
@@ -27,10 +28,10 @@
 /* A step drawn in words, alone or beside its icon. */
 .pager-step.worded {
   width: auto;
-  gap: 3px;
-  padding: 0 5px;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-small);
   white-space: nowrap;
 }
 
@@ -40,23 +41,36 @@ button.pager-step:hover:enabled {
   color: var(--text);
 }
 
+/* A step's hit area grows to --hit-target in the block axis only: steps sit
+   2px apart, so growing sideways would overlap the neighbour's. */
+button.pager-step::after {
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
+  inset-inline: 0;
+  content: '';
+}
+
+/* A step stands in a bar with room around it: the ring sits on its edge and
+   keeps its corners. */
 button.pager-step:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  outline-offset: var(--focus-offset-flush);
 }
 
 .pager-page {
-  height: 20px;
-  padding: 0 4px;
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
+  height: var(--control-height-xs);
+  padding: 0 var(--space-2);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-sm);
   background: var(--ground);
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-small);
 }
 
 .pager-page:focus-visible {
-  outline: none;
+  /* A field's focus edge: its border and a 1px ring make 2px of accent
+     without the field growing. */
   border-color: var(--accent);
+  outline: var(--line) solid var(--accent);
+  outline-offset: var(--focus-offset-flush);
 }
