@@ -13,6 +13,7 @@ export * from './datetime/index.js';
 export * from './dialog/index.js';
 export * from './filter/index.js';
 export * from './grid/index.js';
+export * from './icon/index.js';
 export * from './keyboard/index.js';
 export * from './keychord/index.js';
 export * from './labels/index.js';
