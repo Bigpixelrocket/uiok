@@ -8,10 +8,13 @@ export interface ActivityBarProps {
   readonly label: string;
   /** Whether the run is working now; only then do the stripes move. */
   readonly moving: boolean;
-  /** The track's class, which sizes and colours it where it is drawn. */
-  readonly className: string;
-  /** The fill's class, or the stripes' when the bar is indeterminate. */
-  readonly fillClassName: string;
+  /**
+   * A class for the track beside its own `activity-bar`, for a host that
+   * places the bar or recolours it for a state (a failed run's fill).
+   */
+  readonly className?: string;
+  /** A class for the fill beside its own `activity-fill`; also put on the stripes. */
+  readonly fillClassName?: string;
 }
 
 /**
@@ -24,9 +27,12 @@ export interface ActivityBarProps {
  * An indeterminate bar has no value for assistive technology, which reads
  * it as busy while it moves.
  *
- * The track and fill look is the caller's (`className`, `fillClassName`);
- * the stripes take their colour from `--stripe-ink` on the fill, the accent
- * unless a rule sets another.
+ * The bar draws its own track and fill (`.activity-bar`, `.activity-fill`):
+ * an 8px trough in `--control-track` ringed in `--control-border`, and an
+ * accent fill, so every caller's bar looks the same. The caller's classes
+ * sit beside them and win over them, for placement and for a state colour.
+ * The stripes take their colour from `--stripe-ink` on the fill, the accent
+ * while moving and `--progress-idle` while standing still.
  */
 export function ActivityBar({
   fraction,
@@ -35,15 +41,18 @@ export function ActivityBar({
   className,
   fillClassName
 }: ActivityBarProps): ReactElement {
+  const track = className ? `activity-bar ${className}` : 'activity-bar';
+  const fill = fillClassName ? `activity-fill ${fillClassName}` : 'activity-fill';
+
   if (fraction === null) {
     return (
       <div
         aria-busy={moving}
         aria-label={label}
-        className={`${className} indeterminate${moving ? ' moving' : ''}`}
+        className={`${track} indeterminate${moving ? ' moving' : ''}`}
         role="progressbar"
       >
-        <div className={`${fillClassName} activity-stripes`} />
+        <div className={`${fill} activity-stripes`} />
       </div>
     );
   }
@@ -54,13 +63,10 @@ export function ActivityBar({
       aria-valuemax={100}
       aria-valuemin={0}
       aria-valuenow={Math.round(fraction * 100)}
-      className={className}
+      className={track}
       role="progressbar"
     >
-      <div
-        className={fillClassName}
-        style={{ width: `${Math.min(Math.max(fraction, 0), 1) * 100}%` }}
-      />
+      <div className={fill} style={{ width: `${Math.min(Math.max(fraction, 0), 1) * 100}%` }} />
     </div>
   );
 }

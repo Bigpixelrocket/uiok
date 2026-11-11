@@ -2,31 +2,100 @@
    mostly by the components on each mark; the rules here draw the chrome
    around them from the other theme tokens.
 
-   PieChart: the pie, then a legend of each slice with its share; hovering
-   one lights the other. */
+   One vocabulary for every chart: caption-size type in the interface face
+   with tabular figures; a 10px swatch with a 2px corner (a 10 by 3 dash for
+   a line series); a plot with a left axis and a baseline in --border-strong
+   and grid lines in --border-faint, never a box around it; the picked or
+   hovered mark ringed in --text; a dragged range in the accent wash; a
+   read-out in the tooltip's look; and, with nothing to draw, the plot's
+   place kept with one dim line centred in it. */
+
+/* A chart with no values: the plot's box, its axes and grid left out, and
+   one dim line of words centred in it. */
+.chart-empty {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  min-height: 120px;
+  padding: var(--space-6);
+  border-bottom: var(--line) solid var(--border-strong);
+  border-left: var(--line) solid var(--border-strong);
+  color: var(--row-meta-text);
+  font: var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
+  text-align: center;
+}
+
+/* The same line drawn inside an SVG drawing (ResultChart), so it saves with
+   the picture. */
+.chart-empty-text {
+  fill: var(--row-meta-text);
+}
+
+/* The read-out a hover shows over a plot, in the tooltip's look: a floating
+   panel with the lit top edge. */
+.line-readout {
+  position: absolute;
+  top: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-4);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    var(--shadow-popover);
+  color: var(--text);
+  font: var(--font-weight-medium) var(--font-size-small)/var(--line-height-prose) var(--font-ui);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* PieChart: the pie, then a legend of each slice with its share beside it;
+   hovering one lights the other, and the other slices step back. */
 .pie-chart {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--space-8);
   margin: 0;
   color: var(--text);
-  font: var(--font-size-small) var(--font-ui);
+  font: var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
 }
 
 .pie-slice {
   stroke: var(--surface);
   stroke-width: 1;
-  opacity: 0.9;
+  transition: opacity var(--duration-fast) var(--ease-out);
+}
+
+.pie-chart:has(.pie-slice.lit) .pie-slice:not(.lit) {
+  opacity: 0.45;
 }
 
 .pie-slice.lit {
-  opacity: 1;
   stroke: var(--text);
+  stroke-width: var(--line-strong);
+}
+
+/* A pie with no slices: a dashed ring where the pie would be, and the dim
+   line beside it where the legend would be. */
+.pie-empty-ring {
+  fill: none;
+  stroke: var(--border-strong);
+  stroke-dasharray: 4 4;
+}
+
+.chart-empty-text-line {
+  margin: 0;
+  color: var(--row-meta-text);
 }
 
 .pie-legend {
   display: grid;
   gap: var(--space-1);
+  min-width: 0;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -34,22 +103,24 @@
 
 .pie-legend li {
   display: flex;
-  white-space: nowrap;
   align-items: center;
   gap: var(--space-3);
-  padding: 1px var(--space-2);
+  min-width: 0;
+  height: var(--control-height-xs);
+  padding: 0 var(--space-2);
   border-radius: var(--radius-sm);
+  white-space: nowrap;
 }
 
 .pie-legend li.lit {
-  background: var(--hover-wash);
+  background: var(--cursor-row);
+  box-shadow: inset var(--line-strong) 0 0 var(--cursor-bar);
 }
 
-.pie-swatch {
-  flex: none;
-  width: 10px;
-  height: 10px;
-  border-radius: var(--radius-xs);
+.pie-label {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pie-value {
@@ -57,10 +128,29 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* LineChart: a frame as wide
-   as its cell, the plot's grid and frame, a line per series in the series
-   colours, the hover's guide and read-out, a dragged time range, and the
-   legend under it. */
+.pie-legend li.lit .pie-value {
+  color: var(--text-on-surface);
+}
+
+/* Swatches: a square for a slice, a bar, a point; a dash for a line. */
+.pie-swatch,
+.chart-swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-xs);
+}
+
+.line-swatch {
+  flex: none;
+  width: 10px;
+  height: 3px;
+  border-radius: var(--radius-xs);
+}
+
+/* LineChart: a frame as wide as its cell, the plot's grid and axes, a line
+   per series in the series colours, the hover's guide with a dot on every
+   line and the read-out, a dragged time range, and the legend under it. */
 .line-chart {
   display: flex;
   flex-direction: column;
@@ -68,7 +158,7 @@
   min-width: 0;
   margin: 0;
   color: var(--text);
-  font: var(--font-size-caption) var(--font-ui);
+  font: var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
 }
 
 .line-frame {
@@ -78,18 +168,24 @@
 
 .line-svg {
   display: block;
+  font: var(--font-size-caption) var(--font-ui);
 }
 
-.line-grid {
-  stroke: color-mix(in srgb, var(--border) 70%, transparent);
+.line-grid,
+.scatter-grid,
+.result-chart-grid {
+  stroke: var(--border-faint);
 }
 
-.line-tick text {
+.line-tick text,
+.scatter-tick text {
   fill: var(--row-meta-text);
   font-variant-numeric: tabular-nums;
 }
 
-.line-axes {
+.line-axes,
+.scatter-axes,
+.result-chart-baseline {
   fill: none;
   stroke: var(--border-strong);
 }
@@ -107,6 +203,14 @@
   pointer-events: none;
 }
 
+/* Where the guide crosses a line: a dot in the series colour ringed in the
+   surface, so it stands off the line it marks. */
+.line-dot {
+  stroke: var(--surface);
+  stroke-width: var(--line-strong);
+  pointer-events: none;
+}
+
 .line-plot {
   fill: transparent;
 }
@@ -115,25 +219,11 @@
   cursor: col-resize;
 }
 
-.line-selection {
-  fill: color-mix(in srgb, var(--accent) 14%, transparent);
+.line-selection,
+.scatter-selection {
+  fill: var(--accent-wash);
   stroke: var(--accent);
   pointer-events: none;
-}
-
-.line-readout {
-  position: absolute;
-  top: var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  padding: var(--space-2) var(--space-3);
-  border: var(--line) solid var(--border);
-  border-radius: var(--radius-sm);
-  background: var(--surface);
-  white-space: nowrap;
-  pointer-events: none;
-  font-variant-numeric: tabular-nums;
 }
 
 .line-legend {
@@ -149,27 +239,20 @@
 .line-readout span {
   display: flex;
   align-items: center;
-  gap: var(--space-2);
+  gap: var(--space-3);
 }
 
-.line-swatch {
-  flex: none;
-  width: 10px;
-  height: 3px;
-  border-radius: var(--radius-xs);
-}
-
-/* ScatterChart: a frame the
-   user resizes by its corner, the plot's grid and frame, the points in the
-   first series colour, the dragged zoom rectangle, and a caption with the
-   count and Reset zoom. */
+/* ScatterChart: a frame the user resizes by its corner (no border of its
+   own; the plot's axes are its edges), the plot's grid and axes, the points
+   in the first series colour, the dragged zoom rectangle, and a caption with
+   the count and Reset zoom. */
 .scatter-chart {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   margin: 0;
   color: var(--text);
-  font: var(--font-size-caption) var(--font-ui);
+  font: var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
 }
 
 .scatter-frame {
@@ -179,37 +262,16 @@
   min-height: 180px;
   overflow: hidden;
   resize: both;
-  border: var(--line) solid var(--border);
-  border-radius: var(--radius-md);
 }
 
 .scatter-svg {
   display: block;
-}
-
-.scatter-grid {
-  stroke: color-mix(in srgb, var(--border) 70%, transparent);
-}
-
-.scatter-tick text {
-  fill: var(--row-meta-text);
-  font-variant-numeric: tabular-nums;
-}
-
-.scatter-axes {
-  fill: none;
-  stroke: var(--border-strong);
+  font: var(--font-size-caption) var(--font-ui);
 }
 
 .scatter-plot {
   fill: transparent;
   cursor: crosshair;
-}
-
-.scatter-selection {
-  fill: color-mix(in srgb, var(--accent) 14%, transparent);
-  stroke: var(--accent);
-  pointer-events: none;
 }
 
 .scatter-point {
@@ -220,10 +282,25 @@
   cursor: pointer;
 }
 
-.scatter-point:hover,
+.scatter-point:hover {
+  fill-opacity: 1;
+  stroke: var(--text);
+}
+
+/* The picked point: full strength, a 2px ring in the text colour, and a
+   halo of its own colour behind it, so it is found among many. */
 .scatter-point.lit {
   fill-opacity: 1;
   stroke: var(--text);
+  stroke-width: var(--line-strong);
+}
+
+.scatter-halo {
+  fill: var(--chart-1);
+  fill-opacity: 0.25;
+  stroke: var(--chart-1);
+  stroke-width: 1;
+  pointer-events: none;
 }
 
 /* A point is a circle the outline cannot follow: the focus ring is its
@@ -235,7 +312,8 @@
   outline: none;
 }
 
-.scatter-title {
+.scatter-title,
+.result-chart-axis-title {
   fill: var(--text-dim);
   font-weight: var(--font-weight-strong);
 }
@@ -245,6 +323,7 @@
   align-items: center;
   gap: var(--space-6);
   color: var(--row-meta-text);
+  font-variant-numeric: tabular-nums;
 }
 
 /* ResultChart, the chart of a table: its title, legend, axes and their
@@ -256,7 +335,7 @@
   gap: var(--space-2);
   margin: 0;
   color: var(--text);
-  font: var(--font-size-caption) var(--font-ui);
+  font: var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
 }
 
 .result-chart svg {
@@ -276,19 +355,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.result-chart-axis-title {
-  fill: var(--text-dim);
-  font-weight: var(--font-weight-strong);
-}
-
-.result-chart-grid {
-  stroke: color-mix(in srgb, var(--border) 70%, transparent);
-}
-
-.result-chart-baseline {
-  stroke: var(--border-strong);
-}
-
 .result-chart-line {
   stroke-width: 2;
   stroke-linejoin: round;
@@ -306,11 +372,11 @@
 
 .result-chart-mark:hover {
   stroke: var(--text);
-  stroke-width: 1.5;
+  stroke-width: var(--line-strong);
 }
 
 .result-chart-readout {
-  min-height: 1.4em;
+  min-height: var(--line-height-compact);
   margin: 0;
   color: var(--row-meta-text);
   font-variant-numeric: tabular-nums;

@@ -78,9 +78,10 @@ describe('the result chart’s read-out', () => {
       />
     );
     const slices = container.querySelectorAll('path.result-chart-mark');
-    const swatch = [...container.querySelectorAll('.result-chart-legend')]
-      .find((label) => label.textContent === 'positive')
-      ?.parentElement?.querySelector('rect');
+    // A legend entry is a swatch glyph in the series colour, then its name.
+    const swatch = [...container.querySelectorAll('.result-chart-legend tspan')].find(
+      (name) => name.textContent === 'positive'
+    )?.previousElementSibling;
 
     expect(slices).toHaveLength(1);
     expect(slices[0]?.getAttribute('data-at')).toBe('1');
@@ -88,5 +89,44 @@ describe('the result chart’s read-out', () => {
     expect(slices[0]?.getAttribute('fill')).toBe(swatch?.getAttribute('fill'));
     fireEvent.pointerOver(slices[0] as Element);
     expect(readout(container)).toBe('positive: 5');
+  });
+
+  it('breaks an area’s fill where a value is missing, as its line breaks', () => {
+    const { container } = render(
+      <ResultChart
+        categories={['Mon', 'Tue', 'Wed', 'Thu']}
+        height={300}
+        series={[{ name: 'wholesale', values: [3, 4, null, 5] }]}
+        stacked={false}
+        title=""
+        type="area"
+        width={500}
+        xLabel=""
+        xValues={[]}
+        yLabel=""
+      />
+    );
+
+    expect(container.querySelectorAll('path.result-chart-area')).toHaveLength(2);
+  });
+
+  it('says it has no value in its plot instead of drawing empty axes', () => {
+    const { container } = render(
+      <ResultChart
+        categories={[]}
+        height={300}
+        series={[]}
+        stacked={false}
+        title="Sales"
+        type="column"
+        width={500}
+        xLabel="day"
+        xValues={[]}
+        yLabel="orders"
+      />
+    );
+
+    expect(container.querySelector('.chart-empty-text')?.textContent).toBe('no value');
+    expect(container.querySelectorAll('.result-chart-grid')).toHaveLength(0);
   });
 });

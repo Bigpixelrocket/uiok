@@ -45,7 +45,7 @@ A tablist with roving focus: one Tab stop, the current tab (the first when none 
 
 ## Styling
 
-`.page-tabs` (`.pills`, `[data-overflow~='start']`, `[data-overflow~='end']`), `.page-tab` (`[aria-selected='true']` is current).
+`.page-tabs` (`.pills`, `[data-overflow~='start']`, `[data-overflow~='end']`), `.page-tab` (`[aria-selected='true']` is current: the `--current-mark` underline and `--current-text`, or in pills `--current-bg` with a `--current-ring` edge). A tab's name carries `data-label`, which reserves the width of its bold self, so no tab moves when the current one changes. Hover and pressed come from the base stylesheet's track recipe; the focus ring sits inside the tab, so the strip never clips it.
 
 ## Labels read
 

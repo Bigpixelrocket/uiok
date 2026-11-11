@@ -2,9 +2,10 @@
 
    The header a view watching work in progress opens with: the state's
    glyph and sentence, the big figure at the right edge, the optional bar,
-   and the facts. It keeps the surrounding dialog's type family, like the
-   frame; sizes, weights, and colours are its own. */
+   and the facts. It carries its own type: the sentences in the interface
+   font, the figure (a clock or a percentage) in monospace. */
 .run-header {
+  font-family: var(--font-ui);
   display: flex;
   flex: none;
   flex-direction: column;
@@ -27,23 +28,26 @@
   color: var(--text-dim);
 }
 
-/* The running glyph turns in the accent; it stands still under reduced
-   motion (below), where the clock and the counts say the run is working. */
+/* The running glyph is the shared Spinner, in the accent; it stands still
+   under reduced motion, where the clock and the counts say the run is
+   working. */
 .run-header[data-state='running'] .run-header-glyph {
   color: var(--accent);
-  animation: uiok-spin var(--duration-spin) linear infinite;
 }
 
-/* The done sentence keeps the plain text colour: a light theme's green can
-   miss 4.5:1 as text on the dialog surface, so only the glyph (and the bar)
-   carries it. The red meets 4.5:1 in every theme. */
+/* The done sentence keeps the plain text colour, and only the glyph and the
+   bar carry the green, a mark colour. A failed sentence is a status word
+   (--danger-text); its glyph and bar are marks (--danger). */
 .run-header[data-state='done'] .run-header-glyph {
   color: var(--success);
 }
 
-.run-header[data-state='failed'] .run-header-glyph,
-.run-header[data-state='failed'] .run-header-headline {
+.run-header[data-state='failed'] .run-header-glyph {
   color: var(--danger);
+}
+
+.run-header[data-state='failed'] .run-header-headline {
+  color: var(--danger-text);
 }
 
 .run-header-said {
@@ -73,6 +77,7 @@
    (or before it starts). */
 .run-header-figure {
   color: var(--text);
+  font-family: var(--font-mono);
   font-size: var(--font-size-figure);
   font-variant-numeric: tabular-nums;
   font-weight: var(--font-weight-strong);
@@ -90,40 +95,30 @@
   color: var(--text-dim);
 }
 
-.run-header-bar {
-  height: 8px;
-  border-radius: var(--radius-sm);
-  background: var(--cursor-bg);
-  overflow: hidden;
-}
-
-.run-header-fill {
-  height: 100%;
-  border-radius: var(--radius-sm);
-  background: var(--accent);
-  transition: width var(--duration-fast) linear;
-}
-
-/* A bar that stopped short (paused, failed, or stopped) dims: it no longer
-   moves. Stripes dim through their own colour (below), which this fill
-   colour would otherwise paint over. */
-.run-header:is([data-state='paused'], [data-state='failed'], [data-state='stopped'])
+/* The bar's trough and fill are ActivityBar's own (.activity-bar,
+   .activity-fill), as are its stripes, which stand still in the idle mark
+   whenever the run is not moving. The header only colours a fill by state:
+   the accent while running or waiting, the quiet idle mark once it stopped
+   short (paused, stopped), so a halted bar never outweighs a working one;
+   the danger mark when failed and the success mark when done. Stripes
+   keep their own colours (a background here would paint over them). */
+.run-header:is([data-state='paused'], [data-state='stopped'])
   .run-header-bar:not(.indeterminate)
   .run-header-fill {
-  background: var(--text-dim);
+  background: var(--progress-idle);
 }
 
-/* The stripes of a run that stopped short stand still and dim, through the
-   hooks the activity stripes read. */
-.run-header:is([data-state='paused'], [data-state='failed'], [data-state='stopped'])
-  .indeterminate
-  > .activity-stripes {
-  --stripe-ink: var(--text-dim);
-  --stripe-ground: 16%;
+.run-header[data-state='failed'] .run-header-bar:not(.indeterminate) .run-header-fill {
+  background: var(--danger);
 }
 
-.run-header[data-state='done'] .run-header-fill {
+.run-header[data-state='done'] .run-header-bar:not(.indeterminate) .run-header-fill {
   background: var(--success);
+}
+
+/* A failed run's stripes stand still in the danger mark, as its fill would. */
+.run-header[data-state='failed'] .indeterminate > .activity-stripes {
+  --stripe-ink: var(--danger);
 }
 
 .run-header-facts {
@@ -171,10 +166,4 @@
 .run-header-fact code {
   color: var(--text);
   font-family: var(--font-mono);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .run-header[data-state='running'] .run-header-glyph {
-    animation: none;
-  }
 }

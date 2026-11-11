@@ -33,7 +33,7 @@ import { TooltipLayer, describedTooltip, tooltip } from '@bigpixelrocket/uiok/to
 
 ## Styling
 
-`.tooltip`, `.tooltip-label` (wraps, clamps at 12 lines), `.tooltip-shortcut`. Layered at `--z-tooltip`.
+`.tooltip`, `.tooltip-label` (wraps with balanced lines, clamps at 12 lines), `.tooltip-shortcut` (the chord in the key caps' monospace). Layered at `--z-tooltip`, on `--shadow-popover` under a lit top edge (`--glass-edge`), which lifts it in dark themes where a shadow barely shows.
 
 ## Labels read
 

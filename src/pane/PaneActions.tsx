@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { createContext, useContext, type ReactElement, type Ref } from 'react';
 
+import { ICON_SM } from '../icon/index.js';
 import { describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
 
 /**
@@ -72,6 +73,11 @@ export interface QuietActionProps {
    * logic that must tell them apart without reading the translated `word`.
    */
   readonly action?: string;
+  /**
+   * A destructive action (Remove, Drop, Delete): quiet at rest, in the
+   * danger tone under the pointer, with the focus, and on the cursor row.
+   */
+  readonly danger?: boolean;
 }
 
 /**
@@ -94,7 +100,8 @@ export function QuietAction({
   softDisabled = false,
   verb,
   pageVerb,
-  action
+  action,
+  danger = false
 }: QuietActionProps): ReactElement {
   const inRow = useInRow();
 
@@ -102,7 +109,7 @@ export function QuietAction({
     <button
       aria-disabled={softDisabled || undefined}
       aria-label={label}
-      className={lit ? 'pane-act lit' : 'pane-act'}
+      className={['pane-act', lit ? 'lit' : '', danger ? 'danger' : ''].filter(Boolean).join(' ')}
       data-action={action}
       data-page-verb={pageVerb}
       data-verb={verb}
@@ -120,7 +127,7 @@ export function QuietAction({
         ? {}
         : { 'data-tooltip-shortcut': shortcut })}
     >
-      <Icon aria-hidden size={12} />
+      <Icon aria-hidden size={ICON_SM} />
       {word}
     </button>
   );
@@ -145,6 +152,8 @@ export interface RowIconActionProps {
    * `RowLinkLookContext` of words, the word it draws.
    */
   readonly word?: string;
+  /** A destructive action, drawn as on `QuietAction`. */
+  readonly danger?: boolean;
 }
 
 /**
@@ -164,7 +173,8 @@ export function RowIconAction({
   softDisabled = false,
   tip = label,
   verb,
-  word
+  word,
+  danger = false
 }: RowIconActionProps): ReactElement {
   const inRow = useInRow();
   const chosen = useContext(RowLinkLookContext);
@@ -175,7 +185,9 @@ export function RowIconAction({
     <button
       aria-disabled={softDisabled || undefined}
       aria-label={label}
-      className={look === 'icons' ? 'pane-icon-act' : 'pane-icon-act worded'}
+      className={['pane-icon-act', look === 'icons' ? '' : 'worded', danger ? 'danger' : '']
+        .filter(Boolean)
+        .join(' ')}
       data-verb={verb}
       data-word={word}
       disabled={disabled}
@@ -192,7 +204,7 @@ export function RowIconAction({
           ? tooltip(label)
           : describedTooltip(tip))}
     >
-      {look !== 'text' && <Icon aria-hidden size={13} />}
+      {look !== 'text' && <Icon aria-hidden size={ICON_SM} />}
       {look !== 'icons' && <span>{word}</span>}
     </button>
   );

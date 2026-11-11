@@ -1,59 +1,65 @@
 /* ---- Palette look (Palette, PaletteQuery) ----
 
    A palette: one list over the page. It is the menu surface (menu.css) over
-   a backdrop, closing on a dialog's key legend. Scoped by
-   :where(.listing-root) like the listing look. */
+   a backdrop, closing on a dialog's key legend. One class's weight and no
+   scope, like the menu look, so a palette reads the same wherever it is
+   drawn and an app adjusts a piece with one scoped selector. */
 
 /* The backdrop takes the whole window, as a dialog's does, so nothing behind
-   it can take the keys while the palette is open. */
-:where(.listing-root) .palette-backdrop {
+   it can take the keys while the palette is open. A palette replaces the
+   page for a moment, so it frosts what is behind it as a frosted dialog
+   does: the overlay scrim, blurred. */
+.palette-backdrop {
   position: fixed;
   inset: 0;
   z-index: var(--z-dialog);
   display: flex;
   align-items: flex-start;
   justify-content: center;
+  /* 104px: the palette's drop from the window's top, below an app's title
+     bar and toolbar, so the page's own header stays in view. */
   padding: 104px var(--space-8) var(--space-8);
-  background: color-mix(in srgb, var(--bg) 45%, transparent);
+  background: var(--scrim);
+  backdrop-filter: var(--frost);
 }
 
-:where(.listing-root) .folder-menu.palette {
+.folder-menu.palette {
   position: static;
-  /* The listing's face, whatever face the app's root sets. */
-  font-family: var(--font-mono);
-  font-size: var(--font-size-body);
   /* Room for a row's name and its context, and for a legend's four slots. */
   width: 600px;
   max-width: 100%;
   max-height: 100%;
-  box-shadow: var(--shadow-dialog);
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    var(--shadow-modal);
 }
 
-:where(.listing-root) .palette .folder-menu-query {
+.palette .folder-menu-query {
   flex: none;
 }
 
 /* A dialog's key legend footer at the palette's foot, its hairline run out
    to the palette's edges. */
-:where(.listing-root) .palette > .dialog-legend {
+.palette > .dialog-legend {
   margin: var(--space-2) calc(-1 * var(--space-2)) calc(-1 * var(--space-2));
 }
 
-:where(.listing-root) .palette .folder-menu-options {
+/* Seventeen whole rows, so the list ends on a whole row; a shorter window
+   shrinks it, never below one row. */
+.palette .folder-menu-options {
   flex: 0 1 auto;
-  /* Never squeezed below a row, however short the window. */
   min-height: var(--row-height);
-  max-height: 420px;
+  max-height: calc(17 * var(--row-height));
 }
 
-:where(.listing-root) .palette-text {
+.palette-text {
   display: flex;
   align-items: baseline;
   gap: 1.5ch;
   min-width: 0;
 }
 
-:where(.listing-root) .palette-text .row-name {
+.palette-text .row-name {
   flex: 0 1 auto;
   min-width: 3ch;
   overflow: hidden;
@@ -64,7 +70,7 @@
 /* What a row says after its name: where an item is, or what a command does.
    A long path gives way at its start, so the folder it ends in stays; the
    text itself still reads left to right inside a <bdi>. */
-:where(.listing-root) .palette-context {
+.palette-context {
   flex: 1 1 0;
   min-width: 0;
   overflow: hidden;
@@ -76,25 +82,30 @@
   text-align: left;
 }
 
-:where(.listing-root) .palette-context > bdi {
+.palette-context > bdi {
   direction: ltr;
 }
 
-:where(.listing-root) .palette-trail {
+/* A row's trailing column: a chord, a version, a count. */
+.palette-trail {
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
   padding-left: var(--space-4);
 }
 
+.palette-trail .keychord {
+  color: var(--text-dim);
+}
+
 /* What a row says after its name when that is a sentence or a command line
    rather than a path: it reads and gives way at its end. */
-:where(.listing-root) .palette-context.palette-sentence {
+.palette-context.palette-sentence {
   direction: ltr;
 }
 
 /* A row's end in the listing's meta tone: versions, a count, a chord. */
-:where(.listing-root) .palette-meta {
+.palette-meta {
   display: inline-flex;
   align-items: center;
   color: var(--row-meta-text);
@@ -102,59 +113,71 @@
   white-space: pre;
 }
 
+/* On the cursor row the quiet words take the tone made for the cursor fill. */
+.folder-menu-option.cursor:not([aria-disabled='true'])
+  :is(.palette-context, .palette-meta, .palette-trail .keychord) {
+  color: var(--text-on-surface);
+}
+
 /* The notes under a palette's list, ruled off from it, their text over
-   the rows' names; a failure among them in the danger tone. */
-:where(.listing-root) .palette-notes {
+   the rows' names; a failure among them in the danger tone for words. */
+.palette-notes {
   margin: var(--space-2) calc(-1 * var(--space-2)) 0;
   padding: var(--space-2) var(--space-2) 0;
   border-top: var(--line) solid var(--border);
 }
 
-:where(.listing-root) .palette-notes .folder-menu-note {
+.palette-notes .folder-menu-note {
   margin: 0;
   /* The text starts over the rows' names: an option's inset plus its icon column. */
   padding: var(--space-1) var(--space-4) var(--space-1) calc(var(--space-3) + var(--icon-column));
 }
 
-:where(.listing-root) .palette-notes .palette-failure {
-  color: var(--danger);
+.palette-notes .palette-failure {
+  color: var(--danger-text);
 }
 
-/* A refused keystroke, said where the count stands; a long refused paste
-   gives way to the field rather than pushing past the palette's edge. */
-:where(.listing-root) .palette-refused {
+/* A refused keystroke, said where the count stands, in the warning tone for
+   words; a long refused paste gives way to the field rather than pushing
+   past the palette's edge. */
+.palette-refused {
   min-width: 0;
   overflow: hidden;
   margin-left: 1ch;
   text-overflow: ellipsis;
-  color: var(--warning);
+  color: var(--warning-text);
   font-family: var(--font-ui);
   font-size: var(--font-size-caption);
   white-space: nowrap;
 }
 
 /* The level the list shows, a chip before the query that steps back out
-   when pressed. */
-:where(.listing-root) .palette-level {
+   when pressed: an accent wash with an accent line, deeper under the
+   pointer; the base sheet's pressed recipe and control transition draw the
+   rest. It takes no keyboard focus (the
+   field keeps it; ← steps back), so it draws no ring of its own. */
+.palette-level {
   display: inline-flex;
   flex: none;
   align-items: center;
   gap: var(--space-2);
+  height: var(--control-height-xs);
   margin-right: var(--space-4);
-  padding: 1px var(--space-3);
-  border: var(--line) solid color-mix(in srgb, var(--accent) 45%, var(--border-strong));
+  padding: 0 var(--space-3);
+  border: var(--line) solid var(--accent-line);
   border-radius: var(--radius-sm);
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  background: var(--accent-wash);
   color: var(--text);
   font: inherit;
   font-weight: var(--font-weight-strong);
   cursor: pointer;
 }
 
-:where(.listing-root) .palette-level:hover:enabled {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+.palette-level:hover:enabled {
+  background: var(--accent-wash-strong);
 }
 
-:where(.listing-root) .palette-level:focus-visible {
-  outline: none;
+/* Should a host hand it the focus anyway, it says so with the ring. */
+.palette-level:focus-visible {
+  outline-offset: var(--focus-offset-flush);
 }

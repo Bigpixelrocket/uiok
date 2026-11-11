@@ -11,6 +11,7 @@ export * from './charts/index.js';
 export * from './clock/index.js';
 export * from './datetime/index.js';
 export * from './dialog/index.js';
+export * from './field/index.js';
 export * from './filter/index.js';
 export * from './grid/index.js';
 export * from './icon/index.js';

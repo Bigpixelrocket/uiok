@@ -1,8 +1,9 @@
 /* ---- Pager (Pager) ----
 
    Begin and Previous, the page menu, Next and End, each step a compact
-   control drawn as a path bar's, an icon step's place kept while it is
-   hidden so the menu never moves. */
+   control drawn as a path bar's. A step that cannot act stays in its place,
+   disabled, so the menu never moves. Hover and pressed come from the base
+   stylesheet's quiet-control recipe; the menu is the shared field look. */
 .pager {
   display: flex;
   align-items: center;
@@ -35,12 +36,6 @@
   white-space: nowrap;
 }
 
-button.pager-step:hover:enabled {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
-  color: var(--text);
-}
-
 /* A step's hit area grows to --hit-target in the block axis only: steps sit
    2px apart, so growing sideways would overlap the neighbour's. */
 button.pager-step::after {
@@ -56,21 +51,8 @@ button.pager-step:focus-visible {
   outline-offset: var(--focus-offset-flush);
 }
 
+/* The page menu: the shared field (.field.field-xs) draws its height,
+   edge, chevron, text, and focus; the pager only keeps it from shrinking. */
 .pager-page {
-  height: var(--control-height-xs);
-  padding: 0 var(--space-2);
-  border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--ground);
-  color: var(--text);
-  font: inherit;
-  font-size: var(--font-size-small);
-}
-
-.pager-page:focus-visible {
-  /* A field's focus edge: its border and a 1px ring make 2px of accent
-     without the field growing. */
-  border-color: var(--accent);
-  outline: var(--line) solid var(--accent);
-  outline-offset: var(--focus-offset-flush);
+  flex: none;
 }

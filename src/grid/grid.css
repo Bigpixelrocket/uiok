@@ -63,8 +63,25 @@
   color: var(--text);
 }
 
+/* A right-aligned column keeps its label on the right edge, over the digits
+   under it: the sort mark goes before the label instead of after. */
+.data-grid-heading.align-right .data-grid-sort {
+  flex-direction: row-reverse;
+}
+
+/* The sort mark: the chevron the listing's sort draws, and the column's
+   place in a sort of several. */
 .data-grid-arrow {
-  font-size: var(--font-size-key-word);
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+  color: var(--text);
+}
+
+.data-grid-arrow small {
+  font-size: var(--font-size-caption);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
 }
 
 .data-grid-resize {
@@ -78,8 +95,40 @@
   touch-action: none;
 }
 
+/* The edge under the pointer, and while it is dragged, draws in the accent,
+   so a reader sees which column the drag resizes. */
+.data-grid-resize:hover,
+.data-grid-resize:active {
+  border-right: var(--line-strong) solid var(--accent);
+}
+
 .data-grid-body {
   position: relative;
+}
+
+/* A grid with no rows keeps a well of two rows under its header, so it reads
+   as an empty grid rather than a header alone. */
+.data-grid-body.empty {
+  min-height: calc(2 * var(--row-height-dense));
+}
+
+/* What an empty grid says (the `empty` prop): a sentence in the interface
+   face, dim, centred in the well. It keeps to the grid's visible width while
+   a wide header scrolls sideways, and wraps rather than widen the grid. */
+.data-grid-empty {
+  position: sticky;
+  left: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: calc(2 * var(--row-height-dense));
+  padding: var(--space-3) var(--space-6);
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-body);
+  text-align: center;
 }
 
 .data-grid-row {
@@ -100,7 +149,7 @@
   min-width: 0;
   padding: 0 var(--space-4);
   overflow: hidden;
-  border-right: var(--line) solid color-mix(in srgb, var(--border) 60%, transparent);
+  border-right: var(--line) solid var(--border);
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: default;
@@ -112,8 +161,8 @@
 }
 
 .data-grid-cell.cursor {
-  background: var(--cursor-row-bg);
-  box-shadow: inset 0 0 0 1px var(--accent);
+  background: var(--cursor-row);
+  box-shadow: inset 0 0 0 var(--line) var(--accent);
 }
 
 .data-grid-action {
@@ -122,17 +171,19 @@
   padding: 0 var(--space-3);
 }
 
-/* A row's controls before its cells: a checkbox and compact icon actions. */
+/* A row's controls before its cells: a checkbox and compact icon actions.
+   The checkbox starts --space-3 inside the frame, the inset SelectAllBar
+   keeps, so a bar under the grid lines its box up with the rows'. */
 .data-grid-lead {
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  padding: 0 var(--space-2);
-  border-right: var(--line) solid color-mix(in srgb, var(--border) 60%, transparent);
+  padding: 0 var(--space-2) 0 var(--space-3);
+  border-right: var(--line) solid var(--border);
 }
 
 .data-grid-lead input[type='checkbox'] {
-  margin: 0 var(--space-2) 0 var(--space-1);
+  margin: 0 var(--space-2) 0 0;
 }
 
 /* A cell whose value opens something: a linked record, a download. */
@@ -142,32 +193,59 @@
   overflow: hidden;
   border: none;
   background: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font: inherit;
   text-decoration: underline;
-  text-decoration-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  text-decoration-color: var(--accent-line);
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
 }
 
 .data-grid-link:hover:enabled {
-  text-decoration-color: var(--accent);
+  text-decoration-color: var(--accent-text);
 }
 
-/* The row under the pointer, a marked row, and a marked column. */
+/* The row under the pointer, a marked row, and a marked column. A marked
+   row is a tint with a bar on its leading edge, apart from the cursor
+   cell's ring and from the zebra rows; the bar is drawn over the lead and
+   the first cell, whatever fills them. */
 .data-grid.pointer .data-grid-row:hover {
   background: var(--hover-wash);
 }
 
 .data-grid-row.marked,
 .data-grid-row.marked:hover {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: var(--marked-bg);
 }
 
+.data-grid-row.marked::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  z-index: var(--z-raised);
+  width: var(--line-strong);
+  background: var(--marked-bar);
+  content: '';
+}
+
+.data-grid-row.marked .data-grid-cell.cursor {
+  background: var(--marked-cursor-bg);
+}
+
+/* A marked column lights its cells and underlines its heading; on a marked
+   row the row's tint alone, so two tints never stack under the text. */
 .data-grid-cell.marked,
 .data-grid-heading.marked {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  background: var(--accent-wash);
+}
+
+.data-grid-heading.marked {
+  box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--accent);
+}
+
+.data-grid-row.marked .data-grid-cell.marked:not(.cursor) {
+  background: none;
 }
 
 /* A header that drags to a new place, and where it lands. */
@@ -175,8 +253,15 @@
   cursor: grab;
 }
 
+.data-grid-heading.draggable:active,
 .data-grid-heading.dragging {
-  opacity: 0.5;
+  cursor: grabbing;
+}
+
+/* The heading in the hand fades and lifts; the accent bar marks where it lands. */
+.data-grid-heading.dragging {
+  background: var(--accent-wash);
+  opacity: var(--dragging-opacity);
 }
 
 .data-grid-heading.drop-before {
@@ -187,11 +272,6 @@
   box-shadow: inset calc(-1 * var(--line-strong)) 0 0 var(--accent);
 }
 
-.data-grid-arrow small {
-  margin-left: 1px;
-  font-size: var(--font-size-key-word);
-}
-
 /* Inline edit: the editor drawn over its cell in a layer of its own, so the
    grid's scrolling box never cuts it, above a dialog the grid sits in and
    under the tooltip; and a value edited but not saved yet (a cell whose
@@ -199,12 +279,58 @@
 .data-grid-editor {
   position: fixed;
   z-index: var(--z-dialog-popover);
+  display: flex;
+  align-items: stretch;
+  gap: var(--space-1);
   box-sizing: border-box;
   font: var(--font-size-small)/var(--line-height-prose) var(--font-ui);
   white-space: normal;
   cursor: auto;
 }
 
+/* The caller's field takes the cell's place: as wide as the cell (the layer
+   is, unless buttons beside it ask for more), as tall as the row plus the
+   frame, its text in the cell's face on the cell's baseline, a field edge
+   in the accent. Its own width never widens the layer. */
+.data-grid-editor > :is(input, select, textarea) {
+  flex: 1 1 0;
+  box-sizing: border-box;
+  width: 0;
+  min-width: 0;
+  height: calc(var(--row-height-dense) + 2 * var(--line));
+  margin: 0;
+  padding: 0 calc(var(--space-4) - var(--line));
+  border: var(--line) solid var(--accent);
+  border-radius: var(--radius-xs);
+  background: var(--ground);
+  color: var(--text);
+  font: var(--font-size-small)/var(--row-height-dense) var(--font-mono);
+}
+
+.data-grid-editor > textarea {
+  height: auto;
+  min-height: calc(var(--row-height-dense) + 2 * var(--line));
+  resize: none;
+}
+
+/* Focus keeps the field's edge on its border: no ring over the row above. */
+.data-grid-editor > :is(input, select, textarea):focus-visible {
+  outline: var(--line) solid var(--accent);
+  outline-offset: var(--focus-offset-flush);
+}
+
 .data-grid-cell.cell-edited {
-  background: color-mix(in srgb, var(--warning) 16%, transparent);
+  background: var(--warning-wash-strong);
+}
+
+/* Values that are not text: a missing value (SQL NULL) set apart from the
+   word, and bytes shown by their kind and size. The classes are hooks a
+   caller sets through a cell's className. */
+.data-grid-cell.cell-null {
+  color: var(--row-meta-text);
+  font-style: italic;
+}
+
+.data-grid-cell.cell-binary {
+  color: var(--syntax-teal);
 }

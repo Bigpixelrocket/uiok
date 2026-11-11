@@ -24,7 +24,8 @@ import { KeyChord } from '@bigpixelrocket/uiok/keychord';
 - A `<kbd class="keychord">` with one `.key` per part in macOS order.
 - Modifiers, arrows, Return, Backspace, Tab, Home, End, Page Up/Down, and `/` are lucide icons (`.key-icon`) on one 12px grid.
 - Escape and Space print their cap words (`.key-word`); any other key prints its capital (`.key-letter`).
-- The chord has no frame of its own; a surface that wants a key cap draws the border around `.keychord`.
+- The chord has no frame of its own. Where it is drawn as a key, put `keycap` on any element around it: every `.keychord` inside becomes the library's one key cap, 18px tall and at least 20px wide, a `--border-strong` frame with a 2px foot, on `--bg-panel`. The key legend, a dialog legend's slots, and the filter's escape key use the same cap. The cap rule weighs one class, so a host's state rule (an accent layer) changes its colours without restating it.
+- Icons are 12px (`--icon-sm`); letters and key words (esc, space) are both 10px (`--font-size-key`) mono.
 
 ## Labels read
 

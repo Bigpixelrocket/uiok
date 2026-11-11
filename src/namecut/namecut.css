@@ -22,10 +22,12 @@
   white-space: pre;
 }
 
-/* A head that has to give way keeps room for a character and its ellipsis. */
+/* A head that has to give way keeps room for a character and its ellipsis,
+   in whatever face the line is set: a character is about 1ch, and the
+   ellipsis about 1em in a proportional face. */
 .name-cut-head {
   flex: 0 10000000000 auto;
-  min-width: 2ch;
+  min-width: calc(1ch + 1em);
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -54,6 +56,23 @@
   overflow: hidden;
   direction: rtl;
   text-overflow: ellipsis;
+}
+
+/* A right-to-left name is seen tail first. Its head runs right to left, so
+   its ellipsis falls on its left, at its logical end; its tail's box runs
+   left to right around the right-to-left name, so the tail's ellipsis falls
+   on its right, at its front, and its end stays in view. */
+.name-cut-head.rtl {
+  direction: rtl;
+}
+
+.name-cut-tail.rtl {
+  direction: ltr;
+}
+
+/* The closing quote of a right-to-left name, after its head. */
+.name-cut-quote {
+  flex: none;
 }
 
 /* The spoken copy of the line is not selected twice with the drawn one. */

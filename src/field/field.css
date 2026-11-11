@@ -1,0 +1,441 @@
+/* ---- Form controls (docs/components/field.md) ----
+
+   One look for everything a user types in or toggles, drawn on the native
+   elements by class so a form keeps its own markup, keyboard, and screen
+   reader behaviour:
+
+   - .field on an input, select, or textarea: a well in the window ground,
+     outlined in --control-border, its contents in the code face (what a
+     user types is a value). 28px (.field), 24px (.field-sm, dense forms and
+     toolbars), 20px (.field-xs, in-row editors and inline controls).
+   - .check on a checkbox or radio: a 14px box (a disc for a radio), filled
+     with the accent when on, with the tick, the dash (indeterminate), or
+     the dot drawn in --on-accent.
+   - .switch on a checkbox with role="switch": a pill track and its knob.
+   - .range on an input of type range: a thin trough, its filled part, a knob.
+   - .field-label, .field-note, .field-problem: the words around a field,
+     in the interface face; .field-group stacks them, .field-choice puts a
+     check or switch beside its words, .field-grid lays label and value
+     rows on one label column.
+
+   Every state reads tokens: hover lifts the outline to --text-dim; focus
+   draws the 2px accent edge without growing (border plus a 1px ring on the
+   edge); aria-invalid="true" outlines in --danger; disabled fades whole by
+   the base rule. The drawn marks are borders and gradients, not images, so
+   no content policy blocks them. */
+
+/* -- Text field, textarea, select -- */
+
+.field {
+  box-sizing: border-box;
+  min-width: 0;
+  height: var(--control-height);
+  margin: 0;
+  padding: 0 var(--space-4);
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-md);
+  /* A well: the field sits a touch below the surface, the opposite of a
+     button's lit edge. */
+  box-shadow: inset 0 1px 0 var(--pressed-wash);
+  background: var(--ground);
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+  transition:
+    border-color var(--duration-fast),
+    outline-color var(--duration-fast);
+}
+
+.field-sm {
+  height: var(--control-height-sm);
+}
+
+/* Inline: inside a 24 to 26 px row or bar, so corners follow the smaller
+   height and the inset tightens to the inline icon-to-label step. */
+.field-xs {
+  height: var(--control-height-xs);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
+.field:hover:not(:disabled, :focus-visible, [aria-invalid='true']) {
+  border-color: var(--text-dim);
+}
+
+/* The field's focus edge, over the base ring: 2px of accent on the field's
+   own edge, so focusing it moves nothing beside it. */
+.field:focus-visible {
+  border-color: var(--accent);
+  outline: var(--line) solid var(--accent);
+  outline-offset: var(--focus-offset-flush);
+}
+
+.field[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.field[aria-invalid='true']:focus-visible {
+  outline-color: var(--danger);
+}
+
+/* Read-only: the value is there to copy, not to change; the well loses its
+   depth and sits on the surface it is drawn on. */
+.field:read-only:not(select) {
+  box-shadow: none;
+  background: transparent;
+}
+
+textarea.field {
+  height: auto;
+  min-height: calc(var(--control-height) * 2);
+  padding: var(--space-2) var(--space-4);
+  line-height: var(--line-height-prose);
+  resize: vertical;
+}
+
+/* A number keeps the keyboard's arrows; the spin buttons go, since their
+   platform drawing is the only part of the field the theme cannot reach. */
+input.field[type='number'] {
+  appearance: textfield;
+}
+
+input.field[type='number']::-webkit-inner-spin-button,
+input.field[type='number']::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+/* A pop-up menu: the platform's arrow is replaced by the up and down
+   chevron pair a desktop pop-up button shows, two 8 by 4 triangles in
+   --text-dim with 2px between them, at the end of the field. Each triangle
+   is two 4px squares, each half filled by a diagonal gradient. A list box
+   (multiple, or a size) shows its rows, so it takes no chevrons. */
+select.field:not([multiple], [size]) {
+  --field-chevron-end: var(--space-4);
+
+  padding-inline-end: calc(var(--field-chevron-end) + var(--space-6));
+  appearance: none;
+  background-image:
+    linear-gradient(135deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(-135deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(-45deg, transparent 50%, var(--text-dim) 50%);
+  background-position:
+    right calc(var(--field-chevron-end) + 4px) bottom calc(50% + 3px),
+    right var(--field-chevron-end) bottom calc(50% + 3px),
+    right calc(var(--field-chevron-end) + 4px) top calc(50% + 3px),
+    right var(--field-chevron-end) top calc(50% + 3px);
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: pointer;
+}
+
+select.field-xs:not([multiple], [size]) {
+  --field-chevron-end: var(--space-3);
+}
+
+/* The menu's own rows are drawn by the platform; give them the theme's
+   ground and text where the platform lets a page. */
+select.field option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* -- Checkbox and radio -- */
+
+.check {
+  /* 14px: the box sits on a 13px label's x-height the way an icon of
+     --icon-md does. */
+  display: inline-grid;
+  flex: none;
+  place-content: center;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-xs);
+  box-shadow: inset 0 1px 0 var(--pressed-wash);
+  background: var(--ground);
+  vertical-align: middle;
+  cursor: pointer;
+  appearance: none;
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast),
+    box-shadow var(--duration-fast);
+}
+
+.check[type='radio'] {
+  border-radius: var(--radius-pill);
+}
+
+.check:hover:not(:disabled) {
+  border-color: var(--text-dim);
+}
+
+.check:active:not(:disabled) {
+  background-color: var(--pressed-wash);
+}
+
+.check:is(:checked, :indeterminate) {
+  border-color: var(--accent);
+  box-shadow: none;
+  background: var(--accent);
+}
+
+/* On, the fill takes the lit edge a filled button takes on hover; a press
+   sinks it as a press sinks a button. */
+.check:is(:checked, :indeterminate):hover:not(:disabled) {
+  border-color: var(--accent);
+  box-shadow: var(--hover-lit);
+}
+
+.check:is(:checked, :indeterminate):active:not(:disabled) {
+  box-shadow: var(--shadow-pressed);
+  filter: brightness(0.94);
+}
+
+.check[aria-invalid='true']:not(:checked, :indeterminate) {
+  border-color: var(--danger);
+}
+
+/* The tick: two sides of a 4 by 8 box, turned, so its strokes are 2px
+   lines like the rest of the interface's marks. */
+.check[type='checkbox']:checked::before {
+  box-sizing: border-box;
+  width: 5px;
+  height: 9px;
+  margin-top: calc(-1 * var(--space-1));
+  border: solid var(--on-accent);
+  border-width: 0 var(--line-strong) var(--line-strong) 0;
+  transform: rotate(45deg);
+  content: '';
+}
+
+/* Some but not all: the dash wins over the tick, as the platform draws it. */
+.check[type='checkbox']:indeterminate::before {
+  width: 8px;
+  height: var(--line-strong);
+  margin-top: 0;
+  border: 0;
+  background: var(--on-accent);
+  transform: none;
+  content: '';
+}
+
+.check[type='radio']:checked::before {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--on-accent);
+  content: '';
+}
+
+/* -- Switch -- */
+
+/* A checkbox drawn as a pill track with a knob: the input itself, so it
+   keeps the checkbox's keyboard and screen reader behaviour and fades as a
+   whole under the disabled rule. Off: the knob at the start on the control
+   outline's track; on: at the end on the primary. */
+.switch {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: 24px;
+  height: 14px;
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--control-border);
+  vertical-align: middle;
+  cursor: pointer;
+  appearance: none;
+  transition: background-color var(--duration-fast);
+}
+
+.switch::before {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-raised);
+  background: var(--surface);
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast);
+  content: '';
+}
+
+.switch:checked {
+  background: var(--primary);
+}
+
+.switch:checked::before {
+  background: var(--on-primary);
+  transform: translateX(10px);
+}
+
+.switch:hover:not(:disabled) {
+  box-shadow: var(--hover-lit);
+}
+
+.switch:active:not(:disabled)::before {
+  box-shadow: var(--shadow-pressed);
+}
+
+/* -- Range -- */
+
+/* A slider (seek, volume): a 4px trough in --control-border with the part
+   up to the value in the accent, and a 12px knob on the surface. The
+   platform fills no part of the track by itself, so the host sets
+   --range-fill to the value's share (style="--range-fill: 40%"); without
+   it the whole trough is plain. */
+.range {
+  --range-fill: 0%;
+
+  flex: none;
+  height: var(--control-height-sm);
+  margin: 0;
+  background: transparent;
+  vertical-align: middle;
+  cursor: pointer;
+  appearance: none;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background:
+    linear-gradient(var(--accent), var(--accent)) 0 0 / var(--range-fill) 100% no-repeat,
+    var(--control-border);
+}
+
+.range::-webkit-slider-thumb {
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  margin-top: calc(-1 * var(--space-2));
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-raised);
+  background: var(--surface);
+  appearance: none;
+  transition: border-color var(--duration-fast);
+}
+
+.range:hover:not(:disabled)::-webkit-slider-thumb {
+  border-color: var(--text-dim);
+}
+
+.range:active:not(:disabled)::-webkit-slider-thumb {
+  box-shadow: var(--shadow-pressed);
+}
+
+/* -- The words around a field -- */
+
+/* What the field is for: the interface face, dim, on the compact line. */
+.field-label {
+  display: block;
+  margin: 0;
+  color: var(--text-dim);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+  overflow-wrap: anywhere;
+}
+
+/* Help under a field: what a value means or what happens next. */
+.field-note {
+  margin: 0;
+  color: var(--text-dim);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+  overflow-wrap: anywhere;
+}
+
+/* What is wrong with the value, in the danger's text tone. Pair it with
+   aria-invalid="true" on the field and aria-describedby naming it. */
+.field-problem {
+  margin: 0;
+  color: var(--danger-text);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+  overflow-wrap: anywhere;
+}
+
+/* One field with its words: label, control, then note or problem, 4px
+   apart. On a fieldset it is a group of choices under its legend. */
+.field-group {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field-group > legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  color: var(--text-dim);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+}
+
+/* A check, radio, or switch with its words beside it; the whole label is
+   the target. The words wrap rather than run out of the column. */
+.field-choice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: var(--control-height-sm);
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+  cursor: pointer;
+}
+
+/* Rows of a form or a settings page on one label column: the label, then
+   its value (a field, choices, a note). Each label's first line is centred
+   on a 24px control; a long label wraps on the compact line instead. A
+   host sets --field-label-width for its own label column. */
+.field-grid {
+  display: grid;
+  grid-template-columns: var(--field-label-width, 136px) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4) var(--space-6);
+  margin: 0;
+}
+
+.field-grid > .field-label {
+  padding-block: var(--space-2);
+}
+
+/* A value of several lines: options, then the note under them. */
+.field-value {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* One line of a value: a choice, a field, a status, with anything trailing
+   (a key chord) pushed to the line's end. */
+.field-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  min-width: 0;
+  min-height: var(--control-height-sm);
+}
+
+/* A note that is the whole value starts on the label's line. */
+.field-grid > .field-note {
+  padding-block-start: var(--space-2);
+}

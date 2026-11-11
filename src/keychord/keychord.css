@@ -1,10 +1,10 @@
 /* ---- Key chord (KeyChord) ----
 
    A chord as a row of keys, drawn in key legends, menus, settings, and a
-   dialog's legend. One grid for every key: an 11px icon or a 10px letter in
+   dialog's legend. One grid for every key: a 12px icon or a 10px letter in
    the same 12px box, so a modifier sits at the cap height of the mono text
-   beside it. The chord itself has no frame; a surface that draws it as a key
-   cap adds the border and ground around .keychord. */
+   beside it. The chord itself has no frame; where it is drawn as a key cap,
+   the one cap below frames it. */
 .keychord {
   display: inline-flex;
   align-items: center;
@@ -21,8 +21,8 @@
 }
 
 .key-icon {
-  width: 11px;
-  height: 11px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   display: block;
 }
 
@@ -36,9 +36,35 @@
   box-sizing: border-box;
 }
 
+/* Key words (esc, space) take the letters' size, so no key is printed
+   smaller than the others. */
 .key-word {
   width: auto;
   padding: 0 1px;
-  font: var(--font-weight-strong) var(--font-size-key-word)/12px var(--font-mono);
-  letter-spacing: 0.02em;
+  font: var(--font-weight-strong) var(--font-size-key)/12px var(--font-mono);
+  letter-spacing: 0;
+}
+
+/* ---- The key cap ----
+
+   The one picture of a key, for every surface that draws a chord as a key:
+   18px tall, at least 20px wide, a --border-strong frame with a 2px foot (the
+   retro key's thicker bottom edge), on the panel ground. A host puts
+   .keycap on any element around its chords (a row, a menu, a settings
+   list); the library's own legends and the filter's escape key are listed
+   here. Key caps are identified by their glyph, not their outline, so they
+   keep --border-strong rather than the control outline. Written at the
+   weight of one class, so a host's state rule (a held layer's accent, a
+   danger slot) changes a colour without restating the cap. */
+:where(.keycap, .keylegend, .legend-slot, .filter-escape) .keychord {
+  box-sizing: border-box;
+  height: 18px;
+  min-width: 20px;
+  justify-content: center;
+  padding: 0 var(--space-2);
+  border: var(--line) solid var(--border-strong);
+  border-bottom-width: var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
 }

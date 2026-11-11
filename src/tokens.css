@@ -92,13 +92,23 @@
      enters and glides; ease-in-out shakes and pulses; progress and spinners
      run linear. Under reduced motion the one-shot durations are zero (the
      rule below), so a transition written with them needs no query of its
-     own; a loop still stops itself with animation: none. */
+     own; a loop still stops itself with animation: none. signal: a
+     change that carries meaning by colour alone (a refusal's red without its
+     shake); reduced motion keeps it, since nothing moves. */
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 280ms;
+  --duration-signal: 280ms;
   --duration-spin: 1s;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in-out: ease-in-out;
+
+  /* The feedback transition of every control (Button, quiet actions, tabs,
+     segments, fields): its fills, outlines, rings, and words change at the
+     fast step together. */
+  --transition-control:
+    background-color var(--duration-fast), border-color var(--duration-fast),
+    box-shadow var(--duration-fast), color var(--duration-fast), filter var(--duration-fast);
 
   /* Heights. Controls that share a row share a height:
      - control-height: Button, IconButton, text field, select, tab strip;
@@ -174,12 +184,15 @@
 
   /* Surfaces that float over other content (sticky headers, cards,
      overlays) add --frost as a backdrop-filter so what scrolls under a
-     translucent layer blurs. */
+     translucent layer blurs; the .frost utility in styles.css applies it.
+     One recipe for every frosted layer, the full-window backdrop of a
+     dialog included; its wash is --scrim. */
   --frost: blur(24px) saturate(160%);
 }
 
 /* Reduced motion: every one-shot transition and animation written with the
-   duration tokens ends at once. Loops (spinners, stripes, pulses, blinks)
+   duration tokens ends at once, except --duration-signal, which moves
+   nothing. Loops (spinners, stripes, pulses, blinks)
    stop in their own component's query with animation: none. */
 @media (prefers-reduced-motion: reduce) {
   :root {
@@ -187,4 +200,30 @@
     --duration-base: 0ms;
     --duration-slow: 0ms;
   }
+}
+
+/* The edges .scroll-fade (styles.css) fades, typed so they animate along
+   the scroll position: lengths, 0 when nothing lies past an edge. */
+@property --scroll-fade-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --scroll-fade-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --scroll-fade-inline-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --scroll-fade-inline-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
 }

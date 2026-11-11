@@ -21,7 +21,7 @@ import {
 import { useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { chordGlyphs } from '@bigpixelrocket/uiok/keyboard';
+import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 
 import { CommandPalette, type Command } from '../CommandPalette';
 
@@ -34,16 +34,16 @@ export function PaletteDemo() {
     label: string,
     hint: string,
     icon: Command['icon'],
-    chord?: Parameters<typeof chordGlyphs>[0]
+    chord?: Command['chord']
   ): Command => ({
     id,
     label,
     hint,
     icon,
-    meta: chord === undefined ? undefined : chordGlyphs(chord),
+    chord,
     run: () => setRan(label)
   });
-  const size = 14;
+  const size = ICON_MD;
   const commands: readonly Command[] = [
     command('new', 'New File', 'Create an empty file here', <FilePlus size={size} />, {
       key: 'n',

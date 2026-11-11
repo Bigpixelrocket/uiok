@@ -1,13 +1,16 @@
 /* The documentation site's own look: its layout, its prose, and the frames
    around each demo. Every colour is a UIOK theme token, as in the library;
    the library's components keep their own look, and the site only lays them
-   out and draws the key-cap frames a surface adds around .keychord. */
+   out (key caps come from the library's .keycap host class). */
 
 :root {
   --site-header-height: 48px;
   --site-legend-height: 34px;
   --site-nav-width: 232px;
   --site-measure: 860px;
+  /* Running prose wraps at a reading measure inside the page's width; demos,
+     tables, and code blocks take the whole page. */
+  --site-measure-prose: 75ch;
 
   /* The site's prose sizes: a reading page's type, larger than the
      library's compact interface scale (src/tokens.css) and only the site's.
@@ -42,7 +45,7 @@ body {
 }
 
 a {
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 /* ---- The shell ---- */
@@ -105,16 +108,17 @@ a {
   margin-left: var(--space-6);
   padding: 0 var(--space-3) 0 var(--space-5);
   min-width: 220px;
-  border: var(--line) solid var(--border-strong);
+  border: var(--line) solid var(--control-border);
   border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--text-dim);
   font: var(--font-size-small) var(--font-mono);
   cursor: pointer;
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 .find-button:hover {
-  background: var(--cursor-bg);
+  background: var(--hover-wash);
 }
 
 .find-words {
@@ -127,17 +131,14 @@ a {
   align-items: center;
   gap: var(--space-4);
   margin-left: auto;
+  /* The appearance switch stands as tall as the find button and the theme
+     select beside it. */
+  --segmented-height: var(--control-height);
 }
 
 .theme-select,
 .demo-select {
-  height: var(--control-height);
-  padding: 0 var(--space-3);
-  border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--surface);
-  color: var(--text);
-  font: var(--font-size-small) var(--font-ui);
+  max-width: 100%;
 }
 
 .site-nav {
@@ -159,10 +160,6 @@ a {
 .nav-heading {
   margin: 0 0 var(--space-3);
   padding: 0 var(--space-4);
-  color: var(--text-dim);
-  font: var(--font-weight-strong) var(--font-size-caption)/var(--line-height-prose) var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
 }
 
 .nav-group ul {
@@ -178,19 +175,21 @@ a {
   color: var(--text);
   font: var(--font-size-body)/var(--line-height-prose) var(--font-mono);
   text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* A long page name wraps rather than hiding its end. */
+  overflow-wrap: anywhere;
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 .nav-link:hover {
-  background: var(--cursor-bg);
+  background: var(--hover-wash);
 }
 
+/* The open page is the current item: its own tint and mark, never the cursor's. */
 .nav-link[aria-current='page'] {
-  background: var(--cursor-row-bg);
-  color: var(--text-on-surface);
-  box-shadow: inset var(--line-strong) 0 0 var(--accent);
+  background: var(--current-bg);
+  color: var(--current-text);
+  font-weight: var(--font-weight-strong);
+  box-shadow: inset var(--line-strong) 0 0 var(--current-mark);
 }
 
 .site-main {
@@ -254,18 +253,29 @@ a {
   letter-spacing: -0.01em;
 }
 
+/* The import path under a page title (render-docs.ts sets it on its own line):
+   a value to copy, in the body size, and free to break at any character so a
+   long path never runs out of a phone's width. */
+.prose .doc-import {
+  margin: calc(-1 * var(--space-3)) 0 var(--space-6);
+  color: var(--text-dim);
+  font: var(--font-size-body)/var(--line-height-prose) var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.prose .doc-import code {
+  padding: 0;
+  background: none;
+  font: inherit;
+}
+
+/* Headings are marked by the mono face and the rule under them. */
 .prose h2,
 .home-section h2 {
   margin: var(--space-16) 0 var(--space-5);
   padding-bottom: var(--space-3);
   border-bottom: var(--line) solid var(--border);
   font: var(--font-weight-strong) var(--site-font-h2)/var(--line-height-heading) var(--font-mono);
-}
-
-.prose h2::before,
-.home-section h2::before {
-  content: '## ';
-  color: var(--text-dim);
 }
 
 .prose h3 {
@@ -279,18 +289,27 @@ a {
   margin: 0 0 var(--space-6);
 }
 
+.prose :is(p, ul, ol, blockquote),
+.home-section > p,
+.feature-list {
+  max-width: var(--site-measure-prose);
+}
+
 .prose li + li {
   margin-top: var(--space-2);
 }
 
+/* Inline code is a quiet wash, not a chip: no frame, and a run that wraps
+   keeps its ends on both lines. */
 .prose code,
 .home code {
   padding: 1px var(--space-2);
   border-radius: var(--radius-sm);
-  background: var(--bg-panel);
-  border: var(--line) solid var(--border);
+  background: var(--surface-header);
   /* Inline code follows the running text's size, a little smaller. */
   font: 0.9em var(--font-mono);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 .prose pre,
@@ -331,12 +350,12 @@ a {
 }
 
 .prose th {
-  background: var(--bg-header);
+  background: var(--surface-header);
   font: var(--font-weight-strong) var(--font-size-small) var(--font-mono);
 }
 
 .prose tr:nth-child(even) td {
-  background: var(--bg-panel);
+  background: var(--surface);
 }
 
 .prose blockquote {
@@ -348,39 +367,81 @@ a {
 
 /* ---- The demo frame ---- */
 
+/* A demo sits in the page flow, so its frame is a line, not a lift. */
 .demo {
   margin: var(--space-10) 0 var(--space-12);
   border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--surface);
-  box-shadow: var(--shadow-card);
 }
 
 .demo-head {
   display: flex;
   align-items: center;
   gap: var(--space-5);
+  min-width: 0;
   padding: var(--space-3) var(--space-6);
   border-bottom: var(--line) solid var(--border);
   background: var(--surface-header);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  font: var(--font-size-caption) var(--font-mono);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  font: var(--font-size-caption)/var(--line-height-compact) var(--font-mono);
   color: var(--text-dim);
 }
 
 .demo-tag {
+  flex: none;
   padding: 0 var(--space-3);
+  border: var(--line) solid var(--tonal-border);
   border-radius: var(--radius-sm);
-  background: var(--success);
-  color: var(--bg-panel);
+  background: var(--tonal);
+  color: var(--on-tonal);
   font-weight: var(--font-weight-strong);
-  letter-spacing: 0.08em;
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
+}
+
+.demo-source {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .demo-stage {
   position: relative;
   padding: var(--space-8);
+}
+
+/* A grid of labelled states (DemoStates.tsx): each cell shows one state of a
+   component with a caption under it naming the state, so every demo lays out
+   rest, hover, disabled, empty, and the rest the same way. */
+.demo-states {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.demo-states-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--demo-state-min, 140px), 1fr));
+  gap: var(--space-8) var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.demo-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.demo-state-label {
+  max-width: 100%;
+  color: var(--text-dim);
+  font: var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
 }
 
 .demo-stack {
@@ -397,10 +458,12 @@ a {
   margin: 0;
 }
 
+/* A label that heads a row of a demo: the interface face, as labels that head
+   data are. */
 .demo-label {
   min-width: 72px;
   color: var(--text-dim);
-  font: var(--font-size-small) var(--font-mono);
+  font: var(--font-size-small) var(--font-ui);
 }
 
 .demo-readout {
@@ -408,50 +471,32 @@ a {
   font: var(--font-size-small) var(--font-mono);
 }
 
+/* A group heading inside a demo, drawn as the small uppercase heading. */
 .demo-subhead {
   margin: var(--space-2) 0 var(--space-4);
-  font: var(--font-weight-strong) var(--font-size-small) var(--font-mono);
+  font: var(--font-weight-strong) var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
   color: var(--text-dim);
   letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
 }
 
+/* A demo's text field: the library's `field` draws it; this sets its width. */
 .demo-input {
-  width: 200px;
-  height: var(--control-height);
-  padding: 0 var(--space-4);
-  border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--bg);
-  color: var(--text);
-  font: var(--font-size-body) var(--font-mono);
+  width: min(200px, 100%);
 }
 
 .demo-input.wide {
-  width: 280px;
+  width: min(280px, 100%);
 }
 
 .demo-link {
   padding: 0;
   border: none;
   background: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font: inherit;
   text-decoration: underline;
   cursor: pointer;
-}
-
-.demo-track {
-  position: relative;
-  display: flex;
-  height: 8px;
-  overflow: hidden;
-  border-radius: var(--radius-sm);
-  background: var(--border);
-}
-
-.demo-fill {
-  background: var(--accent);
-  transition: width var(--duration-fast) var(--ease-out);
 }
 
 /* A demo pane sizes to its listing instead of sharing a row of panes. */
@@ -468,28 +513,8 @@ a {
   max-height: 260px;
 }
 
-.demo-filter {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  height: var(--control-height);
-  padding: 0 var(--space-3) 0 var(--space-4);
-  border-bottom: var(--line) solid var(--border);
-  font: var(--font-size-body) var(--font-mono);
-}
-
-.demo-filter input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-}
-
 .demo-described {
-  border-bottom: 1px dashed var(--text-dim);
+  border-bottom: var(--line) dashed var(--text-dim);
   font-family: var(--font-mono);
 }
 
@@ -497,9 +522,11 @@ a {
   max-width: 360px;
   padding: var(--space-5) var(--space-6);
   border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--surface);
-  box-shadow: var(--shadow-menu);
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    var(--shadow-popover);
   font-size: var(--font-size-body);
 }
 
@@ -525,16 +552,6 @@ a {
   align-self: flex-start;
 }
 
-/* Key caps: the frame a surface draws around a chord. */
-:is(.chord-cap, .showcase-keys, .find-button, .key-catcher) .keychord {
-  padding: var(--space-1) var(--space-2);
-  border: var(--line) solid var(--border-strong);
-  border-bottom-width: var(--line-strong);
-  border-radius: var(--radius-sm);
-  background: var(--bg-panel);
-  color: var(--text);
-}
-
 .chord-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
@@ -558,10 +575,19 @@ a {
   font: var(--font-size-body)/var(--site-line-list) var(--font-mono);
 }
 
+/* A marked path keeps its runs and marks together on the left (MarkedText
+   returns loose text and marks, each its own flex item), and the score sits
+   at the end. */
 .marked-list li {
   display: flex;
-  justify-content: space-between;
-  gap: var(--space-6);
+  align-items: baseline;
+  min-width: 0;
+}
+
+.marked-list li > .demo-readout {
+  flex: none;
+  margin-inline-start: auto;
+  padding-inline-start: var(--space-6);
 }
 
 .check-list label {
@@ -570,10 +596,21 @@ a {
   gap: var(--space-4);
 }
 
+/* The list's boxes stand in the SelectAllBar's column below them: the bar's
+   inset (the line plus --space-3, a grid's lead column), and no browser
+   margin of their own. */
+.check-list {
+  padding-inline-start: calc(var(--line) + var(--space-3));
+}
+
+.check-list input {
+  margin: 0;
+}
+
 .namecut-box {
   max-width: 100%;
   padding: var(--space-3) var(--space-5);
-  border: 1px dashed var(--border-strong);
+  border: var(--line) dashed var(--border-strong);
   border-radius: var(--radius-md);
   font-size: var(--font-size-body);
 }
@@ -583,7 +620,7 @@ a {
   overflow: hidden;
   border: var(--line) solid var(--border);
   border-radius: var(--radius-md);
-  background: var(--bg);
+  background: var(--ground);
 }
 
 .run-frame {
@@ -633,9 +670,9 @@ a {
   gap: var(--space-6);
   min-height: 56px;
   padding: var(--space-5) var(--space-6);
-  border: 1px dashed var(--border-strong);
+  border: var(--line) dashed var(--border-strong);
   border-radius: var(--radius-md);
-  background: var(--bg);
+  background: var(--ground);
   font: var(--font-size-body) var(--font-mono);
   cursor: text;
 }
@@ -670,14 +707,17 @@ a {
   gap: var(--space-5);
 }
 
-/* A miniature painted from the preview tokens its data-theme-preview sets. */
+/* A miniature painted from the preview tokens its data-theme-preview sets.
+   It reads the palette names (--bg, --bg-panel, --bg-header) on purpose: the
+   role aliases resolve on the root, so inside a preview scope they would
+   still show the worn theme. */
 .theme-tile {
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
   padding: var(--space-3);
   border: var(--line) solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--bg);
   color: var(--text);
   font: var(--font-size-small) var(--font-mono);
@@ -821,6 +861,76 @@ a {
   white-space: nowrap;
 }
 
+/* ---- Scale tokens ---- */
+
+.scale-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Name, value, then the step drawn at its own size. */
+.scale-row {
+  display: grid;
+  grid-template-columns: minmax(0, 22ch) 7ch minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-6);
+  min-height: var(--row-height);
+  padding-block: var(--space-1);
+  border-bottom: var(--line) solid var(--border-faint);
+  font-size: var(--font-size-caption);
+}
+
+.scale-row .token-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scale-sample {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.scale-type {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  line-height: var(--line-height-heading);
+  white-space: nowrap;
+}
+
+.scale-space {
+  height: var(--space-4);
+  border-radius: var(--radius-xs);
+  background: var(--accent);
+}
+
+.scale-radius {
+  width: 48px;
+  height: var(--control-height);
+  border: var(--line) solid var(--control-border);
+  background: var(--surface);
+}
+
+.scale-height {
+  width: 48px;
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.scale-icon {
+  color: var(--primary-mark);
+}
+
+@media (max-width: 860px) {
+  .scale-row {
+    grid-template-columns: minmax(0, 1fr) 6ch minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+
 /* ---- Home ---- */
 
 .hero {
@@ -834,7 +944,7 @@ a {
 }
 
 .prompt-sigil {
-  color: var(--success);
+  color: var(--text-dim);
 }
 
 .hero-title {
@@ -885,9 +995,8 @@ a {
   margin: var(--space-4) 0 var(--space-6);
   padding: var(--space-6);
   border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  background: var(--bg);
-  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-md);
+  background: var(--ground);
 }
 
 .showcase-pane {
@@ -917,14 +1026,27 @@ a {
   margin-left: calc(-1 * var(--space-1));
 }
 
+/* A code block with its copy button in a column of its own beside the code,
+   so a line longer than the block scrolls under nothing. */
 .code-block {
-  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  margin: 0 0 var(--space-8);
+  border: var(--line) solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--terminal-bg);
+}
+
+.code-block pre {
+  margin: 0;
+  border: none;
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  background: none;
 }
 
 .code-block .copy-button {
-  position: absolute;
-  top: var(--space-3);
-  right: var(--space-3);
+  margin: var(--space-3) var(--space-3) 0 0;
 }
 
 .feature-list {
@@ -949,11 +1071,30 @@ a {
 /* ---- Narrow windows ---- */
 
 @media (max-width: 860px) {
+  /* The header takes two rows: the menu, the wordmark, and find on the
+     first, the appearance switch and the theme on the second. */
+  :root {
+    --site-header-height: calc(2 * var(--control-height) + var(--space-4) + 2 * var(--space-5));
+  }
+
+  /* A phone has no keyboard to legend; the strip gives its room back. */
   .shell {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'header'
       'main';
+    padding-bottom: 0;
+  }
+
+  .site-legend {
+    display: none;
+  }
+
+  .site-header {
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: var(--space-4);
+    padding-block: var(--space-5);
   }
 
   .menu-toggle {
@@ -966,16 +1107,28 @@ a {
     left: 0;
     z-index: var(--z-panel);
     width: min(280px, 85vw);
-    box-shadow: var(--shadow-menu);
+    height: calc(100vh - var(--site-header-height));
+    box-shadow: var(--shadow-popover);
   }
 
   .shell[data-menu='closed'] .site-nav {
     display: none;
   }
 
+  /* The open drawer dims the page beside it, under the drawer and the
+     header. It takes no clicks, so the page works as it did. */
+  .shell[data-menu='open']::before {
+    content: '';
+    position: fixed;
+    inset: var(--site-header-height) 0 0;
+    z-index: var(--z-panel);
+    background: var(--scrim);
+    pointer-events: none;
+  }
+
   .find-button {
     min-width: 0;
-    margin-left: 0;
+    margin-left: auto;
   }
 
   .find-words,
@@ -983,12 +1136,21 @@ a {
     display: none;
   }
 
-  .theme-switcher .segmented-choice {
-    display: none;
+  .theme-switcher {
+    flex: 1 0 100%;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  .theme-select {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 200px;
+    text-overflow: ellipsis;
   }
 
   .site-main {
-    padding: var(--space-10) var(--space-8) 48px;
+    padding: var(--space-10) var(--space-8) var(--space-16);
   }
 
   .charts-pair {

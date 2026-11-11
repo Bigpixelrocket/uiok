@@ -1,11 +1,22 @@
-/** Every button variant and size, and icon buttons named on hover. */
+/**
+ * Every button tier, enabled then disabled, at the regular size and then the
+ * small one; icon buttons at both sizes, enabled and disabled; and buttons
+ * with an icon beside their label. Icon buttons are named on hover.
+ */
 
 import { Download, Plus, RefreshCw, Settings, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, IconButton } from '@bigpixelrocket/uiok/button';
+import { Button, IconButton, type ButtonVariant } from '@bigpixelrocket/uiok/button';
+import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { chordGlyphs } from '@bigpixelrocket/uiok/keyboard';
 import { tooltip } from '@bigpixelrocket/uiok/tooltip';
+
+const TIERS: ReadonlyArray<{ readonly variant: ButtonVariant; readonly word: string }> = [
+  { variant: 'primary', word: 'Save' },
+  { variant: 'tonal', word: 'Install' },
+  { variant: 'neutral', word: 'Cancel' }
+];
 
 /** The button page's demo. */
 export function ButtonDemo() {
@@ -13,46 +24,38 @@ export function ButtonDemo() {
   const press = (what: string) => () => setPressed(what);
   return (
     <div className="demo-stack">
+      {(['regular', 'small'] as const).map((size) => (
+        <div className="demo-row" key={size}>
+          {TIERS.map(({ variant, word }) => (
+            <Button key={variant} onClick={press(`${size} ${word}`)} size={size} variant={variant}>
+              {word}
+            </Button>
+          ))}
+          {TIERS.map(({ variant, word }) => (
+            <Button disabled key={variant} size={size} variant={variant}>
+              {word}
+            </Button>
+          ))}
+        </div>
+      ))}
       <div className="demo-row">
-        <Button onClick={press('Save')} variant="primary">
-          Save
-        </Button>
-        <Button onClick={press('Install')} variant="tonal">
-          Install
-        </Button>
-        <Button onClick={press('Cancel')}>Cancel</Button>
-        <Button disabled variant="primary">
-          Disabled
-        </Button>
-      </div>
-      <div className="demo-row">
-        <Button onClick={press('small Save')} size="small" variant="primary">
-          Save
-        </Button>
-        <Button onClick={press('small Install')} size="small" variant="tonal">
-          Install
-        </Button>
-        <Button onClick={press('small Delete')} size="small">
-          Delete
-        </Button>
-      </div>
-      <div className="demo-row">
+        {/* The glyph takes the button's size (14px, 12px when small) whatever the icon is given. */}
         <IconButton
           aria-label="New"
           onClick={press('New')}
           {...tooltip('New', chordGlyphs({ key: 'n', meta: true }))}
         >
-          <Plus size={14} />
+          <Plus />
         </IconButton>
         <IconButton
           aria-label="Refresh"
           onClick={press('Refresh')}
           {...tooltip('Refresh', chordGlyphs({ key: 'r', meta: true }))}
         >
-          <RefreshCw size={14} />
+          <RefreshCw />
         </IconButton>
-        <IconButton aria-label="Download" onClick={press('Download')} {...tooltip('Download')}>
-          <Download size={14} />
+        <IconButton aria-label="Download" disabled {...tooltip('Download')}>
+          <Download />
         </IconButton>
         <IconButton
           aria-label="Settings"
@@ -60,11 +63,21 @@ export function ButtonDemo() {
           size="small"
           {...tooltip('Settings')}
         >
-          <Settings size={12} />
+          <Settings />
         </IconButton>
         <IconButton aria-label="Delete" disabled size="small" {...tooltip('Delete')}>
-          <Trash2 size={12} />
+          <Trash2 />
         </IconButton>
+      </div>
+      <div className="demo-row">
+        <Button onClick={press('Add Folder')} variant="tonal">
+          <Plus size={ICON_MD} />
+          Add Folder
+        </Button>
+        <Button onClick={press('Refresh')} size="small">
+          <RefreshCw />
+          Refresh
+        </Button>
       </div>
       <code className="demo-readout">pressed: {pressed}</code>
     </div>

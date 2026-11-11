@@ -1,6 +1,8 @@
 import { ListFilter } from 'lucide-react';
 import type { ReactElement } from 'react';
 
+import { ICON_MD } from '../icon/index.js';
+
 /**
  * The mark at the start of a filter field, the same over a listing, in a
  * menu, and in a palette. It is as wide as the icon column of the rows the
@@ -10,7 +12,7 @@ import type { ReactElement } from 'react';
 export function FilterIcon(): ReactElement {
   return (
     <span aria-hidden className="filter-icon">
-      <ListFilter size={13} />
+      <ListFilter size={ICON_MD} />
     </span>
   );
 }

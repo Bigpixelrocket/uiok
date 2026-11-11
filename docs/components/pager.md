@@ -25,7 +25,7 @@ const shown = pageSlice(rows, page, 50);
 | `forward`  | `boolean`                     | Whether a later page can be reached; false hides Next and End           |
 | `look`     | `'icons' \| 'text' \| 'both'` | How steps draw (`LinkLook`); icons, named on hover, by default          |
 
-A hidden icon step keeps its place so the menu never moves; a hidden worded step takes no room.
+A step that cannot act from the page shown (Begin and Previous on the first page, Next and End on the last or past a stop, End before the end is known) stays in its place, disabled and faded like every disabled control, so the menu and the other steps never move under the pointer.
 
 ### Logic
 
@@ -37,7 +37,7 @@ Its steps and menu are ordinary Tab stops. The keys that page a list (Page Up, P
 
 ## Styling
 
-`.pager`, `.pager-step` (`.worded`; a hidden icon step is an empty `span.pager-step`), `.pager-page`.
+`.pager`, `.pager-step` (`.worded`; a step that cannot act is `:disabled`), `.pager-page` (also the shared `.field.field-xs`, which draws the menu's edge, chevrons, and focus). Hover and pressed come from the base stylesheet's quiet-control recipe.
 
 ## Labels read
 

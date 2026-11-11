@@ -92,6 +92,35 @@ describe('the data grid', () => {
     }
   });
 
+  it('says what its empty well holds only when it has no rows', () => {
+    const columns = [{ label: 'name' }, { label: 'size' }];
+    const { rerender } = render(
+      <DataGrid
+        cell={() => ({ text: 'a' })}
+        columns={columns}
+        copyText={() => null}
+        empty="No rows match"
+        label="Files"
+        rowCount={0}
+      />
+    );
+    const said = screen.getByRole('gridcell', { name: 'No rows match' });
+    expect(said.getAttribute('aria-colspan')).toBe('2');
+    expect(said.closest('.data-grid-body')?.classList.contains('empty')).toBe(true);
+
+    rerender(
+      <DataGrid
+        cell={() => ({ text: 'a' })}
+        columns={columns}
+        copyText={() => null}
+        empty="No rows match"
+        label="Files"
+        rowCount={3}
+      />
+    );
+    expect(screen.queryByText('No rows match')).toBeNull();
+  });
+
   it('keeps where it stood while out of layout, as in a hidden pane', () => {
     viewportHeight(400);
     render(
@@ -174,7 +203,9 @@ describe('the data grid’s cursor, sort, and edit', () => {
     expect(
       screen.getAllByRole('columnheader').map((header) => header.getAttribute('aria-sort'))
     ).toEqual(['ascending', 'descending']);
-    expect(size.textContent).toBe('size▼2');
+    // The mark is the listing's chevron (descending points down) and the sort's place.
+    expect(size.textContent).toBe('size2');
+    expect(size.querySelector('.data-grid-arrow svg.lucide-chevron-down')).not.toBeNull();
   });
 
   it('draws a cell’s class and content, and runs its link on Return', () => {

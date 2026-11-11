@@ -975,10 +975,11 @@ function rule(selector: string, tokens: Readonly<Record<string, string>>, depth 
 /**
  * The custom properties `@bigpixelrocket/uiok/styles.css` declares or reads beside the theme
  * tokens: the scales of `src/tokens.css` on `:root`, and the hooks a component stylesheet
- * declares or reads (the activity stripes' colour, a dialog's tone and
- * pinned top, a date picker fraction field's digit count, a tab strip's
- * edge fades), which an app
- * token on `:root` would otherwise reach.
+ * declares or reads (the activity stripes' colour, a dialog's tone, top
+ * inset, and pinned top, a date picker fraction field's digit count, a tab
+ * strip's edge fades, a field's label column and chevron, a range's fill, a
+ * notice's tone, the scroll fade's edges), which an app token on `:root`
+ * would otherwise reach.
  */
 const BASE_TOKEN_NAMES = [
   // The scales of src/tokens.css: size, space, corner, line, timing,
@@ -1021,6 +1022,7 @@ const BASE_TOKEN_NAMES = [
   '--duration-fast',
   '--duration-base',
   '--duration-slow',
+  '--duration-signal',
   '--duration-spin',
   '--ease-out',
   '--ease-in-out',
@@ -1052,6 +1054,13 @@ const BASE_TOKEN_NAMES = [
   '--z-dialog-popover',
   '--z-tooltip',
   '--frost',
+  '--transition-control',
+  // The scroll fade's edge size and its internal per-edge lengths.
+  '--scroll-fade-size',
+  '--scroll-fade-start',
+  '--scroll-fade-end',
+  '--scroll-fade-inline-start',
+  '--scroll-fade-inline-end',
   // The hooks a component stylesheet declares or reads.
   '--stripe-ink',
   '--stripe-ground',
@@ -1066,7 +1075,12 @@ const BASE_TOKEN_NAMES = [
   '--date-picker-digits',
   '--page-tabs-fade-start',
   '--page-tabs-fade-end',
-  '--segmented-height'
+  '--segmented-height',
+  '--dialog-inset-top',
+  '--field-label-width',
+  '--field-chevron-end',
+  '--range-fill',
+  '--notice-tone'
 ] as const;
 
 /** Every token name uiok defines: the fixed tokens, those a theme sets, and the stylesheet's own. */

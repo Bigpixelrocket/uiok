@@ -89,6 +89,25 @@ describe('ConfirmDialog', () => {
     expect(onConfirm).toHaveBeenCalledTimes(1);
   });
 
+  it('lists each path whole, breakable only after its slashes', () => {
+    render(
+      <ConfirmDialog
+        confirmLabel="Delete"
+        icon={Trash2}
+        message="Delete 1 item?"
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+        paths={['~/projects/infra/terraform/main.tf']}
+        title="Delete"
+      />
+    );
+
+    const item = screen.getByRole('listitem');
+
+    expect(item.textContent).toBe('~/projects/infra/terraform/main.tf');
+    expect(item.innerHTML).toBe('~/<wbr>projects/<wbr>infra/<wbr>terraform/<wbr>main.tf');
+  });
+
   it('takes its leave verb and list name from the labels, and a cancel label over them', () => {
     const { rerender } = render(
       <UiokProvider

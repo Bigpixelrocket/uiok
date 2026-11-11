@@ -12,6 +12,7 @@ import { ChartsDemo } from './charts';
 import { ClockDemo } from './clock';
 import { DateTimeDemo } from './datetime';
 import { DialogDemo } from './dialog';
+import { FieldDemo } from './field';
 import { FilterDemo } from './filter';
 import { GridDemo } from './grid';
 import { KeyChordDemo } from './keychord';
@@ -26,7 +27,9 @@ import { RunDemo } from './run';
 import { SegmentedDemo } from './segmented';
 import { SelectAllDemo } from './selectall';
 import { StoreDemo } from './store';
+import { SurfaceDemo } from './surface';
 import { TabsDemo } from './tabs';
+import { TerminalDemo } from './terminal';
 import { TextDemo } from './text';
 import { TooltipDemo } from './tooltip';
 
@@ -38,6 +41,7 @@ export const DEMOS: Readonly<Record<string, ComponentType>> = {
   clock: ClockDemo,
   datetime: DateTimeDemo,
   dialog: DialogDemo,
+  field: FieldDemo,
   filter: FilterDemo,
   grid: GridDemo,
   keychord: KeyChordDemo,
@@ -52,7 +56,9 @@ export const DEMOS: Readonly<Record<string, ComponentType>> = {
   segmented: SegmentedDemo,
   selectall: SelectAllDemo,
   store: StoreDemo,
+  surface: SurfaceDemo,
   tabs: TabsDemo,
+  terminal: TerminalDemo,
   text: TextDemo,
   tooltip: TooltipDemo
 };

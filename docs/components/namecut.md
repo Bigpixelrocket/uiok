@@ -23,17 +23,19 @@ import { labelParts, NameCut, nameParts } from '@bigpixelrocket/uiok/namecut';
 
 As the line narrows, the parts give way in this order:
 
-1. The name's head (down to one character and its ellipsis) and the words after the name (at their end), together.
+1. The name's head (down to about one character and its ellipsis, in any face) and the words after the name (at their end), together.
 2. The words before the name, at their end.
 3. The name's tail, at its front.
 
 A short name is never cut in its middle; it joins the words around it. A cut name keeps its closing quote in its tail.
 
+A name whose first letter is in a right-to-left script (Arabic, Hebrew) is cut the mirrored way inside a left-to-right line: its tail, its end, on the left with its ellipsis at its front; its head, its start, on the right with its ellipsis at its end; then its closing quote, so the quotes still close around it.
+
 A line with a cut name is drawn for sight only (`aria-hidden`), and assistive technology reads one hidden copy of the whole line. The tooltip shows the whole line.
 
 ## Styling
 
-`.name-cut`, `.name-cut-line`, `.name-cut-head`, `.name-cut-tail` (right to left for its front ellipsis; the name inside is a left-to-right `bdi`), `.name-cut-text`, `.name-cut-rest`. Inside a dialog title strip's `.dialog-context`, the line sits at the right edge.
+`.name-cut`, `.name-cut-line`, `.name-cut-head`, `.name-cut-tail` (right to left for its front ellipsis; the name inside is a left-to-right `bdi`), `.rtl` on both for a right-to-left name, `.name-cut-quote` (its closing quote), `.name-cut-text`, `.name-cut-rest`. Inside a dialog title strip's `.dialog-context`, the line sits at the right edge.
 
 ## Labels read
 

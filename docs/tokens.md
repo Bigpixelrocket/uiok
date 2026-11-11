@@ -83,18 +83,21 @@ A corner nested inside another keeps it concentric: `calc(var(--radius-md) - var
 
 ## Motion
 
-| Token             | Value                          | Use                                                |
-| ----------------- | ------------------------------ | -------------------------------------------------- |
-| `--duration-fast` | 120ms                          | Hover, focus, and press feedback; progress fills   |
-| `--duration-base` | 200ms                          | A surface entering or settling                     |
-| `--duration-slow` | 280ms                          | Glides; a refusal's shake and red together; a bell |
-| `--duration-spin` | 1s                             | One turn of a spinner, a pulse, a cursor blink     |
-| `--ease-out`      | cubic-bezier(0.2, 0.8, 0.2, 1) | Entering and gliding                               |
-| `--ease-in-out`   | ease-in-out                    | Shakes and pulses                                  |
+| Token               | Value                          | Use                                                                                            |
+| ------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- |
+| `--duration-fast`   | 120ms                          | Hover, focus, and press feedback; progress fills                                               |
+| `--duration-base`   | 200ms                          | A surface entering or settling                                                                 |
+| `--duration-slow`   | 280ms                          | Glides; a refusal's shake and red together; a bell                                             |
+| `--duration-signal` | 280ms                          | A change shown by colour alone (a refusal's red under reduced motion); reduced motion keeps it |
+| `--duration-spin`   | 1s                             | One turn of a spinner, a pulse, a cursor blink                                                 |
+| `--ease-out`        | cubic-bezier(0.2, 0.8, 0.2, 1) | Entering and gliding                                                                           |
+| `--ease-in-out`     | ease-in-out                    | Shakes and pulses                                                                              |
 
 Progress and spinners run `linear`; a blink steps with `steps()`. Rows, menu options, and tabs change at once on hover, as native lists do; controls drawn with the frosted hover take `--duration-fast`.
 
-Reduced motion: under `prefers-reduced-motion: reduce`, `tokens.css` sets the three one-shot durations to 0ms, so a transition or one-shot animation written with them needs no query of its own. A loop (a spinner, stripes, a pulse, a blink) stops itself with `animation: none` in its own query. The base sheet's `uiok-spin` and `uiok-pulse` keyframes serve every spinner and pulse.
+`--transition-control` is the feedback transition every control writes on its rest state: background, border, shadow, text colour, and filter, each at `--duration-fast`. The base sheet sets it on every quiet control its hover and press recipes cover (`docs/components/surface.md`), and the Button and the form controls read the same steps.
+
+Reduced motion: under `prefers-reduced-motion: reduce`, `tokens.css` sets the three one-shot durations to 0ms (`--duration-signal` keeps its length: it moves nothing, and a colour that carries meaning must stay visible), so a transition or one-shot animation written with them needs no query of its own. A loop (a spinner, stripes, a pulse, a blink) stops itself with `animation: none` in its own query. The base sheet's `uiok-spin` and `uiok-pulse` keyframes serve every spinner and pulse.
 
 ## Heights
 
@@ -122,7 +125,7 @@ One ring for everything focusable. The base sheet draws it with zero weight (`:w
 | `--focus-offset-flush` | 0px   | On the edge: a compact control in a bar with room around it keeps its corners                                      |
 | `--focus-offset-inset` | -2px  | Inside: only where a parent clips (a tab in a scrolling strip, a segment in its track, a grid, a well, a day cell) |
 
-The ring follows the control's `border-radius`, so a control with corners shows a rounded ring at the default and flush offsets. A text field draws the same 2px accent edge without growing: `border-color: var(--accent)` plus `outline: var(--line) solid var(--accent)` at `--focus-offset-flush`, and no soft halo. A container focused by script (`tabindex="-1"`) draws no ring. The ring's colour is written where it is drawn, not held in a token: a token resolves `var(--accent)` on `:root` and would miss a theme preview scope's own accent.
+The ring follows the control's `border-radius`, so a control with corners shows a rounded ring at the default and flush offsets. A text field draws the same 2px accent edge without growing: `border-color: var(--accent)` plus `outline: var(--line) solid var(--accent)` at `--focus-offset-flush`, and no soft halo. A container focused by script (`tabindex="-1"`) draws no ring. The shared form controls (`.field`, `docs/components/field.md`) draw this field edge for you. The ring's colour is written where it is drawn, not held in a token: a token resolves `var(--accent)` on `:root` and would miss a theme preview scope's own accent.
 
 ## Icons
 

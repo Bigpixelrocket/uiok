@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type ReactElement } from 'react';
 
+import { ICON_MD } from '../icon/index.js';
 import type { LinkLook } from '../pane/PaneActions.js';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
 
@@ -184,8 +185,9 @@ export function PageTabs<Id extends string>({
           type="button"
           {...(look === 'icons' ? tooltip(name) : {})}
         >
-          {look !== 'text' && <Icon aria-hidden size={13} />}
-          {look !== 'icons' && <span>{name}</span>}
+          {look !== 'text' && <Icon aria-hidden size={ICON_MD} />}
+          {/* data-label sizes the name for its bold weight, so no tab moves when the current one changes. */}
+          {look !== 'icons' && <span data-label={name}>{name}</span>}
         </button>
       ))}
     </div>

@@ -11,6 +11,7 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import { createPortal, flushSync } from 'react-dom';
 
 import {
@@ -24,6 +25,7 @@ import {
   type GridCell,
   type ScrollDirection
 } from './DataGrid.logic.js';
+import { ICON_SM } from '../icon/index.js';
 import { describedTooltip } from '../tooltip/Tooltip.logic.js';
 
 /** Every row's height, so the grid can place any row without measuring it. */
@@ -168,6 +170,12 @@ export interface DataGridProps {
    * returns null.
    */
   readonly editorContainer?: (grid: HTMLElement) => Element | null;
+  /**
+   * What the grid says when it has no rows (a sentence such as "No rows
+   * match the filter", or a sentence and an action), drawn dim and centred in
+   * the empty well under the header. The well stays blank without it.
+   */
+  readonly empty?: ReactNode;
 }
 
 /**
@@ -217,7 +225,8 @@ export function DataGrid({
   editTrigger = 'double-click',
   onEdit,
   editor = null,
-  editorContainer
+  editorContainer,
+  empty
 }: DataGridProps): ReactElement {
   const id = useId();
   const viewport = useRef<HTMLDivElement>(null);
@@ -658,7 +667,8 @@ export function DataGrid({
       aria-label={label}
       aria-multiselectable={onMarkRow === undefined ? undefined : true}
       aria-rowcount={rowCount + 1}
-      className={pointer ? 'data-grid pointer' : 'data-grid'}
+      // Columns past the frame fade at the side they hide on (`.scroll-fade-x`).
+      className={pointer ? 'data-grid scroll-fade-x pointer' : 'data-grid scroll-fade-x'}
       onKeyDown={onKeyDown}
       ref={viewport}
       role="grid"
@@ -723,7 +733,11 @@ export function DataGrid({
                   {column.label}
                   {mark !== undefined && (
                     <span aria-hidden className="data-grid-arrow">
-                      {mark.direction === 'ascending' ? '▲' : '▼'}
+                      {mark.direction === 'ascending' ? (
+                        <ChevronUp size={ICON_SM} />
+                      ) : (
+                        <ChevronDown size={ICON_SM} />
+                      )}
                       {marks.length > 1 && <small>{mark.position}</small>}
                     </span>
                   )}
@@ -739,8 +753,20 @@ export function DataGrid({
         })}
         {rowAction !== undefined && <div className="data-grid-action" />}
       </div>
-      <div className="data-grid-body" role="rowgroup" style={{ height: rowCount * ROW_HEIGHT }}>
-        {rows}
+      <div
+        className={rowCount === 0 ? 'data-grid-body empty' : 'data-grid-body'}
+        role="rowgroup"
+        style={rowCount === 0 ? undefined : { height: rowCount * ROW_HEIGHT }}
+      >
+        {rowCount === 0 && empty !== undefined ? (
+          <div className="data-grid-empty" role="row">
+            <div aria-colspan={columns.length} role="gridcell">
+              {empty}
+            </div>
+          </div>
+        ) : (
+          rows
+        )}
       </div>
     </div>
   );

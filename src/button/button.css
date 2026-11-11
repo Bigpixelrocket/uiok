@@ -5,8 +5,12 @@
    surrounding stylesheet restyles them, and a consumer never overrides them
    (a layout class may set width or alignment only). Tiers: primary for a
    view's one main action, tonal for a row's routine positive action, neutral
-   for the rest. Hover is the glass edge: a lit top edge and a touch of
-   brightness on fills, a frosted wash on outlines; a press sinks the face. */
+   for the rest. A neutral button and an icon button are outlined in
+   --control-border, the 3:1 line every control a pointer acts on shares.
+   Fills carry the glass edge (a lit top edge) at rest; hover deepens a fill
+   to its own hover token and lays a frosted wash on an outline; a press
+   sinks the face. Every control with the frosted hover takes this
+   transition list, so the change eases the same everywhere. */
 .button,
 .icon-button {
   display: inline-flex;
@@ -17,7 +21,7 @@
   box-sizing: border-box;
   height: var(--control-height);
   margin: 0;
-  border: var(--line) solid var(--border);
+  border: var(--line) solid var(--control-border);
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--text);
@@ -31,8 +35,7 @@
     background-color var(--duration-fast),
     border-color var(--duration-fast),
     box-shadow var(--duration-fast),
-    color var(--duration-fast),
-    filter var(--duration-fast);
+    color var(--duration-fast);
 }
 
 .button {
@@ -56,26 +59,41 @@
   height: var(--control-height-sm);
 }
 
+/* A glyph takes the size of the control it sits in, whatever size its
+   caller passed: 14px in a regular control, 12px in a small one. */
+:is(.button, .icon-button) > svg {
+  flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+:is(.button-small, .icon-button-small) > svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
 .button-primary {
   border-color: var(--primary);
   background: var(--primary);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
   color: var(--on-primary);
 }
 
 .button-tonal {
   border-color: var(--tonal-border);
   background: var(--tonal);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
   color: var(--on-tonal);
 }
 
 .button-primary:hover:enabled:not([aria-disabled='true']) {
+  background: var(--primary-hover);
   box-shadow: var(--hover-lit);
-  filter: brightness(1.08);
 }
 
 .button-tonal:hover:enabled:not([aria-disabled='true']) {
+  background: var(--tonal-hover);
   box-shadow: var(--hover-lit);
-  filter: brightness(var(--tonal-hover-brightness));
 }
 
 :is(.button-neutral, .icon-button):hover:enabled:not([aria-disabled='true']) {
@@ -84,7 +102,34 @@
   color: var(--text);
 }
 
-:is(.button, .icon-button):active:enabled:not([aria-disabled='true']) {
+/* A press sinks the face: a fill drops back to its resting tone under the
+   pressed shadow; an outline takes the pressed wash, darker than the hover
+   wash, so pressed never reads as hovered. */
+:is(.button-primary, .button-tonal):active:enabled:not([aria-disabled='true']) {
   box-shadow: var(--shadow-pressed);
-  filter: brightness(0.94);
+}
+
+.button-primary:active:enabled:not([aria-disabled='true']) {
+  background: var(--primary);
+}
+
+.button-tonal:active:enabled:not([aria-disabled='true']) {
+  background: var(--tonal);
+}
+
+:is(.button-neutral, .icon-button):active:enabled:not([aria-disabled='true']) {
+  background: var(--pressed-wash);
+  box-shadow: var(--shadow-pressed);
+  color: var(--text);
+}
+
+/* A primary or tonal button that cannot act drops its tier and is drawn as
+   a disabled neutral button: a faded tinted fill would leave its label
+   unreadable on a murky colour. The base rule fades it like every other
+   disabled control. */
+:is(.button-primary, .button-tonal):is(:disabled, [aria-disabled='true']) {
+  border-color: var(--control-border);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
 }

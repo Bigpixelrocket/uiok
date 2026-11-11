@@ -187,6 +187,68 @@ describe('renderGhosttySnapshot', () => {
     ]);
   });
 
+  it.each([
+    ['draws no cursor on an unfocused screen with nothing on it', ['', ' ', ''], 0],
+    [
+      'draws a quiet text-coloured outline cursor on an unfocused screen with text',
+      ['a', 'b', ''],
+      1
+    ]
+  ])('%s', (_name, texts, outlines) => {
+    const strokes: { style: string; alpha: number }[] = [];
+    let strokeStyle = '';
+    const context = {
+      canvas: { width: 100, height: 40 },
+      globalAlpha: 1,
+      beginPath: () => {},
+      clip: () => {},
+      fillRect: () => {},
+      fillText: () => {},
+      rect: () => {},
+      resetTransform: () => {},
+      restore: () => {},
+      save: () => {},
+      strokeRect(this: { globalAlpha: number }) {
+        strokes.push({ style: strokeStyle, alpha: this.globalAlpha });
+      },
+      set fillStyle(_value: string) {},
+      set font(_value: string) {},
+      set strokeStyle(value: string) {
+        strokeStyle = value;
+      },
+      set textBaseline(_value: string) {}
+    } as unknown as CanvasRenderingContext2D;
+    const cells = texts.map((text) => cell(text));
+    const snapshot: GhosttySnapshot = {
+      cols: 3,
+      rows: 1,
+      foreground: { r: 200, g: 200, b: 200 },
+      background: { r: 0, g: 0, b: 0 },
+      cursor: { r: 255, g: 120, b: 0 },
+      cursorX: 2,
+      cursorY: 0,
+      cursorVisible: true,
+      cursorBlinking: false,
+      cursorStyle: 1,
+      dirtyRows: new Set([0]),
+      rowData: [{ cells, text: texts.join(''), isWrapContinuation: false, wrapsToNext: false }]
+    };
+
+    renderGhosttySnapshot({
+      context,
+      snapshot,
+      metrics: { width: 10, height: 20, baseline: 15 },
+      fontSize: 12,
+      fontFamily: 'monospace',
+      padding: 4,
+      forceFull: true,
+      cursorOn: true,
+      focused: false
+    });
+
+    expect(strokes).toEqual(outlines === 0 ? [] : [{ style: 'rgb(200, 200, 200)', alpha: 0.5 }]);
+  });
+
   it('batches text around block glyphs and paints the glyphs as shapes that share edges', () => {
     const fillTextCalls: unknown[][] = [];
     const foregroundRects: number[][] = [];

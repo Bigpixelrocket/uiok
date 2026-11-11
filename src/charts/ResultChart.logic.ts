@@ -197,3 +197,58 @@ export function legendLayout(
     return place;
   });
 }
+
+/** A tick's label as an axis draws it: its left edge, from the plot's start, and its text. */
+export interface PlacedTick {
+  readonly x: number;
+  readonly text: string;
+}
+
+/**
+ * Which tick labels a horizontal axis of `span` pixels draws, and where:
+ * each centred on its tick at about `charWidth` pixels a character, moved
+ * inside the plot where it would pass an edge, and left out where it would
+ * come within `gap` pixels of the one before, so no two labels touch and
+ * none hangs past the plot.
+ */
+export function spacedTicks(
+  ticks: readonly { readonly at: number; readonly text: string }[],
+  span: number,
+  charWidth = 6.5,
+  gap = 8
+): PlacedTick[] {
+  const placed: PlacedTick[] = [];
+  let end = -Infinity;
+
+  for (const tick of ticks) {
+    const width = Array.from(tick.text).length * charWidth;
+    const x = Math.min(Math.max(0, tick.at - width / 2), Math.max(0, span - width));
+
+    if (x < end + gap) continue;
+    placed.push({ x, text: tick.text });
+    end = x + width;
+  }
+  return placed;
+}
+
+/**
+ * The runs of consecutive points a line or an area draws, each at least
+ * one point long; a missing point (null) ends a run.
+ */
+export function pointRuns<Point>(
+  points: readonly (Point | null)[]
+): { readonly at: number; readonly point: Point }[][] {
+  const runs: { readonly at: number; readonly point: Point }[][] = [];
+  let run: { readonly at: number; readonly point: Point }[] = [];
+
+  points.forEach((point, at) => {
+    if (point === null) {
+      if (run.length > 0) runs.push(run);
+      run = [];
+    } else {
+      run.push({ at, point });
+    }
+  });
+  if (run.length > 0) runs.push(run);
+  return runs;
+}

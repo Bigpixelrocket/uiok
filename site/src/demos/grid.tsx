@@ -2,12 +2,19 @@
  * A grid of ten thousand orders: click into it and arrow around, ⌘ and an
  * arrow jumps to an edge, Page Up and Down move a screen, Space marks a
  * row, a header click sorts (Shift adds a column), a header edge resizes,
- * and a header drags to reorder.
+ * and a header drags to reorder. Under it, a short grid with every cell
+ * kind (a lead checkbox, linked ids, missing and edited values, an inline
+ * editor on double-click), and a grid with no rows.
  */
 
 import { useMemo, useState } from 'react';
 
-import { DataGrid, type DataGridColumn, type DataGridSortMark } from '@bigpixelrocket/uiok/grid';
+import {
+  DataGrid,
+  type DataGridCell,
+  type DataGridColumn,
+  type DataGridSortMark
+} from '@bigpixelrocket/uiok/grid';
 
 import { ORDER_COUNT, orderAt, type Order } from './data';
 
@@ -123,7 +130,120 @@ export function GridDemo() {
               .map((sort) => `${fields[sort.column]?.column.label} ${sort.direction}`)
               .join(', ')}
       </code>
+      <h3 className="demo-subhead">Cell kinds and inline edit</h3>
+      <CellKinds />
+      <h3 className="demo-subhead">No rows</h3>
+      <DataGrid
+        cell={() => null}
+        columns={FIELDS.slice(0, 4).map((field) => field.column)}
+        copyText={() => null}
+        empty="No orders yet. New orders appear here as they come in."
+        label="Orders, none yet"
+        rowCount={0}
+      />
     </div>
+  );
+}
+
+const KIND_COLUMNS: readonly DataGridColumn[] = [
+  { id: 'id', label: 'order', align: 'right' },
+  { id: 'customer', label: 'customer' },
+  { id: 'city', label: 'city', tip: 'NULL where the order has none' },
+  { id: 'status', label: 'status', tip: 'Double-click to edit' }
+];
+const KIND_ROWS = ORDERS.slice(0, 8);
+
+/** A short grid with a lead checkbox, linked ids, NULL cities, edited statuses, and the inline editor. */
+function CellKinds() {
+  const [checked, setChecked] = useState<ReadonlySet<number>>(() => new Set([1, 2]));
+  const [edits, setEdits] = useState<ReadonlyMap<number, string>>(() => new Map([[3, 'held']]));
+  const [editing, setEditing] = useState<{ row: number; draft: string } | null>(null);
+  const [opened, setOpened] = useState('nothing');
+
+  const cell = (row: number, column: number): DataGridCell | null => {
+    const order = KIND_ROWS[row];
+    if (order === undefined) return null;
+    if (column === 0) {
+      return { text: String(order.id), onOpen: () => setOpened(`order ${order.id}`) };
+    }
+    if (column === 1) return { text: order.customer };
+    if (column === 2) {
+      return row % 3 === 1 ? { text: 'NULL', className: 'cell-null' } : { text: order.city };
+    }
+    const edited = edits.get(row);
+    return edited === undefined
+      ? { text: order.status }
+      : { text: edited, className: 'cell-edited', tip: `Was ${order.status}; not saved yet` };
+  };
+  const commit = (): void => {
+    if (editing === null) return;
+    setEdits((current) => new Map(current).set(editing.row, editing.draft));
+    setEditing(null);
+  };
+
+  return (
+    <>
+      <DataGrid
+        cell={cell}
+        columns={KIND_COLUMNS}
+        copyText={(row, column) => cell(row, column)?.text ?? null}
+        editable={(_, column) => column === 3}
+        editor={
+          editing === null
+            ? null
+            : {
+                row: editing.row,
+                column: 3,
+                node: (
+                  <input
+                    aria-label="Status"
+                    autoFocus
+                    onBlur={commit}
+                    onChange={(event) =>
+                      setEditing({ row: editing.row, draft: event.target.value })
+                    }
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') commit();
+                      if (event.key === 'Escape') setEditing(null);
+                    }}
+                    value={editing.draft}
+                  />
+                )
+              }
+        }
+        label="Orders with every cell kind"
+        leadWidth={32}
+        onEdit={(row) => setEditing({ row, draft: cell(row, 3)?.text ?? '' })}
+        onMarkRow={(row) =>
+          setChecked((current) => {
+            const next = new Set(current);
+            if (!next.delete(row)) next.add(row);
+            return next;
+          })
+        }
+        rowCount={KIND_ROWS.length}
+        rowLead={(row) => (
+          <input
+            aria-label={`Check order ${KIND_ROWS[row]?.id ?? ''}`}
+            checked={checked.has(row)}
+            className="check"
+            onChange={() =>
+              setChecked((current) => {
+                const next = new Set(current);
+                if (!next.delete(row)) next.add(row);
+                return next;
+              })
+            }
+            onClick={(event) => event.stopPropagation()}
+            type="checkbox"
+          />
+        )}
+        rowMarked={(row) => checked.has(row)}
+      />
+      <code className="demo-readout">
+        {checked.size} checked · {edits.size} edited · opened {opened}
+      </code>
+    </>
   );
 }
 

@@ -67,40 +67,45 @@ const niceStep = (span: number, count: number): number => {
   return (fraction < 1.5 ? 1 : fraction < 3 ? 2 : fraction < 7 ? 5 : 10) * power;
 };
 
-/** Time steps a time axis may tick on, in milliseconds. */
+/**
+ * Time steps a time axis may tick on, in milliseconds: round seconds,
+ * minutes, hours, days, weeks, months, and years, close enough together
+ * that some step always gives a few ticks.
+ */
 const TIME_STEPS = [
   1000,
+  2000,
+  5000,
+  10_000,
+  15_000,
+  30_000,
   60_000,
-  600_000,
+  2 * 60_000,
+  5 * 60_000,
+  10 * 60_000,
+  15 * 60_000,
+  30 * 60_000,
   3_600_000,
+  2 * 3_600_000,
+  3 * 3_600_000,
   6 * 3_600_000,
+  12 * 3_600_000,
   86_400_000,
+  2 * 86_400_000,
   7 * 86_400_000,
+  14 * 86_400_000,
   30 * 86_400_000,
+  91 * 86_400_000,
+  182 * 86_400_000,
   365 * 86_400_000
 ];
 
-/**
- * The ticks of an axis over `domain`, about `count` of them: round numbers;
- * round times; or each category in the domain, every few where there are
- * more than `count`. Each tick is counted from the first, never added up,
- * and a step finer than a double can tell apart at the domain's values (an
- * integer past 2^53, a deep zoom) gives no repeats, so the ticks stay few.
- */
-export function ticksOf(domain: Domain, kind: ScatterAxisKind, count = 5): number[] {
+/** The fewest ticks a number or time axis shows where its span allows. */
+const FEWEST_TICKS = 3;
+
+/** The ticks of a number or time axis over `domain` at about `count` of them. */
+function stepTicks(domain: Domain, kind: 'number' | 'time', count: number): number[] {
   const span = domain.max - domain.min;
-
-  if (!(span > 0) || !Number.isFinite(span)) return [];
-  if (kind === 'category') {
-    const first = Math.max(0, Math.ceil(domain.min));
-    const last = Math.floor(domain.max);
-    const every = Math.max(1, Math.ceil((last - first + 1) / count));
-    const ticks: number[] = [];
-
-    for (let at = first; at <= last; at += every) ticks.push(at);
-    return ticks;
-  }
-
   const step =
     kind === 'time'
       ? (TIME_STEPS.find((candidate) => span / candidate <= count) ?? niceStep(span, count))
@@ -123,12 +128,69 @@ export function ticksOf(domain: Domain, kind: ScatterAxisKind, count = 5): numbe
   return ticks;
 }
 
+/**
+ * The ticks of an axis over `domain`, about `count` of them: round numbers;
+ * round times; or each category in the domain, every few where there are
+ * more than `count`. A number or time axis shows at least three where a
+ * round step allows, however few `count` asks for, so its span can be read.
+ * Each tick is counted from the first, never added up, and a step finer
+ * than a double can tell apart at the domain's values (an integer past
+ * 2^53, a deep zoom) gives no repeats, so the ticks stay few.
+ */
+export function ticksOf(domain: Domain, kind: ScatterAxisKind, count = 5): number[] {
+  const span = domain.max - domain.min;
+
+  if (!(span > 0) || !Number.isFinite(span)) return [];
+  if (kind === 'category') {
+    const first = Math.max(0, Math.ceil(domain.min));
+    const last = Math.floor(domain.max);
+    const every = Math.max(1, Math.ceil((last - first + 1) / count));
+    const ticks: number[] = [];
+
+    for (let at = first; at <= last; at += every) ticks.push(at);
+    return ticks;
+  }
+
+  let ticks = stepTicks(domain, kind, count);
+
+  // Ask for one more at a time until a round step gives enough, a few tries at most.
+  for (let more = count + 1; ticks.length < FEWEST_TICKS && more <= count + 4; more += 1) {
+    const finer = stepTicks(domain, kind, more);
+
+    if (finer.length > ticks.length) ticks = finer;
+  }
+  return ticks;
+}
+
 const pad = (value: number): string => String(value).padStart(2, '0');
 
-/** A tick's label: the number, the date or the time of day in UTC, or the category. */
+/** Numbers from a million up are written short ("1.7936T"), at most this many digits long. */
+const LONG_NUMBER = 1_000_000;
+
+/**
+ * A number on an axis over `domain`: as it is below a million; from a
+ * million up in the short form ("2.5M", "1.7936T") with as many significant
+ * digits as a tenth of the span needs, so neighbouring ticks still differ.
+ */
+function numberLabel(value: number, domain: Domain): string {
+  if (Math.abs(value) < LONG_NUMBER) return String(value);
+
+  const step = (domain.max - domain.min) / 10;
+  const digits = Math.ceil(Math.log10(Math.abs(value))) - Math.floor(Math.log10(step || 1));
+
+  return new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    maximumSignificantDigits: Math.min(21, Math.max(2, digits))
+  }).format(value);
+}
+
+/**
+ * A tick's label: the number (from a million up in the short form,
+ * "1.7936T"), the date or the time of day in UTC, or the category.
+ */
 export function tickLabel(value: number, axis: ScatterAxis, domain: Domain): string {
   if (axis.kind === 'category') return axis.categories?.[Math.round(value)] ?? '';
-  if (axis.kind === 'number') return String(value);
+  if (axis.kind === 'number') return numberLabel(value, domain);
 
   if (axis.timeOfDay === true) {
     const seconds = Math.round(value / 1000);

@@ -139,10 +139,10 @@ export function terminalFontFamilyFromCss(value: string): string | undefined {
 
 /**
  * How long the visual bell shows, in milliseconds: the flash's fade, or the
- * static edge tint that takes its place under reduced motion. `Terminal.css`
- * fades over the same time.
+ * static edge tint that takes its place under reduced motion. terminal.css
+ * fades over `--duration-slow`, the same 280 ms.
  */
-export const BELL_FLASH_MS = 250;
+export const BELL_FLASH_MS = 280;
 
 /**
  * The shortest time between two flashes of the visual bell, in milliseconds.

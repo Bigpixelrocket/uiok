@@ -6,6 +6,7 @@
 
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
+import { KeyChord, type KeyChordProps } from '@bigpixelrocket/uiok/keychord';
 import { matchQuery, menuQueryRefused, moveMenuCursor } from '@bigpixelrocket/uiok/menu';
 import { Palette, PaletteQuery } from '@bigpixelrocket/uiok/palette';
 import { MarkedText } from '@bigpixelrocket/uiok/text';
@@ -17,8 +18,10 @@ export interface Command {
   /** A dim sentence after the label. */
   readonly hint?: string;
   readonly icon?: ReactNode;
-  /** Drawn at the row's end, such as a chord's glyphs. */
+  /** Dim text at the row's end, such as the page's route. */
   readonly meta?: string;
+  /** The command's chord, drawn as key caps at the row's end. */
+  readonly chord?: KeyChordProps['chord'];
   readonly run: () => void;
 }
 
@@ -124,7 +127,12 @@ export function CommandPalette({ label, placeholder, commands, onClose }: Comman
           if (event.key === 'Tab') event.preventDefault();
         }}
       />
-      <div className="folder-menu-options" id={listId} role="listbox" aria-label={label}>
+      <div
+        className="folder-menu-options scroll-fade"
+        id={listId}
+        role="listbox"
+        aria-label={label}
+      >
         {rows.map((row, index) => (
           <div
             aria-selected={index === cursor}
@@ -144,8 +152,11 @@ export function CommandPalette({ label, placeholder, commands, onClose }: Comman
                 <span className="palette-context palette-sentence">{row.command.hint}</span>
               )}
             </span>
-            <span className="palette-trail">
-              <span className="palette-meta">{row.command.meta}</span>
+            <span className="palette-trail keycap">
+              {row.command.meta === undefined ? null : (
+                <span className="palette-meta">{row.command.meta}</span>
+              )}
+              {row.command.chord === undefined ? null : <KeyChord chord={row.command.chord} />}
             </span>
           </div>
         ))}

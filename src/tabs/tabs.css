@@ -1,8 +1,9 @@
 /* ---- Page tabs (PageTabs) ----
 
    The level's pages as tabs under a path bar, the current one underlined
-   in the accent. A strip too narrow for its tabs scrolls sideways and
-   fades each edge that hides tabs (PageTabs sets data-overflow). */
+   in the current mark. A strip too narrow for its tabs scrolls sideways and
+   fades each edge that hides tabs (PageTabs sets data-overflow). Hover and
+   pressed come from the base stylesheet's track recipe. */
 .page-tabs {
   flex: none;
   display: flex;
@@ -12,7 +13,9 @@
   padding: 0 var(--space-3);
   overflow-x: auto;
   box-sizing: border-box;
-  border-bottom: var(--line) solid var(--border);
+  /* The strip's rule is drawn under the tabs, so the current tab's mark
+     covers it rather than stacking on it. */
+  box-shadow: inset 0 calc(-1 * var(--line)) 0 var(--border);
   scrollbar-width: none;
 }
 
@@ -46,6 +49,7 @@
   padding: 0 var(--space-5);
   border: none;
   border-bottom: var(--line-strong) solid transparent;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
   background: transparent;
   color: var(--text-dim);
   font: var(--font-size-small) var(--font-ui);
@@ -53,23 +57,37 @@
   cursor: pointer;
 }
 
-.page-tab:hover:enabled {
-  background: var(--hover-wash);
-  color: var(--text);
+/* The name keeps the width of its bold self, so no tab moves sideways when
+   the current one changes. */
+.page-tab > span {
+  display: inline-flex;
+  flex-direction: column;
+}
+
+.page-tab > span::after {
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: var(--font-weight-strong);
+  /* Empty alternative text: the copy never joins the tab's accessible name. */
+  content: attr(data-label) / '';
+  user-select: none;
 }
 
 .page-tab[aria-selected='true'] {
-  border-bottom-color: var(--accent);
-  color: var(--text);
+  border-bottom-color: var(--current-mark);
+  color: var(--current-text);
   font-weight: var(--font-weight-strong);
 }
 
+/* The strip scrolls sideways and clips anything outside it: the ring sits
+   inside the tab, above the current mark, never cut. */
 .page-tab:focus-visible {
-  /* The strip scrolls sideways and clips anything outside it. */
   outline-offset: var(--focus-offset-inset);
 }
 
-/* The second strip, a tab's own pages: rounded pills on a shorter row, the current one washed. */
+/* The second strip, a tab's own pages: small lozenges on a shorter row, the
+   current one in the current tint and ring. */
 .page-tabs.pills {
   height: var(--bar-height);
   padding: var(--space-1) var(--space-3);
@@ -79,10 +97,11 @@
 .page-tabs.pills .page-tab {
   padding: 0 var(--space-4);
   border-bottom: none;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   font-size: var(--font-size-caption);
 }
 
 .page-tabs.pills .page-tab[aria-selected='true'] {
-  background: var(--cursor-row-bg);
+  background: var(--current-bg);
+  box-shadow: inset 0 0 0 var(--line) var(--current-ring);
 }

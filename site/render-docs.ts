@@ -41,6 +41,7 @@ const REPOSITORY = 'https://github.com/Bigpixelrocket/uiok/blob/main/';
 const DOC_ROUTES: Readonly<Record<string, string>> = {
   'docs/themes.md': '#/theming',
   'docs/labels.md': '#/labels',
+  'docs/tokens.md': '#/tokens',
   'docs/components/keyboard.md': '#/keyboard'
 };
 
@@ -51,7 +52,7 @@ function siteHref(href: string, from: string): string {
   const resolved = new URL(path, `https://repo.invalid/${from}`).pathname.slice(1);
   const route = DOC_ROUTES[resolved];
   if (route !== undefined) return route;
-  const area = /^docs\/components\/([a-z]+)\.md$/.exec(resolved)?.[1];
+  const area = /^docs\/components\/([a-z][a-z-]*)\.md$/.exec(resolved)?.[1];
   if (area !== undefined) return `#/components/${area}`;
   return `${REPOSITORY}${resolved}${anchor === undefined ? '' : `#${anchor}`}`;
 }
@@ -77,15 +78,32 @@ function docTitle(text: string, fallback: string): string {
   return heading.replace(/\s*\(`[^`]*`\)\s*$/, '').trim();
 }
 
+/** A first heading that ends with the area's package path in parentheses. */
+const IMPORT_HEADING = /^# (.+?)\s*\(`([^`<>&]*)`\)\s*$/m;
+
+/**
+ * The doc with its package path moved out of the title onto a line of its
+ * own under it, so the title reads as the page's name and the path, a value
+ * to copy, can break anywhere on a narrow screen.
+ */
+function withImportLine(text: string): string {
+  return text.replace(
+    IMPORT_HEADING,
+    (_match, title: string, path: string) =>
+      `# ${title}\n\n<p class="doc-import"><code>${path}</code></p>\n`
+  );
+}
+
 /** The markdown of the doc at `from` (a repository path), rendered for the site. */
-export function renderDoc(text: string, from: string): RenderedDoc {
+export function renderDoc(source: string, from: string): RenderedDoc {
+  const text = withImportLine(source);
   const at = text.search(/^## /m);
   const intro = at === -1 ? text : text.slice(0, at);
   const rest = at === -1 ? '' : text.slice(at);
   const name = /([^/]+)\.md$/.exec(from)?.[1] ?? from;
   return {
     from,
-    title: docTitle(text, name),
+    title: docTitle(source, name),
     intro: markdownHtml(intro, from),
     rest: markdownHtml(rest, from)
   };

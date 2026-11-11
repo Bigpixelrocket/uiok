@@ -20,7 +20,9 @@ import { MarkedText } from '@bigpixelrocket/uiok/text';
 
 ## Styling
 
-`.name-hit`, inside the listing scope (`.listing-root`): a 22% accent tint behind the text. It never changes the text colour, so a name keeps the colour it already has.
+`.name-hit`, wherever MarkedText is used: a `--match-bg` wash behind the text, which keeps the text at 4.5:1 on a listing, a panel, and the cursor row, and a 2px `--match-mark` underline that carries the mark on any row colour. It never changes the text colour, so a name keeps the colour it already has. On a selected listing row the wash is `--selection-hit`.
+
+A mark is an inline block, so where a name ends in an ellipsis a cut inside a mark replaces the whole mark: the ellipsis never wears a match's wash.
 
 ## Labels read
 

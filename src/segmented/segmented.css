@@ -1,22 +1,29 @@
 /* ---- Segmented choice (SegmentedChoice) ----
 
-   One choice of several: a tinted track with the chosen segment raised, each
-   segment as wide as its words. It carries its whole look, so it draws the
-   same in a dialog and on a page. Its outer height is a control height,
-   small by default; a form of regular controls sets --segmented-height to
-   var(--control-height) so the track matches the fields beside it. Each
+   One choice of several: a trough (--control-track, ringed in
+   --control-border like every control outline) with the chosen segment
+   raised, each segment as wide as its words. It carries its whole look, so
+   it draws the same in a dialog and on a page. Its outer height is a control
+   height, small by default, so it lines up with small buttons and fields; a
+   form of regular controls sets --segmented-height to var(--control-height),
+   and a dense row sets var(--control-height-xs). The height is a minimum: a
+   host that lets the choices wrap gets a taller trough, not overflow. Each
    segment is the track less its 2px inset on both sides, its corner
-   concentric with the track's. */
+   concentric with the track's. Hover and press come from the base sheet's
+   track recipe (a wash, no ring); the chosen segment's raised look outweighs
+   them. Every segment has one weight, chosen or not,
+   so a change of choice never moves a label. */
 .segmented-choice {
   box-sizing: border-box;
   display: inline-flex;
   flex: none;
   gap: var(--space-1);
-  height: var(--segmented-height, var(--control-height-sm));
+  min-height: var(--segmented-height, var(--control-height-sm));
   margin: 0;
   padding: var(--space-1);
   border-radius: var(--radius-md);
-  background: color-mix(in srgb, var(--text) 7%, transparent);
+  background: var(--control-track);
+  box-shadow: inset 0 0 0 var(--line) var(--control-border);
 }
 
 .segmented-choice-option {
@@ -27,25 +34,22 @@
   border: none;
   border-radius: calc(var(--radius-md) - var(--space-1));
   background: transparent;
-  color: var(--text-dim);
+  color: var(--text-on-surface);
   font-family: var(--font-ui);
   font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+  line-height: 1;
   white-space: nowrap;
   cursor: pointer;
-}
-
-.segmented-choice-option:hover:enabled:not([aria-disabled='true']) {
-  color: var(--text);
 }
 
 .segmented-choice-option[aria-checked='true'] {
   background: linear-gradient(var(--hover-wash), transparent), var(--surface);
   box-shadow:
     inset 0 1px 0 var(--glass-edge),
-    0 0 0 var(--line) var(--border-strong),
-    var(--shadow-segment);
+    0 0 0 var(--line) var(--control-border),
+    var(--shadow-raised);
   color: var(--text);
-  font-weight: var(--font-weight-strong);
 }
 
 .segmented-choice-option:focus-visible {

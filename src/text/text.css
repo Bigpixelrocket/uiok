@@ -1,11 +1,20 @@
 /* ---- Marked text (MarkedText) ----
 
-   Matched characters are tinted, never recoloured: a row name may already
+   Matched characters are marked, never recoloured: a row name may already
    carry a colour of its own (a file's kind), and repainting it would trade
-   that colour for the match. The tint sits behind whatever colour the name
-   has, so it composes with names that draw their own background too. Drawn
-   inside the listing scope (.listing-root). */
-:where(.listing-root) .name-hit {
+   that colour for the match. The mark is a light wash behind the text that
+   keeps the text at 4.5:1 on a listing, a panel, and the cursor row, and an
+   underline that carries the mark on any row colour. It draws wherever
+   MarkedText is used, inside a listing scope or not.
+
+   Where a name is cut with an ellipsis, an inline mark that runs under the
+   cut paints its wash behind the ellipsis and past it, so the cut reads as
+   a match. A mark is an atomic box (inline-block) instead: a cut that falls
+   inside it replaces it whole with the ellipsis, which never takes its
+   wash. */
+.name-hit {
+  display: inline-block;
   border-radius: var(--radius-xs);
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: var(--match-bg);
+  box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--match-mark);
 }

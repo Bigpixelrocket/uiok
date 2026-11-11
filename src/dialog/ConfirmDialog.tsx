@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { useId, type ReactElement, type ReactNode } from 'react';
+import { Fragment, useId, type ReactElement, type ReactNode } from 'react';
 
 import type { Chord } from '../keyboard/Keyboard.logic.js';
 import { useLabels } from '../labels/UiokProvider.js';
@@ -8,6 +8,24 @@ import { ModalDialog } from './ModalDialog.js';
 
 /** Finder's Delete Immediately chord, which confirms a delete that cannot be undone. */
 const DELETE_IMMEDIATELY: Chord = { key: 'Backspace', meta: true, alt: true };
+
+/**
+ * A path with a line-break opportunity after each slash, so a long path
+ * wraps between its folders instead of inside a name. The text is
+ * unchanged: `<wbr>` adds no characters, so a copied path stays whole.
+ */
+const breakAfterSlashes = (path: string): ReactNode =>
+  path.split('/').map((part, index, parts) => (
+    // A path's parts are fixed for one render; their place is their identity.
+    <Fragment key={index}>
+      {part}
+      {index < parts.length - 1 && (
+        <>
+          /<wbr />
+        </>
+      )}
+    </Fragment>
+  ));
 
 /**
  * A confirmation's tone: `danger` for a destructive action, `warning` for a
@@ -77,9 +95,11 @@ export interface ConfirmDialogProps {
  * on ⌥⌘⌫ with Return running nothing for a delete that cannot be undone
  * (`forGood`). The message describes the dialog (`aria-describedby`), so a
  * screen reader reads the consequence, and any name it holds, with the
- * title. It carries its own type, margins, and box sizing, so it renders
- * the same portalled to the body as inside any page. Styled by the
- * `.confirm-dialog` rules in `@bigpixelrocket/uiok/styles.css`; reads the `dialog` labels.
+ * title. The frame carries its type, margins, and box sizing, so it renders
+ * the same portalled to the body as inside any page; its title wraps to a
+ * second line rather than lose the question's end, and a long path breaks
+ * after a slash. Styled by the `.confirm-dialog` rules in
+ * `@bigpixelrocket/uiok/styles.css`; reads the `dialog` labels.
  */
 export function ConfirmDialog({
   title,
@@ -123,9 +143,13 @@ export function ConfirmDialog({
       </p>
       {/* Focusable so keyboard users can scroll a long list before confirming. */}
       {paths.length > 0 && (
-        <ul aria-label={labels.affectedItems(paths.length)} className="dialog-paths" tabIndex={0}>
+        <ul
+          aria-label={labels.affectedItems(paths.length)}
+          className="dialog-paths scroll-fade"
+          tabIndex={0}
+        >
           {paths.map((path) => (
-            <li key={path}>{path}</li>
+            <li key={path}>{breakAfterSlashes(path)}</li>
           ))}
         </ul>
       )}

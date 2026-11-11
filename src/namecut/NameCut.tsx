@@ -3,12 +3,58 @@ import { Fragment, type ReactElement } from 'react';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
 import { partsText, type CutPart } from './NameCut.logic.js';
 
+/** A name whose first letter is in a right-to-left script reads right to left. */
+const RIGHT_TO_LEFT =
+  /^[^\p{L}]*[\p{Script=Arabic}\p{Script=Hebrew}\p{Script=Syriac}\p{Script=Thaana}\p{Script=Nko}]/u;
+
+/** The closing quote `nameParts` keeps at a cut name's end. */
+const CLOSING_QUOTE = /["”“»«]$/u;
+
 /** Props for {@link NameCut}. */
 export interface NameCutProps {
   /** The line in parts (`labelParts`, `nameParts`). */
   readonly parts: readonly CutPart[];
   /** The box's own class, which sets its type, colour, and size where it is drawn. */
   readonly className?: string;
+}
+
+/**
+ * A cut name's head and tail, in the order they are seen. A left-to-right
+ * name shows its head, then its tail. A right-to-left name is seen the
+ * other way round inside the line: its tail (its end) on the left, its
+ * head (its start) on the right, then its closing quote, so the quotes
+ * still close around it; each box cuts on the side that gives way.
+ */
+function cutName(head: string, tail: string): ReactElement {
+  if (!RIGHT_TO_LEFT.test(head + tail)) {
+    return (
+      <>
+        {head !== '' && <span className="name-cut-head">{head}</span>}
+        {/* The box runs right to left for its ellipsis; the name inside
+            keeps its own order, as the head does. */}
+        <span className="name-cut-tail">
+          <bdi dir="ltr">{tail}</bdi>
+        </span>
+      </>
+    );
+  }
+
+  const quote = CLOSING_QUOTE.exec(tail)?.[0] ?? '';
+  const end = tail.slice(0, tail.length - quote.length);
+
+  return (
+    <>
+      <span className="name-cut-tail rtl">
+        <bdi dir="rtl">{end}</bdi>
+      </span>
+      {head !== '' && (
+        <span className="name-cut-head rtl" dir="rtl">
+          {head}
+        </span>
+      )}
+      {quote !== '' && <span className="name-cut-quote">{quote}</span>}
+    </>
+  );
 }
 
 /**
@@ -47,14 +93,7 @@ export function NameCut({ parts, className }: NameCutProps): ReactElement {
           ) : (
             // Head and tail sit in the line itself, so its flex sizes them
             // against the words around them.
-            <Fragment key={index}>
-              {part.head !== '' && <span className="name-cut-head">{part.head}</span>}
-              {/* The box runs right to left for its ellipsis; the name
-                  inside keeps its own order, as the head does. */}
-              <span className="name-cut-tail">
-                <bdi dir="ltr">{part.tail}</bdi>
-              </span>
-            </Fragment>
+            <Fragment key={index}>{cutName(part.head, part.tail)}</Fragment>
           )
         )}
       </span>

@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 
 /**
  * How long a refusal's classes stay on, in milliseconds. Longer than the
- * 240 ms nudge and the red flash in menu.css, so both finish before their
- * class is taken away.
+ * nudge and the red flash in menu.css, which both run for `--duration-slow`
+ * (280 ms), so both finish before their class is taken away.
  */
 const BELL_BEAT_MS = 300;
 

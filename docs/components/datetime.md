@@ -1,6 +1,6 @@
 # DateTimePicker (`@bigpixelrocket/uiok/datetime`)
 
-The button beside a date or time field that opens a picker under it: a month's days, the previous and next month, Today or Now, and for a time its hour, minute, second, and optional fraction. The field stays the caller's, so a user can still type any value; the picker only writes what it picks.
+The button beside a date or time field that opens a picker under it (above it when the room below is short): a month's days, the previous and next month, Today or Now, and for a time its hour, minute, second, and optional fraction. The field stays the caller's, so a user can still type any value; the picker only writes what it picks.
 
 ## Example
 
@@ -52,11 +52,11 @@ Other helpers: `nowParts`, `daysIn`, `monthGrid`, `stepMonth`, `weekdayNames`.
 
 ## Keyboard
 
-The button opens and closes the panel. In the panel, Tab moves through its controls, Escape closes it, and a day button picks with Return or Space. Picking a day closes a `date` picker; a `datetime` picker stays open for its time. A pointer outside the panel closes it. The panel carries `data-overlay`, so a window key policy that watches overlays (`watchOverlays`) treats it as open.
+The button opens and closes the panel. In the panel, Tab moves through its controls, Escape closes it, and a day button picks with Return or Space. Picking a day closes a `date` picker; a `datetime` picker stays open for its time. A pointer outside the panel closes it. The panel stays beside its button in the document, so Tab reaches it next and a dialog keeps it, but is placed in the window with `position: fixed`, flipped above the button when the room below is short and kept 8px inside every window edge, so no scrolling pane or dialog cuts it. Today carries `aria-current="date"` and is outlined in the month grid. The panel carries `data-overlay`, so a window key policy that watches overlays (`watchOverlays`) treats it as open.
 
 ## Styling
 
-`.date-picker`, `.date-picker-panel` (at `--z-panel`), `.date-picker-head`, `.date-picker-days`, `.date-picker-week`, `.date-picker-weekday`, `.date-picker-day` (`.outside`, `.current`), `.date-picker-time`, `.date-picker-field`, `.date-picker-input` (`.long`), `.date-picker-foot`. A fraction field of more than three digits is `.long` and sets `--date-picker-digits` to its digit count, which its width reads.
+`.date-picker`, `.date-picker-panel` (fixed, at `--z-menu`, or `--z-dialog-popover` inside a `.dialog`), `.date-picker-head`, `.date-picker-days`, `.date-picker-week`, `.date-picker-weekday`, `.date-picker-day` (`.outside`, `.today`, `.current`), `.date-picker-time`, `.date-picker-field`, `.date-picker-input` (`.long`; also the shared `.field.field-sm`, its value two digits), `.date-picker-foot`. A fraction field of more than three digits is `.long` and sets `--date-picker-digits` to its digit count, which its width reads.
 
 ## Labels read
 

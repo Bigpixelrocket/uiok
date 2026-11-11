@@ -1,4 +1,8 @@
-/** Date, time, and date-time fields with the picker beside each; any value can still be typed. */
+/**
+ * Date, time, and date-time fields with the picker beside each; any value
+ * can still be typed. Under them, a time to the microsecond and a picker
+ * that is disabled.
+ */
 
 import { useState } from 'react';
 
@@ -9,13 +13,14 @@ export function DateTimeDemo() {
   const [due, setDue] = useState('2026-11-20');
   const [alarm, setAlarm] = useState('07:30:00');
   const [start, setStart] = useState('2026-11-07 09:15:00.250');
+  const [stamp, setStamp] = useState('2026-11-07 09:15:00.250000');
   return (
     <div className="demo-stack datetime-demo">
       <div className="demo-row">
         <span className="demo-label">Due</span>
         <input
           aria-label="Due"
-          className="demo-input"
+          className="field demo-input"
           onChange={(event) => setDue(event.target.value)}
           spellCheck={false}
           value={due}
@@ -26,7 +31,7 @@ export function DateTimeDemo() {
         <span className="demo-label">Alarm</span>
         <input
           aria-label="Alarm"
-          className="demo-input"
+          className="field demo-input"
           onChange={(event) => setAlarm(event.target.value)}
           spellCheck={false}
           value={alarm}
@@ -37,7 +42,7 @@ export function DateTimeDemo() {
         <span className="demo-label">Start</span>
         <input
           aria-label="Start"
-          className="demo-input wide"
+          className="field demo-input wide"
           onChange={(event) => setStart(event.target.value)}
           spellCheck={false}
           value={start}
@@ -50,6 +55,42 @@ export function DateTimeDemo() {
           label="Pick the start"
           onChange={setStart}
           value={start}
+        />
+      </div>
+      <h3 className="demo-subhead">Microseconds and disabled</h3>
+      <div className="demo-row">
+        <span className="demo-label">Logged</span>
+        <input
+          aria-label="Logged"
+          className="field demo-input wide"
+          onChange={(event) => setStamp(event.target.value)}
+          spellCheck={false}
+          value={stamp}
+        />
+        <DateTimePicker
+          format={(kind, parts, fraction) => formatPicker(kind, parts, fraction, ' ')}
+          fraction={6}
+          kind="datetime"
+          label="Pick the log time"
+          onChange={setStamp}
+          value={stamp}
+        />
+      </div>
+      <div className="demo-row">
+        <span className="demo-label">Locked</span>
+        <input
+          aria-label="Locked"
+          className="field demo-input"
+          disabled
+          readOnly
+          value="2026-11-01"
+        />
+        <DateTimePicker
+          disabled
+          kind="date"
+          label="Pick the locked date"
+          onChange={() => undefined}
+          value="2026-11-01"
         />
       </div>
     </div>

@@ -14,7 +14,7 @@
   align-items: center;
   height: var(--bar-height-lg);
   flex: 0 0 var(--bar-height-lg);
-  padding: 0 var(--space-4) 0 var(--space-5);
+  padding: 0 var(--space-4);
   border-top: var(--line) solid var(--border);
   background: var(--surface-header);
 }
@@ -36,19 +36,21 @@
 }
 
 /* The dock only shows what is held, so its keys are drawn as keys, not
-   buttons: no pointer, and a fixed box whatever the glyph. */
+   buttons: no pointer, and a fixed box whatever the glyph. They are the
+   shared key cap (keychord.css) in a fixed width: 18px tall with the 2px
+   foot, so the dock and the verbs' caps are one key. */
 .keylegend-dock .keylegend-key {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
   width: 24px;
-  height: var(--control-height-xs);
+  height: 18px;
   padding: 0;
   border: var(--line) solid var(--border-strong);
   border-bottom-width: var(--line-strong);
   border-radius: var(--radius-sm);
-  background: var(--bg-panel);
+  background: var(--surface);
   color: var(--text-dim);
   cursor: default;
 }
@@ -71,11 +73,17 @@
   font: var(--font-size-caption) var(--font-mono);
 }
 
+/* The verbs as one line of whole places. A place that does not fit wraps
+   to a second line the strip never shows, so the row always ends on a
+   complete key and verb, never on a cut cap or a key that names nothing. */
 .keylegend-verbs {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  align-content: flex-start;
   flex: 1;
   min-width: 0;
+  height: var(--control-height-sm);
   overflow: hidden;
 }
 
@@ -95,10 +103,8 @@
   cursor: pointer;
 }
 
-.keylegend-verbs button:hover:enabled:not([aria-disabled='true']) {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
-}
+/* Hover (wash and frosted ring) and press come from the base sheet's quiet
+   control recipe, with the Button's transition. */
 
 /* Two directions of one action in one slot: each key cap is its own button,
    lit alone under the pointer, and the shared label is not a target. The
@@ -123,23 +129,13 @@
   margin-left: calc(var(--space-3) / 2);
 }
 
-/* Key caps are glyph-sized (18px), not controls. */
-.keylegend .keychord {
-  height: 18px;
-  min-width: 20px;
-  justify-content: center;
-  padding: 0 var(--space-2);
-  border-radius: var(--radius-sm);
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-}
-
-/* At rest the caps are drawn as plain keys. A legend that shows one layer
-   at a time sets data-layer to the held modifier, and data-fn while fn is
-   held, so its caps take the accent with the layer. */
-.keylegend[data-layer='none']:not([data-fn='true']) .keychord {
-  box-sizing: border-box;
-  color: var(--text);
-  background: var(--bg-panel);
-  border: var(--line) solid var(--border-strong);
+/* The caps are the shared key cap (keychord.css). A legend that shows one
+   layer at a time sets data-layer to the held modifier, and data-fn while fn
+   is held, so its caps take the accent with the layer: accent words on the
+   accent wash, framed in the accent line. KeyLegendStrip lists every layer
+   at once and leaves both at rest. */
+.keylegend:is(:not([data-layer='none']), [data-fn='true']) .keychord {
+  border-color: var(--accent-line);
+  background: var(--accent-wash);
+  color: var(--accent-text);
 }

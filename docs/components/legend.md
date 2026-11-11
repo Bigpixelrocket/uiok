@@ -59,7 +59,7 @@ A pair's label is a message of its own in every language ("Up/Down", "Haut/Bas")
 
 ## Overflow helpers
 
-`KeyLegendStrip` lets its verbs clip at the right edge. A legend of the app's own that collapses the tail into a chip can use:
+`KeyLegendStrip` drops whole places that do not fit: the verbs wrap onto a second line the strip never shows, so it always ends on a complete key and verb. A legend of the app's own that collapses the tail into a chip can use:
 
 - `fittingUnits(widths, available, chipWidth)`: how many places fit from the left, beside a chip of `chipWidth` once they do not all fit.
 - `moreLabel(count, labels.legend)`: the chip's text (`+3`) and spoken name ("3 more shortcuts").
@@ -67,7 +67,7 @@ A pair's label is a message of its own in every language ("Up/Down", "Haut/Bas")
 
 ## Styling
 
-The strip is 34px tall on `--surface-header` with a top border. Classes: `.keylegend`, `.keylegend-dock` with `.keylegend-key` (`.held` while down) and `.keylegend-dock-fn`, `.keylegend-row`, `.keylegend-verbs`, `.keylegend-pair` with `.keylegend-cap` and `.keylegend-pair-label`. The rules are unscoped, so the strip looks the same inside or outside the listing scope. The dock draws macOS's modifier icons in this version.
+The strip is 34px tall on `--surface-header` with a top border, inset 8px on both sides to line up with pane rows. Its caps and dock keys are the shared key cap (`docs/components/keychord.md`); with a layer held, the caps take `--accent-text` on `--accent-wash` in an `--accent-line` frame. Slots answer hover and press with the base sheet's quiet control recipe. Classes: `.keylegend`, `.keylegend-dock` with `.keylegend-key` (`.held` while down) and `.keylegend-dock-fn`, `.keylegend-row`, `.keylegend-verbs`, `.keylegend-pair` with `.keylegend-cap` and `.keylegend-pair-label`. The rules are unscoped, so the strip looks the same inside or outside the listing scope. The dock draws macOS's modifier icons in this version.
 
 ## Labels read
 

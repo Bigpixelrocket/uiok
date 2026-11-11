@@ -9,7 +9,11 @@
    class. Every rule is scoped by :where(.listing-root), so it weighs one
    class less than an app's own `.my-view .row` and the app adjusts one with
    a single scoped selector whatever order the stylesheets load in. The
-   class names carry no prefix. */
+   compact controls (crumbs, the path star, QuietAction, RowIconAction, sort
+   headers, strip links) are the exception: their look is their own class's,
+   so a control drawn outside a listing scope looks the same. Their hover
+   and pressed looks are the base sheet's shared recipes. The class names
+   carry no prefix. */
 
 /* The current one in a list (CurrentDot): one character after its label,
    neutral so it never reads as a status dot. */
@@ -91,14 +95,16 @@
 }
 
 /* The trail fills its row, root first; the slashes between crumbs only
-   separate them. */
+   separate them. The first crumb's words start on the row inset, the line
+   the column strip's first label and the rows' icons start on, so the
+   pane's three bands share one left edge. */
 :where(.listing-root) .pane-crumbs {
   flex: 1;
   display: flex;
   align-items: center;
   min-width: 0;
   height: 100%;
-  padding: 0 var(--space-1) 0 var(--space-4);
+  padding: 0 var(--space-1) 0 calc(var(--pane-row-inset) - var(--space-2));
 }
 
 /* A crumb's menu anchors under it. A crumb that shrinks keeps room for one
@@ -122,7 +128,7 @@
   min-width: 0;
 }
 
-:where(.listing-root) .crumb-label {
+.crumb-label {
   min-width: 0;
   height: var(--control-height-xs);
   margin: 0;
@@ -138,39 +144,65 @@
   cursor: pointer;
 }
 
-:where(.listing-root) .crumb.root .crumb-label {
+/* A crumb that is a control cuts its words in an inner box (PanePathBar's
+   `.crumb-text`), not in itself, so its hit area can reach past its 20px
+   to --hit-target in the block axis, inside the 26px bar. */
+button.crumb-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: visible;
+}
+
+button.crumb-label::after {
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
+  inset-inline: 0;
+  content: '';
+}
+
+.crumb-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crumb.root .crumb-label {
   display: inline-flex;
   align-items: center;
 }
 
-/* Only a crumb that is a control reacts to the pointer. */
-:where(.listing-root) button.crumb-label:hover {
+/* Only a crumb that is a control reacts to the pointer; its pressed look is
+   the base sheet's shared recipe. */
+button.crumb-label:hover:enabled {
   background: var(--hover-wash);
   box-shadow: var(--hover-frost);
   color: var(--text);
 }
 
 /* The trail's last crumb is where the pane is. */
-:where(.listing-root) .crumb.here .crumb-label {
+.crumb.here .crumb-label {
   color: var(--text);
 }
 
-:where(.listing-root) .crumb-separator {
+/* A slash is a separator, never words: the faint tone. */
+.crumb-separator {
   flex: none;
   padding: 0 1px;
-  /* Catppuccin overlay2. */
-  color: var(--syntax-overlay2);
+  color: var(--text-faint);
 }
 
-/* Compact controls in the path bar have room for the ring: it sits on their
-   edge and keeps their corners. */
-:where(.listing-root) :is(.crumb-label, .path-star):focus-visible {
+/* Compact controls in a bar or a row have room for the ring: it sits on
+   their edge and keeps their corners. */
+:is(.crumb-label, .path-star, .pane-act, .pane-icon-act):focus-visible {
   outline-offset: var(--focus-offset-flush);
 }
 
 /* A compact icon control at the path bar's end (`.path-star`: a favourite's
    star, a sidebar's Refresh), drawn as a crumb is. */
-:where(.listing-root) .path-star {
+.path-star {
   flex: none;
   display: inline-flex;
   align-items: center;
@@ -187,28 +219,24 @@
   cursor: pointer;
 }
 
-:where(.listing-root) .path-star:hover:enabled {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
-  color: var(--text);
-}
-
 /* A crumb is mostly no control (PanePathBar), so a label crumb centres its
    text as a button would and takes no pointer. */
-:where(.listing-root) .crumb-label:not(button) {
+.crumb-label:not(button) {
   display: inline-flex;
   align-items: center;
   cursor: default;
 }
 
-/* A page's facts and compact controls at its path bar's end. */
+/* A page's facts and compact controls at its path bar's end. The last
+   control's words end on the row inset, over the rows' actions: a quiet
+   action pads its words by --space-3 on that side. */
 :where(.listing-root) .path-tools {
   display: flex;
   flex: 0 1 auto;
   align-items: center;
   gap: var(--space-4);
   min-width: 0;
-  padding-right: var(--space-2);
+  padding-right: calc(var(--pane-row-inset) - var(--space-3));
 }
 
 /* A page's state at the path bar's end: its dot and words; a failure reads
@@ -225,17 +253,17 @@
 }
 
 :where(.listing-root) .path-facts.danger {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 :where(.listing-root) .path-facts.warning {
-  color: var(--warning-text, var(--warning));
+  color: var(--warning-text);
 }
 
 /* One quiet action per row, and a path bar's compact verbs (QuietAction):
    an icon and a verb at the path bar's control
    size, dim until the row is the cursor row or the verb leads its bar. */
-:where(.listing-root) .pane-act {
+.pane-act {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -259,7 +287,7 @@
 
 /* A compact icon control (RowIconAction): a row's hover icon, or Reveal and
    Copy at a status line's end. */
-:where(.listing-root) .pane-icon-act {
+.pane-icon-act {
   display: inline-flex;
   flex: none;
   align-items: center;
@@ -278,7 +306,7 @@
 /* The compact controls of a bar or a row are drawn 20px high; their hit
    area grows to --hit-target in the block axis, inside the 24px row or 26px
    bar. Not sideways: neighbours sit closer than the growth. */
-:where(.listing-root) :is(.path-star, .pane-act, .pane-icon-act)::after {
+:is(.path-star, .pane-act, .pane-icon-act)::after {
   position: absolute;
   inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
   inset-inline: 0;
@@ -286,7 +314,7 @@
 }
 
 /* A row link drawn in words, alone or after its icon (RowLinkLookContext). */
-:where(.listing-root) .pane-icon-act.worded {
+.pane-icon-act.worded {
   width: auto;
   gap: var(--space-2);
   padding: 0 var(--space-2);
@@ -295,24 +323,22 @@
   white-space: nowrap;
 }
 
-:where(.listing-root) :is(.pane-act, .pane-icon-act):hover:enabled:not([aria-disabled='true']) {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
-  color: var(--text);
+/* The cursor row's actions, and a bar's lead action, are lit: accent words
+   that keep 4.5:1 on the row, the bar, and the hover wash. */
+:where(.listing-root) .row.cursor .pane-act,
+.pane-act.lit,
+.pane-act.lit:hover:enabled {
+  color: var(--accent-text);
 }
 
-:where(.listing-root) :is(.row.cursor .pane-act, .pane-act.lit, .pane-act.lit:hover:enabled) {
-  color: var(--accent);
-}
-
-/* The ring sits on the control's edge: a 20px control in a 24px row or a
-   26px bar has room for it, and it keeps the control's corners. It keeps
-   .listing-root's weight, which the rest of the look drops in :where(), so
-   a host's own button ring (two classes and an element, such as
-   `.my-view button:focus-visible`) never moves it. */
-.listing-root :is(.pane-act, .pane-icon-act):focus-visible {
-  outline: var(--focus-ring-width) solid var(--accent);
-  outline-offset: var(--focus-offset-flush);
+/* A destructive action (`danger`: Remove, Drop, Delete) stays quiet at rest,
+   so a list is no wall of red, and says what it is in the danger tone where
+   it is about to run: under the pointer, with the keyboard focus, and on the
+   cursor row, whose keys run it. */
+:is(.pane-act, .pane-icon-act).danger:hover:enabled,
+:is(.pane-act, .pane-icon-act).danger:focus-visible,
+:where(.listing-root) .row.cursor :is(.pane-act, .pane-icon-act).danger {
+  color: var(--danger-text);
 }
 
 /* The list takes programmatic focus after a keyboard sort; it is not in the
@@ -338,6 +364,31 @@
   align-items: center;
   box-sizing: border-box;
   padding: 0 var(--pane-row-inset);
+}
+
+/* A listing with rows (Listing's table) is the one grid its strip and rows
+   lay out on: each is a subgrid across all its tracks, so a track sized by
+   content (`auto`, `max-content`) takes its widest cell in any row or the
+   strip, and a label always stands over its values. The listing keeps the
+   row inset as its own padding; each child reaches back over it, so its
+   ground, its cursor fill, and its rules still run edge to edge, and pads
+   it again, which a subgrid adds to its edge cells as margin: the two
+   cancel, so the cells sit exactly on the listing's tracks. Anything else
+   in the listing (a message, an app's own block) spans every track. */
+:where(.listing-root) .pane-listing:where([role='table']) {
+  display: grid;
+  grid-template-columns: var(--pane-grid, var(--icon-column) minmax(0, 1fr));
+  align-content: start;
+  padding: 0 var(--pane-row-inset);
+}
+
+:where(.listing-root .pane-listing[role='table']) > * {
+  grid-column: 1 / -1;
+  margin-inline: calc(-1 * var(--pane-row-inset));
+}
+
+:where(.listing-root .pane-listing[role='table']) > :is(.row, .pane-columns) {
+  grid-template-columns: subgrid;
 }
 
 :where(.listing-root) .row {
@@ -456,7 +507,19 @@
   outline-offset: var(--focus-offset-inset);
 }
 
-:where(.listing-root) :is(.pane-sort:hover, .pane-sort.active) {
+/* A label that sorts is a control: the quiet wash under the pointer, with
+   rounded corners like the frame's other compact controls; its pressed look
+   is the base sheet's shared recipe. A label that only names its column
+   takes no pointer state. */
+:where(.listing-root) .pane-sort.sortable {
+  border-radius: var(--radius-sm);
+}
+
+:where(.listing-root) .pane-sort.sortable:hover {
+  background: var(--hover-wash);
+}
+
+:where(.listing-root) :is(.pane-sort.sortable:hover, .pane-sort.active) {
   color: var(--text);
 }
 
@@ -464,8 +527,55 @@
   flex: none;
 }
 
+/* A listing whose rows draw no icon starts its first label over the names,
+   past the empty icon column, as the rows' values start. */
+:where(.listing-root)
+  .pane-listing:has(> .row):not(:has(> .row > .row-icon:not(:empty)))
+  > .pane-columns
+  > .row-name {
+  grid-column: 2;
+}
+
+/* The keyboard cursor: the cursor fill and a 2px accent bar on the row's
+   leading edge, the block cursor of a terminal, so the row is found at a
+   glance whatever the fill's contrast with the list. */
 :where(.listing-root) .row.cursor {
-  background: var(--cursor-row-bg);
+  background: var(--cursor-row);
+  box-shadow: inset var(--line-strong) 0 0 var(--cursor-bar);
+}
+
+/* Beside the pane that holds the keys, another pane's cursor row keeps its
+   place in the neutral cursor tone, with no bar, so only one cursor in the
+   window reads as the one the keys move. A lone pane, or a set of panes
+   none of which is active, keeps its cursor as it is. */
+:where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane)) .row.cursor {
+  background: var(--fill);
+  box-shadow: none;
+}
+
+/* Under the pointer, in a list whose rows act on a click (`.pane-list.pointer`),
+   a row other than the cursor takes the quiet hover wash. Where the pointer
+   moves the cursor itself, leave the class off: the cursor is the hover. */
+:where(.listing-root) .pane-list.pointer .row:hover:not(.cursor, .selected) {
+  background: var(--hover-wash);
+}
+
+/* A focusable row (`Row` `focusable`) rings inside its edges: the list
+   around it scrolls, and would clip a ring drawn outside. */
+:where(.listing-root) .row:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset-inset);
+}
+
+/* A row drawn as a button (a tree's row) wears the row's look, not the
+   button's. */
+:where(.listing-root) button.row {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
 }
 
 /* A sidebar row whose page the main pane shows, while the cursor is on
@@ -478,6 +588,22 @@
    --text-dim misses 4.5:1 contrast on the cursor row in the light flavor. */
 :where(.listing-root) .row.cursor :is(.row-icon, .row-meta) {
   color: var(--text-on-surface);
+}
+
+/* A row at a listing's foot that adds one (`.pane-add`: "Add service…"):
+   quiet dim words after an accent plus, which turn to accent words under
+   the pointer, with the focus, and on the cursor row. */
+:where(.listing-root) .row.pane-add {
+  color: var(--text-dim);
+}
+
+:where(.listing-root) .row.pane-add > .row-icon {
+  color: var(--accent);
+}
+
+:where(.listing-root) .row.pane-add:hover > .row-name,
+:where(.listing-root) .row.pane-add:is(:focus-visible, .cursor) > .row-name {
+  color: var(--accent-text);
 }
 
 :where(.listing-root) .row-icon {
@@ -494,10 +620,12 @@
 
 /* Metadata cells read like columns of a terminal listing: the gap character
    sits in the padding, numbers right-align, and whitespace is kept so a value
-   padded with spaces ("Aug  1") keeps its alignment. */
+   padded with spaces ("Aug  1") keeps its alignment. A value wider than
+   its column ends in an ellipsis, never cut through a glyph. */
 :where(.listing-root) .row-meta {
   padding-left: var(--pane-column-gap);
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: pre;
   color: var(--row-meta-text);
   font-variant-numeric: tabular-nums;
@@ -508,21 +636,26 @@
   text-align: right;
 }
 
-/* The status line closes the pane: a summary of what the pane lists. */
+/* The status line closes the pane: a summary of what the pane lists. Its
+   words start, and its last control's glyph ends, on the row inset, the
+   edges the path bar and the rows keep. */
 :where(.listing-root) .pane-status {
   height: var(--bar-height);
   flex: 0 0 var(--bar-height);
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  padding: 0 var(--space-5);
+  padding: 0 var(--pane-row-inset);
   border-top: var(--line) solid var(--border);
   color: var(--text-dim);
   font-size: var(--font-size-small);
 }
 
 :where(.listing-root) .pane-summary {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -535,13 +668,6 @@
   gap: var(--space-1);
   margin-left: auto;
   margin-right: calc(-1 * var(--space-2));
-}
-
-:where(.listing-root) .pane-summary:has(+ .pane-status-tools) {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 /* ---- Page listings (Listing) ----
@@ -584,25 +710,50 @@
   justify-content: flex-end;
 }
 
-:where(.listing-root) .pane-strip-link {
+/* A strip link is accent words drawn 20px high, with a little room either
+   side so its ring and pressed wash clear the words; the words keep the
+   column's right edge. Its hit area grows to --hit-target in the block
+   axis. Its look is its own class's, so it draws the same outside a strip. */
+.pane-strip-link {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 0;
+  height: var(--control-height-xs);
+  margin: 0 calc(-1 * var(--space-1));
+  padding: 0 var(--space-1);
   border: none;
+  border-radius: var(--radius-sm);
   background: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font: var(--font-weight-medium) var(--font-size-caption) var(--font-ui);
   white-space: nowrap;
   cursor: pointer;
 }
 
-:where(.listing-root) .pane-strip-link:hover:enabled {
-  text-decoration: underline;
+.pane-strip-link::after {
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
+  inset-inline: 0;
+  content: '';
 }
 
-:where(.listing-root) .pane-strip-link.danger {
-  color: var(--danger);
+.pane-strip-link:hover:enabled {
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
+  text-underline-offset: var(--space-1);
+}
+
+.pane-strip-link:focus-visible {
+  outline-offset: var(--focus-offset-flush);
+}
+
+.pane-strip-link.danger {
+  color: var(--danger-text);
+}
+
+.pane-strip-link.danger:hover:enabled {
+  text-decoration-color: var(--danger-line);
 }
 
 /* A line that says something about a listing, or stands in for its rows:
@@ -623,7 +774,7 @@
 }
 
 :where(.listing-root) .pane-message.danger {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 :where(.listing-root) .pane-message code {
@@ -648,6 +799,7 @@
 
 :where(.listing-root) .pane-empty > svg {
   margin-bottom: var(--space-4);
+  color: var(--text-faint);
 }
 
 :where(.listing-root) .pane-empty :is(strong, h2) {
@@ -661,6 +813,8 @@
   max-width: 420px;
   margin: 0;
   font-size: var(--font-size-small);
+  line-height: var(--line-height-prose);
+  text-wrap: balance;
 }
 
 :where(.listing-root) .pane-empty > .button,
@@ -676,66 +830,99 @@
   max-width: 620px;
 }
 
-/* A state (StateMark): its dot, or its spinner for a transition, and its
-   word, in the state's tone. The dot takes the tone everywhere; the word
-   inside a row only. A warning's words read in --warning-text where an app
-   sets a more legible warning tone for text, --warning otherwise. */
+/* A state (StateMark): its mark, or its spinner for a transition, and its
+   word, in the state's tone. The mark takes the tone everywhere, the word
+   inside a row only, in the text-safe tone of its state. Each mark has its
+   own shape as well as its hue, so two states whose hues meet in a theme
+   (a green accent, a red and an amber under a colour-vision deficiency)
+   and a busy mark held still still differ: ready a dot, warning a diamond,
+   failure a square, busy a heavy accent ring, quiet a thin grey ring. The
+   word gives way with an ellipsis; its tooltip holds it whole. */
 :where(.listing-root) .pane-state {
   display: inline-flex;
   align-items: center;
   gap: var(--space-3);
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: top;
+}
+
+:where(.listing-root) .pane-state-word {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 :where(.listing-root) .pane-state-dot {
   flex: none;
-  width: 7px;
-  height: 7px;
+  box-sizing: border-box;
+  width: 6px;
+  height: 6px;
   border-radius: var(--radius-pill);
-  background: var(--border-strong);
+  background: transparent;
+  box-shadow: inset 0 0 0 calc(var(--line) * 1.5) var(--idle-mark);
 }
 
 :where(.listing-root) .pane-tone-ready > .pane-state-dot {
   background: var(--success);
+  box-shadow: none;
 }
 
+/* In a listing that shows a busy spinner, each mark stands in a slot as
+   wide as the spinner (--icon-sm), so the words read from one edge: the
+   6px mark is --space-3 wide, and its margins take up the rest (a turned
+   diamond is about as wide). A listing with no spinner keeps the room. */
+:where(.listing-root) .pane-listing:has(.pane-state-busy) .pane-state-dot {
+  margin-inline: calc((var(--icon-sm) - var(--space-3)) / 2);
+}
+
+/* A 5px square turned on its corner spans the 6px dot's height and a
+   little more, so the diamond weighs what the dot does. */
 :where(.listing-root) .pane-tone-warning > .pane-state-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-xs);
   background: var(--warning);
+  box-shadow: none;
+  transform: rotate(45deg);
 }
 
 :where(.listing-root) .pane-tone-danger > .pane-state-dot {
+  border-radius: var(--radius-xs);
   background: var(--danger);
+  box-shadow: none;
 }
 
 :where(.listing-root) .pane-tone-busy > .pane-state-dot {
-  background: var(--accent);
+  box-shadow: inset 0 0 0 var(--line-strong) var(--accent);
   animation: uiok-pulse var(--duration-spin) var(--ease-in-out) infinite;
 }
 
+/* The busy spinner is the shared Spinner (it turns and stands still under
+   reduced motion on its own); the state only colours it. */
 :where(.listing-root) .pane-state-busy {
-  flex: none;
   color: var(--accent);
-  animation: uiok-spin var(--duration-spin) linear infinite;
 }
 
 /* Reduced motion: a busy mark stands still, and its accent and word still say
    the work is running. */
 @media (prefers-reduced-motion: reduce) {
-  :where(.listing-root) .pane-tone-busy > .pane-state-dot,
-  :where(.listing-root) .pane-state-busy {
+  :where(.listing-root) .pane-tone-busy > .pane-state-dot {
     animation: none;
   }
 }
 
 :where(.listing-root) .row .pane-state.pane-tone-ready {
-  color: var(--success);
+  color: var(--success-text);
 }
 
 :where(.listing-root) .row .pane-state.pane-tone-danger {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 :where(.listing-root) .row .pane-state.pane-tone-warning {
-  color: var(--warning-text, var(--warning));
+  color: var(--warning-text);
 }
 
 :where(.listing-root) .row .pane-state:is(.pane-tone-muted, .pane-tone-busy) {
@@ -862,4 +1049,44 @@
   font-size: var(--font-size-caption);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* A selected row (`.selected`), where nothing else on the row shows the
+   state: the solid accent fill with on-accent words, its quiet words in the
+   on-selection dim tone, every tone a cell would wear (a state, a path's
+   name, a lit action) on the selection's own. The cursor on a selected row
+   is the selection's cursor fill and a bar in the on-selection tone. A
+   selection keeps its fill in a pane that does not hold the keys. */
+:where(.listing-root) .row.selected {
+  background: var(--selected-bg);
+  color: var(--on-selected);
+}
+
+:where(.listing-root) .row.cursor.selected {
+  background: var(--selected-cursor-bg);
+  box-shadow: inset var(--line-strong) 0 0 var(--on-selected);
+}
+
+:where(.listing-root)
+  .row.selected
+  :is(.row-icon, .row-name, .pane-path-name, .pane-act, .pane-icon-act, .pane-state) {
+  color: var(--on-selected);
+}
+
+:where(.listing-root) .row.selected :is(.row-meta, .pane-path-head, .pane-path-tail) {
+  color: var(--on-selected-dim);
+}
+
+/* On the accent fill a filled mark wears a hairline in the selection's
+   words' tone, so its shape holds whatever its hue. */
+:where(.listing-root)
+  .row.selected
+  :is(.pane-tone-ready, .pane-tone-warning, .pane-tone-danger)
+  > .pane-state-dot {
+  box-shadow: 0 0 0 var(--line) var(--on-selected);
+}
+
+:where(.listing-root) .row.selected .name-hit {
+  background: var(--selection-hit);
+  box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--on-selected);
 }

@@ -15,8 +15,8 @@ UIOK is an open-source (MIT) React 19 UI library published to npm as `@bigpixelr
 
 ```text
 src/index.ts                  # the public API: one `export * from './<area>/index.js'` line per area
-src/styles.css                # base stylesheet, shipped as @bigpixelrocket/uiok/styles.css: imports the theme tokens, tokens.css, and one sheet per component; the zero-weight focus ring, the .hit-target utility, uiok-spin and uiok-pulse, the disabled-control rule
-src/tokens.css                # the tokens no theme changes: type, space, radius, line, motion, height, focus, icon, and z-index scales, and the reduced-motion rule over the durations (docs/tokens.md)
+src/styles.css                # base stylesheet, shipped as @bigpixelrocket/uiok/styles.css: imports the theme tokens, tokens.css, one sheet per component, field.css and surface.css; the theme's selection, placeholder, caret, and scrollbar colours, .overline, .frost, .scroll-fade, the shared hover and press recipes of quiet controls, the zero-weight focus ring, the .hit-target utility, .spinner, uiok-spin and uiok-pulse, the disabled-control rule
+src/tokens.css                # the tokens no theme changes: type, space, radius, line, motion (with --transition-control), height, focus, icon, and z-index scales, the reduced-motion rule over the durations, and the typed lengths .scroll-fade animates (docs/tokens.md)
 src/VisuallyHidden.tsx        # a root-level component, its test beside it (VisuallyHidden.test.tsx)
 src/<area>/index.ts           # an area's public surface, importable as @bigpixelrocket/uiok/<area>; modules, tests, and its .css sit beside it
 src/themes/ids.ts             # theme ids, names, appearances, the data-light-theme / data-dark-theme / data-theme-preview attributes
@@ -33,7 +33,9 @@ src/button/                   # Button (primary, tonal, neutral) and IconButton
 src/activity/ src/segmented/ src/keychord/ src/filter/  # ActivityBar, SegmentedChoice, KeyChord, FilterIcon and FilterEscape
 src/legend/                   # KeyLegendStrip and legendUnits / fittingUnits / moreLabel / moreListAction; pair labels are the app's
 src/store/ src/clock/         # ValueStore, sameData/sameProps, useStableHandlers, keepUnchanged*; useClock
-src/icon/                     # ICON_SM, ICON_MD, ICON_LG: the sizes for lucide's size prop, mirroring --icon-* in tokens.css
+src/icon/                     # ICON_SM, ICON_MD, ICON_LG (sizes.ts): the sizes for lucide's size prop, mirroring --icon-* in tokens.css; Spinner, the one turning ring (StateMark busy, RunHeader running)
+src/field/                    # the form controls as classes on native elements (field.css: .field, .check, .switch, labels, notes, problems, groups, the label-column grid) and Check, a checkbox whose state can be mixed (docs/components/field.md)
+src/surface/surface.css       # .notice and its tones, .card; a stylesheet without a module, so no area export (docs/components/surface.md)
 src/dialog/                   # ModalDialog frame, DialogLegend footer and legendKeyAction (which slot a key runs), ConfirmDialog; dialog labels in src/labels/dialog.ts
 src/run/                      # RunHeader progress header and the RunProgress state and elapsed-time helpers
 src/listing/                  # Listing, Strip, Row, Cell, RowCursorContext, StateMark, PathCell, WellColumn, CurrentDot; listing.css is the whole listing look under .listing-root, panes included
@@ -50,7 +52,7 @@ test/api.test.ts              # every public export has a docblock (TypeScript c
 test/fileFetch.ts             # serves the terminal's vendored WebAssembly to fetch in the engine suites
 test/cancelKey.test.ts        # no library module writes the ⌘. chord; Escape is the one cancel key
 test/stylesheets.ts           # CSS test helpers: readStylesheet (follows @import), applyStylesheets, declaredValues
-test/stylesheets.test.ts      # src/styles.css imports every component stylesheet
+test/stylesheets.test.ts      # src/styles.css imports every component stylesheet; no hover or press highlight on a disabled control; component sheets name grounds by role (--ground, --surface, --fill), not palette name, and set words in a text role, never a bare hue outside a mark
 test/tokenValues.test.ts      # no raw font size, weight, line height, radius, z-index, duration, easing, or space in a stylesheet where a scale token exists; exceptions listed with reasons
 test/setup.ts                 # Testing Library cleanup after each test; calls no app code
 scripts/build.mjs             # cleans dist/, runs tsc -p tsconfig.build.json, copies src/**/*.css, *.wasm, *.woff2, and vendored LICENSE files

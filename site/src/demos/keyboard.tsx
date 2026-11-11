@@ -41,7 +41,7 @@ export function KeyboardDemo() {
     <div className="keyboard-demo">
       <div
         aria-label="Press a chord"
-        className="key-catcher"
+        className="key-catcher keycap"
         onKeyDown={(event) => {
           if (MODIFIER_KEYS.has(event.key) || event.key === 'Tab') return;
           event.preventDefault();

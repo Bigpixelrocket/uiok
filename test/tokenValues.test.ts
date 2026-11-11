@@ -72,19 +72,19 @@ const EXCEPTIONS: readonly Exception[] = [
   {
     file: 'src/keychord/keychord.css',
     property: 'font',
-    value: /\/12px /,
+    value: /\/\s*12px /,
     reason: "A key cap's letter sits on the key's own 12px box, glyph geometry, not a text line."
   },
   {
     file: 'src/listing/listing.css',
     property: 'font',
-    value: /\/19px /,
+    value: /\/\s*19px /,
     reason: "A terminal well sets plain text on the terminal engine's 19px cell height."
   },
   {
     file: 'src/terminal/terminal.css',
     property: 'font',
-    value: /\/19px /,
+    value: /\/\s*19px /,
     reason: "The failure text sits where the engine's first line would, on its 19px cell height."
   },
   {
@@ -198,9 +198,10 @@ const RULES: readonly { property: RegExp; problem: (value: string) => string | u
   },
   {
     // `[weight] size[/line-height] family`: the family is a token or a name.
+    // A formatter may space the slash (`size / line-height`); read it as one part.
     property: /^font$/,
     problem: (value) => {
-      const plain = withoutVars(value);
+      const plain = withoutVars(value).replace(/\s*\/\s*/g, '/');
       if (plain === 'inherit') return undefined;
       if (/^(?:\d+|bold|bolder|lighter)(?=\s)/.test(plain)) return 'a weight in a font shorthand';
       const [size = '', lineHeight] = (

@@ -36,11 +36,11 @@ const elapsed = runElapsedMs({ startedMs, finishedMs }, state, now);
 ### Look
 
 - States and glyphs: waiting (hourglass, dim), running (a turning circle in the accent, still under reduced motion), paused (dim), done (a check, green), failed (a cross, red), stopped (a slashed circle, dim).
-- The headline is 14px semibold in the text colour; red when failed, with the reason under it. A done headline stays in the text colour because a light theme's green can be too faint for text; the glyph carries it.
-- The figure is 18px tabular and dims while waiting and once the run settles.
-- The bar is 8px: in the accent while running, dimmed once it stops short (paused, failed, stopped), green when done. Without a fraction it is `ActivityBar`'s stripes, moving only while running and dimmed through `--stripe-ink` and `--stripe-ground` once stopped short.
+- The headline is 14px semibold in the text colour; `--danger-text` when failed, with the reason under it. A done headline stays in the text colour; the glyph and the bar carry the green. A headline cut short in a narrow view is its own tooltip.
+- The figure is 18px tabular monospace and dims while waiting and once the run settles.
+- The bar is `ActivityBar`'s 8px trough (`--control-track`, ringed in `--control-border`). Its fill is the accent while running, the quiet `--progress-idle` once paused or stopped, so a halted run never outweighs a working one, `--danger` when failed, and `--success` when done. Without a fraction it is the activity stripes, moving only while running, standing still in `--progress-idle` otherwise (waiting included), and in `--danger` when failed.
 - Facts sit closer to the bar than the bar sits to the headline; without a bar they line up under the headline, past the glyph.
-- The header keeps the surrounding dialog's font family.
+- The header sets its own type: sentences and facts in the interface font, the figure in monospace, `code` in a fact in monospace.
 
 ### Accessibility
 
@@ -51,7 +51,7 @@ The headline (and a failure's reason) is a status region, replaced by a new aler
 - `RunState` and `isSettledRun(state)`: done, failed, and stopped never change again.
 - `RunTimes`: `{ startedMs, finishedMs }`, epoch milliseconds or null.
 - `runElapsedMs(times, state, nowMs)`: start to now while running or paused, start to finish once settled; null while waiting or for a settled run with no finish.
-- `runClock(ms)`: `0:07`, `12:03`, `1:02:03`; partial seconds dropped, negatives read as `0:00`.
+- `runClock(ms)`: the one elapsed-time format, for a RunHeader figure and any uptime or duration cell beside it: `m:ss` under an hour (`0:07`, `12:03`), `h:mm:ss` from an hour (`1:02:03`); partial seconds dropped, negatives read as `0:00`.
 
 ## Styling
 

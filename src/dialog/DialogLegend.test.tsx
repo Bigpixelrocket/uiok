@@ -53,8 +53,10 @@ describe('the dialog legend look', () => {
     legendMarkup('accent');
     const [leaveCap, primaryCap] = [...document.querySelectorAll('.keychord')];
 
-    expect(declaredValues(leaveCap as Element, 'border')).toContain(
-      'var(--line) solid var(--border-strong)'
+    expect(declaredValues(leaveCap as Element, 'background').at(-1)).toBe('var(--surface)');
+    // The key cap's thicker foot.
+    expect(declaredValues(leaveCap as Element, 'border-bottom-width').at(-1)).toBe(
+      'var(--line-strong)'
     );
     expect(declaredValues(primaryCap as Element, 'background').at(-1)).toBe('var(--accent)');
 
@@ -65,9 +67,14 @@ describe('the dialog legend look', () => {
     document.body.innerHTML = '';
   });
 
-  it('leaves a disabled slot out of the hover wash', () => {
-    const hover = readStylesheet('src/dialog/dialog.css').match(/^\.legend-slot:hover[^{]*/m);
+  it('writes a destructive primary in the danger text colour, its glyph legible on the red cap', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    legendMarkup('danger');
+    const primary = document.querySelector('.legend-primary') as Element;
+    const cap = primary.querySelector('.keychord') as Element;
 
-    expect(hover?.[0].trim()).toBe('.legend-slot:hover:enabled');
+    expect(declaredValues(primary, 'color').at(-1)).toBe('var(--danger-text)');
+    expect(declaredValues(cap, 'color').at(-1)).toBe('var(--on-danger)');
+    document.body.innerHTML = '';
   });
 });

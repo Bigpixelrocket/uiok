@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Loader } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import {
   createContext,
   useContext,
@@ -12,6 +12,7 @@ import {
   type RefObject
 } from 'react';
 
+import { ICON_SM, Spinner } from '../icon/index.js';
 import type { SortDirection } from '../labels/listing.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { InRowContext, RowLinkLookContext, type LinkLook } from '../pane/PaneActions.js';
@@ -106,9 +107,9 @@ function SortLabel({
   const { sortBy } = useLabels().listing;
   const mark =
     sort.direction === null ? null : sort.direction === 'asc' ? (
-      <ChevronUp aria-hidden size={12} />
+      <ChevronUp aria-hidden size={ICON_SM} />
     ) : (
-      <ChevronDown aria-hidden size={12} />
+      <ChevronDown aria-hidden size={ICON_SM} />
     );
 
   return (
@@ -392,8 +393,8 @@ export interface ListingProps {
  * its column; a listing whose row links take words gives it as the grid for
  * a look (`linksColumn`), and its rows take the richest look that keeps it
  * inside its pane. A listing with no rows says so in `empty`: a plain line
- * under the strip instead of a table, so no column headers stand over a row
- * that is not one.
+ * under the strip instead of a table, its column labels left out, so no
+ * header stands over a row that is not one.
  */
 export function Listing({
   title,
@@ -421,7 +422,14 @@ export function Listing({
   if (empty !== null) {
     return (
       <section aria-label={label} className={classes} ref={listing} style={style}>
-        <Strip columns={columns} title={title} />
+        {/* No label stands over a column with no values under it; a control
+            in the strip (Clear, Update all) keeps its place. */}
+        <Strip
+          columns={columns.map((entry) =>
+            entry.control === undefined ? { ...entry, hidden: true } : entry
+          )}
+          title={title}
+        />
         <p className="pane-message">{empty}</p>
       </section>
     );
@@ -542,6 +550,9 @@ export function Row({
         <span
           className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
           role="cell"
+          // A name in words carries itself whole as its tooltip, since a
+          // narrow name column cuts it with an ellipsis.
+          {...(typeof name === 'string' ? tooltip(name) : {})}
         >
           {name}
         </span>
@@ -589,19 +600,24 @@ export interface StateMarkProps {
 }
 
 /**
- * A state as a State column says it: a dot in the state's tone and its word
- * ("running", "error"), or a spinner for a transition. Inside a row the word
- * takes the tone too, so a failure reads red and a stopped line dim.
+ * A state as a State column says it: a mark in the state's tone and its word
+ * ("running", "error"), or a spinner for a transition (the shared
+ * `Spinner`, as `RunHeader` turns). Each tone's mark has its own shape too, so it reads
+ * without its hue. Inside a row the word takes the tone too, so a failure
+ * reads red and a stopped line dim. A word wider than its column ends in an
+ * ellipsis and carries itself whole as its tooltip.
  */
 export function StateMark({ tone, word, busy = false }: StateMarkProps): ReactElement {
   return (
     <span className={`pane-state pane-tone-${tone}`}>
       {busy ? (
-        <Loader aria-hidden className="pane-state-busy" size={11} />
+        <Spinner className="pane-state-busy" />
       ) : (
         <span aria-hidden className="pane-state-dot" />
       )}
-      {word}
+      <span className="pane-state-word" {...tooltip(word)}>
+        {word}
+      </span>
     </span>
   );
 }
@@ -671,7 +687,7 @@ export function WellColumn({
   const strip = <Strip columns={columns} title={title} />;
   // The strip's name, then each of its columns at its own width.
   const style = {
-    '--pane-grid': `20px minmax(0, 1fr) ${columns.map(() => 'auto').join(' ')}`
+    '--pane-grid': `var(--icon-column) minmax(0, 1fr) ${columns.map(() => 'auto').join(' ')}`
   } as CSSProperties;
 
   return label === undefined ? (

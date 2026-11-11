@@ -35,8 +35,8 @@ export interface PanePathBarProps {
  * The row a pane opens with: a path bar, in the listing look (under
  * `.listing-root`). Its crumbs say where the pane is; one handed as a
  * `PaneCrumb` is a control that goes there. A narrow pane, or a longer
- * language, cuts a label crumb with an ellipsis, its whole text in its
- * tooltip. Facts and controls sit at the bar's end (`.path-tools`): a state
+ * language, cuts a crumb with an ellipsis, its whole text in its tooltip
+ * (a control's `tip`, when it has one, says what a press does instead). Facts and controls sit at the bar's end (`.path-tools`): a state
  * as `.path-facts`, compact verbs as `QuietAction` and `.path-star` icon
  * buttons.
  */
@@ -77,9 +77,11 @@ export function PanePathBar({
                     className="crumb-label"
                     onClick={crumb.onOpen}
                     type="button"
-                    {...describedTooltip(crumb.tip)}
+                    {...(crumb.tip === undefined ? tooltip(label) : describedTooltip(crumb.tip))}
                   >
-                    {label}
+                    {/* The words are cut in their own box, so the button's
+                        hit area can reach past its drawn edge. */}
+                    <span className="crumb-text">{label}</span>
                   </button>
                 )}
                 {last && here}

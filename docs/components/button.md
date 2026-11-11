@@ -32,7 +32,10 @@ import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 ## Behaviour
 
-- Hover lifts fills (`--hover-lit`, brightness) and washes outlines (`--hover-wash`, `--hover-frost`); a press sinks the face (`--shadow-pressed`). Disabled or `aria-disabled="true"` buttons get neither.
+- A neutral button and an icon button are outlined in `--control-border`, the 3:1 line every control outline shares. Primary and tonal fills carry a lit top edge (`--glass-edge`) at rest.
+- Hover moves a fill to its hover token (`--primary-hover`, `--tonal-hover`) under `--hover-lit`, and lays `--hover-wash` with `--hover-frost` on an outline. A press sinks the face: `--shadow-pressed`, with `--pressed-wash` on an outline, so pressed never looks like hovered. Every change eases over `--duration-fast`.
+- Disabled or `aria-disabled="true"` buttons get no hover or press. A disabled primary or tonal button drops its fill and is drawn as a disabled neutral one, faded to `--disabled-opacity` like every disabled control, so its label stays readable in every theme.
+- A glyph inside takes the button's icon size whatever its `size` prop says: 14px (`--icon-md`) in a regular button, 12px (`--icon-sm`) in a small one.
 - Keyboard focus draws a 2px `--accent` ring outside the button.
 
 ## Styling

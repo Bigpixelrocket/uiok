@@ -478,7 +478,7 @@ describe('StateMark', () => {
     expect(container.querySelector('svg.pane-state-busy')).not.toBeNull();
   });
 
-  it('colours its word by its tone inside a row, a warning in the app’s warning text', () => {
+  it('colours its word by its tone inside a row, in the text-safe tone of its state', () => {
     applyStylesheets(styles);
     render(
       <div className="listing-root">
@@ -490,10 +490,8 @@ describe('StateMark', () => {
     );
     const [warning, danger] = [...document.querySelectorAll('.pane-state')];
 
-    expect(declaredValues(warning as Element, 'color')).toEqual([
-      'var(--warning-text, var(--warning))'
-    ]);
-    expect(declaredValues(danger as Element, 'color')).toEqual(['var(--danger)']);
+    expect(declaredValues(warning as Element, 'color')).toEqual(['var(--warning-text)']);
+    expect(declaredValues(danger as Element, 'color')).toEqual(['var(--danger-text)']);
   });
 });
 
@@ -521,7 +519,7 @@ describe('WellColumn', () => {
 
     expect(screen.queryByRole('region')).toBeNull();
     expect(document.querySelector('.pane-well-column')?.getAttribute('style')).toContain(
-      '--pane-grid: 20px minmax(0, 1fr) auto'
+      '--pane-grid: var(--icon-column) minmax(0, 1fr) auto'
     );
 
     rerender(

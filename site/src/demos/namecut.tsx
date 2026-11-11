@@ -1,4 +1,8 @@
-/** Lines that keep a long name's end in view as their box narrows. */
+/**
+ * Lines that keep a long name's end in view as their box narrows: a name in
+ * a sentence, a name that opens its line, and a right-to-left name, cut
+ * from its own start's other end.
+ */
 
 import { useState } from 'react';
 
@@ -34,6 +38,11 @@ export function NameCutDemo() {
             { name: 'quarterly-report-final-v3-reviewed.xlsx' },
             '" already exists'
           ])}
+        />
+      </div>
+      <div className="namecut-box" style={{ width }}>
+        <NameCut
+          parts={labelParts('Copying "סיכום-פגישת-הצוות-השבועית-הסופי.docx" to "Seedbox"')}
         />
       </div>
     </div>

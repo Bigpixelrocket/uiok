@@ -1,10 +1,42 @@
-/* ---- Filter field marks (FilterIcon, FilterEscape) ----
+/* ---- Filter field (FilterIcon, FilterEscape, .filter-field) ----
 
    Drawn inside the listing scope (.listing-root), where a filter field sits
    over the rows it narrows. */
 
-/* The key that leaves a filter field (FilterEscape), drawn as a plain key
-   cap; the field's mark is .filter-icon. */
+/* The field: one bar as tall as the pane's path bar, the mark in the row's
+   icon column, the query in the rows' monospace, and the esc cap at the far
+   end. It has no outline of its own; while it holds the keys its foot turns
+   to a 2px accent edge, the same mark as a current tab's underline. A host
+   that draws its own row keeps working: these rules apply only under
+   .filter-field. */
+:where(.listing-root) .filter-field {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  height: var(--pane-path-height);
+  padding: 0 var(--space-3) 0 var(--pane-row-inset);
+  border-bottom: var(--line) solid var(--border);
+  font: var(--font-size-body) var(--font-mono);
+}
+
+:where(.listing-root) .filter-field:focus-within {
+  box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--accent);
+}
+
+:where(.listing-root) .filter-field input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: none;
+  color: var(--text);
+  font: inherit;
+}
+
+/* The key that leaves a filter field (FilterEscape), drawn as the shared key
+   cap (keychord.css); the field's mark is .filter-icon. */
 :where(.listing-root) .filter-escape {
   position: relative;
   flex: none;
@@ -17,7 +49,7 @@
   cursor: pointer;
 }
 
-/* The cap is glyph-sized (16px, a key cap's height, not a control height);
+/* The cap is glyph-sized (18px, a key cap's height, not a control height);
    its hit area grows to --hit-target around it. */
 :where(.listing-root) .filter-escape::after {
   position: absolute;
@@ -25,27 +57,35 @@
   content: '';
 }
 
-:where(.listing-root) .filter-escape .keychord {
-  box-sizing: border-box;
-  height: 16px;
-  padding: 0 var(--space-2);
-  border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  background: var(--bg-panel);
-  color: var(--text);
+/* Hover and press answer as every quiet control does, on the cap itself:
+   the frosted wash and ring, then the pressed wash. The cap's own panel
+   ground stays under the wash, since the cap is opaque. */
+:where(.listing-root) .filter-escape:hover:enabled:not([aria-disabled='true']) .keychord {
+  background: linear-gradient(var(--hover-wash), var(--hover-wash)) var(--surface);
+  box-shadow: var(--hover-frost);
 }
 
-:where(.listing-root) .filter-escape:hover:enabled:not([aria-disabled='true']) .keychord {
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--border-strong));
-  background: linear-gradient(var(--hover-wash), transparent) var(--bg-panel);
+:where(.listing-root) .filter-escape:active:enabled:not([aria-disabled='true']) .keychord {
+  background: linear-gradient(var(--pressed-wash), var(--pressed-wash)) var(--surface);
+  box-shadow: var(--shadow-pressed);
+}
+
+:where(.listing-root) .filter-escape .keychord {
+  transition: var(--transition-control);
 }
 
 /* A filter field's mark (FilterIcon), as wide as a row's icon column so the
-   query starts over the names. */
+   query starts over the names. It rests dim and lights with the accent only
+   while the field narrows the list: while it holds the keys or holds a
+   query. */
 :where(.listing-root) .filter-icon {
   flex: none;
   display: inline-flex;
   align-items: center;
   width: var(--icon-column);
+  color: var(--text-dim);
+}
+
+:where(.listing-root) :is(:focus-within, :has(> input:not(:placeholder-shown))) > .filter-icon {
   color: var(--accent);
 }

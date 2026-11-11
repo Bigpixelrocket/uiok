@@ -1,8 +1,12 @@
-/** Tooltips with and without a chord, and one that describes more than the name. */
+/**
+ * Tooltips with and without a chord, one long enough to wrap, and one that
+ * describes more than the name.
+ */
 
-import { Copy, FolderOpen, Plus, Search } from 'lucide-react';
+import { Copy, FolderOpen, Info, Plus, Search } from 'lucide-react';
 
 import { IconButton } from '@bigpixelrocket/uiok/button';
+import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { chordGlyphs } from '@bigpixelrocket/uiok/keyboard';
 import { describedTooltip, tooltip } from '@bigpixelrocket/uiok/tooltip';
 
@@ -15,19 +19,28 @@ export function TooltipDemo() {
           aria-label="New Tab"
           {...tooltip('New Tab', chordGlyphs({ key: 't', meta: true }))}
         >
-          <Plus size={14} />
+          <Plus size={ICON_MD} />
         </IconButton>
         <IconButton aria-label="Find" {...tooltip('Find', chordGlyphs({ key: 'f', meta: true }))}>
-          <Search size={14} />
+          <Search size={ICON_MD} />
         </IconButton>
         <IconButton
           aria-label="Copy Path"
           {...tooltip('Copy Path', chordGlyphs({ key: 'c', meta: true, alt: true }))}
         >
-          <Copy size={14} />
+          <Copy size={ICON_MD} />
         </IconButton>
         <IconButton aria-label="Open" {...tooltip('Open')}>
-          <FolderOpen size={14} />
+          <FolderOpen size={ICON_MD} />
+        </IconButton>
+        <IconButton
+          aria-label="Copy Home Path"
+          {...tooltip(
+            'Copies the full path of the selected file, with the home folder written as ~, so it can be pasted into a terminal on another machine with the same layout.',
+            chordGlyphs({ key: 'c', meta: true, shift: true })
+          )}
+        >
+          <Info size={ICON_MD} />
         </IconButton>
       </div>
       <p className="demo-row">

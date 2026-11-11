@@ -31,28 +31,31 @@ describe('Pager', () => {
     expect(onPage).toHaveBeenLastCalledWith(4);
   });
 
-  it('offers no step back on the first page, no End before the end is known, and nothing on past a stop', () => {
+  it('disables the steps back on the first page, End before the end is known, and both onward past a stop', () => {
     const { rerender } = render(
       <Pager endKnown={false} onPage={() => undefined} page={0} pages={5} />
     );
+    const step = (name: RegExp): HTMLButtonElement =>
+      screen.getByRole('button', { name }) as HTMLButtonElement;
 
-    expect(screen.queryByRole('button', { name: /^Begin/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Previous/ })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Next page of items' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^End/ })).toBeNull();
+    expect(step(/^Begin/).disabled).toBe(true);
+    expect(step(/^Previous/).disabled).toBe(true);
+    expect(step(/^Next/).disabled).toBe(false);
+    expect(step(/^End/).disabled).toBe(true);
 
     rerender(<Pager forward={false} onPage={() => undefined} page={1} pages={5} />);
-    expect(screen.queryByRole('button', { name: /^Next/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^End/ })).toBeNull();
+    expect(step(/^Previous/).disabled).toBe(false);
+    expect(step(/^Next/).disabled).toBe(true);
+    expect(step(/^End/).disabled).toBe(true);
   });
 
-  it('keeps a hidden icon step’s place, and draws steps in words when asked', () => {
+  it('keeps every step in its place in each look, so nothing moves between pages', () => {
     const { container, rerender } = render(<Pager onPage={() => undefined} page={0} pages={3} />);
 
-    expect(container.querySelectorAll('span.pager-step')).toHaveLength(2);
+    expect(container.querySelectorAll('button.pager-step')).toHaveLength(4);
 
     rerender(<Pager look="text" onPage={() => undefined} page={0} pages={3} />);
-    expect(container.querySelectorAll('span.pager-step')).toHaveLength(0);
+    expect(container.querySelectorAll('button.pager-step.worded')).toHaveLength(4);
     expect(screen.getByRole('button', { name: 'Next page of items' }).textContent).toBe('Next');
   });
 

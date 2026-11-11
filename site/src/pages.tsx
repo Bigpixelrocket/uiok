@@ -13,11 +13,13 @@ import { DEMOS } from './demos';
 import { KeyboardDemo } from './demos/keyboard';
 import { LabelsDemo } from './demos/labels';
 import { ThemingDemo } from './demos/theming';
+import { TokensDemo } from './demos/tokens';
 import { DocPage } from './DocPage';
 import { Home } from './Home';
 import keyboardDoc from '../../docs/components/keyboard.md?doc';
 import labelsDoc from '../../docs/labels.md?doc';
 import themesDoc from '../../docs/themes.md?doc';
+import tokensDoc from '../../docs/tokens.md?doc';
 
 /** A page the sidebar lists and the router opens. */
 export interface SitePage {
@@ -37,7 +39,7 @@ const COMPONENT_DOCS = Object.fromEntries(
       import: 'default',
       eager: true
     })
-  ).map(([path, doc]) => [/([a-z]+)\.md$/.exec(path)?.[1] ?? path, doc])
+  ).map(([path, doc]) => [/([a-z][a-z-]*)\.md$/.exec(path)?.[1] ?? path, doc])
 );
 
 /** Areas a guide already covers, so they get no second page. */
@@ -51,6 +53,12 @@ const docPage = (doc: RenderedDoc, Demo?: ComponentType): ComponentType =>
 const guides: readonly SitePage[] = [
   { route: '/', title: 'Home', group: 'Guides', Page: Home },
   { route: '/theming', title: 'Theming', group: 'Guides', Page: docPage(themesDoc, ThemingDemo) },
+  {
+    route: '/tokens',
+    title: 'Scale tokens',
+    group: 'Guides',
+    Page: docPage(tokensDoc, TokensDemo)
+  },
   { route: '/labels', title: 'Labels', group: 'Guides', Page: docPage(labelsDoc, LabelsDemo) },
   {
     route: '/keyboard',

@@ -29,6 +29,244 @@
 @import './charts/charts.css';
 @import './terminal/terminal.css';
 
+/* Shared looks a page puts on its own markup: form controls, notices, cards. */
+@import './field/field.css';
+@import './surface/surface.css';
+
+/* ---- What the browser would otherwise draw in its own colours ---- */
+
+/* Selected text, a field's placeholder, its caret, a native check or
+   slider, and every scrollbar take the theme's colours. On the root and on
+   a theme preview, so a preview scope's accent and grounds reach its own
+   scrollbars and fields. */
+:where(:root, [data-theme-preview]) {
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+:where(input, textarea, [contenteditable]:not([contenteditable='false'])) {
+  caret-color: var(--accent);
+}
+
+:where(input, progress, meter) {
+  accent-color: var(--accent);
+}
+
+::placeholder {
+  color: var(--text-placeholder);
+  opacity: 1;
+}
+
+::selection {
+  background: var(--text-selection-bg);
+}
+
+/* ---- Shared recipes ---- */
+
+/* The small uppercase heading over a group (a menu's section, a settings
+   group, a sidebar's set of pages). */
+.overline {
+  margin: 0;
+  color: var(--text-dim);
+  font: var(--font-weight-strong) var(--font-size-caption) / var(--line-height-compact)
+    var(--font-ui);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+/* A translucent layer over content that scrolls under it: the one frost
+   recipe (--frost), with the layer's own translucent fill. */
+.frost {
+  -webkit-backdrop-filter: var(--frost);
+  backdrop-filter: var(--frost);
+}
+
+/* A scrolling box whose content runs past an edge fades over the last
+   --scroll-fade-size at that edge, so a clipped row reads as "more", not
+   as a cut. On the scrolling element itself: .scroll-fade for the block
+   edges, .scroll-fade-x for the inline edges, both for all four. The
+   lengths follow the scroll position (a scroll-driven animation), so an
+   edge with nothing past it stays sharp, and a box that does not scroll
+   never fades. The mask covers the whole box, its border and any sticky
+   strip included: put it on a borderless scroller, and use only the inline
+   fade under a sticky header. Engines without scroll timelines draw no
+   fade. */
+@supports (animation-timeline: scroll()) {
+  .scroll-fade,
+  .scroll-fade-x {
+    --scroll-fade-size: var(--space-6);
+  }
+
+  .scroll-fade {
+    mask-image: linear-gradient(
+      to bottom,
+      transparent,
+      var(--ground) var(--scroll-fade-start),
+      var(--ground) calc(100% - var(--scroll-fade-end)),
+      transparent
+    );
+    animation: uiok-scroll-fade-block linear both;
+    animation-timeline: scroll(self block);
+  }
+
+  .scroll-fade-x {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      var(--ground) var(--scroll-fade-inline-start),
+      var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+      transparent
+    );
+    animation: uiok-scroll-fade-inline linear both;
+    animation-timeline: scroll(self inline);
+  }
+
+  .scroll-fade.scroll-fade-x {
+    mask-image:
+      linear-gradient(
+        to bottom,
+        transparent,
+        var(--ground) var(--scroll-fade-start),
+        var(--ground) calc(100% - var(--scroll-fade-end)),
+        transparent
+      ),
+      linear-gradient(
+        to right,
+        transparent,
+        var(--ground) var(--scroll-fade-inline-start),
+        var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+        transparent
+      );
+    mask-composite: intersect;
+    animation:
+      uiok-scroll-fade-block linear both,
+      uiok-scroll-fade-inline linear both;
+    animation-timeline: scroll(self block), scroll(self inline);
+  }
+}
+
+/* The fade grows in over the first tenth of the scroll and out over the
+   last, so it is full whenever there is more past that edge. */
+@keyframes uiok-scroll-fade-block {
+  0% {
+    --scroll-fade-start: 0px;
+    --scroll-fade-end: var(--scroll-fade-size);
+  }
+
+  10% {
+    --scroll-fade-start: var(--scroll-fade-size);
+  }
+
+  90% {
+    --scroll-fade-end: var(--scroll-fade-size);
+  }
+
+  100% {
+    --scroll-fade-start: var(--scroll-fade-size);
+    --scroll-fade-end: 0px;
+  }
+}
+
+@keyframes uiok-scroll-fade-inline {
+  0% {
+    --scroll-fade-inline-start: 0px;
+    --scroll-fade-inline-end: var(--scroll-fade-size);
+  }
+
+  10% {
+    --scroll-fade-inline-start: var(--scroll-fade-size);
+  }
+
+  90% {
+    --scroll-fade-inline-end: var(--scroll-fade-size);
+  }
+
+  100% {
+    --scroll-fade-inline-start: var(--scroll-fade-size);
+    --scroll-fade-inline-end: 0px;
+  }
+}
+
+/* Hover and press for every quiet control: one look per kind, written once
+   here so no component restates it. Each rule weighs one class (every part
+   but the pointer state sits in :where()), so a component's own state rule
+   (current, checked, lit, the cursor row) still wins over it, and it wins
+   over a component's rest rule by coming after it. Only a control that can
+   act takes them: a button, a link, or a role a control has, not disabled.
+
+   - Quiet control (an outlined-on-hover action): the frosted wash and ring,
+     words to full text, as the neutral Button.
+   - Tab or segment in a track: the wash alone, words to full text; the
+     track already draws the frame.
+   - Pressed (both kinds, and the text-like controls: crumbs, sort labels,
+     strip links, palette levels): the face sinks,
+     as Button's does. */
+:where(
+  .pager-step,
+  .legend-slot,
+  .keylegend-verbs button,
+  .pane-act,
+  .pane-icon-act,
+  .path-star,
+  .page-tab,
+  .segmented-choice-option,
+  .date-picker-day,
+  .crumb-label,
+  .pane-sort.sortable,
+  .pane-strip-link,
+  .data-grid-sort,
+  .palette-level
+):where(button, a[href], [role='button'], [role='tab'], [role='radio']) {
+  transition: var(--transition-control);
+}
+
+:where(
+    .pager-step,
+    .legend-slot,
+    .keylegend-verbs button,
+    .pane-act,
+    .pane-icon-act,
+    .path-star
+  ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
+    :not(:disabled, [aria-disabled='true'])
+  ):hover {
+  box-shadow: var(--hover-frost);
+  background: var(--hover-wash);
+  color: var(--text);
+}
+
+:where(.page-tab, .segmented-choice-option, .date-picker-day):where(
+    button,
+    a[href],
+    [role='button'],
+    [role='tab'],
+    [role='radio']
+  ):where(:not(:disabled, [aria-disabled='true'])):hover {
+  background: var(--hover-wash);
+  color: var(--text);
+}
+
+:where(
+    .pager-step,
+    .legend-slot,
+    .keylegend-verbs button,
+    .pane-act,
+    .pane-icon-act,
+    .path-star,
+    .page-tab,
+    .segmented-choice-option,
+    .date-picker-day,
+    .crumb-label,
+    .pane-sort.sortable,
+    .pane-strip-link,
+    .data-grid-sort,
+    .palette-level
+  ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
+    :not(:disabled, [aria-disabled='true'])
+  ):active {
+  box-shadow: var(--shadow-pressed);
+  background: var(--pressed-wash);
+}
+
 /* A focusable element that the keyboard reached: one ring from the focus
    tokens. :where() gives it no weight, so a component that must draw its
    ring inside a clipping parent changes only outline-offset, and a host's
@@ -63,6 +301,19 @@
 }
 
 /* One turn and one breath, shared by every spinner and pulse. */
+/* The Spinner (src/icon): one turn per --duration-spin, standing still
+   under reduced motion. */
+.spinner {
+  flex: none;
+  animation: uiok-spin var(--duration-spin) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
 @keyframes uiok-spin {
   to {
     transform: rotate(1turn);

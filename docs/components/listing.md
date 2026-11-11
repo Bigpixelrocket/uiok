@@ -10,7 +10,7 @@ Every rule applies under `.listing-root`. Put the class on the element that hold
 <section class="my-view listing-root">…</section>
 ```
 
-Rules are scoped with `:where(.listing-root)`, so each weighs one class less than your own `.my-view .row`. Adjust one piece with a single scoped rule, in whatever order the stylesheets load. The scope's metrics are custom properties on `.listing-root`:
+Rules are scoped with `:where(.listing-root)`, so each weighs one class less than your own `.my-view .row`. Adjust one piece with a single scoped rule, in whatever order the stylesheets load. The compact controls (crumbs, the path star, `QuietAction`, `RowIconAction`, strip links) are the exception: their look belongs to their own class, so they look the same outside the scope. The scope's metrics are custom properties on `.listing-root`:
 
 | Property                | Default | Meaning                                                                         |
 | ----------------------- | ------- | ------------------------------------------------------------------------------- |
@@ -36,7 +36,7 @@ import { QuietAction } from '@bigpixelrocket/uiok/pane';
         { label: 'Size', align: 'right', sort },
         { label: 'Action', hidden: true }
       ]}
-      grid={`20px minmax(0, 1fr) ${column(10)} ${column(8)} ${ACTION_COLUMN}`}
+      grid={`var(--icon-column) minmax(14ch, 1fr) ${column(12)} ${column(8)} ${ACTION_COLUMN}`}
       title="Services"
     >
       {services.map((service) => (
@@ -68,12 +68,16 @@ import { QuietAction } from '@bigpixelrocket/uiok/pane';
 - `ListingColumn`: `label` (the column's label and key), `hidden` (said to screen readers only, as over an action column), `align: 'right'` (numbers), `control` (a control in the label's place, such as a `.pane-strip-link` "Update all"), and `sort` (`ColumnSort`: `direction` (`SortDirection`: `'asc' | 'desc' | null`), and `onSort`).
 - `Row` (`RowProps`): `rowKey` (its `data-row-key`), `mark` (the icon), `name`, `nameClass`, `className`, `onOpen` (a click anywhere but its controls), `tabbable` (keep its controls in the Tab order), `focusable` and `entry` (the row itself is a Tab stop).
 - `Cell` (`CellProps`): `align`, `className`, and `tip`, the whole text of a cell cut short, as its tooltip and accessible description.
-- `StateMark` (`StateMarkProps`): a dot in the state's tone (`StateTone`: `ready`, `warning`, `danger`, `busy`, `muted`) and its word; `busy` draws a spinner instead of the dot.
-- `PathCell` (`PathCellProps`): a path whose folders give way before its name. `nameClassName` colours the name by its kind; `pathParts(path).base` is the name it draws.
+- `StateMark` (`StateMarkProps`): a mark in the state's tone (`StateTone`) and its word; `busy` draws a spinner, the same turning ring as `RunHeader`'s, instead of the mark. Each tone has its own shape, so two tones whose hues meet in a theme still differ: `ready` a dot, `warning` a diamond, `danger` a square, `busy` a heavy accent ring (it pulses where motion is allowed), `muted` a thin grey ring. A word wider than its column ends in an ellipsis, its whole text in its tooltip.
+- `PathCell` (`PathCellProps`): a path whose folders give way before its name. It is a cell itself: put it in the row as it is, never inside a `Cell`, whose gutter it would add a second time. `nameClassName` colours the name by its kind; `pathParts(path).base` is the name it draws.
 - `WellColumn` (`WellColumnProps`): a strip over a terminal-coloured well, full height. The child draws the well, usually `<pre className="pane-well">`. `label` makes it a region.
 - `CurrentDot` (`CurrentDotProps`): a neutral dot one character after a label, named and titled by `label`.
 
 ## Column widths
+
+A listing with rows lays its strip and every row on one grid (CSS subgrid), so a track sized by its content (`auto`, `max-content`) takes its widest cell across all rows and the strip, and every label stands over its values.
+
+Give the name a floor, such as `minmax(14ch, 1fr)`, so it keeps a readable width at a narrow pane while the other columns keep theirs; the list then scrolls sideways rather than cutting every name to two letters. A listing whose rows draw no icon starts its first label past the icon column, over the names.
 
 - `column(ch)`: a track as wide as `ch` characters plus the gutter.
 - `ACTION_COLUMN`: `column(10)`, the same action column in every listing.
@@ -92,17 +96,27 @@ A row's controls that the keys run carry `data-verb` (`QuietAction`, `RowIconAct
 
 Rows take no keys themselves; the app's key handler (`usePaneKeys`) moves the cursor and runs the cursor row's verbs. The pointer moving over a row, or the focus entering it, moves the cursor there. A sorting strip label is a button: Return or Space sorts.
 
+## Row states
+
+| Look                                         | How you get it                                               | Drawn with                                                                    |
+| -------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------- |
+| Keyboard cursor                              | `RowCursorContext` (`.cursor`)                               | `--cursor-row` fill, a 2px `--cursor-bar` on the leading edge                 |
+| Cursor of a pane that does not hold the keys | `.cursor` in a `.pane` beside a `.pane.active`               | `--fill`, no bar                                                              |
+| Selected                                     | `className="selected"` on `Row`                              | `--selected-bg` fill, `--on-selected` words, `--on-selected-dim` quiet words  |
+| Selected under the cursor                    | `.selected` and `.cursor`                                    | `--selected-cursor-bg`, a bar in `--on-selected`                              |
+| Pointer hover                                | `.pointer` on the `.pane-list`, for rows that act on a click | `--hover-wash` on rows other than the cursor and the selection                |
+| Keyboard focus                               | `Row` `focusable`                                            | the accent ring inside the row's edges                                        |
+| Add row                                      | `className="pane-add"` on `Row`                              | dim words after an accent glyph; accent words on hover, focus, and the cursor |
+
+Leave `.pointer` off a list where the pointer moves the cursor: the cursor is the hover there. A row drawn as a `button` (a tree) wears the row's look, not the button's.
+
 ## Styling
 
-`.pane-listing`, `.pane-columns.pane-strip`, `.pane-sort` (`.sortable`, `.active`), `.pane-sort-label`, `.row` (`.cursor`, `.pane-open-row`), `.row-icon`, `.row-name`, `.row-meta` (`.align-right`), `.pane-message` (`.danger`), `.pane-empty` with `.pane-empty-actions`, `.pane-row-open` (a name that is a button), `.pane-action-cell`, `.pane-hover-cell` (its icon controls show on hover, focus, and the cursor row), `.pane-state` (`.pane-tone-*`, `.pane-state-dot`, `.pane-state-busy`), `.pane-path` (`.pane-path-head`, `.pane-path-tail`, `.pane-path-name`), `.pane-well-column`, `.pane-well`, `.pane-strip-link` (`.danger`), `.pane-filter-summary`, `.current-dot`.
+`.pane-listing`, `.pane-columns.pane-strip`, `.pane-sort` (`.sortable`, `.active`), `.pane-sort-label`, `.row` (`.cursor`, `.selected`, `.pane-open-row`, `.pane-add`), `.pane-list.pointer`, `.row-icon`, `.row-name`, `.row-meta` (`.align-right`), `.pane-message` (`.danger`), `.pane-empty` with `.pane-empty-actions`, `.pane-row-open` (a name that is a button), `.pane-action-cell`, `.pane-hover-cell` (its icon controls show on hover, focus, and the cursor row), `.pane-state` (`.pane-tone-*`, `.pane-state-dot`, `.pane-state-word`, `.pane-state-busy`), `.pane-path` (`.pane-path-head`, `.pane-path-tail`, `.pane-path-name`), `.pane-well-column`, `.pane-well`, `.pane-strip-link` (`.danger`), `.pane-filter-summary`, `.current-dot`.
 
-A warning's words (`StateMark`'s, a path bar's `.path-facts.warning`) read in `--warning-text` when set, `--warning` otherwise. A theme whose `--warning` is too light for text sets a more legible tone for text on the scope:
+A value cut by its column ends in an ellipsis. Words take the text-safe roles, which keep 4.5:1 on the list, the cursor row, the header, and their own washes in every theme: a state's word `--success-text`, `--warning-text`, or `--danger-text`, a lit action and a strip link `--accent-text`. Marks keep the hue tokens (`--success`, `--warning`, `--danger`, `--accent`) and the idle ring `--idle-mark`, each at 3:1.
 
-```css
-.listing-root {
-  --warning-text: var(--my-legible-warning);
-}
-```
+A listing with no rows (`empty`) leaves its column labels out, so no header stands over nothing; a control in the strip keeps its place. A pane with nothing in it at all centres a `.pane-empty` block: a glyph in the faint tone, a title (`strong` or `h2`), a sentence, and a `Button` or a `.pane-empty-actions` row of them.
 
 ## Labels read
 

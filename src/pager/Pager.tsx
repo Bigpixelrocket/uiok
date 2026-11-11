@@ -1,6 +1,7 @@
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 import type { ReactElement } from 'react';
 
+import { ICON_SM } from '../icon/index.js';
 import type { PagerStep } from '../labels/pager.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import type { LinkLook } from '../pane/PaneActions.js';
@@ -46,9 +47,10 @@ const STEP_ICONS: Readonly<Record<PagerStep, typeof ChevronLeft>> = {
  * list whose last page is not known yet (one counted only so far) offers
  * no End, and a page that cannot be passed (`forward` false) offers neither
  * Next nor End. `look` draws its steps as icons (named on hover), words,
- * or both; a hidden icon step keeps its place so the menu never moves,
- * while a hidden worded step takes no room, since their widths differ.
- * Words and names come from the `pager` labels.
+ * or both. A step that cannot act from the page shown stays in its place,
+ * disabled and faded as every disabled control is, so the menu and the
+ * other steps never move under the pointer between clicks. Words and names
+ * come from the `pager` labels.
  */
 export function Pager({
   kind = 'items',
@@ -69,21 +71,18 @@ export function Pager({
     const Icon = STEP_ICONS[name];
     const word = labels[name];
 
-    return shown ? (
+    return (
       <button
         aria-label={labels.step(name, kind)}
         className={look === 'icons' ? 'pager-step' : 'pager-step worded'}
+        disabled={!shown}
         onClick={() => onPage(to)}
         type="button"
-        {...(look === 'icons' ? tooltip(word) : {})}
+        {...(look === 'icons' && shown ? tooltip(word) : {})}
       >
-        {look !== 'text' && <Icon aria-hidden size={13} />}
+        {look !== 'text' && <Icon aria-hidden size={ICON_SM} />}
         {look !== 'icons' && word}
       </button>
-    ) : look === 'icons' ? (
-      <span aria-hidden className="pager-step" />
-    ) : (
-      <></>
     );
   };
 
@@ -93,7 +92,7 @@ export function Pager({
       {step('previous', page - 1, !first)}
       <select
         aria-label={labels.page(kind)}
-        className="pager-page"
+        className="field field-xs pager-page"
         onChange={(event) => onPage(Number(event.currentTarget.value) - 1)}
         value={page + 1}
       >

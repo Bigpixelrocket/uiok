@@ -50,13 +50,13 @@ function View() {
 
 ## Frame
 
-- `PanePathBar` (`PanePathBarProps`): `trail` (crumbs, broadest first; a string is a label, a `PaneCrumb` `{ label, onOpen, tip? }` is a button), `mark` (a glyph in the root crumb), `heading` (the last label crumb is the page's `h2`), `here` (drawn inside the last crumb, such as a `CurrentDot`), and children at the bar's end (`.path-tools`). A label crumb cut short carries its whole text as its tooltip.
+- `PanePathBar` (`PanePathBarProps`): `trail` (crumbs, broadest first; a string is a label, a `PaneCrumb` `{ label, onOpen, tip? }` is a button), `mark` (a glyph in the root crumb), `heading` (the last label crumb is the page's `h2`), `here` (drawn inside the last crumb, such as a `CurrentDot`), and children at the bar's end (`.path-tools`). A crumb cut short ends in an ellipsis and carries its whole text as its tooltip; a button crumb with a `tip` shows the tip instead.
 - `PaneStatus` (`PaneStatusProps`): the summary as children, and `tools` (compact controls at the line's end), which the summary gives way to.
 
 ## Compact controls
 
-- `QuietAction` (`QuietActionProps`): an icon and a verb (`word`) in the dim tone, lit in the accent on the cursor row or with `lit`. `label` is the accessible name, `tip` the tooltip and description, `shortcut` the chord the tooltip shows. `verb` marks what the cursor row's keys run it for (`data-verb`), `pageVerb` what the page's chords run it for (`data-page-verb`), and `action` tells several controls on one verb apart. `softDisabled` keeps it focusable but inert (`aria-disabled`).
-- `RowIconAction` (`RowIconActionProps`): an icon control with the same `label`, `tip`, `verb`, `softDisabled`. With a `word`, it draws as `RowLinkLookContext` says.
+- `QuietAction` (`QuietActionProps`): an icon and a verb (`word`) in the dim tone, lit in the accent on the cursor row or with `lit`. `danger` marks a destructive one (Remove, Drop): quiet at rest, in the danger tone under the pointer, with the focus, and on the cursor row. `label` is the accessible name, `tip` the tooltip and description, `shortcut` the chord the tooltip shows. `verb` marks what the cursor row's keys run it for (`data-verb`), `pageVerb` what the page's chords run it for (`data-page-verb`), and `action` tells several controls on one verb apart. `softDisabled` keeps it focusable but inert (`aria-disabled`).
+- `RowIconAction` (`RowIconActionProps`): an icon control with the same `label`, `tip`, `verb`, `softDisabled`, `danger`. With a `word`, it draws as `RowLinkLookContext` says.
 - `LinkLook` (`'icons' | 'text' | 'both'`) and `RowLinkLookContext` (icons by default): how row links draw, for an app with an icon-or-text preference.
 - `InRowContext` and `useInRow()`: set by `Row`. A control inside a row leaves the Tab order, since the cursor row's keys run it.
 - `ControlVerb`: a string. Several verbs on one control are separated by spaces (`enter reveal`).
@@ -92,9 +92,11 @@ DOM helpers: `paneRows`, `paneRow`, `verbControl(root, verb, 'verb' | 'page-verb
 
 ## Styling
 
-`.pane` (`.active` wears the accent on its frame), `.pane-path-row`, `.pane-crumbs`, `.crumb` (`.root`, `.home`, `.here`, `.brief`), `.crumb-label`, `.crumb-separator`, `.path-tools`, `.path-facts` (`.danger`, `.warning`), `.path-star`, `.pane-act` (`.lit`), `.pane-icon-act` (`.worded`), `.pane-list`, `.pane-status`, `.pane-summary`, `.pane-status-tools`.
+`.pane` (`.active` wears the accent on its frame), `.pane-path-row`, `.pane-crumbs`, `.crumb` (`.root`, `.home`, `.here`, `.brief`), `.crumb-label` (a button crumb's words in `.crumb-text`), `.crumb-separator`, `.path-tools`, `.path-facts` (`.danger`, `.warning`), `.path-star`, `.pane-act` (`.lit`, `.danger`), `.pane-icon-act` (`.worded`, `.danger`), `.pane-list`, `.pane-status`, `.pane-summary`, `.pane-status-tools`.
 
-The compact controls' focus ring sits inside them (`outline-offset: -2px`) and keeps `.listing-root`'s weight, so a host rule such as `.my-view button:focus-visible` does not replace it. Hover never lights a disabled control.
+The pane's three bands share one inset: the first crumb's words, the strip's first label, the rows' icons, and the status line's words start on `--pane-row-inset`, and the path bar's last action, the rows' actions, and the status line's last icon end on it.
+
+The compact controls are drawn 20px high; each one's hit area reaches `--hit-target` (24px) in the block axis, inside the 24px row or 26px bar. Their hover and pressed looks are the base sheet's shared recipes, and they ease into them as the Button does. Their focus ring sits on their edge (`--focus-offset-flush`) and keeps their 4px corners; inside a listing scope it keeps `.listing-root`'s weight, so a host rule such as `.my-view button:focus-visible` does not replace it. Hover never lights a disabled control.
 
 ## Labels read
 

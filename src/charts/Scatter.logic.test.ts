@@ -13,7 +13,11 @@ describe('the scatter chart’s geometry', () => {
   it('ticks on round numbers, each category, and round times', () => {
     expect(ticksOf({ min: -5, max: 105 }, 'number')).toEqual([0, 20, 40, 60, 80, 100]);
     expect(ticksOf({ min: -0.5, max: 2.5 }, 'category')).toEqual([0, 1, 2]);
-    expect(ticksOf({ min: 0, max: 10 * 86_400_000 }, 'time')).toEqual([0, 7 * 86_400_000]);
+    const day = 86_400_000;
+
+    expect(ticksOf({ min: 0, max: 10 * day }, 'time')).toEqual(
+      [0, 2, 4, 6, 8, 10].map((n) => n * day)
+    );
     expect(
       tickLabel(
         Date.UTC(2026, 0, 2),
@@ -36,6 +40,13 @@ describe('the scatter chart’s geometry', () => {
     ).toEqual({ x: { min: 2.5, max: 7.5 }, y: { min: 2, max: 8 } });
     // A click is no zoom.
     expect(zoomedTo({ x: 5, y: 5 }, { x: 6, y: 6 }, { x: domain, y: domain }, 200, 100)).toBeNull();
+  });
+
+  it('shows at least three ticks on a number or time axis, however few are asked for', () => {
+    // Ten minutes on a narrow plot: start, middle, and end, not one tick at the end.
+    expect(ticksOf({ min: 0, max: 600_000 }, 'time', 2)).toEqual([0, 300_000, 600_000]);
+    expect(ticksOf({ min: 0, max: 7.5 * 86_400_000 }, 'time', 2).length).toBeGreaterThanOrEqual(3);
+    expect(ticksOf({ min: 0, max: 10 }, 'number', 1).length).toBeGreaterThanOrEqual(3);
   });
 
   it('ends its ticks where a step is finer than a double tells apart, and refuses such a zoom', () => {

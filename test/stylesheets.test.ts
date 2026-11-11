@@ -4,7 +4,7 @@
  * theme tokens) must be reached from `src/styles.css`.
  */
 
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -52,7 +52,9 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
       .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
       .map((rule) => rule.selectorText)
       .filter((selector) => /:(?:hover|active)\b/.test(selector.replace(/:not\([^()]*\)/g, '')))
-      .map((selector) => selector.replace(/:(?:hover|active)\b/g, ''));
+      // Each pointer state reads as always true; :where(*) keeps a list
+      // such as :is(:hover, .cursor) a valid selector.
+      .map((selector) => selector.replace(/:(?:hover|active)\b/g, ':where(*)'));
     const highlighted = (disabled: boolean): string[] => {
       // A fieldset disables what it holds, so no control here takes its own prop.
       document.body.innerHTML = `<fieldset${disabled ? ' disabled' : ''} class="listing-root">
@@ -68,6 +70,9 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
           <button class="data-grid-link">42</button></div>
         <button class="date-picker-day" role="gridcell">7</button>
         <label class="select-all-check"><input type="checkbox">Check all</label>
+        <input class="field"><select class="field field-sm"></select>
+        <input type="checkbox" class="check" checked><input type="radio" class="check">
+        <input type="checkbox" role="switch" class="switch">
       </fieldset>`;
       const elements = [...document.querySelectorAll('fieldset *')];
       const matched = elements.flatMap((element) =>
@@ -82,5 +87,56 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
     expect(pointerRules.length).toBeGreaterThan(0);
     expect(highlighted(false).length).toBeGreaterThan(0);
     expect(highlighted(true)).toEqual([]);
+  });
+});
+
+/** A rule of a component sheet: its file, selector, and declarations, comments blanked. */
+interface SheetRule {
+  readonly file: string;
+  readonly selector: string;
+  readonly body: string;
+}
+
+/** Every innermost rule of every component sheet (an @media's rules included). */
+const sheetRules: readonly SheetRule[] = componentSheets
+  .filter((sheet) => sheet !== 'themes/themes.generated.css')
+  .flatMap((sheet) => {
+    const text = readFileSync(join(SRC, sheet), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    return [...text.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map(([, selector = '', body = '']) => ({
+      file: `src/${sheet}`,
+      selector: selector.trim().replace(/\s+/g, ' '),
+      body
+    }));
+  });
+
+describe('colour roles in the component sheets', () => {
+  // The palette-named grounds are the source the role aliases read
+  // (docs/themes.md); a sheet names the role: --ground, --surface,
+  // --surface-header, --fill, --cursor-row.
+  it('paints grounds through their role names, not the palette names', () => {
+    const raw = sheetRules.flatMap(({ file, selector, body }) =>
+      [...body.matchAll(/var\(--(?:bg|bg-panel|bg-header|cursor-bg|cursor-row-bg)\)/g)].map(
+        ([use]) => `${file} ${selector}: ${use}`
+      )
+    );
+
+    expect(raw).toEqual([]);
+  });
+
+  // A hue as a mark (an icon, a dot, a bar) needs 3:1, which the hue token
+  // holds; as words it needs 4.5:1, which only its text role holds
+  // (--accent-text, --danger-text, --warning-text, --success-text). So a
+  // hue is a text colour only on a selector that draws a mark, by its name
+  // or by being an icon or a pseudo-element.
+  it('sets words in a text role, never a bare hue', () => {
+    const mark =
+      /svg|icon|glyph|dot|mark|pane-state|arrow|chevron|spinner|caret|bar\b|knob|thumb|::?(?:before|after)|\.keychord/;
+    const hued = sheetRules.flatMap(({ file, selector, body }) =>
+      [...body.matchAll(/(?:^|;)\s*color:\s*(var\(--(?:accent|danger|warning|success|primary)\))/g)]
+        .filter(() => !mark.test(selector))
+        .map(([, use]) => `${file} ${selector}: color ${use}`)
+    );
+
+    expect(hued).toEqual([]);
   });
 });

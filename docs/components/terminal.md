@@ -89,7 +89,7 @@ The history lives in the engine and ends with the terminal; nothing is written a
 
 The engine decides what is a bell: a BEL its parser executes in ground state or inside a control sequence. A BEL that ends an OSC string (`ESC ] 0 ; title BEL`) only ends it, and one inside a DCS, APC, PM, or SOS payload is data, so neither rings; scanning output for `0x07` cannot tell these apart. The engine reports a bell through an effect callback, routed to JavaScript by the trampoline module (`ghostty-effects.wasm`), and the terminal reports it once the parse returns, once per write however many rang.
 
-A terminal given `onBell` flashes a veil of its text colour that fades over 250 ms (`BELL_FLASH_MS`), or under reduced motion a still tint at its edges for the same time. Bells less than 500 ms after a flash began fold into it, so a program ringing without pause flashes at most twice a second. Only the flash is limited: `onBell` hears every bell. A read-only terminal never rings.
+A terminal given `onBell` flashes a veil of its text colour that fades over 280 ms (`BELL_FLASH_MS`, the same as `--duration-slow`), or under reduced motion a still tint at its edges for the same time. Bells less than 500 ms after a flash began fold into it, so a program ringing without pause flashes at most twice a second. Only the flash is limited: `onBell` hears every bell. A read-only terminal never rings.
 
 ## Keyboard
 
@@ -100,6 +100,11 @@ An interactive terminal takes every key into a hidden input element and encodes 
 Colours come from the `--terminal-*` tokens every theme sets (`--terminal-bg`, `--terminal-fg`, `--terminal-cursor`, `--terminal-selection`, `--terminal-ansi-0` to `-15`), from which the terminal derives xterm's 256-colour palette. It reads them again on every appearance or theme change (`subscribeThemeChange`). On a page without UIOK's stylesheet it falls back to Catppuccin Mocha.
 
 Text is `--font-mono` at 13px on 19px lines, 4px in from the mount's edges; a host padding the other 8px puts the text 12px from its edge, where a listing's path bar starts its own. A proportional face is refused for the engine's default monospace stack. The rules live in `terminal.css`, which `styles.css` imports: `.terminal` (the host, sized by `className`), `.terminal-mount`, `.terminal-canvas`, `.terminal-scrollbar`, `.terminal-failure`, and `.terminal-menu`.
+
+- The scrollback thumb reads `--scrollbar-thumb`, and `--scrollbar-thumb-hover` while the pointer or the keyboard is on the rail.
+- An unfocused terminal draws its cursor as a quiet 1px outline in the text colour at half strength, and none at all while nothing is on its screen, so an idle output well shows no stray box.
+- The menu a secondary click opens is the menu look (`.folder-menu` and `.folder-menu-option`, with `.terminal-menu` and `.terminal-menu-item`), drawn through a portal on the document's body at `--z-dialog-popover`, so neither a scrolling pane nor a dialog clips it.
+- A terminal that could not start says so in the interface face on the terminal's own ground.
 
 ## Assets
 

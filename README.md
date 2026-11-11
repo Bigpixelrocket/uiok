@@ -6,7 +6,7 @@ UIOK is a React UI library with a retro look: compact controls set in system and
 
 ## Status
 
-Pre-1.0; expect breaking changes in minor releases until 1.0. Version 0.1.0 ships the base stylesheet with 18 light and dark themes ([docs/themes.md](docs/themes.md)), shared labels, keyboard helpers, and component areas from buttons, tooltips, and dialogs to listings, data grids, pickers, palettes, and charts ([docs/components/](docs/components/)). Each area is importable on its own as `@bigpixelrocket/uiok/<area>`.
+Pre-1.0; expect breaking changes in minor releases until 1.0. Version 0.1.0 ships the base stylesheet with 18 light and dark themes ([docs/themes.md](docs/themes.md)) and one set of size, spacing, corner, motion, and layer tokens ([docs/tokens.md](docs/tokens.md)), shared labels, keyboard helpers, and component areas from buttons, tooltips, and dialogs to listings, data grids, pickers, palettes, and charts ([docs/components/](docs/components/)). Each area is importable on its own as `@bigpixelrocket/uiok/<area>`.
 
 ## Install
 

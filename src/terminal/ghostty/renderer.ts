@@ -368,6 +368,16 @@ export function terminalGridSize(
   };
 }
 
+/** How strongly an unfocused terminal's hollow cursor is drawn: the text colour at half strength. */
+const UNFOCUSED_CURSOR_ALPHA = 0.5;
+
+/** Whether no cell of the snapshot's screen shows a glyph. */
+function screenIsBlank(snapshot: GhosttySnapshot): boolean {
+  return snapshot.rowData.every((row) =>
+    row.cells.every((cell) => cell.text === '' || cell.text === ' ')
+  );
+}
+
 /** Paints a snapshot onto the canvas context. */
 export function renderGhosttySnapshot(options: {
   readonly context: CanvasRenderingContext2D;
@@ -672,7 +682,15 @@ export function renderGhosttySnapshot(options: {
     }
   }
 
-  if (cursorOn && snapshot.cursorVisible && snapshot.cursorX >= 0 && snapshot.cursorY >= 0) {
+  if (
+    cursorOn &&
+    snapshot.cursorVisible &&
+    snapshot.cursorX >= 0 &&
+    snapshot.cursorY >= 0 &&
+    // An unfocused screen with nothing on it shows no cursor: a lone box in
+    // an empty output well reads as an error mark, not as a place to type.
+    (focused || !screenIsBlank(snapshot))
+  ) {
     const left = padding + snapshot.cursorX * metrics.width;
     const top = padding + snapshot.cursorY * metrics.height;
     const deviceLeft = deviceGridEdge(snapshot.cursorX, metrics.width, padding, pixelRatio);
@@ -681,9 +699,14 @@ export function renderGhosttySnapshot(options: {
     const deviceBottom = deviceGridEdge(snapshot.cursorY + 1, metrics.height, padding, pixelRatio);
     context.fillStyle = cssColor(snapshot.cursor);
     if (!focused) {
-      // An unfocused terminal draws a hollow cursor so the active pane is obvious.
-      context.strokeStyle = cssColor(snapshot.cursor);
+      // An unfocused terminal draws a quiet hollow cursor, a 1px outline in
+      // the text colour at half strength, so the active pane is obvious and
+      // the resting one keeps its place without the cursor colour's alarm.
+      const alpha = context.globalAlpha;
+      context.globalAlpha = alpha * UNFOCUSED_CURSOR_ALPHA;
+      context.strokeStyle = cssColor(snapshot.foreground);
       context.strokeRect(left + 0.5, top + 0.5, metrics.width - 1, metrics.height - 1);
+      context.globalAlpha = alpha;
     } else if (snapshot.cursorStyle === 0) {
       context.fillRect(left, top, 2, metrics.height);
     } else if (snapshot.cursorStyle === 2) {

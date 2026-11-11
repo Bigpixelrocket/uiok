@@ -1,9 +1,14 @@
-/** A filter field over a listing; the esc cap and the Escape key both clear it. */
+/**
+ * A filter field over a listing, drawn by the library's `.filter-field`; the
+ * esc cap and the Escape key both clear it. The mark lights while the field
+ * holds the keys or a query.
+ */
 
 import { FileText } from 'lucide-react';
 import { useState } from 'react';
 
 import { FilterEscape, FilterIcon } from '@bigpixelrocket/uiok/filter';
+import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { Cell, column, Listing, Row } from '@bigpixelrocket/uiok/listing';
 import { matchQuery } from '@bigpixelrocket/uiok/menu';
 import { MarkedText } from '@bigpixelrocket/uiok/text';
@@ -20,7 +25,7 @@ export function FilterDemo() {
   return (
     <div className="demo-stack listing-root">
       <div className="pane demo-pane">
-        <label className="demo-filter">
+        <label className="filter-field">
           <FilterIcon />
           <input
             aria-label="Filter files"
@@ -46,7 +51,7 @@ export function FilterDemo() {
             {rows.map(({ file, positions }) => (
               <Row
                 key={file.id}
-                mark={<FileText size={14} />}
+                mark={<FileText size={ICON_MD} />}
                 name={<MarkedText positions={positions} text={file.name} />}
                 rowKey={file.id}
               >

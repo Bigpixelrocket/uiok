@@ -43,7 +43,7 @@ The checkbox and the actions are ordinary Tab stops; Space toggles the checkbox.
 
 ## Styling
 
-`.select-all-bar`, `.select-all-check`, `.select-all-with`.
+`.select-all-bar`, `.select-all-check`, `.select-all-with`. The checkbox is the shared `.check`. The bar starts its checkbox `var(--line) + var(--space-3)` in, where a DataGrid's lead column starts its rows' boxes inside the frame, so a bar under a grid lines up with the rows; give the rows' own checkboxes `.check` too, so both draw alike.
 
 ## Labels read
 

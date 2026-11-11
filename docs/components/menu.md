@@ -68,7 +68,7 @@ function FolderMenu() {
 }
 ```
 
-Draw it inside the listing scope (`.listing-root`), positioned relative to what opened it.
+Draw it anywhere, positioned relative to what opened it; the menu look needs no scope.
 
 ## API
 
@@ -95,13 +95,14 @@ The caller maps keys. The usual mapping: ↑ and ↓ move the cursor (`moveMenuC
 
 ## Styling
 
-Under `.listing-root`:
+The rules weigh one class and need no scope, so a menu reads the same in a listing, a dialog, or a terminal; an app adjusts a piece with one scoped selector (`.listing-root .folder-menu`).
 
-- `.folder-menu`: the floating surface, absolutely placed 5px below its offset parent, 300px wide by default.
+- `.folder-menu`: the floating surface, absolutely placed 4px below its offset parent on `--z-menu`, 300px wide by default, in monospace 13px, with the lit top edge and `--shadow-popover`.
 - `.folder-menu-query`: the query row, with `.filter-icon`, an `input`, and `.folder-menu-count`; `bell-0` / `bell-1` ring it.
-- `.folder-menu-options`: the scrolling list (216px tall at most), with `.folder-menu-option` rows on a 20px icon column, the name, and an end column; `.cursor` marks the cursor row.
-- `.entry-menu-heading`: a group's name with a hairline after it.
-- `.folder-menu-note`: a dim line of text, for an empty or loading list.
+- `.folder-menu-options`: the scrolling list, nine whole rows tall at most, with a thin scrollbar; add `.scroll-fade` to fade the edge that has more rows. Its `.folder-menu-option` rows sit on the icon column (`--icon-column`), the name, and an end column (a `KeyChord`, a count). `.cursor` marks the cursor row with the cursor fill and a 2px accent bar at its leading edge; a row with `aria-disabled="true"` is faded and never takes the cursor's look.
+- `.entry-menu-heading`: a group's name in the small uppercase heading (the base sheet's `.overline`) with a hairline after it.
+- `.folder-menu-note`: a dim sentence in the interface face, its text over the rows' names, for an empty or loading list or a reason.
+- The typed query is `--accent-text`, the caret `--accent`; the placeholder is the base sheet's.
 - `.name-hit` ([text](text.md)) tints a matched character.
 
 The keyframes `row-nudge-a`, `row-nudge-b`, `query-refused-a`, and `query-refused-b` are global, so an app's own filter field or cursor row can ring on them too.

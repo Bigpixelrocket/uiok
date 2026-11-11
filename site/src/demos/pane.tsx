@@ -7,14 +7,17 @@
  * page when the focus leaves it.
  */
 
-import { FileText, Play, Server, Square } from 'lucide-react';
+import { Copy, FileText, Play, RefreshCw, Server, Square, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
+import { ICON_SM } from '@bigpixelrocket/uiok/icon';
 import { KeyLegendStrip, type LegendVerb } from '@bigpixelrocket/uiok/legend';
 import {
   ACTION_COLUMN,
   Cell,
   column,
+  CurrentDot,
+  iconLinksColumn,
   Listing,
   Row,
   RowCursorContext,
@@ -27,6 +30,7 @@ import {
   paneKeyAction,
   paneRow,
   QuietAction,
+  RowIconAction,
   usePaneKeys,
   verbControl,
   type MainVerbs,
@@ -205,12 +209,22 @@ export function PaneDemo() {
           onFocus={panes.activateSidebar}
           onPointerLeave={panes.leaveSidebar}
         >
-          <PanePathBar trail={['Servers']} />
+          <PanePathBar trail={['Servers']}>
+            <button
+              aria-label="Refresh servers"
+              className="path-star"
+              onClick={() => setSaid('refreshed the servers')}
+              type="button"
+            >
+              <RefreshCw aria-hidden size={ICON_SM} />
+            </button>
+          </PanePathBar>
           <div aria-label="Servers" className="pane-list" data-pane-home="sidebar" tabIndex={-1}>
             <RowCursorContext value={panes.sidebarCursor}>
-              <Listing columns={[]} grid="20px minmax(0, 1fr)" title="Name">
+              <Listing columns={[]} grid="var(--icon-column) minmax(0, 1fr)" title="Name">
                 {SERVER_KEYS.map((key) => (
                   <Row
+                    className={key === open ? 'pane-open-row' : undefined}
                     key={key}
                     mark={<Server size={14} />}
                     name={key}
@@ -232,8 +246,23 @@ export function PaneDemo() {
         >
           <PanePathBar
             heading
+            here={<CurrentDot label="Open server" />}
             trail={[{ label: 'Servers', onOpen: () => panes.focusPane('sidebar') }, open]}
-          />
+          >
+            <QuietAction
+              icon={Play}
+              label={`Start every service on ${open}`}
+              lit
+              onClick={() =>
+                setServices((current) => ({
+                  ...current,
+                  [open]: (current[open] ?? []).map((service) => ({ ...service, running: true }))
+                }))
+              }
+              pageVerb="start-all"
+              word="Start all"
+            />
+          </PanePathBar>
           <div
             aria-label={`Services on ${open}`}
             className="pane-list"
@@ -246,9 +275,10 @@ export function PaneDemo() {
                   { label: 'State' },
                   { label: 'Port', align: 'right' },
                   { label: 'Logs', hidden: true },
-                  { label: 'Action', hidden: true }
+                  { label: 'Action', hidden: true },
+                  { label: 'Remove', hidden: true }
                 ]}
-                grid={`20px minmax(0, 1fr) ${column(10)} ${column(6)} ${column(7)} ${ACTION_COLUMN}`}
+                grid={`var(--icon-column) minmax(10ch, 1fr) ${column(10)} ${column(6)} ${column(7)} ${ACTION_COLUMN} ${iconLinksColumn(1, 0)}`}
                 title="Service"
               >
                 {rows.map((service) => (
@@ -283,12 +313,28 @@ export function PaneDemo() {
                         word={service.running ? 'Stop' : 'Start'}
                       />
                     </Cell>
+                    <Cell className="pane-hover-cell">
+                      <RowIconAction
+                        danger
+                        icon={Trash2}
+                        label={`Remove ${service.name}`}
+                        onClick={() => setSaid(`removed ${service.name} (not really)`)}
+                      />
+                    </Cell>
                   </Row>
                 ))}
               </Listing>
             </RowCursorContext>
           </div>
-          <PaneStatus>
+          <PaneStatus
+            tools={
+              <RowIconAction
+                icon={Copy}
+                label={`Copy the address of ${open}`}
+                onClick={() => setSaid(`copied the address of ${open}`)}
+              />
+            }
+          >
             {rows.length} services, {running} running
           </PaneStatus>
         </div>

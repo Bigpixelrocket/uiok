@@ -1,4 +1,4 @@
-/** Chords drawn as key caps, each named in words. */
+/** Chords drawn as key caps, each named in words, and one chord bare. */
 
 import { useLabels } from '@bigpixelrocket/uiok';
 import { chordSpoken, type Chord } from '@bigpixelrocket/uiok/keyboard';
@@ -20,15 +20,19 @@ const CHORDS: readonly Chord[] = [
 export function KeyChordDemo() {
   const keys = useLabels().keys;
   return (
-    <ul className="chord-list">
-      {CHORDS.map((chord) => (
-        <li key={chordSpoken(chord, keys)}>
-          <span className="chord-cap">
+    <div className="demo-stack">
+      {/* `keycap` around the chords draws each as the library's one key cap. */}
+      <ul className="chord-list keycap">
+        {CHORDS.map((chord) => (
+          <li key={chordSpoken(chord, keys)}>
             <KeyChord chord={chord} />
-          </span>
-          <span className="demo-readout">{chordSpoken(chord, keys)}</span>
-        </li>
-      ))}
-    </ul>
+            <span className="demo-readout">{chordSpoken(chord, keys)}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="demo-row">
+        Bare, in running text: <KeyChord chord={{ key: 'c', meta: true }} />
+      </p>
+    </div>
   );
 }

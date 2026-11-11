@@ -1,12 +1,16 @@
 /* ---- Select-all bar (SelectAllBar) ----
 
    Check all, then "With selected:" in italics and the bulk actions, on one
-   wrapping row. */
+   wrapping row. The checkbox is the shared .check look. The bar starts its
+   checkbox the line plus --space-3 in, where a DataGrid's lead column
+   starts the rows' boxes inside its frame, so a bar under a grid lines up
+   with its rows. */
 .select-all-bar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: var(--space-3) var(--space-5);
+  gap: var(--space-3) var(--space-4);
+  padding-inline-start: calc(var(--line) + var(--space-3));
 }
 
 .select-all-check {
@@ -17,7 +21,6 @@
 
 .select-all-check input {
   margin: 0;
-  accent-color: var(--accent);
 }
 
 .select-all-with {

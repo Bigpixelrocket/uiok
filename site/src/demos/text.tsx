@@ -20,7 +20,7 @@ export function TextDemo() {
       <label className="demo-row">
         <span className="demo-label">Query</span>
         <input
-          className="demo-input"
+          className="field demo-input"
           onChange={(event) => setQuery(event.target.value)}
           spellCheck={false}
           value={query}
@@ -29,7 +29,10 @@ export function TextDemo() {
       <ul className="marked-list">
         {rows.map((row) => (
           <li key={row.id}>
-            <MarkedText positions={row.positions} text={row.name} />
+            {/* MarkedText returns loose runs and marks; one box keeps them a single line. */}
+            <span>
+              <MarkedText positions={row.positions} text={row.name} />
+            </span>
             <span className="demo-readout">{row.score}</span>
           </li>
         ))}

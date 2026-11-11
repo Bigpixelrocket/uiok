@@ -87,7 +87,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
 }
 ```
 
-Render it inside the listing scope (`.listing-root`); the backdrop is `position: fixed` on `--z-dialog`.
+The backdrop is `position: fixed` on `--z-dialog`; the palette needs no scope.
 
 ## Props
 
@@ -120,14 +120,15 @@ Render it inside the listing scope (`.listing-root`); the backdrop is `position:
 
 ## Styling
 
-Under `.listing-root`, on top of the menu look:
+On top of the menu look ([menu](menu.md)):
 
-- `.palette-backdrop`: the full-window backdrop, a 45% wash of `--bg`, the box anchored 104px from the top.
-- `.folder-menu.palette`: 600px wide, monospace 13px, `--shadow-dialog`; the options list grows to 420px.
+- `.palette-backdrop`: the full-window backdrop, `--scrim` frosted with `--frost` (a palette replaces the page for a moment, as a frosted dialog does), the box anchored 104px from the top.
+- `.folder-menu.palette`: 600px wide, with the lit top edge and `--shadow-modal`; the options list grows to seventeen whole rows. Add `.scroll-fade` to the list to fade the edge that has more rows.
 - `.palette-text` holds a row's `.row-name` and `.palette-context`, which gives way at its start (a path) or, with `.palette-sentence`, at its end (a sentence). Wrap a path's text in `<bdi>`.
-- `.palette-trail` and `.palette-meta`: a row's end, in the meta tone.
-- `.palette-notes` with `.folder-menu-note` lines under the list; `.palette-failure` in the danger colour.
-- `.palette-refused` and `.palette-level`: the refusal and the level chip in the query row.
+- `.palette-trail` and `.palette-meta`: a row's end, in the meta tone; on the cursor row they and `.palette-context` take `--text-on-surface`. Put a `KeyChord` in `.palette-trail` for a command's chord.
+- `.palette-notes` with `.folder-menu-note` lines under the list; `.palette-failure` in `--danger-text`.
+- `.palette-refused`: the refusal where the count stands, in `--warning-text`.
+- `.palette-level`: the level chip, an accent wash with an accent line, deeper on hover; it takes the base sheet's pressed look.
 - A dialog's key legend (`.dialog-legend`) placed last in the box runs its hairline to the box's edges.
 
 ## Labels read

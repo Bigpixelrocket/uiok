@@ -4,28 +4,42 @@
    page, so nothing outside the dialog can be reached until it closes, the
    way a native sheet blocks its window. It paints nothing: a dialog is part
    of the context it asks about (the file being renamed, the record being
-   added), so the page stays readable behind it. Only the box itself lifts. */
+   added), so the page stays readable behind it. Only the box itself lifts.
+
+   The backdrop keeps a margin round the box, so a tall dialog never meets
+   the window's edge. Its top margin is the hook --dialog-inset-top: a host
+   whose window draws its own title bar sets it to that bar's height plus a
+   margin, so no dialog ever covers the bar (the brand, the window
+   buttons). */
 .dialog-backdrop {
   position: fixed;
   inset: 0;
   /* Above any docked panel (--z-panel) so the panel cannot steal clicks. */
   z-index: var(--z-dialog);
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: var(--space-8);
+  /* calc() only so the scale guard reads the fallback as a token. */
+  padding-top: calc(var(--dialog-inset-top, var(--space-8)));
 }
 
 /* The frosted wash, for overlays that replace the page rather than ask
-   about it (a shortcuts list, settings): the window ground at half strength
-   over a heavy blur, so each theme keeps its own tone and the page ghosts
-   through. */
+   about it (a shortcuts list, settings): the modal scrim over the shared
+   frost, so each theme keeps its own tone and the page ghosts through. */
 .dialog-backdrop.frosted {
-  background: color-mix(in srgb, var(--bg) 50%, transparent);
-  -webkit-backdrop-filter: blur(36px) saturate(180%);
-  backdrop-filter: blur(36px) saturate(180%);
+  background: var(--scrim);
+  -webkit-backdrop-filter: var(--frost);
+  backdrop-filter: var(--frost);
   animation: dialog-wash-in var(--duration-base) var(--ease-out);
 }
 
+/* The box owns its type, whatever page root it is drawn under (a caller
+   may portal it to the body): sentences and labels in the interface font,
+   and what the user could type or copy (the title, the context, names,
+   paths, values) in monospace, through the rules and hooks below. It also
+   resets box sizing and the margins of its own text elements. */
 .dialog {
   /* The tone (ModalDialog's `tone`): the title strip's rule, and in a
      destructive dialog the lit primary; the icon wears the same colour, with
@@ -34,18 +48,78 @@
   --dialog-icon: var(--primary);
   box-sizing: border-box;
   width: 360px;
+  /* Never taller or wider than the backdrop's inset area: past that the
+     body scrolls between the title strip and the legend, which stay put. */
+  max-width: 100%;
+  max-height: 100%;
   background: var(--surface);
   border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-lg);
-  overflow: hidden;
+  overflow: hidden auto;
+  overscroll-behavior: contain;
   /* Children are inset 12px; the title strip and the legend reach across
      the box and the legend closes it at the bottom. */
   padding: 0 var(--space-6) var(--space-6);
   display: flex;
   flex-direction: column;
   gap: var(--space-6);
-  box-shadow: var(--shadow-dialog);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-body);
+  line-height: var(--line-height-body);
+  /* The lit top edge every floating surface wears, then the modal layer's
+     lift, which is stronger in dark themes, where a shadow alone barely
+     shows. */
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    var(--shadow-modal);
   animation: dialog-settle var(--duration-base) var(--ease-out);
+}
+
+.dialog,
+.dialog * {
+  box-sizing: border-box;
+}
+
+/* The resets weigh one class, so a body's own class (a note's margin, a
+   value's face) still wins over them. */
+.dialog :where(h2, p, ul, ol, dl, dd, figure) {
+  margin: 0;
+}
+
+/* Hooks a dialog body uses so its type follows the rule above. Help, notes,
+   and descriptions under a field are sentences: the interface font, small,
+   dim. A label that heads a field or a value is the interface font too. A
+   value the user could copy (a name, a path, a command, a host) is
+   monospace. Paragraphs in the body are sentences unless marked as values. */
+.dialog :where(p, .dialog-help, .dialog-label) {
+  font-family: var(--font-ui);
+}
+
+.dialog-help {
+  color: var(--text-dim);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-prose);
+}
+
+.dialog-label {
+  color: var(--text);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+}
+
+.dialog :where(code, samp, pre),
+.dialog .dialog-value {
+  font-family: var(--font-mono);
+}
+
+/* A body that scrolls on its own: the dialog's height limit shrinks it
+   first, and its contents scroll between the strip and the legend. Pair it
+   with the shared .scroll-fade so a cut edge shows there is more. */
+.dialog-body {
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .dialog[data-tone='danger'] {
@@ -59,10 +133,13 @@
 }
 
 /* A dialog that grows while it is open (ModalDialog's `pinTop`) keeps the
-   top edge it opened at, centred, and grows downward. */
+   top edge it opened at, centred, and grows downward. --dialog-top is
+   measured from the backdrop's edge, its top inset included, and the box
+   still stops at the backdrop's bottom inset. */
 .dialog[data-pinned] {
   align-self: flex-start;
-  margin-top: var(--dialog-top);
+  margin-top: calc(var(--dialog-top) - var(--dialog-inset-top, var(--space-8)));
+  max-height: calc(100% - var(--dialog-top) + var(--dialog-inset-top, var(--space-8)));
 }
 
 /* The dialog holds the focus only so its keys work; it is not a control. */
@@ -93,14 +170,18 @@
 }
 
 /* The title strip: crust, ruled in the tone, with the verb's icon, the
-   title, and where the dialog acts pushed to the right edge. */
+   title, and where the dialog acts pushed to the right edge. It wears the
+   lit top edge, and stays at the top while a tall body scrolls under it. */
 .dialog > .dialog-heading {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-raised);
   box-sizing: border-box;
   display: flex;
   flex: none;
   align-items: center;
   gap: var(--space-4);
-  height: var(--bar-height-lg);
+  min-height: var(--bar-height-lg);
   margin: 0 calc(-1 * var(--space-6));
   padding: 0 var(--space-6) 0 var(--space-5);
   border-bottom: var(--line) solid var(--dialog-tone);
@@ -108,6 +189,7 @@
      curve in a dialog that lets a popup hang past its edge. */
   border-radius: calc(var(--radius-lg) - 1px) calc(var(--radius-lg) - 1px) 0 0;
   background: var(--surface-header);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
 }
 
 .dialog-icon {
@@ -117,24 +199,33 @@
   color: var(--dialog-icon);
 }
 
+/* The title takes the strip; the context keeps a floor of its own, so the
+   "where" of a dialog never vanishes behind a long title. Both are cut with
+   an ellipsis, and a string of either is its own tooltip. */
 .dialog h2 {
-  flex: 0 1 auto;
+  flex: 1 1 auto;
   min-width: 0;
   margin: 0;
   overflow: hidden;
+  font-family: var(--font-mono);
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-strong);
+  line-height: var(--line-height-compact);
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .dialog-context {
-  flex: 1 1 0;
-  min-width: 0;
+  /* Gives up its room first, down to its floor, so a long title keeps the rest. */
+  flex: 0 1000 auto;
+  min-width: min(12ch, 40%);
+  margin-left: auto;
   overflow: hidden;
   color: var(--row-meta-text);
+  font-family: var(--font-mono);
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-compact);
   text-align: right;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -159,8 +250,16 @@
   border-top: var(--line) solid var(--border);
 }
 
+/* In the frame the legend closes the box and stays at its bottom while a
+   tall body scrolls under it, so it needs the box's own fill. */
 .dialog > .dialog-legend {
+  position: sticky;
+  /* A sticky box stops at the scroll box's padding; the legend sits in the
+     bottom padding, so it sticks that far past it. */
+  bottom: calc(-1 * var(--space-6));
+  z-index: var(--z-raised);
   margin: 0 calc(-1 * var(--space-6)) calc(-1 * var(--space-6));
+  background: var(--surface);
 }
 
 .legend-slot {
@@ -183,10 +282,8 @@
   white-space: normal;
 }
 
-.legend-slot:hover:enabled {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
-}
+/* Hover and pressed come from the base sheet's shared quiet-control
+   recipes (src/styles.css), which list .legend-slot. */
 
 .dialog-legend .legend-slot:focus-visible {
   outline: none;
@@ -196,18 +293,8 @@
   display: inline-flex;
 }
 
-/* A slot's chord drawn as one plain key cap, glyph-sized (18px). */
-.legend-slot .keychord {
-  box-sizing: border-box;
-  height: 18px;
-  min-width: 20px;
-  justify-content: center;
-  padding: 0 var(--space-2);
-  border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-sm);
-  color: var(--text);
-  background: var(--bg-panel);
-}
+/* A slot's chord is the shared key cap (src/keychord/keychord.css lists
+   .legend-slot); the rules below only colour it. */
 
 .legend-primary {
   margin-left: auto;
@@ -222,61 +309,76 @@
   color: var(--on-accent);
 }
 
+/* A lit cap's foot is its own fill darkened, so it keeps the key's shape. */
+.legend-primary .keychord {
+  border-bottom-color: color-mix(in srgb, var(--accent) 70%, var(--ground));
+}
+
 .dialog[data-tone='danger'] .legend-primary {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 .dialog[data-tone='danger'] .legend-primary .keychord {
   border-color: var(--danger);
+  border-bottom-color: color-mix(in srgb, var(--danger) 70%, var(--ground));
   background: var(--danger);
+  color: var(--on-danger);
 }
 
 /* ---- Confirmation dialog (ConfirmDialog) ----
 
-   The dialog carries its own type, reset margins, and border-box sizing,
-   because a caller may portal it to the body, outside every page root; it
-   must render identically wherever it is drawn. */
-.confirm-dialog {
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-body);
+   The frame carries the type, margins, and box sizing (above). A
+   confirmation's title is the question being asked, so it wraps to a
+   second line rather than lose its end, and the strip grows with it. */
+.confirm-dialog > .dialog-heading {
+  padding-block: var(--space-3);
 }
 
-.confirm-dialog,
-.confirm-dialog * {
-  box-sizing: border-box;
-}
-
-.confirm-dialog h2,
-.confirm-dialog p,
-.confirm-dialog ul {
-  margin: 0;
+.confirm-dialog h2 {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 .dialog-message {
   color: var(--text-dim);
+  line-height: var(--line-height-prose);
   overflow-wrap: break-word;
 }
 
-/* A name the message sets apart (the item a delete asks about) reads in the text colour. */
+/* A name the message sets apart (the item a delete asks about) reads in the
+   text colour and in monospace, as a name the user could copy. */
 .dialog-message strong {
   color: var(--text);
+  font-family: var(--font-mono);
   font-weight: var(--font-weight-strong);
 }
 
-/* A batch lists every affected path; long selections scroll. */
+/* A batch lists every affected path in full, in monospace. A long path
+   breaks after a slash (ConfirmDialog marks each one) and its later lines
+   hang under the first, so each path's start stands out. Eight lines show
+   before the list scrolls, with the shared scroll fade as its cue. */
 .dialog-paths {
-  margin: var(--space-4) 0 0;
+  flex: 0 1 auto;
+  min-height: calc(2 * var(--line-height-compact) + 2 * var(--space-3) + 2px);
+  max-height: calc(8 * var(--line-height-compact) + 2 * var(--space-3) + 2px);
+  margin: 0;
   padding: var(--space-3) var(--space-4);
-  max-height: 160px;
   overflow: auto;
   list-style: none;
   border: var(--line) solid var(--border);
   border-radius: var(--radius-sm);
-  font-size: var(--font-size-small);
   color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-compact);
 }
 
 .dialog-paths li {
+  padding-left: 2ch;
+  text-indent: -2ch;
   overflow-wrap: anywhere;
 }

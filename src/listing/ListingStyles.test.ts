@@ -93,15 +93,12 @@ describe('the listing look', () => {
     document.body.innerHTML = '';
   });
 
-  it('turns a busy mark, and holds it still under reduced motion', () => {
+  it('pulses a busy mark, and holds it still under reduced motion', () => {
     expect(sheet).toMatch(
       /:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot\s*\{[^}]*animation:\s*uiok-pulse /
     );
     expect(sheet).toMatch(
-      /:where\(\.listing-root\) \.pane-state-busy\s*\{[^}]*animation:\s*uiok-spin /
-    );
-    expect(sheet).toMatch(
-      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot,\s*:where\(\.listing-root\) \.pane-state-busy\s*\{\s*animation:\s*none;/
+      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot\s*\{\s*animation:\s*none;/
     );
   });
 });
@@ -121,17 +118,15 @@ describe("the frame's compact controls", () => {
       icon.getPropertyValue('height')
     ]).toEqual(['var(--control-height-xs)', '22px', 'var(--control-height-xs)']);
     // jsdom drops a padding shorthand that holds var(), so read the rule.
-    expect(sheet).toMatch(
-      /:where\(\.listing-root\) \.pane-act \{[^}]*padding: 0 var\(--space-3\) 0 var\(--space-2\);/
-    );
+    expect(sheet).toMatch(/^\.pane-act \{[^}]*padding: 0 var\(--space-3\) 0 var\(--space-2\);/m);
     document.body.innerHTML = '';
   });
 
-  it("keep their ring on their edge, weighing more than a host's own button ring", () => {
-    // A host's own button ring, such as `.my-view button:focus-visible`,
-    // weighs two classes and an element; the look's weighs three classes.
+  it("keep their ring on their edge, and yield to a host's own ring", () => {
+    // The ring is the base sheet's (no weight); the compact-control rule
+    // only moves it onto the edge, so a host's own rule decides.
     expect(sheet).toMatch(
-      /^\.listing-root :is\(\.pane-act, \.pane-icon-act\):focus-visible \{[^}]*outline-offset: var\(--focus-offset-flush\);/m
+      /^:is\(\.crumb-label, \.path-star, \.pane-act, \.pane-icon-act\):focus-visible \{[^}]*outline-offset: var\(--focus-offset-flush\);/m
     );
 
     applyStylesheets(
@@ -142,7 +137,7 @@ describe("the frame's compact controls", () => {
     const act = document.querySelector('.pane-act') as HTMLButtonElement;
 
     act.focus();
-    expect(getComputedStyle(act).outlineOffset).toBe('var(--focus-offset-flush)');
+    expect(getComputedStyle(act).outlineOffset).toBe('1px');
     document.body.innerHTML = '';
   });
 

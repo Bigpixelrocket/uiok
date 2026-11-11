@@ -108,7 +108,7 @@ Labels must be unique; they key the slices.
 | `picked` | `number \| null`          | Optional. The picked point's id, drawn lit                                                                                         |
 | `onPick` | `(id: number) => void`    | A click on a point, or Return or Space on a focused one                                                                            |
 
-Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for a time of day). The frame resizes by its corner (CSS `resize: both`). Mount `TooltipLayer` for the point tooltips.
+Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for a time of day); numbers from a million up are written short (`2.5M`, `1.7936T`). The frame resizes by its corner (CSS `resize: both`). The picked point is drawn last, ringed 2px in `--text` over a halo of its colour. Mount `TooltipLayer` for the point tooltips.
 
 ### `ResultChart` (`ResultChartProps`)
 
@@ -124,7 +124,13 @@ Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for 
 | `width`, `height`  | `number`                      | The drawing's size in pixels                                                                         |
 | `svgRef`           | `Ref<SVGSVGElement>`          | Optional. Receives the `<svg>` for `svgMarkup`                                                       |
 
-`ResultChart` is memoised: keep the arrays stable across renders. The legend shows at most 24 entries in up to four rows. Values are written with six significant digits.
+`ResultChart` is memoised: keep the arrays stable across renders. The legend starts at the plot's left edge and shows at most 24 entries in up to four rows; the title is centred on the plot. Values are written with six significant digits. An area's fill breaks where a value is missing, as its line does. A number or time X axis shows at least three ticks and leaves out any label that would touch its neighbour.
+
+## Look
+
+Every chart shares one vocabulary: caption-size type with tabular figures; a 10px swatch with a 2px corner, a dash for a line series; a left axis and a baseline in `--border-strong` with grid lines in `--border-faint`, never a box; a hovered mark ringed in `--text`; a dragged range in `--accent-wash`. Hovering a `LineChart` puts a dot on every line at the guide and a read-out in the tooltip's look. Hovering a pie slice or its legend row lights both and steps the other slices back.
+
+A chart with no values keeps its plot's place and centres one dim line in it (`charts.noValue`): a `LineChart` draws its axes only, a `PieChart` a dashed ring, a `ScatterChart` its axes and titles, and a `ResultChart` its title, axes, and titles. The rules are `.chart-empty` (an HTML plot) and `.chart-empty-text` (inside an SVG).
 
 ## Saving a picture
 
@@ -146,4 +152,4 @@ Nothing is fetched: the SVG is loaded from its own `data:` URL. Writing the byte
 
 ## Labels read
 
-`charts`: `time` and `seriesValue` (`LineChart` read-out), `points`, `pointsShown`, and `resetZoom` (`ScatterChart` caption), `seriesValue`, `seriesCategoryValue`, `noValue`, and `chart` (`ResultChart`), `coloursUnreadable` and `drawFailed` (`tokenColour`, `svgPng`, when passed). See [labels](../labels.md).
+`charts`: `noValue` (every chart with no values), `time` and `seriesValue` (`LineChart` read-out), `points`, `pointsShown`, and `resetZoom` (`ScatterChart` caption), `seriesValue`, `seriesCategoryValue`, `noValue`, and `chart` (`ResultChart`), `coloursUnreadable` and `drawFailed` (`tokenColour`, `svgPng`, when passed). See [labels](../labels.md).

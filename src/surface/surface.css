@@ -1,0 +1,91 @@
+/* ---- Notices and cards (docs/components/surface.md) ----
+
+   Surfaces a page draws around its own content, as classes on the page's
+   own markup. No component: their words are the page's.
+
+   - .notice: a message about the page or a value on it. A 2px bar in the
+     tone on its leading edge, an optional tone glyph, the message in
+     --text, and an optional action at the end. Tones: .notice-danger,
+     .notice-warning, .notice-success; none is neutral. .notice-card floats
+     it on a raised panel (a notice over the page, not in its flow).
+   - .card: a lifted panel that groups one subject's lines. */
+
+.notice {
+  /* The tone's mark (bar and glyph), 3:1 on every ground by its token. */
+  --notice-tone: var(--text-faint);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0;
+  padding: var(--space-1) 0 var(--space-1) var(--space-4);
+  border-inline-start: var(--line-strong) solid var(--notice-tone);
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+}
+
+.notice-danger {
+  --notice-tone: var(--danger);
+}
+
+.notice-warning {
+  --notice-tone: var(--warning);
+}
+
+.notice-success {
+  --notice-tone: var(--success);
+}
+
+/* The glyph (a lucide icon of --icon-md, or anything marked .notice-glyph)
+   sits on the first line's centre in the tone. */
+.notice > svg:first-child,
+.notice-glyph {
+  flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  margin-block: var(--space-1);
+  color: var(--notice-tone);
+}
+
+.notice-text {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* Actions sit at the end, centred on the message's first line. */
+.notice-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block: calc((var(--line-height-compact) - var(--control-height-sm)) / 2);
+  margin-inline-start: auto;
+}
+
+.notice-card {
+  align-items: center;
+  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
+  border: var(--line) solid var(--border-strong);
+  border-inline-start: var(--line-strong) solid var(--notice-tone);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-popover);
+  background: var(--surface);
+}
+
+.notice-card .notice-actions {
+  margin-block: 0;
+}
+
+.card {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--space-6);
+  border: var(--line) solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}

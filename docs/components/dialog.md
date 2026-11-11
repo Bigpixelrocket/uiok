@@ -71,10 +71,27 @@ function RenameDialog({ name, onRename, onCancel }) {
 
 ### The frame
 
-- The box is the surface colour with a strong hairline, radius 8, and a soft lift, centred over a clear backdrop that covers the whole viewport (`--z-dialog`), so the page stays readable behind it. `frosted` washes and blurs the window instead.
-- The title strip is 34px of `--surface-header`, ruled at the bottom in the tone: the icon, the title at 12px, and the context pushed to the right edge.
+- The box is the surface colour with a strong hairline, radius 8, the lit top edge (`--glass-edge`), and the modal layer's lift (`--shadow-modal`, stronger in dark themes), centred over a clear backdrop that covers the whole viewport (`--z-dialog`), so the page stays readable behind it. `frosted` lays the modal scrim (`--scrim`) and the shared frost (`--frost`) over the window instead.
+- The backdrop keeps 16px round the box. Its top inset is the hook `--dialog-inset-top`: a host whose window draws its own title bar sets it to that bar's height plus a margin (for example `calc(48px + 8px)` on its shell root), so no dialog ever covers the bar.
+- The box is never taller than the backdrop's inset area. Past that it scrolls, with the title strip pinned at the top and the legend at the bottom. A body that should scroll on its own (a long form between fixed parts) takes `.dialog-body` with the shared `.scroll-fade`, and shrinks first.
+- The title strip is at least 34px of `--surface-header` with the lit top edge, ruled at the bottom in the tone: the icon (16px), the title at 12px, and the context pushed to the right edge. The title takes the room; the context keeps at least 12 characters (or 40% of the strip), so where the dialog acts never vanishes. Both are cut with an ellipsis and a string of either is its own tooltip.
 - `aria-modal="true"` is the overlay contract's modal cue (`MODAL_SELECTOR` in `@bigpixelrocket/uiok/keyboard`), which an app shell reads to mute its own chords while a dialog is open.
 - A caller sets a dialog's size and body layout through `className`, never the frame's look.
+
+### Type
+
+The frame sets its own type, so a dialog reads the same under any page root and in any app: monospace for what the user could type or copy, the interface font for sentences and for labels.
+
+| Part                                                                   | Face                          |
+| ---------------------------------------------------------------------- | ----------------------------- |
+| The title and the context on the strip                                 | monospace                     |
+| The body, paragraphs, the legend's verbs                               | the interface font, 13px      |
+| `.dialog-help`: help, a note, a description under a field              | the interface font, 12px, dim |
+| `.dialog-label`: a label that heads a field or a value                 | the interface font, 12px      |
+| `.dialog-value`, `code`, `samp`, `pre`: a name, path, command, or host | monospace                     |
+| A confirmation's `<strong>` name and its path list                     | monospace                     |
+
+Field contents take their face from the shared form controls. The hooks weigh one class, so a body's own class can still set its face.
 
 ### Focus
 
@@ -84,7 +101,7 @@ function RenameDialog({ name, onRename, onCancel }) {
 
 ## The legend (`DialogLegendModel`)
 
-The footer is 34px under a hairline, with no fill of its own. Each verb is a slot: its key cap, then the verb. A legend holds four slots at most.
+The footer is 34px under a hairline, with no fill of its own (in the frame it takes the box's fill, since a tall body scrolls under it). Each verb is a slot: its key cap, then the verb. A legend holds four slots at most. Each cap is 18px with the key cap's 2px foot. A slot eases into the shared quiet hover and sinks into the shared pressed look (`src/styles.css`), so a press reads apart from a hover. The primary's cap is lit in the accent; in a destructive dialog the cap is `--danger` with its glyph in `--on-danger`, and the verb is `--danger-text`.
 
 | Field       | Type                        | Meaning                                                                           |
 | ----------- | --------------------------- | --------------------------------------------------------------------------------- |
@@ -129,7 +146,11 @@ A held key runs its slot once. A key the browser-key guard cancelled still reach
 | `onConfirm`    | `() => void`                         |            | The primary                                                                |
 | `onCancel`     | `() => void`                         |            | Escape, the leave slot, a press outside                                    |
 
-The message is the dialog's description, so a screen reader reads it with the title. The dialog carries its own type and box sizing, so it renders the same portalled to the body.
+The message is the dialog's description, so a screen reader reads it with the title. The frame carries the type and box sizing, so it renders the same portalled to the body.
+
+- The title is the question being asked, so it wraps to a second line rather than lose its end, and the strip grows with it; past two lines it ends in an ellipsis and its tooltip holds the whole question.
+- The order is the platform's: the leave verb at the left edge, the action alone at the right, lit. A `danger` action is lit red; a `warning` question rules the strip amber and lights its action in the accent, since its yes is the safe choice.
+- The path list shows every path whole, in monospace. A long path breaks only after a slash, its later lines hang under the first, and the list shows eight lines before it scrolls, with the shared scroll fade at a cut edge.
 
 ### Deletes that cannot be undone
 
@@ -137,7 +158,7 @@ People confirm a delete out of habit, ⌘⌫ then Return, without reading. With 
 
 ## Styling
 
-`.dialog-backdrop`, `.frosted`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-context`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.confirm-dialog`, `.dialog-message`, `.dialog-paths`. The frame declares `--dialog-tone` and `--dialog-icon` and reads `--dialog-top`.
+`.dialog-backdrop`, `.frosted`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-context`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.confirm-dialog`, `.dialog-message`, `.dialog-paths`. The frame declares `--dialog-tone` and `--dialog-icon`, and reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
 
 ## Labels read
 

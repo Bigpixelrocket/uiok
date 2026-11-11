@@ -47,6 +47,7 @@ export function SelectAllBar({
       <label className="select-all-check">
         <input
           checked={all || some}
+          className="check"
           disabled={total === 0}
           onChange={() => onCheckAll(!all)}
           ref={box}

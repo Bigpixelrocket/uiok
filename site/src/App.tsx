@@ -15,6 +15,7 @@ import {
   UiokProvider
 } from '@bigpixelrocket/uiok';
 import { IconButton } from '@bigpixelrocket/uiok/button';
+import { ICON_LG, ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { isModalOpen, isOverlayOpen, isTextEditingTarget } from '@bigpixelrocket/uiok/keyboard';
 import { KeyChord } from '@bigpixelrocket/uiok/keychord';
 import { KeyLegendStrip, type LegendPair, type LegendVerb } from '@bigpixelrocket/uiok/legend';
@@ -144,7 +145,7 @@ export function App() {
               className="menu-toggle"
               onClick={() => setMenuOpen((open) => !open)}
             >
-              <Menu size={16} />
+              <Menu size={ICON_LG} />
             </IconButton>
             <a className="brand" href="#/">
               <span className="brand-mark" aria-hidden="true">
@@ -154,12 +155,12 @@ export function App() {
             </a>
             <button
               aria-label="Find a page"
-              className="find-button"
+              className="find-button keycap"
               onClick={() => setFinding(true)}
               type="button"
               {...tooltip('Find a page')}
             >
-              <Search aria-hidden="true" size={13} />
+              <Search aria-hidden="true" size={ICON_MD} />
               <span className="find-words">Find a page</span>
               <KeyChord chord={{ key: 'k', meta: true }} />
             </button>
@@ -176,7 +177,7 @@ export function App() {
               />
               <select
                 aria-label={`${theme.appearance === 'light' ? 'Light' : 'Dark'} theme`}
-                className="theme-select"
+                className="field theme-select"
                 onChange={(event) =>
                   theme.setChoice({ ...theme.choice, [theme.appearance]: event.target.value })
                 }
@@ -190,10 +191,10 @@ export function App() {
               </select>
             </div>
           </header>
-          <nav aria-label="Pages" className="site-nav">
+          <nav aria-label="Pages" className="site-nav scroll-fade">
             {groups.map((group) => (
               <section className="nav-group" key={group}>
-                <h2 className="nav-heading">{group}</h2>
+                <h2 className="nav-heading overline">{group}</h2>
                 <ul>
                   {PAGES.filter((candidate) => candidate.group === group).map((candidate) => (
                     <li key={candidate.route}>

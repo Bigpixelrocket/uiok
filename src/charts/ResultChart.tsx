@@ -1,4 +1,5 @@
 import {
+  Fragment,
   memo,
   useState,
   useSyncExternalStore,
@@ -14,7 +15,9 @@ import {
   STACKABLE_CHART_TYPES,
   cutLabel,
   legendLayout,
+  pointRuns,
   shownLabels,
+  spacedTicks,
   splinePath,
   stackedRanges,
   valueDomain,
@@ -26,6 +29,13 @@ import { seriesColour as colour } from './seriesColour.js';
 
 /** A value as an axis and the read-out write it: six significant digits, no exponent for everyday sizes. */
 const valueText = (value: number): string => String(Number(value.toPrecision(6)));
+
+/** The room between the drawing's edge and the plot on a side with no axis. */
+const EDGE = 16;
+
+/** The height of a legend row, and the most rows a legend draws. */
+const LEGEND_ROW = 16;
+const LEGEND_ROWS = 4;
 
 /** What the pointer is on: a series' value at a category, or a slice. */
 interface Hovered {
@@ -133,24 +143,32 @@ function ResultChartDrawing({
     0,
     24
   );
-  const legendPlaces = legendLayout(
-    legendNames.map((name) => cutLabel(name, 24)),
-    width - 24
-  );
-  const legendRows = legendPlaces.reduce((rows, place) => Math.max(rows, place.row + 1), 0);
-  const top = (title === '' ? 8 : 28) + Math.min(4, legendRows) * 16;
   const values = valueDomain(series, stack);
-  const valueTicks = type === 'pie' ? [] : ticksOf(values, 'number');
+  // A chart with no value to draw keeps its plot's place and says so there.
+  const empty =
+    categories.length === 0 ||
+    !series.some((entry) => entry.values.some((value) => value !== null && Number.isFinite(value)));
+  const valueTicks = type === 'pie' || empty ? [] : ticksOf(values, 'number');
   // The value axis's title sits clear of its widest tick (11px figures run about 6.5px each).
   const tickWidth = valueTicks.reduce(
     (widest, tick) => Math.max(widest, valueText(tick).length),
     0
   );
+  // A pie has no axes, so its plot sits evenly between the drawing's edges.
+  const left =
+    type === 'pie' ? EDGE : type === 'bar' ? 110 : Math.max(64, Math.ceil(tickWidth * 6.5) + 30);
+  // The legend starts at the plot's left edge and wraps inside its width.
+  const legendPlaces = legendLayout(
+    legendNames.map((name) => cutLabel(name, 24)),
+    width - left - EDGE
+  );
+  const legendRows = legendPlaces.reduce((rows, place) => Math.max(rows, place.row + 1), 0);
+  const legendTop = title === '' ? 8 : 28;
   const margin = {
-    top,
-    right: 16,
-    bottom: 44,
-    left: type === 'bar' ? 110 : Math.max(64, Math.ceil(tickWidth * 6.5) + 30)
+    top: legendTop + Math.min(LEGEND_ROWS, legendRows) * LEGEND_ROW,
+    right: EDGE,
+    bottom: type === 'pie' ? EDGE : 44,
+    left
   };
   const plotWidth = Math.max(40, width - margin.left - margin.right);
   const plotHeight = Math.max(40, height - margin.top - margin.bottom);
@@ -173,7 +191,20 @@ function ResultChartDrawing({
 
   const plot: ReactElement[] = [];
 
-  if (type === 'pie') {
+  if (empty) {
+    plot.push(
+      <text
+        className="chart-empty-text"
+        dominantBaseline="middle"
+        key="empty"
+        textAnchor="middle"
+        x={plotWidth / 2}
+        y={plotHeight / 2}
+      >
+        {labels.noValue}
+      </text>
+    );
+  } else if (type === 'pie') {
     const first = series[0];
     const r = Math.max(10, Math.min(plotWidth, plotHeight) / 2 - 4);
     const slices = categories.map((label, at) => ({
@@ -255,12 +286,12 @@ function ResultChartDrawing({
           across(at),
           along(stack ? (ranges[seriesIndex]?.[at]?.from ?? 0) : Math.max(values.min, 0))
         ]);
-        const kept = points.flatMap((point, index) => (point === null ? [] : [{ point, index }]));
-
-        if (kept.length > 0) {
+        // One fill per run of values, the same runs its line draws, so a
+        // missing value breaks the fill where it breaks the outline.
+        pointRuns(points).forEach((run, runIndex) => {
           const outline = [
-            ...kept.map(({ point }) => point),
-            ...kept.map(({ index }) => base[index] ?? [0, 0]).reverse()
+            ...run.map(({ point }) => point),
+            ...run.map(({ at }) => base[at] ?? [0, 0]).reverse()
           ];
 
           plot.push(
@@ -268,10 +299,10 @@ function ResultChartDrawing({
               className="result-chart-area"
               d={`${outline.map(([x, y], at) => `${at === 0 ? 'M' : 'L'}${x} ${y}`).join(' ')} Z`}
               fill={colour(seriesIndex)}
-              key={`area-${seriesIndex}`}
+              key={`area-${seriesIndex}-${runIndex}`}
             />
           );
-        }
+        });
       }
       if (type !== 'scatter') {
         plot.push(
@@ -331,6 +362,16 @@ function ResultChartDrawing({
     if (held === null || held.series !== next.series || held.at !== next.at) hover.set(next);
   };
 
+  const xAxis = { title: xLabel, kind: type === 'timeline' ? 'time' : 'number' } as const;
+  const xTicks = numericX
+    ? spacedTicks(
+        ticksOf(xDomain, xAxis.kind, Math.max(2, Math.floor(plotWidth / 90))).map((tick) => ({
+          at: scaled(tick, xDomain, 0, plotWidth),
+          text: tickLabel(tick, xAxis, xDomain)
+        })),
+        plotWidth
+      )
+    : [];
   const labelled = shownLabels(
     count,
     type === 'bar' ? plotHeight : plotWidth,
@@ -350,21 +391,37 @@ function ResultChartDrawing({
         width={width}
       >
         {title !== '' && (
-          <text className="result-chart-title" textAnchor="middle" x={width / 2} y={18}>
+          <text
+            className="result-chart-title"
+            textAnchor="middle"
+            x={margin.left + plotWidth / 2}
+            y={18}
+          >
             {title}
           </text>
         )}
-        <g transform={`translate(12 ${title === '' ? 8 : 28})`}>
-          {legendPlaces.map((place, at) =>
-            place.row >= 4 ? null : (
-              <g key={at} transform={`translate(${place.x} ${place.row * 16})`}>
-                <rect fill={colour(at)} height={9} rx={2} width={9} y={2} />
-                <text className="result-chart-legend" x={14} y={10}>
-                  {place.text}
-                </text>
-              </g>
-            )
-          )}
+        {/* Each legend row is one line of text, a square glyph in the
+            series colour before each name, so the browser spaces the
+            entries evenly whatever their glyphs' widths. */}
+        <g transform={`translate(${margin.left} ${legendTop})`}>
+          {Array.from({ length: Math.min(LEGEND_ROWS, legendRows) }, (_unused, row) => (
+            <text className="result-chart-legend" key={row} y={row * LEGEND_ROW + 10}>
+              {legendPlaces.map((place, at) =>
+                place.row === row ? (
+                  <Fragment key={at}>
+                    <tspan
+                      className="result-chart-legend-swatch"
+                      dx={place.x === 0 ? 0 : 14}
+                      fill={colour(at)}
+                    >
+                      ■
+                    </tspan>
+                    <tspan dx={4}>{place.text}</tspan>
+                  </Fragment>
+                ) : null
+              )}
+            </text>
+          ))}
         </g>
         <g transform={`translate(${margin.left} ${margin.top})`}>
           {type !== 'pie' && (
@@ -386,47 +443,34 @@ function ResultChartDrawing({
                   </g>
                 )
               )}
-              {numericX
-                ? ticksOf(xDomain, type === 'timeline' ? 'time' : 'number').map((tick) => (
-                    <text
-                      key={tick}
-                      textAnchor="middle"
-                      x={scaled(tick, xDomain, 0, plotWidth)}
-                      y={plotHeight + 14}
-                    >
-                      {tickLabel(
-                        tick,
-                        { title: xLabel, kind: type === 'timeline' ? 'time' : 'number' },
-                        xDomain
-                      )}
-                    </text>
-                  ))
-                : categories.map((category, at) =>
-                    labelled.has(at) ? (
-                      type === 'bar' ? (
-                        <text
-                          dominantBaseline="middle"
-                          key={at}
-                          textAnchor="end"
-                          x={-6}
-                          y={across(at)}
-                        >
-                          {cutLabel(category, 16)}
-                        </text>
-                      ) : (
-                        <text key={at} textAnchor="middle" x={across(at)} y={plotHeight + 14}>
-                          {cutLabel(category, 12)}
-                        </text>
-                      )
-                    ) : null
-                  )}
-              <line
-                className="result-chart-baseline"
-                x1={0}
-                x2={plotWidth}
-                y1={plotHeight}
-                y2={plotHeight}
-              />
+              {empty
+                ? null
+                : numericX
+                  ? xTicks.map((tick) => (
+                      <text key={tick.x} textAnchor="start" x={tick.x} y={plotHeight + 14}>
+                        {tick.text}
+                      </text>
+                    ))
+                  : categories.map((category, at) =>
+                      labelled.has(at) ? (
+                        type === 'bar' ? (
+                          <text
+                            dominantBaseline="middle"
+                            key={at}
+                            textAnchor="end"
+                            x={-6}
+                            y={across(at)}
+                          >
+                            {cutLabel(category, 16)}
+                          </text>
+                        ) : (
+                          <text key={at} textAnchor="middle" x={across(at)} y={plotHeight + 14}>
+                            {cutLabel(category, 12)}
+                          </text>
+                        )
+                      ) : null
+                    )}
+              <path className="result-chart-baseline" d={`M0 0V${plotHeight}H${plotWidth}`} />
               <text
                 className="result-chart-axis-title"
                 textAnchor="middle"

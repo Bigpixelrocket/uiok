@@ -100,7 +100,7 @@ describe('DateTimePicker', () => {
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 
-  it('widens a fraction field past three digits to its digit count, and keeps a shorter one at 7ch', () => {
+  it('widens a fraction field past three digits to its digit count, and keeps a shorter one at 6ch or more', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     const { rerender } = render(
       <DateTimePicker fraction={6} kind="time" label="Pick" onChange={() => undefined} value="" />
@@ -110,7 +110,9 @@ describe('DateTimePicker', () => {
     const micro = screen.getByRole('textbox', { name: 'Microsecond' });
 
     expect(micro.style.getPropertyValue('--date-picker-digits')).toBe('6');
-    expect(declaredValues(micro, 'width').at(-1)).toBe(
+    // declaredValues lists rules in source order, not by weight; the picker's
+    // rule outweighs the shared field's later `min-width: 0` by its scope.
+    expect(declaredValues(micro, 'min-width')).toContain(
       'calc((var(--date-picker-digits) + 1) * 1ch + 2 * var(--space-4) + 2px)'
     );
 
@@ -120,10 +122,43 @@ describe('DateTimePicker', () => {
     const milli = screen.getByRole('textbox', { name: 'Millisecond' });
 
     expect(milli.style.getPropertyValue('--date-picker-digits')).toBe('');
-    expect(declaredValues(milli, 'width')).toEqual(['7ch']);
-    expect(declaredValues(screen.getByRole('spinbutton', { name: 'Hour' }), 'width')).toEqual([
-      '7ch'
-    ]);
+    expect(declaredValues(milli, 'min-width')).toContain('6ch');
+    expect(declaredValues(milli, 'min-width')).not.toContain(
+      'calc((var(--date-picker-digits) + 1) * 1ch + 2 * var(--space-4) + 2px)'
+    );
+    expect(declaredValues(screen.getByRole('spinbutton', { name: 'Hour' }), 'min-width')).toContain(
+      '6ch'
+    );
+  });
+
+  it('marks today, zero-pads the time fields, and opens a panel placed in the window', () => {
+    render(
+      <DateTimePicker
+        kind="datetime"
+        label="Pick"
+        onChange={() => undefined}
+        value="2026-10-30 09:05:00"
+      />
+    );
+
+    open('Pick');
+    const today = new Date();
+    const marked = document.querySelector('.date-picker-day.today');
+
+    // October 2026 is shown; today is marked only when it falls in the grid.
+    if (marked !== null) {
+      expect(marked.getAttribute('aria-current')).toBe('date');
+      expect(marked.textContent).toBe(String(today.getDate()));
+    }
+    expect((screen.getByRole('spinbutton', { name: 'Hour' }) as HTMLInputElement).value).toBe('09');
+    expect((screen.getByRole('spinbutton', { name: 'Minute' }) as HTMLInputElement).value).toBe(
+      '05'
+    );
+    expect((screen.getByRole('spinbutton', { name: 'Second' }) as HTMLInputElement).value).toBe(
+      '00'
+    );
+    // jsdom lays nothing out, but the panel is measured and placed, never left hidden.
+    expect(screen.getByRole('dialog').style.visibility).toBe('');
   });
 
   it('shows only the time fields for a time, named by them', () => {

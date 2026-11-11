@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { readStylesheet } from '../../test/stylesheets.js';
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { RunHeader } from './RunHeader.js';
 
 describe('RunHeader', () => {
@@ -38,7 +38,7 @@ describe('RunHeader', () => {
     );
     const bar = (): HTMLElement => screen.getByRole('progressbar', { name: 'Compressing 3 items' });
 
-    expect(bar().className).toBe('run-header-bar indeterminate moving');
+    expect(bar().className).toBe('activity-bar run-header-bar indeterminate moving');
     expect(bar().getAttribute('aria-valuenow')).toBeNull();
 
     rerender(
@@ -50,7 +50,7 @@ describe('RunHeader', () => {
       />
     );
 
-    expect(bar().className).toBe('run-header-bar indeterminate');
+    expect(bar().className).toBe('activity-bar run-header-bar indeterminate');
   });
 
   it('turns the sentence into an alert with its reason once the run failed', () => {
@@ -100,21 +100,43 @@ describe('RunHeader', () => {
   });
 });
 
-describe('the progress header look', () => {
-  const styles = readStylesheet('src/run/run.css');
+it('gives a headline cut short in a narrow view its whole sentence as a tooltip', () => {
+  render(<RunHeader headline="Copying 240 files to the backup disk" state="running" />);
 
-  it('dims the stripes of a paused run in the progress header', () => {
-    expect(styles).toMatch(
-      /\.run-header:is\(\[data-state='paused'\][^)]*\)\s*\.indeterminate\s*> \.activity-stripes\s*\{[^}]*--stripe-ink:\s*var\(--text-dim\);/
-    );
+  expect(screen.getByText('Copying 240 files to the backup disk').dataset.tooltip).toBe(
+    'Copying 240 files to the backup disk'
+  );
+});
+
+describe('the progress header look', () => {
+  it('fills a halted bar with the quiet idle mark, a failed one in the danger mark', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const fill = (state: string): string | undefined => {
+      document.body.innerHTML = `<div class="run-header" data-state="${state}">
+        <div class="activity-bar run-header-bar"><div class="activity-fill run-header-fill"></div></div>
+      </div>`;
+
+      return declaredValues(document.querySelector('.run-header-fill') as Element, 'background').at(
+        -1
+      );
+    };
+
+    expect(['running', 'paused', 'stopped', 'failed', 'done'].map(fill)).toEqual([
+      'var(--accent)',
+      'var(--progress-idle)',
+      'var(--progress-idle)',
+      'var(--danger)',
+      'var(--success)'
+    ]);
+    document.body.innerHTML = '';
   });
 
-  it('turns the running glyph, and stands it still under reduced motion', () => {
-    expect(styles).toMatch(
-      /\.run-header\[data-state='running'\] \.run-header-glyph\s*\{[^}]*animation:\s*uiok-spin /
-    );
-    expect(styles).toMatch(
-      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.run-header\[data-state='running'\] \.run-header-glyph\s*\{\s*animation:\s*none;/
-    );
+  it('draws the shared spinner while running and a still glyph otherwise', () => {
+    const { container, rerender } = render(<RunHeader headline="Running" state="running" />);
+    expect(container.querySelector('svg.spinner.run-header-glyph')).not.toBeNull();
+
+    rerender(<RunHeader headline="Paused" state="paused" />);
+    expect(container.querySelector('svg.run-header-glyph')).not.toBeNull();
+    expect(container.querySelector('.spinner')).toBeNull();
   });
 });

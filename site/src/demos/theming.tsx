@@ -16,21 +16,64 @@ import { SegmentedChoice } from '@bigpixelrocket/uiok/segmented';
 
 import { useTheme, type AppearanceChoice } from '../theme';
 
-/** Token roles, in the order docs/themes.md lists them; a name lands in the first role that claims it. */
+/**
+ * Token roles; a name lands in the first role that claims it, so the
+ * narrower roles (selection, status words) come before the broad ones.
+ */
 const ROLES: readonly { readonly role: string; readonly claims: (name: string) => boolean }[] = [
-  { role: 'Grounds', claims: (name) => name.startsWith('--bg') },
+  {
+    role: 'Selection and current',
+    claims: (name) =>
+      /^--(cursor|selected|selection|on-selected|marked|current|match|text-selection|fill$)/.test(
+        name
+      )
+  },
+  {
+    role: 'Grounds',
+    claims: (name) => /^--(bg|ground|surface|card-bg|file-list-bg|row-lift)/.test(name)
+  },
   { role: 'Lines', claims: (name) => name.startsWith('--border') },
   { role: 'Text', claims: (name) => name.startsWith('--text') || name === '--row-meta-text' },
-  { role: 'Accent', claims: (name) => name.endsWith('accent') },
+  { role: 'Accent', claims: (name) => name.startsWith('--accent') || name === '--on-accent' },
   { role: 'Primary', claims: (name) => name.includes('primary') },
   { role: 'Tonal tier', claims: (name) => name.includes('tonal') },
-  { role: 'Listings', claims: (name) => /^--(row-lift|file-list-bg|cursor)/.test(name) },
-  { role: 'Glass and hover', claims: (name) => name === '--glass-edge' || name === '--hover-wash' },
-  { role: 'Status', claims: (name) => ['--success', '--warning', '--danger'].includes(name) },
+  {
+    role: 'Status',
+    claims: (name) => /^--(on-)?(success|warning|danger)/.test(name) || name === '--idle-mark'
+  },
+  {
+    role: 'Controls',
+    claims: (name) =>
+      /^--(control|progress|scrollbar|pressed|hover|switch|disabled|dragging)/.test(name)
+  },
+  {
+    role: 'Depth and glass',
+    claims: (name) => /^--(shadow|scrim|glass)/.test(name)
+  },
+  { role: 'Charts', claims: (name) => name.startsWith('--chart') },
   { role: 'Categorical', claims: (name) => name.startsWith('--group') },
   { role: 'Terminal', claims: (name) => name.startsWith('--terminal') },
   { role: 'Syntax', claims: (name) => name.startsWith('--syntax') },
   { role: 'Other', claims: () => true }
+];
+
+/** The roles in the order the page lists them, as docs/themes.md does. */
+const SHOWN: readonly string[] = [
+  'Grounds',
+  'Lines',
+  'Text',
+  'Accent',
+  'Primary',
+  'Tonal tier',
+  'Status',
+  'Controls',
+  'Selection and current',
+  'Depth and glass',
+  'Charts',
+  'Categorical',
+  'Terminal',
+  'Syntax',
+  'Other'
 ];
 
 const isColour = (value: string): boolean => CSS.supports('color', value);
@@ -142,7 +185,7 @@ export function ThemingDemo() {
       ))}
       <h3 className="demo-subhead">Tokens of {themeById(theme.worn).name}</h3>
       <div className="token-roles">
-        {ROLES.filter(({ role }) => groups.has(role)).map(({ role }) => (
+        {SHOWN.filter((role) => groups.has(role)).map((role) => (
           <section className="token-role" key={role}>
             <h4>{role}</h4>
             <ul>

@@ -1,7 +1,7 @@
 /**
  * Each chart over sample series: a day of requests (drag across it to pick a
  * range), time per state, price against weight (drag to zoom), and a week of
- * sales drawn as any result chart type.
+ * sales drawn as any result chart type, then each chart with nothing to draw.
  */
 
 import { useId, useMemo, useState } from 'react';
@@ -124,7 +124,7 @@ export function ChartsDemo() {
             <span className="demo-label">Type</span>
           </label>
           <select
-            className="demo-select"
+            className="demo-select field field-sm"
             id={typeId}
             onChange={(event) => setType(event.target.value as ResultChartType)}
             value={type}
@@ -136,6 +136,7 @@ export function ChartsDemo() {
           <label className="demo-row">
             <input
               checked={stacked}
+              className="check"
               disabled={!STACKABLE_CHART_TYPES.has(type)}
               onChange={(event) => setStacked(event.target.checked)}
               type="checkbox"
@@ -154,6 +155,34 @@ export function ChartsDemo() {
             width={640}
             xLabel="day"
             xValues={xValues}
+            yLabel="orders"
+          />
+        </div>
+      </section>
+      <section>
+        <h3 className="demo-subhead">With no data</h3>
+        <div className="charts-pair">
+          <LineChart
+            format={(value) => count.format(value)}
+            from={FROM}
+            label="Requests per ten minutes, none yet"
+            series={[]}
+            timeText={(at) => clock.format(at)}
+            to={TO}
+          />
+          <PieChart format={(value) => `${value} h`} label="Time per state, none yet" slices={[]} />
+        </div>
+        <div className="result-chart-frame">
+          <ResultChart
+            categories={[]}
+            height={200}
+            series={[]}
+            stacked={false}
+            title="Sales by day"
+            type="column"
+            width={640}
+            xLabel="day"
+            xValues={[]}
             yLabel="orders"
           />
         </div>

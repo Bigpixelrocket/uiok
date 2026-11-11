@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { daysIn, formatPicker, monthGrid, parsePicker, stepMonth } from './DateTimePicker.logic.js';
+import {
+  daysIn,
+  formatPicker,
+  monthGrid,
+  PANEL_INSET,
+  panelPlace,
+  parsePicker,
+  stepMonth
+} from './DateTimePicker.logic.js';
 
 describe('date and time picker', () => {
   it('reads a date, a time, and both, and refuses what it cannot show', () => {
@@ -59,5 +67,34 @@ describe('date and time picker', () => {
     expect(inMonth.every((day) => day.year === 99 && day.month === 1)).toBe(true);
     expect(days.findIndex((day) => day.inMonth)).toBe((first.getUTCDay() + 6) % 7);
     expect(daysIn(4, 2)).toBe(29);
+  });
+});
+
+describe('panelPlace', () => {
+  const view = { width: 800, height: 600 };
+  const panel = { width: 240, height: 300 };
+
+  it('opens under its button, on its left edge, when the room below holds it', () => {
+    expect(panelPlace({ left: 100, top: 50, width: 28, height: 28 }, panel, view)).toEqual({
+      left: 100,
+      top: 82,
+      above: false
+    });
+  });
+
+  it('opens above when the room below is short and the room above is larger', () => {
+    expect(panelPlace({ left: 100, top: 450, width: 28, height: 28 }, panel, view)).toEqual({
+      left: 100,
+      top: 146,
+      above: true
+    });
+  });
+
+  it('stays inside the window on every side', () => {
+    const place = panelPlace({ left: 700, top: 280, width: 28, height: 28 }, panel, view);
+
+    expect(place.left).toBe(800 - 240 - PANEL_INSET);
+    expect(place.top + panel.height).toBeLessThanOrEqual(600 - PANEL_INSET);
+    expect(place.top).toBeGreaterThanOrEqual(PANEL_INSET);
   });
 });

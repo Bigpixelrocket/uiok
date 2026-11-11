@@ -1,0 +1,136 @@
+/**
+ * The scale tokens drawn at their own size: each type step set in its size,
+ * each space as a bar of its length, each corner on a box, each control
+ * height as a box that tall, and each icon size. Values are read from the
+ * page, so the demo shows what `src/tokens.css` holds now.
+ */
+
+import { Folder } from 'lucide-react';
+import { useLayoutEffect, useState, type ReactNode } from 'react';
+
+import { ICON_LG, ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
+
+const TYPE = ['key-word', 'key', 'caption', 'small', 'body', 'heading', 'figure', 'display'];
+const SPACE = ['1', '2', '3', '4', '5', '6', '8', '10', '12', '16'];
+const RADIUS = ['xs', 'sm', 'md', 'lg', 'pill'];
+const HEIGHT = [
+  '--control-height-xs',
+  '--control-height-sm',
+  '--row-height-dense',
+  '--row-height',
+  '--bar-height',
+  '--control-height',
+  '--bar-height-lg'
+];
+const ICONS = [
+  { name: 'ICON_SM', size: ICON_SM },
+  { name: 'ICON_MD', size: ICON_MD },
+  { name: 'ICON_LG', size: ICON_LG }
+];
+
+/** Every token the demo reads a value for. */
+const NAMES: readonly string[] = [
+  ...TYPE.map((step) => `--font-size-${step}`),
+  ...SPACE.map((step) => `--space-${step}`),
+  ...RADIUS.map((step) => `--radius-${step}`),
+  ...HEIGHT
+];
+
+/** Each token's computed value on the root, read once the stylesheet applies. */
+function useTokenValues(): Readonly<Record<string, string>> {
+  const [values, setValues] = useState<Readonly<Record<string, string>>>({});
+  useLayoutEffect(() => {
+    const style = getComputedStyle(document.documentElement);
+    setValues(Object.fromEntries(NAMES.map((name) => [name, style.getPropertyValue(name).trim()])));
+  }, []);
+  return values;
+}
+
+/** One token's row: its name, its value, and a sample drawn with it. */
+function TokenRow({
+  name,
+  value,
+  children
+}: {
+  readonly name: string;
+  readonly value: string | undefined;
+  readonly children: ReactNode;
+}) {
+  return (
+    <li className="scale-row">
+      <code className="token-name">{name}</code>
+      <code className="token-value">{value ?? ''}</code>
+      <span className="scale-sample">{children}</span>
+    </li>
+  );
+}
+
+/** The scale tokens page's demo. */
+export function TokensDemo() {
+  const values = useTokenValues();
+  return (
+    <div className="demo-stack tokens-demo">
+      <section aria-label="Type">
+        <h3 className="demo-subhead">Type</h3>
+        <ul className="scale-list">
+          {TYPE.map((step) => {
+            const name = `--font-size-${step}`;
+            return (
+              <TokenRow key={name} name={name} value={values[name]}>
+                <span className="scale-type" style={{ fontSize: `var(${name})` }}>
+                  Aa 0:42
+                </span>
+              </TokenRow>
+            );
+          })}
+        </ul>
+      </section>
+      <section aria-label="Space">
+        <h3 className="demo-subhead">Space</h3>
+        <ul className="scale-list">
+          {SPACE.map((step) => {
+            const name = `--space-${step}`;
+            return (
+              <TokenRow key={name} name={name} value={values[name]}>
+                <span className="scale-space" style={{ width: `var(${name})` }} />
+              </TokenRow>
+            );
+          })}
+        </ul>
+      </section>
+      <section aria-label="Corners">
+        <h3 className="demo-subhead">Corners</h3>
+        <ul className="scale-list">
+          {RADIUS.map((step) => {
+            const name = `--radius-${step}`;
+            return (
+              <TokenRow key={name} name={name} value={values[name]}>
+                <span className="scale-radius" style={{ borderRadius: `var(${name})` }} />
+              </TokenRow>
+            );
+          })}
+        </ul>
+      </section>
+      <section aria-label="Heights">
+        <h3 className="demo-subhead">Heights</h3>
+        <ul className="scale-list">
+          {HEIGHT.map((name) => (
+            <TokenRow key={name} name={name} value={values[name]}>
+              <span className="scale-height" style={{ height: `var(${name})` }} />
+            </TokenRow>
+          ))}
+        </ul>
+      </section>
+      <section aria-label="Icons">
+        <h3 className="demo-subhead">Icons</h3>
+        <ul className="scale-list">
+          {ICONS.map(({ name, size }) => (
+            <TokenRow key={name} name={name} value={`${size}px`}>
+              <Folder aria-hidden="true" className="scale-icon" size={size} />
+            </TokenRow>
+          ))}
+        </ul>
+      </section>
+    </div>
+  );
+}
