@@ -135,7 +135,7 @@ function FolderMenu({
           value={query}
         />
         <span className="folder-menu-count">
-          {rows.length}/{ENTRIES.length}
+          {rows.length} of {ENTRIES.length}
         </span>
       </div>
       <div className="folder-menu-options" ref={list} role="listbox" aria-label="Files">

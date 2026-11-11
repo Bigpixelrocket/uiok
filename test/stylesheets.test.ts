@@ -73,6 +73,9 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
         <input class="field"><select class="field field-sm"></select>
         <input type="checkbox" class="check" checked><input type="radio" class="check">
         <input type="checkbox" role="switch" class="switch">
+        <button class="toggle-chip" aria-pressed="false">Wrap</button>
+        <button class="quiet-control">Stop</button>
+        <button class="quiet-track-item" role="tab" aria-selected="false">Log</button>
       </fieldset>`;
       const elements = [...document.querySelectorAll('fieldset *')];
       const matched = elements.flatMap((element) =>
@@ -118,6 +121,49 @@ describe('pointer states of the shared recipes and form controls', () => {
     document.body.innerHTML = '';
   });
 
+  it('sinks a checked, mixed, or invalid box onto the pressed fill of its tone', () => {
+    const rules = pressedRules();
+    document.body.innerHTML = `
+      <input type="checkbox" class="check" checked data-want="--accent-pressed">
+      <input type="checkbox" class="check" data-mixed data-want="--accent-pressed">
+      <input type="radio" class="check" checked data-want="--accent-pressed">
+      <input type="checkbox" checked data-want="--accent-pressed">
+      <input type="checkbox" class="check" checked data-tone="danger" data-want="--danger-pressed">
+      <input type="checkbox" class="check" checked data-tone="warning" data-want="--warning-pressed">
+      <input type="checkbox" class="check" checked aria-invalid="true" data-want="--danger-pressed">
+      <input type="checkbox" class="check" checked aria-invalid="true" data-tone="warning"
+        data-want="--danger-pressed">`;
+    const mixed = document.querySelector('[data-mixed]') as HTMLInputElement;
+    mixed.indeterminate = true;
+    for (const box of document.querySelectorAll('input')) {
+      const fills = rules
+        .filter(({ selector }) => box.matches(selector))
+        .map(({ rule }) => rule.style.getPropertyValue('background-color'))
+        .filter((value) => value !== '');
+      const label = box.outerHTML;
+
+      // A press paints the held fill, last, through the box's own hook.
+      expect(fills.at(-1), label).toBe('var(--check-on-pressed)');
+      expect(declaredValues(box, '--check-on-pressed').at(-1), label).toBe(
+        `var(${box.dataset.want})`
+      );
+    }
+    document.body.innerHTML = '';
+  });
+
+  it('gives an invalid box the danger tone, on and off', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `
+      <input type="checkbox" class="check" aria-invalid="true">
+      <input type="checkbox" class="check" aria-invalid="true" checked>
+      <input type="radio" class="check" aria-invalid="true" checked>`;
+    for (const box of document.querySelectorAll('input')) {
+      expect(declaredValues(box, '--check-on').at(-1), box.outerHTML).toBe('var(--danger)');
+      expect(declaredValues(box, '--check-mark').at(-1), box.outerHTML).toBe('var(--on-danger)');
+    }
+    document.body.innerHTML = '';
+  });
+
   it('gives the chosen tab, segment, or page neither hover nor press', () => {
     const rules = pressedRules();
     document.body.innerHTML = `
@@ -159,6 +205,10 @@ describe('pointer states of the shared recipes and form controls', () => {
       <button class="palette-level" aria-pressed="true">Level</button>
       <button class="settings-sidebar-page" aria-pressed="true">Page</button>
       <button class="settings-sidebar-subsection" aria-pressed="true">Part</button>
+      <button class="toggle-chip" aria-pressed="true">Wrap</button>
+      <button class="toggle-chip toggle-chip-xs" aria-pressed="true">Trace</button>
+      <button class="quiet-control" aria-pressed="true">Mode</button>
+      <button class="quiet-track-item" aria-pressed="true">Log</button>
     </div>`;
     const onRule = (selector: string): boolean =>
       /\[aria-pressed=['"]?true['"]?\]/.test(
@@ -185,7 +235,10 @@ describe('pointer states of the shared recipes and form controls', () => {
       <button class="page-tab" role="tab" aria-selected="false">Rows</button>
       <button class="pane-sort sortable">Size</button>
       <button class="crumb-label">site</button>
-      <button class="pager-step">Next</button>`;
+      <button class="pager-step">Next</button>
+      <button class="toggle-chip" aria-pressed="false">Wrap</button>
+      <button class="quiet-control">Stop</button>
+      <button class="quiet-track-item">Log</button>`;
     for (const element of document.querySelectorAll('button')) {
       const matched = rules.filter(
         ({ selector, rule }) =>
@@ -195,6 +248,53 @@ describe('pointer states of the shared recipes and form controls', () => {
 
       expect(last?.rule.selectorText, element.className).toMatch(/:active\b/);
     }
+    document.body.innerHTML = '';
+  });
+
+  it('keeps a pressed strip link in its own tone, without the hover underline', () => {
+    // The shared press weighs one pseudo-class; the link's own press rule
+    // outweighs it, so it is that rule's words that hold while pressed.
+    const rules = pressedRules();
+    document.body.innerHTML = `<div class="listing-root">
+      <button class="pane-strip-link" data-want="var(--accent-text)">All</button>
+      <button class="pane-strip-link danger" data-want="var(--danger-text)">Clear</button>
+    </div>`;
+    for (const link of document.querySelectorAll('button')) {
+      const own = rules
+        .filter(({ rule }) => /^\.pane-strip-link\b[^,]*:active/.test(rule.selectorText))
+        .filter(({ selector }) => link.matches(selector))
+        .map(({ rule }) => rule);
+
+      expect(own.at(-1)?.style.getPropertyValue('color'), link.className).toBe(link.dataset.want);
+    }
+    const plain = rules.find(({ rule }) =>
+      /^\.pane-strip-link:active/.test(rule.selectorText)
+    )?.rule;
+    expect(plain?.style.getPropertyValue('text-decoration')).toBe('none');
+    document.body.innerHTML = '';
+  });
+
+  it('lets a host control join the quiet looks by class, the press with its hairline', () => {
+    const rules = pressedRules();
+    document.body.innerHTML = `
+      <button class="quiet-control">Stop</button>
+      <button class="toggle-chip" aria-pressed="false">Wrap</button>
+      <button class="quiet-track-item">Log</button>`;
+    const declared = (element: Element, property: string): string[] =>
+      rules
+        .filter(({ selector }) => element.matches(selector))
+        .map(({ rule }) => rule.style.getPropertyValue(property))
+        .filter((value) => value !== '');
+    const [control, chip, item] = [...document.querySelectorAll('button')];
+
+    for (const element of [control, chip, item]) {
+      expect(declared(element as Element, 'box-shadow').at(-1)).toBe('var(--press-frost)');
+      expect(declared(element as Element, 'background')).toContain('var(--hover-wash)');
+    }
+    // The frosted ring is the quiet control's and the chip's, not a track item's.
+    expect(declared(control as Element, 'box-shadow')).toContain('var(--hover-frost)');
+    expect(declared(chip as Element, 'box-shadow')).toContain('var(--hover-frost)');
+    expect(declared(item as Element, 'box-shadow')).not.toContain('var(--hover-frost)');
     document.body.innerHTML = '';
   });
 });

@@ -16,6 +16,7 @@ import {
 import {
   legibleForeground,
   parseTranslucentColor,
+  quietMark,
   selectedForeground,
   type TranslucentColor
 } from './contrast.logic.js';
@@ -429,8 +430,8 @@ export function terminalGridSize(
   };
 }
 
-/** How strongly an unfocused terminal's hollow cursor is drawn: the text colour at half strength. */
-const UNFOCUSED_CURSOR_ALPHA = 0.5;
+/** How strongly an unfocused terminal's hollow cursor is drawn: the text colour at half strength, at least 3:1 on the ground. */
+const UNFOCUSED_CURSOR_SHARE = 0.5;
 
 /** Whether no cell of the snapshot's screen shows a glyph. */
 function screenIsBlank(snapshot: GhosttySnapshot): boolean {
@@ -783,12 +784,12 @@ export function renderGhosttySnapshot(options: {
     if (!focused) {
       // An unfocused terminal draws a quiet hollow cursor, a 1px outline in
       // the text colour at half strength, so the active pane is obvious and
-      // the resting one keeps its place without the cursor colour's alarm.
-      const alpha = context.globalAlpha;
-      context.globalAlpha = alpha * UNFOCUSED_CURSOR_ALPHA;
-      context.strokeStyle = cssColor(snapshot.foreground);
+      // the resting one keeps its place without the cursor colour's alarm;
+      // never fainter than a mark's 3:1 on the ground.
+      context.strokeStyle = cssColor(
+        quietMark(snapshot.foreground, snapshot.background, UNFOCUSED_CURSOR_SHARE)
+      );
       context.strokeRect(left + 0.5, top + 0.5, metrics.width - 1, metrics.height - 1);
-      context.globalAlpha = alpha;
     } else if (snapshot.cursorStyle === 0) {
       context.fillRect(left, top, 2, metrics.height);
     } else if (snapshot.cursorStyle === 2) {
@@ -804,9 +805,12 @@ export function renderGhosttySnapshot(options: {
       const cell = snapshot.rowData[snapshot.cursorY]?.cells[snapshot.cursorX];
       const shown = cell !== undefined && !cell.invisible;
       const spriteCodepoint = shown ? ghosttySpriteCodepoint(cell.text) : -1;
+      // The cell under the block is drawn in the ground's colour, floored at
+      // the per-cell text contrast against the block, which as a mark only
+      // keeps 3:1 from the ground.
+      const ink = cssColor(legibleForeground(snapshot.background, snapshot.cursor));
       if (spriteCodepoint >= 0) {
-        const background = cssColor(snapshot.background);
-        context.fillStyle = background;
+        context.fillStyle = ink;
         paintSpriteCell(
           context,
           spriteCodepoint,
@@ -817,11 +821,11 @@ export function renderGhosttySnapshot(options: {
           metrics.width,
           pixelRatio,
           spriteThickness,
-          background
+          ink
         );
       } else if (shown && cell.text) {
         context.font = fontForCell(cell, fontSize, fontFamily);
-        context.fillStyle = cssColor(snapshot.background);
+        context.fillStyle = ink;
         context.fillText(cell.text, left, top + metrics.baseline, metrics.width);
       }
     }

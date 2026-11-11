@@ -10,6 +10,9 @@ const RIGHT_TO_LEFT =
 /** The closing quote `nameParts` keeps at a cut name's end. */
 const CLOSING_QUOTE = /["”“»«]$/u;
 
+/** The opening quote `nameParts` keeps at a cut name's start. */
+const OPENING_QUOTE = /^["“„«»”]/u;
+
 /** The ellipsis a cut head ends in, as the browser draws it for `text-overflow`. */
 const ELLIPSIS = '\u2026';
 
@@ -61,8 +64,8 @@ function snapCut(box: HTMLElement): void {
 
   if (dots === null) return;
 
-  // Words that end in a space before the name (and its opening quote,
-  // which the cut hides with it) keep a space after their ellipsis, so the
+  // Words that end in a space before the name (the name's opening quote
+  // starts the name's own head) keep a space after their ellipsis, so the
   // cut words do not run into the name. The space comes out of their own
   // room, never out of the parts that give way after them.
   const space =
@@ -147,8 +150,9 @@ export interface NameCutProps {
  * A cut name's head and tail, in the order they are seen. A left-to-right
  * name shows its head, then its tail. A right-to-left name is seen the
  * other way round inside the line: its tail (its end) on the left, its
- * head (its start) on the right, then its closing quote, so the quotes
- * still close around it; each box cuts on the side that gives way.
+ * head (its start) on the right, between its opening quote on the left
+ * and its closing quote on the right, so the quotes still close around
+ * it; each box cuts on the side that gives way.
  */
 function cutName(head: string, tail: string): ReactElement {
   if (!RIGHT_TO_LEFT.test(head + tail)) {
@@ -164,17 +168,20 @@ function cutName(head: string, tail: string): ReactElement {
     );
   }
 
+  const opening = OPENING_QUOTE.exec(head)?.[0] ?? '';
+  const start = head.slice(opening.length);
   const quote = CLOSING_QUOTE.exec(tail)?.[0] ?? '';
   const end = tail.slice(0, tail.length - quote.length);
 
   return (
     <>
+      {opening !== '' && <span className="name-cut-quote">{opening}</span>}
       <span className="name-cut-tail rtl">
         <bdi dir="rtl">{end}</bdi>
       </span>
-      {head !== '' && (
+      {start !== '' && (
         <span className="name-cut-head rtl" dir="rtl">
-          {head}
+          {start}
         </span>
       )}
       {quote !== '' && <span className="name-cut-quote">{quote}</span>}

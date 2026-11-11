@@ -67,8 +67,13 @@
    the trough) drawn inside it, so two pixels of trough separate it from the
    track's own ring as from the next segment; the glass edge on the row just under that ring
    (the ring, listed first, covers the edge's top row); the raised shadow
-   below. */
-.segmented-choice-option[aria-checked='true'] {
+   below. A host that draws the row as toggle buttons (a menu whose arrow
+   keys step the choices) marks the chosen one aria-pressed="true" and gets
+   the same raised look, held under a press as the radio's is, ahead of the
+   base sheet's look for an on toggle. */
+.segmented-choice-option[aria-checked='true'],
+.segmented-choice-option[aria-pressed='true'],
+.segmented-choice-option[aria-pressed='true']:active {
   background: linear-gradient(var(--hover-wash), transparent), var(--surface);
   box-shadow:
     inset 0 0 0 var(--line) var(--control-border-strong),

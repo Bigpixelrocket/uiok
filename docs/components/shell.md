@@ -109,7 +109,9 @@ A radio group of miniatures, one per theme, each with its name under it. Each mi
         </span>
       </span>
     </span>
-    <span className="theme-choice-name">Catppuccin Latte</span>
+    <span className="theme-choice-name" data-name="Catppuccin Latte">
+      Catppuccin Latte
+    </span>
   </button>
 </div>
 ```
@@ -120,27 +122,27 @@ A radio group of miniatures, one per theme, each with its name under it. Each mi
 - **Pressed:** the ring goes to full `--text` (or keeps the chosen accent ring), the frame sinks (`--pressed-wash`, `--shadow-pressed`), and the miniature drops a pixel.
 - **Focus:** the focus ring outside the frame, over whichever of the above applies, so a focused choice that is not chosen never reads as chosen.
 
-A note after the grid (`field-note`) keeps 4px clear of it. The grid fills its column with miniatures at least 112px wide; a long name wraps.
+A note after the grid (`field-note`) keeps 4px clear of it. The grid fills its column with miniatures at least 112px wide; a long name wraps. Repeat the name in `data-name` on `theme-choice-name`: the name reserves the room its strong weight takes, so choosing a theme never rewraps its name or moves the rows under it.
 
 ## Updates
 
 The Updates page (`updates-page`, in a `settings-page fills`) holds the check cadence over the status card, both on `card` ([Notices and cards](surface.md)).
 
-| Class                 | What it is                                                                                                                                                                    |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `update-checks`       | The cadence: `update-checks-label`, the select at the end, a `field-note` under both                                                                                          |
-| `update-card`         | The status card; `data-tone` is `idle`, `busy`, `ready`, `ok`, `warning`, or `error` and colours its glyph (the error's words too)                                            |
-| `update-card-head`    | The glyph's 16px column, `update-card-said` (`update-card-title` over `update-card-sub`), and a `Button` at the end                                                           |
-| `update-card-glyph`   | The state's glyph; add `spinner` while it checks                                                                                                                              |
-| `update-card-note`    | A quiet line under the head                                                                                                                                                   |
-| `with-run`            | A download under the head (uiok's `RunHeader`): the head turns quieter and ruled off, its glyph a size down in the same column                                                |
-| `with-notes`          | Notes at the card's foot: the card grows only to the column's bottom                                                                                                          |
-| `update-notes`        | What's new under a hairline, its heading an `overline`                                                                                                                        |
-| `update-notes-list`   | One line per change; add `scroll-fade` and `tabIndex={0}`. A squeezed list keeps `--update-note-rows` rows (3 unless set)                                                     |
-| `update-notes-frame`  | Round a fading list: draws the list's focus ring, which the fade's mask would erase on the list itself, and gives the list a small inset so the ring clears the text          |
-| `update-notes-groups` | On the list when the lines come under areas: the list a `div` with `role="group"`, each `update-notes-group` a `div` holding an `update-notes-area` heading over its own `ul` |
+| Class                 | What it is                                                                                                                                                                                                                              |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `update-checks`       | The cadence: `update-checks-label`, the select at the end, a `field-note` under both                                                                                                                                                    |
+| `update-card`         | The status card; `data-tone` is `idle`, `busy`, `ready`, `ok`, `warning`, or `error` and colours its glyph; an error's headline takes `--danger-text`, its reason stays quiet                                                           |
+| `update-card-head`    | The glyph's 16px column, `update-card-said` (`update-card-title` over `update-card-sub`), and a `Button` at the end                                                                                                                     |
+| `update-card-glyph`   | The state's glyph; add `spinner` while it checks                                                                                                                                                                                        |
+| `update-card-note`    | A quiet line under the head                                                                                                                                                                                                             |
+| `with-run`            | A download under the head (uiok's `RunHeader`): the head turns quieter and ruled off, its glyph a size down in the same column. The head's glyph stays still (the `Download` arrow), since the `RunHeader`'s ring is the one that turns |
+| `with-notes`          | Notes at the card's foot: the card grows only to the column's bottom                                                                                                                                                                    |
+| `update-notes`        | What's new under a hairline, its heading an `overline`                                                                                                                                                                                  |
+| `update-notes-list`   | One line per change; add `scroll-fade` and `tabIndex={0}`. A squeezed list keeps `--update-note-rows` rows (3 unless set)                                                                                                               |
+| `update-notes-frame`  | Round a fading list: draws the list's focus ring, which the fade's mask would erase on the list itself, and gives the list a small inset so the ring clears the text                                                                    |
+| `update-notes-groups` | On the list when the lines come under areas: the list a `div` with `role="group"`, each `update-notes-group` a `div` holding an `update-notes-area` heading over its own `ul`                                                           |
 
-A download that stopped short draws no empty track in the card's `RunHeader`.
+A download that stopped short draws no empty track in the card's `RunHeader`, and the reason it prints (what the system returned) is in the code face at the small size.
 
 ### The update pill
 
@@ -161,9 +163,35 @@ A `ModalDialog` that asks for what a connection needs to sign in.
 - `sign-in-dialog` (420px): a secret in a `field-group` ([Field](field.md)): its `field-label`, the field with `field sign-in-field` across the dialog, and, after a refusal, a `field-problem` named in the field's `aria-describedby` with `aria-invalid="true"` on the field.
 - `sign-in-host-key` (520px): the question, then `sign-in-fingerprint`, a `dl` framed as a well (`--border-strong`, `--radius-md`) of the key's type (`dt`, dim) and fingerprint (`dd`, selectable, whole on one line where it fits).
 
+## Exit confirmation
+
+The confirmation shown before an app quits or restarts with work running is uiok's `ConfirmDialog` with `className="exit-confirmation dialog-size-md"` (480px). Its message is one sentence a paragraph: each sentence an `exit-confirmation-sentence` span, joined by a space, so a screen reader and a copy keep it one text.
+
+```tsx
+<ConfirmDialog
+  className="exit-confirmation dialog-size-md"
+  message={sentences.map((sentence, index) => (
+    <Fragment key={index}>
+      {index > 0 ? ' ' : null}
+      <span className="exit-confirmation-sentence">{sentence}</span>
+    </Fragment>
+  ))}
+  …
+/>
+```
+
 ## Load failure
 
-`space-load-failure` on the block shown in place of content that failed to load: a `strong` headline, a dim `p` with the reason (at most 420px wide), and any action, centred in the space it takes.
+`space-load-failure` on the block shown in place of content that failed to load: the failure's glyph first (`CircleAlert` at `ICON_XL` with `absoluteStrokeWidth`, drawn in `--danger`), a `strong` headline, a dim `p` with the reason (at most 420px wide), and any action, centred in the space it takes.
+
+```tsx
+<div className="space-load-failure" role="alert">
+  <CircleAlert size={ICON_XL} absoluteStrokeWidth aria-hidden />
+  <strong>Could not load projects</strong>
+  <p>EACCES: permission denied</p>
+  <Button onClick={retry}>Try again</Button>
+</div>
+```
 
 ## Keyboard
 

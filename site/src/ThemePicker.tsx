@@ -74,7 +74,11 @@ export function ThemeChoices({
           <span className="theme-choice-frame">
             <ThemePreview id={id} />
           </span>
-          <span className="theme-choice-name">{themeName(id)}</span>
+          {/* data-name lets the shell sheet reserve the chosen (bold) name's room, so choosing a
+              theme never wraps its name or moves the grid. */}
+          <span className="theme-choice-name" data-name={themeName(id)}>
+            {themeName(id)}
+          </span>
         </button>
       ))}
     </div>

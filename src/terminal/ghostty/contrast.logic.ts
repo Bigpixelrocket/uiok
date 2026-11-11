@@ -71,6 +71,38 @@ export function legibleForeground(
   return mixed(foreground, target, high);
 }
 
+/** The contrast ratio a mark (the cursor, an outline) keeps against the ground it sits on. */
+export const TERMINAL_MARK_CONTRAST = 3;
+
+/**
+ * A quiet mark's colour on `background`: `foreground` mixed `share` of the
+ * way in from the background, or, where that stands less than
+ * `TERMINAL_MARK_CONTRAST` from it, the least stronger mix that does (at
+ * most `foreground` itself). An unfocused terminal's hollow cursor is drawn
+ * in it, so it stays quieter than text without fading out of sight.
+ */
+export function quietMark(
+  foreground: GhosttyColor,
+  background: GhosttyColor,
+  share = 0.5
+): GhosttyColor {
+  const at = (amount: number) => mixed(background, foreground, amount);
+
+  if (terminalContrast(at(share), background) >= TERMINAL_MARK_CONTRAST) return at(share);
+  if (terminalContrast(foreground, background) < TERMINAL_MARK_CONTRAST) return foreground;
+
+  let low = share;
+  let high = 1;
+
+  for (let step = 0; step < 12; step += 1) {
+    const middle = (low + high) / 2;
+
+    if (terminalContrast(at(middle), background) >= TERMINAL_MARK_CONTRAST) high = middle;
+    else low = middle;
+  }
+  return at(high);
+}
+
 /** A colour over whatever lies under it, at `alpha` (0 to 1). */
 export interface TranslucentColor {
   readonly color: GhosttyColor;

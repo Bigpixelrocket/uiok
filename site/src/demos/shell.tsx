@@ -3,11 +3,12 @@
  * (Appearance with the theme picker, Updates with the status card and its
  * notes, Files with a file's problems), the theme picker and the update
  * card in each tone on the page itself, the update pill's states, the
- * channel tag, the sign-in prompts (a password asked again after a refusal,
- * a new host key), and the load failure block.
+ * channel tag, the About window, the sign-in prompts (a password asked again
+ * after a refusal, a new host key), and the load failure block.
  */
 
 import {
+  Box,
   CircleAlert,
   CircleCheck,
   Download,
@@ -25,7 +26,7 @@ import { useId, useState, type CSSProperties, type ReactElement } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ModalDialog } from '@bigpixelrocket/uiok/dialog';
-import { ICON_MD } from '@bigpixelrocket/uiok/icon';
+import { ICON_MD, ICON_XL } from '@bigpixelrocket/uiok/icon';
 import { RunHeader } from '@bigpixelrocket/uiok/run';
 import { DARK_THEME_IDS, LIGHT_THEME_IDS, type ThemeId } from '@bigpixelrocket/uiok/themes';
 
@@ -71,9 +72,13 @@ function UpdateCard({
   readonly notes?: boolean;
   readonly run?: boolean;
 }): ReactElement {
-  const Glyph =
-    tone === 'busy'
-      ? LoaderCircle
+  // With a download under it, the head's glyph stays still: the RunHeader's
+  // ring is the one that turns.
+  const spins = tone === 'busy' && !run;
+  const Glyph = spins
+    ? LoaderCircle
+    : tone === 'busy'
+      ? Download
       : tone === 'ok'
         ? CircleCheck
         : tone === 'warning'
@@ -90,10 +95,7 @@ function UpdateCard({
   return (
     <section className={classes} data-tone={tone}>
       <div className="update-card-head">
-        <Glyph
-          aria-hidden
-          className={tone === 'busy' ? 'update-card-glyph spinner' : 'update-card-glyph'}
-        />
+        <Glyph aria-hidden className={spins ? 'update-card-glyph spinner' : 'update-card-glyph'} />
         <div className="update-card-said">
           <span className="update-card-title">{title}</span>
           <span className="update-card-sub">{sub}</span>
@@ -524,9 +526,22 @@ export function ShellDemo(): ReactElement {
         <span className="channel-tag">Local</span>
       </div>
 
+      <h3 className="demo-subhead">About window</h3>
+      {/* A window of 420 by 300 in place of the whole viewport the class fills. */}
+      <div className="card" style={{ width: 420, maxWidth: '100%', padding: 0 }}>
+        <div className="about-window" style={{ minHeight: 300 }}>
+          <Box absoluteStrokeWidth aria-hidden size={ICON_XL} />
+          <div className="about-lockup">
+            <strong>Sample App</strong>
+          </div>
+          <p className="about-version">Version 3.4.0 (412)</p>
+        </div>
+      </div>
+
       <h3 className="demo-subhead">Load failure</h3>
       <div className="card">
         <div className="space-load-failure" role="alert">
+          <CircleAlert absoluteStrokeWidth aria-hidden size={ICON_XL} />
           <strong>The list could not be loaded</strong>
           <p>The settings folder could not be read: permission denied. Check its permissions.</p>
           <Button size="small">Try Again</Button>

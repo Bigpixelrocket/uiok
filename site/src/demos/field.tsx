@@ -1,9 +1,11 @@
 /**
  * Every form control in each of its states, one labelled grid per control:
  * fields, selects, and textareas at rest, hovered, focused, read-only,
- * invalid, in the warning tone, and disabled; checks, radios, switches, and
- * the slider off, on, mixed, hovered, pressed, toned, and disabled; the
- * three field heights by place; then a working form on one label column.
+ * invalid, in the warning and accent tones, and disabled; the field box;
+ * checks, radios, switches, and the slider off, on, mixed, hovered,
+ * pressed, toned, invalid, and disabled; toggles off and on; a meter in its
+ * three tones; the three field heights by place; then a working form on
+ * one label column.
  *
  * A cell that shows a pointer or focus state carries `data-force` (with
  * `data-force-sel` naming the control inside it): the screenshot harness
@@ -14,7 +16,11 @@
 
 import { useState, type CSSProperties, type ReactNode } from 'react';
 
+import { Search, WrapText } from 'lucide-react';
+
+import { Button, IconButton } from '@bigpixelrocket/uiok/button';
 import { Check } from '@bigpixelrocket/uiok/field';
+import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 
 import { DemoState, DemoStates } from '../DemoStates';
 
@@ -30,8 +36,9 @@ function Forced({
   readonly sel: string;
   readonly children: ReactNode;
 }) {
+  // No box of its own, so a forced cell sits on the same line as a cell at rest.
   return (
-    <span data-force={force} data-force-sel={sel}>
+    <span data-force={force} data-force-sel={sel} style={{ display: 'contents' }}>
       {children}
     </span>
   );
@@ -84,8 +91,59 @@ export function FieldDemo() {
             defaultValue="utf8mb3"
           />
         </DemoState>
+        <DemoState label="Changed (data-tone accent)">
+          <input
+            aria-label="Memory limit"
+            className="field"
+            data-tone="accent"
+            defaultValue="512M"
+          />
+        </DemoState>
         <DemoState label="Disabled">
           <input aria-label="Locked" className="field" defaultValue="read only here" disabled />
+        </DemoState>
+      </DemoStates>
+
+      <DemoStates minCell="180px" title="Field box">
+        <DemoState label="Rest">
+          <label className="field-box">
+            <Search size={ICON_SM} />
+            <input aria-label="Filter rows" placeholder="Filter rows" />
+          </label>
+        </DemoState>
+        <DemoState label="Filled">
+          <label className="field-box">
+            <Search size={ICON_SM} />
+            <input aria-label="Filter rows" defaultValue="users" />
+          </label>
+        </DemoState>
+        <DemoState label="Hover">
+          <Forced force="hover" sel=".field-box">
+            <label className="field-box">
+              <Search size={ICON_SM} />
+              <input aria-label="Filter rows" defaultValue="users" />
+            </label>
+          </Forced>
+        </DemoState>
+        <DemoState label="Keyboard focus">
+          <Forced force="focus focus-visible" sel="input">
+            <label className="field-box">
+              <Search size={ICON_SM} />
+              <input aria-label="Filter rows" defaultValue="users" />
+            </label>
+          </Forced>
+        </DemoState>
+        <DemoState label="Invalid">
+          <label aria-invalid="true" className="field-box">
+            <Search size={ICON_SM} />
+            <input aria-label="Filter rows" defaultValue="[users" />
+          </label>
+        </DemoState>
+        <DemoState label="Disabled">
+          <label className="field-box">
+            <Search size={ICON_SM} />
+            <input aria-label="Filter rows" defaultValue="users" disabled />
+          </label>
         </DemoState>
       </DemoStates>
 
@@ -219,6 +277,11 @@ export function FieldDemo() {
             <input aria-invalid className="check" type="checkbox" />I agree
           </Choice>
         </DemoState>
+        <DemoState label="Invalid, on">
+          <Choice>
+            <input aria-invalid className="check" defaultChecked type="checkbox" />I agree
+          </Choice>
+        </DemoState>
         <DemoState label="Danger, off">
           <Choice>
             <input className="check" data-tone="danger" type="checkbox" />
@@ -296,6 +359,12 @@ export function FieldDemo() {
               type="radio"
             />
             Move to Trash
+          </Choice>
+        </DemoState>
+        <DemoState label="Invalid, on">
+          <Choice>
+            <input aria-invalid className="check" defaultChecked name="demo-radio-h" type="radio" />
+            Custom
           </Choice>
         </DemoState>
         <DemoState label="Disabled, off">
@@ -423,6 +492,89 @@ export function FieldDemo() {
             style={range(60)}
             type="range"
           />
+        </DemoState>
+      </DemoStates>
+
+      <DemoStates minCell="150px" title="Toggle">
+        <DemoState label="Off">
+          <button aria-pressed="false" className="toggle-chip" type="button">
+            Wrap
+          </button>
+        </DemoState>
+        <DemoState label="Off, hover">
+          <Forced force="hover" sel="button">
+            <button aria-pressed="false" className="toggle-chip" type="button">
+              Wrap
+            </button>
+          </Forced>
+        </DemoState>
+        <DemoState label="Off, pressed">
+          <Forced force="hover active" sel="button">
+            <button aria-pressed="false" className="toggle-chip" type="button">
+              Wrap
+            </button>
+          </Forced>
+        </DemoState>
+        <DemoState label="On">
+          <button aria-pressed="true" className="toggle-chip" type="button">
+            Wrap
+          </button>
+        </DemoState>
+        <DemoState label="On, hover">
+          <Forced force="hover" sel="button">
+            <button aria-pressed="true" className="toggle-chip" type="button">
+              Wrap
+            </button>
+          </Forced>
+        </DemoState>
+        <DemoState label="On, pressed">
+          <Forced force="hover active" sel="button">
+            <button aria-pressed="true" className="toggle-chip" type="button">
+              Wrap
+            </button>
+          </Forced>
+        </DemoState>
+        <DemoState label="Small and inline (-sm, -xs)">
+          <span className="demo-row">
+            <button aria-pressed="true" className="toggle-chip toggle-chip-sm" type="button">
+              Debug
+            </button>
+            <button aria-pressed="false" className="toggle-chip toggle-chip-xs" type="button">
+              Trace
+            </button>
+          </span>
+        </DemoState>
+        <DemoState label="Button, off and on">
+          <span className="demo-row">
+            <Button aria-pressed="false" size="small">
+              Wrap
+            </Button>
+            <Button aria-pressed="true" size="small">
+              Wrap
+            </Button>
+          </span>
+        </DemoState>
+        <DemoState label="IconButton, off and on">
+          <span className="demo-row">
+            <IconButton aria-label="Wrap lines, off" aria-pressed="false" size="small">
+              <WrapText size={ICON_MD} />
+            </IconButton>
+            <IconButton aria-label="Wrap lines, on" aria-pressed="true" size="small">
+              <WrapText size={ICON_MD} />
+            </IconButton>
+          </span>
+        </DemoState>
+      </DemoStates>
+
+      <DemoStates minCell="160px" title="Meter">
+        <DemoState label="Optimum">
+          <meter aria-label="Strength" high={0.75} low={0.4} max={1} optimum={1} value={0.9} />
+        </DemoState>
+        <DemoState label="Below the optimum">
+          <meter aria-label="Strength" high={0.75} low={0.4} max={1} optimum={1} value={0.6} />
+        </DemoState>
+        <DemoState label="Least good">
+          <meter aria-label="Strength" high={0.75} low={0.4} max={1} optimum={1} value={0.2} />
         </DemoState>
       </DemoStates>
 

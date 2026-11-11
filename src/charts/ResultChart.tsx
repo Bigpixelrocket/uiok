@@ -214,9 +214,10 @@ function ResultChartDrawing({
   const left =
     type === 'pie' ? EDGE : type === 'bar' ? 110 : Math.max(64, Math.ceil(tickWidth * 6.5) + 30);
   // The legend starts at the plot's left edge and wraps inside its width.
-  // A pie whose colours repeat numbers its legend as it numbers its slices.
+  // A pie whose colours repeat numbers its legend as it numbers its slices;
+  // a name that is its own number is written once.
   const legendTexts = legendNames.map((name, at) =>
-    type === 'pie' && categories.length > SERIES_COLOURS
+    type === 'pie' && categories.length > SERIES_COLOURS && name !== String(at + 1)
       ? `${at + 1} ${cutLabel(name, 24)}`
       : cutLabel(name, 24)
   );
@@ -300,7 +301,13 @@ function ResultChartDrawing({
     // category it came from; the legend and the read-out go by category.
     const kept = slices.flatMap((slice, at) => (slice.value > 0 ? [at] : []));
 
-    const tags = numbered ? pieTags(arcs, r) : [];
+    const tags = numbered
+      ? pieTags(
+          arcs,
+          r,
+          kept.map((category) => String(category + 1))
+        )
+      : [];
     // Past the eight colours, slices are hatched, then crosshatched, so no
     // two neighbours and no two legend swatches share a fill.
     const fills = pieFills(kept);
@@ -309,25 +316,16 @@ function ResultChartDrawing({
 
     plot.push(
       <g key="pie" transform={`translate(${plotWidth / 2} ${plotHeight / 2})`}>
-        {tags.map((tag, at) => {
-          const category = kept[at] ?? at;
-          // A tag above or below the pie stands clear of its leader's end.
-          const dy = tag.anchor === 'middle' ? (tag.y < 0 ? -6 : 6) : 0;
-
-          return (
-            <g className="result-chart-slice-tag" key={`tag-${category}`}>
+        {tags.map((tag, at) =>
+          tag === null ? null : (
+            <g className="result-chart-slice-tag" key={`tag-${kept[at] ?? at}`}>
               <line x1={tag.fromX} x2={tag.x} y1={tag.fromY} y2={tag.y} />
-              <text
-                dominantBaseline="middle"
-                textAnchor={tag.anchor}
-                x={tag.x + (tag.anchor === 'start' ? 2 : tag.anchor === 'end' ? -2 : 0)}
-                y={tag.y + dy}
-              >
-                {category + 1}
+              <text dominantBaseline="middle" textAnchor={tag.anchor} x={tag.textX} y={tag.textY}>
+                {tag.text}
               </text>
             </g>
-          );
-        })}
+          )
+        )}
         {arcs.map((arc, at) => {
           const category = kept[at] ?? at;
 

@@ -213,19 +213,51 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     expect(screen.getByRole('tablist').hasAttribute('data-overflow')).toBe(false);
   });
 
-  it('fades only the marked edges', () => {
+  it('draws whole tabs only, leaving out a tab the chevrons would cut', () => {
     applyStylesheets(readStylesheet('src/tabs/tabs.css'));
     render(<WideStrip initial="overview" />);
     const strip = screen.getByRole('tablist');
-    const fade = (side: 'start' | 'end'): string | undefined =>
-      declaredValues(strip, `--page-tabs-fade-${side}`).at(-1);
+    const drawn = (): string[] =>
+      screen
+        .getAllByRole('tab')
+        .filter((tab) => !tab.hasAttribute('data-clipped'))
+        .map((tab) => tab.dataset.pageTab ?? '');
 
-    expect([fade('start'), fade('end')]).toEqual(['0px', '24px']);
+    // At rest the end chevron takes 276 to 300: Alerts (246 to 326) is not drawn.
+    expect(drawn()).toEqual(['overview', 'members', 'settings']);
+    const alerts = screen.getByRole('tab', { name: 'Alerts' });
+    expect(declaredValues(alerts, 'opacity').at(-1)).toBe('0');
+    expect(declaredValues(alerts, 'pointer-events').at(-1)).toBe('none');
+    // A tab not drawn stays a tab, in the tab order's reach and the tree.
+    expect(alerts.getAttribute('role')).toBe('tab');
+
+    // Scrolled 50px, both chevrons show: Overview (-44 to 36) and Search leave.
     layout.scrollLeft = 50;
     fireEvent.scroll(strip);
-    expect([fade('start'), fade('end')]).toEqual(['24px', '24px']);
-    strip.removeAttribute('data-overflow');
-    expect([fade('start'), fade('end')]).toEqual([undefined, undefined]);
+    expect(drawn()).toEqual(['members', 'settings', 'alerts']);
+
+    // At the end of the scroll only the start chevron takes room.
+    layout.scrollLeft = 112;
+    fireEvent.scroll(strip);
+    expect(drawn()).toEqual(['settings', 'alerts', 'search']);
+    expect(declaredValues(screen.getByRole('tab', { name: 'Settings' }), 'opacity')).toEqual([]);
+  });
+
+  it('draws every tab when every tab fits', () => {
+    // Three tabs end at 246 of 300.
+    layout.scrollWidth = 300;
+    render(
+      <PageTabs
+        current="overview"
+        label="Pages"
+        onSelect={() => undefined}
+        tabs={WIDE_TABS.slice(0, 3)}
+      />
+    );
+
+    expect(screen.getAllByRole('tab').filter((tab) => tab.hasAttribute('data-clipped'))).toEqual(
+      []
+    );
   });
 
   it('shows the current tab at once when it mounts past the edge', () => {
@@ -309,15 +341,35 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     expect(more('end').getAttribute('aria-hidden')).toBe('true');
     expect(screen.queryAllByRole('button')).toEqual([]);
 
-    // Pages by the clear span: 300px less a 24px fade at each edge.
+    // Pages by whole tabs: Alerts, the first tab not drawn, comes to rest at
+    // the start chevron's inner edge (246 less 24).
+    layout.scrollWidth = 600;
     fireEvent.click(more('end'));
-    expect(scrollBy).toHaveBeenLastCalledWith({ left: 252, behavior: 'smooth' });
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 222, behavior: 'smooth' });
 
+    layout.scrollWidth = 412;
     layout.scrollLeft = 112;
     fireEvent.scroll(strip);
     expect([shown('start'), shown('end')]).toEqual(['flex', 'none']);
+    // Members (-26 to 54) is the last tab not drawn at the start; the earliest
+    // tab start that keeps it whole is Overview's, the strip's own start.
     fireEvent.click(more('start'));
-    expect(scrollBy).toHaveBeenLastCalledWith({ left: -252, behavior: 'smooth' });
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -112, behavior: 'smooth' });
+  });
+
+  it('pages back so the tab before the drawn ones ends the strip whole', () => {
+    layout.scrollWidth = 900;
+    layout.scrollLeft = 340;
+    render(<WideStrip initial="search" />);
+    const strip = screen.getByRole('tablist');
+
+    fireEvent.scroll(strip);
+    scrollBy.mockClear();
+    // Tabs start at -334, -254, -174, -94, -14: Search (-14 to 66) is cut by
+    // the start chevron. The clear span is 252px, so Settings' start (-174) is
+    // the earliest that keeps Search whole: Settings rests at 24, Search ends at 264.
+    fireEvent.click(strip.parentElement?.querySelector('.page-tabs-more.start') as HTMLElement);
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -198, behavior: 'smooth' });
   });
 
   it('brings in a tab past the end edge by a tab start, where the strip’s snap keeps it', () => {

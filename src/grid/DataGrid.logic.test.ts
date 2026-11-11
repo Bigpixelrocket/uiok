@@ -72,6 +72,11 @@ describe('DataGrid logic', () => {
     expect(resizedWidth(100, -500)).toBe(40);
     expect(initialWidth('id', ['1', '22'], 8)).toBe(60);
     expect(initialWidth('note', ['x'.repeat(200)], 8)).toBe(360);
+    // A sortable heading keeps room for its mark beside the label.
+    expect(initialWidth('status', ['ok'], 8)).toBe(68);
+    expect(initialWidth('status', ['ok'], 8, 24)).toBe(92);
+    // Rows longer than the label and its mark set the width as before.
+    expect(initialWidth('id', ['x'.repeat(20)], 8, 24)).toBe(180);
   });
 });
 

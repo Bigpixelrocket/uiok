@@ -2,12 +2,13 @@
 
    The level's pages as tabs under a path bar, the current one underlined
    in the current mark. A strip too narrow for its tabs scrolls sideways and
-   fades each edge that hides tabs (PageTabs sets data-overflow), with a
-   chevron there that pages it. Hover and pressed come from the base
-   stylesheet's track recipe. */
+   draws whole tabs only: PageTabs marks data-clipped any tab that does not
+   lie whole between the chevrons, and marks data-overflow each edge that
+   hides tabs, where a chevron pages the strip. Hover and pressed come from
+   the base stylesheet's track recipe. */
 
-/* The frame holds the strip and its two chevrons. The chevrons sit outside
-   the strip, so its fade, a mask, never fades them. */
+/* The frame holds the strip and its two chevrons, drawn over the strip's
+   ends, where no tab is drawn while they show. */
 .page-tabs-frame {
   position: relative;
   flex: none;
@@ -26,44 +27,29 @@
      covers it rather than stacking on it. */
   box-shadow: inset 0 calc(-1 * var(--line)) 0 var(--border);
   scrollbar-width: none;
-  /* A scrolled strip always comes to rest with a tab's start on the start
-     fade's inner edge (or at either end of its scroll), never with a label
-     cut mid-word in the clear span; every tab is narrower than the strip,
-     so a mandatory snap traps none. Tabs snap by their start only: an end
-     snap would let the strip rest with the last tab whole and the first cut.
-     The padding is the fade's width, and PageTabs scrolls the current tab
-     to a tab start, so a tab it reveals already rests on a snap position. */
+  /* A scrolled strip always comes to rest with a tab's start at the start
+     chevron's inner edge (or at either end of its scroll); every tab is
+     narrower than the strip, so a mandatory snap traps none. Tabs snap by
+     their start only: an end snap would let the strip rest with the last
+     tab whole and the first cut. The padding is the chevron's room, EDGE in
+     PageTabs.tsx, and PageTabs scrolls to tab starts, so a tab it brings in
+     already rests on a snap position. */
   scroll-snap-type: x mandatory;
   scroll-padding-inline: var(--space-12);
 }
 
-/* The fade is a mask, so it shows whatever lies under the strip; a mask
-   reads only alpha, and --text is opaque in every theme. Its 24px matches
-   EDGE_FADE in PageTabs.tsx, which scrolls the current tab clear of it.
-   The outer half is clear, where the chevron stands on nothing, and the
-   inner half fades the next tab in. */
-.page-tabs[data-overflow] {
-  --page-tabs-fade-start: 0px;
-  --page-tabs-fade-end: 0px;
-  mask-image: linear-gradient(
-    to right,
-    transparent calc(var(--page-tabs-fade-start) / 2),
-    var(--text) var(--page-tabs-fade-start),
-    var(--text) calc(100% - var(--page-tabs-fade-end)),
-    transparent calc(100% - var(--page-tabs-fade-end) / 2)
-  );
+/* A tab that would be cut is not drawn: the strip ends after the last tab
+   that fits whole, and the chevron beside it says there are more. It stays
+   in the tab order and the accessibility tree, and the arrow keys bring it
+   in; it takes no click while it is not drawn. */
+.page-tab[data-clipped] {
+  opacity: 0;
+  pointer-events: none;
 }
 
-.page-tabs[data-overflow~='start'] {
-  --page-tabs-fade-start: 24px;
-}
-
-.page-tabs[data-overflow~='end'] {
-  --page-tabs-fade-end: 24px;
-}
-
-/* The chevron at an end that hides tabs: a quiet glyph in the fade's clear
-   outer half, its click area the fade's full width and the strip's height. */
+/* The chevron at an end that hides tabs: a quiet glyph in its own room,
+   where no tab is drawn, its click area that room's width and the strip's
+   height. */
 .page-tabs-more {
   position: absolute;
   inset-block: 0;
@@ -84,7 +70,7 @@
 /* The glyph answers the pointer in a small box of its own, as a quiet
    control does: a wash under hover, the pressed wash while held. The box
    pads the glyph and pulls back by the same step, so the glyph stays where
-   it rests and the wash never reaches the fading tab beside it. */
+   it rests and the wash stays in the chevron's room. */
 .page-tabs-more > svg {
   box-sizing: content-box;
   margin: calc(-1 * var(--space-1));

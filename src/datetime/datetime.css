@@ -110,18 +110,15 @@
   color: var(--on-accent);
 }
 
-/* The time fields share one row that never wraps: hour, minute, and second
-   take equal parts of the panel's width, with a short fraction a fourth. A
-   long fraction (microseconds) takes a row of its own across all three, so
-   it never widens the days above it. */
+/* Hour, minute, and second share one row that never wraps, in equal parts
+   of the panel's width. A fraction field takes a row of its own across all
+   three, so neither its label (whatever its length in a locale) nor its
+   digits set the columns: a picker with a fraction is as wide as one
+   without. */
 .date-picker-time {
   display: grid;
   grid-template-columns: repeat(3, minmax(6ch, 1fr));
   gap: var(--space-4);
-}
-
-.date-picker-time:has(> .date-picker-field:nth-child(4) > .date-picker-input:not(.long)) {
-  grid-template-columns: repeat(4, minmax(6ch, 1fr));
 }
 
 .date-picker-field {
@@ -132,7 +129,7 @@
   color: var(--text-dim);
 }
 
-.date-picker-field:has(> .long) {
+.date-picker-field:nth-child(4) {
   grid-column: 1 / -1;
 }
 
@@ -141,18 +138,20 @@
    after this sheet. */
 .date-picker-field > .date-picker-input {
   width: 100%;
-  /* Three digits and the field's inset: four fields fit the day grid. */
+  /* Three digits and the field's inset, so the field never cuts its value. */
   min-width: 6ch;
   font-variant-numeric: tabular-nums;
   text-align: center;
 }
 
-/* A fraction field of more digits than 6ch shows whole (microseconds) is
-   as wide as its --date-picker-digits, plus a ch for the caret, its padding,
-   and its border, so it fits whether the page sizes boxes by content or
-   border. */
-.date-picker-field > .date-picker-input.long {
-  min-width: calc((var(--date-picker-digits) + 1) * 1ch + 2 * var(--space-4) + 2px);
+/* The fraction field is as wide as its --date-picker-digits, plus a ch for
+   the caret, its padding, and its border, so it fits whether the page sizes
+   boxes by content or border; it starts the row rather than stretch across
+   it, and never grows past the row. */
+.date-picker-field:nth-child(4) > .date-picker-input {
+  align-self: flex-start;
+  width: calc((var(--date-picker-digits) + 1) * 1ch + 2 * var(--space-4) + 2px);
+  max-width: 100%;
 }
 
 .date-picker-foot {

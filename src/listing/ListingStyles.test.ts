@@ -249,6 +249,61 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
+  it('draws a worded action on every state row in a tone floored on its fill', () => {
+    // `:hover` reads as a class, so the hovered row matches as it would
+    // under the pointer, and the action itself is not hovered.
+    applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
+    const row = (classes: string): string =>
+      `<div class="row ${classes}"><span class="row-meta">
+        <button class="pane-icon-act worded" type="button">Edit</button>
+      </span></div>`;
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane active"><div class="pane-list pointer">
+        ${row('cursor')}${row('marked cursor')}${row('marked')}${row('is-hovered')}${row('')}
+      </div></div>
+      <div class="pane"><div class="pane-list">${row('cursor')}</div></div>
+    </section>`;
+    const tones = [...document.querySelectorAll('button')].map((button) => colour(button));
+
+    expect(tones).toEqual([
+      'var(--accent-text)',
+      'var(--accent-text)',
+      'var(--text-on-surface)',
+      'var(--text-on-surface)',
+      'var(--text-dim)',
+      'var(--text-on-surface)'
+    ]);
+    document.body.innerHTML = '';
+  });
+
+  it("draws a state row's bar on its edge, not as an inset shadow that scrolls away", () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane active"><div class="pane-list">
+        <div class="row cursor"></div><div class="row marked"></div>
+        <div class="row marked cursor"></div><div class="row selected cursor"></div>
+      </div></div>
+      <div class="pane"><div class="pane-list"><div class="row cursor"></div></div></div>
+    </section>`;
+    const rows = [...document.querySelectorAll('.row')];
+    const value = (row: Element, name: string): string =>
+      getComputedStyle(row).getPropertyValue(name).trim();
+
+    expect(rows.map((row) => value(row, '--row-bar'))).toEqual([
+      'var(--cursor-bar)',
+      'var(--marked-bar)',
+      'var(--cursor-bar)',
+      'var(--on-selected)',
+      'transparent'
+    ]);
+    for (const row of rows) {
+      expect(value(row, 'box-shadow')).not.toMatch(/var\(--line-strong\)/);
+    }
+    // The marked cursor row's ring, which its pinned cell repeats.
+    expect(value(rows[2] as Element, '--pane-pin-ring')).toMatch(/var\(--cursor-bar\)/);
+    document.body.innerHTML = '';
+  });
+
   it('lets no cursor, mark, or pointer rule recolour a word on a selected row', () => {
     // Every element is hovered: `:hover` reads as a class each one carries,
     // so a hover rule weighs what it does and matches as it would under the

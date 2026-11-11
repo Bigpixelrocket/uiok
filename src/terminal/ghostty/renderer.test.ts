@@ -246,7 +246,8 @@ describe('renderGhosttySnapshot', () => {
       focused: false
     });
 
-    expect(strokes).toEqual(outlines === 0 ? [] : [{ style: 'rgb(200, 200, 200)', alpha: 0.5 }]);
+    // The text at half strength over the black ground, drawn solid.
+    expect(strokes).toEqual(outlines === 0 ? [] : [{ style: 'rgb(100, 100, 100)', alpha: 1 }]);
   });
 
   it('batches text around block glyphs and paints the glyphs as shapes that share edges', () => {

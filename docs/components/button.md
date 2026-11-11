@@ -45,6 +45,8 @@ import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 `.button`, `.button-primary`, `.button-tonal`, `.button-danger`, `.button-neutral`, `.button-small`, `.icon-button`, `.icon-button-small`.
 
+A toggle (a mode, a filter, a reading of a field) is not a Button: put the base sheet's `toggle-chip` class on a plain `button` with `aria-pressed`, `toggle-chip-sm` (24px) or `toggle-chip-xs` (20px, inside a row) for a smaller place. Off is an outline in `--control-border` with words in `--text-dim`; hover and press are the quiet control's; on is the one look every `aria-pressed="true"` button wears. The host sets only the chip's place, never its faces, so every toggle chip in an app reads the same and follows the library ([surface](surface.md)).
+
 ## Labels read
 
 None.

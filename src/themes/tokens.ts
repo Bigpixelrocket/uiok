@@ -110,6 +110,14 @@ const ZEBRA_TINT = 3;
 const ROW_HOVER_CONTRAST = 1.12;
 const PRESSED_CONTRAST = 1.12;
 const PRESSED_FROM_HOVER = 1.12;
+/**
+ * The least a hovered face stands apart from its resting face: the frosted
+ * wash an outlined control takes (`--hover-wash`) over every ground it rests
+ * on. A press stands PRESSED_FROM_HOVER past that.
+ */
+const HOVER_FROM_REST = 1.04;
+/** The most white the frosted hover may take before it turns a text tint. */
+const HOVER_WHITE_MAX = 70;
 
 /**
  * The least each state of a filled button stands apart from the one before
@@ -170,7 +178,10 @@ const BY_APPEARANCE: Readonly<
       /** A listing's lift off the ground: white over a light surface, the base tone over a dark one. */
       readonly rowLift: (palette: ThemePalette) => string;
       readonly glassEdge: string;
-      /** White's share in the frosted wash an outlined control takes on hover. */
+      /**
+       * White's least share in the frosted wash an outlined control takes on
+       * hover; more where that stands under HOVER_FROM_REST from a ground.
+       */
       readonly hoverWhite: number;
       /** White's share over the panel under a listing; none in a dark theme. */
       readonly fileListLift: number;
@@ -375,12 +386,39 @@ function derivedTokens(
   const zebra = mix(palette.text, ground, ZEBRA_TINT);
   // What a row sits on: a panel, the ground (a grid), and a listing.
   const rows: readonly Hex[] = [panel, ground, fileList];
-  // The frosted wash an outlined control takes on hover, over a ground.
-  const hovered = (on: Hex) => mix(WHITE, on, look.hoverWhite);
   const shares = (from: number, to: number) =>
     from <= to
       ? [...Array(to - from + 1).keys()].map((step) => from + step)
       : [...Array(from - to + 1).keys()].map((step) => from - step);
+  // The frosted wash an outlined control takes on hover: white at the
+  // appearance's share, or the least more (up to HOVER_WHITE_MAX) that
+  // stands HOVER_FROM_REST apart from every ground a control rests on. On a
+  // panel already white or nearly (GitHub Light, One Light) no white can,
+  // so the wash is the text's least tint that does, with the text kept at
+  // 4.5:1 on the hovered face.
+  // A listing's ground is already lifted by white in a light theme; where no
+  // white reaches it but white reaches the bare grounds (Solarized Light),
+  // white stays, since a text tint there would darken the hover onto the
+  // press, which the text holds to 2% black.
+  const hoverUnder: readonly Hex[] = [...bare, fileList];
+  const hoverStands = (tone: Hex, share: number, under: readonly Hex[] = hoverUnder) =>
+    under.every((on) => contrast(mix(tone, on, share), on) >= HOVER_FROM_REST);
+  const whiteHover =
+    shares(look.hoverWhite, HOVER_WHITE_MAX).find((share) => hoverStands(WHITE, share)) ??
+    shares(look.hoverWhite, HOVER_WHITE_MAX).find((share) => hoverStands(WHITE, share, bare));
+  const textHover =
+    whiteHover === undefined
+      ? (shares(2, 16).find(
+          (share) =>
+            hoverStands(palette.text, share) &&
+            hoverUnder.every(
+              (on) => contrast(palette.text, mix(palette.text, on, share)) >= TEXT_CONTRAST
+            )
+        ) ?? 4)
+      : undefined;
+  const hoverTone = textHover === undefined ? WHITE : palette.text;
+  const hoverShare = textHover ?? whiteHover ?? look.hoverWhite;
+  const hovered = (on: Hex) => mix(hoverTone, on, hoverShare);
   // Whether the text keeps 4.5:1 on `tint` at `share` over every one of `on`.
   const holds = (tint: Hex, share: number, on: readonly Hex[]) =>
     on.every((under) => contrast(palette.text, mix(tint, under, share)) >= TEXT_CONTRAST);
@@ -521,12 +559,14 @@ function derivedTokens(
   // A primary's hover and press: each moved away from its text, keeping at
   // most `keep` percent of the primary, and less until it stands FILL_STEP
   // apart from the state before it (`from`).
-  const primaryStep = (from: Hex, keep: number) =>
+  // The press stands PRESSED_FROM_HOVER from the hover, as every press does;
+  // moving away from the text keeps the text at 4.5:1 on it.
+  const primaryStep = (from: Hex, keep: number, step: number) =>
     shares(keep, 1)
       .map((share) => awayFrom(primary, onPrimary, share))
-      .find((fill) => contrast(fill, from) >= FILL_STEP) ?? awayFrom(primary, onPrimary, 1);
-  const primaryHover = primaryStep(primary, PRIMARY_HOVER_KEEP);
-  const primaryPressed = primaryStep(primaryHover, PRIMARY_PRESSED_KEEP);
+      .find((fill) => contrast(fill, from) >= step) ?? awayFrom(primary, onPrimary, 1);
+  const primaryHover = primaryStep(primary, PRIMARY_HOVER_KEEP, FILL_STEP);
+  const primaryPressed = primaryStep(primaryHover, PRIMARY_PRESSED_KEEP, PRESSED_FROM_HOVER);
 
   // The trough of a segmented choice and a progress bar: the text's tint,
   // the strongest from 8% down that keeps the accent fill at 3:1 on it over
@@ -603,6 +643,65 @@ function derivedTokens(
       TEXT_CONTRAST
     );
 
+  // A solid fill held down (a checked box or radio pressed): the least move
+  // that stands PRESSED_FROM_HOVER from the fill while the mark drawn on it
+  // keeps 4.5:1 and the fill, which also edges the box, keeps 3:1 on every
+  // ground a box rests on. First away from the text on it (darker under
+  // white text, lighter under dark text, as the pale accents of the dark
+  // themes take); where that runs out of room (a pale yellow next to white),
+  // toward the text. Where no face keeps both the mark and the grounds (the
+  // warning of One Light, Rosé Pine Dawn, and Solarized Light, which sits
+  // near 3:1 on the header with black text near 4.5:1 on it), the mark wins
+  // and the box keeps its resting edge (--check-on), which holds 3:1.
+  const boxGrounds: readonly Hex[] = [...bare, fileList];
+  const pressedFill = (fill: Hex, on: Hex) => {
+    const toward = luminance(on) > 0.5 ? WHITE : BLACK;
+    const faces = [
+      ...shares(99, 1).map((keep) => awayFrom(fill, on, keep)),
+      ...shares(99, 1).map((keep) => mix(fill, toward, keep))
+    ];
+    const steps = (face: Hex) =>
+      contrast(face, fill) >= PRESSED_FROM_HOVER && contrast(on, face) >= TEXT_CONTRAST;
+    return (
+      faces.find(
+        (face) => steps(face) && boxGrounds.every((under) => contrast(face, under) >= MARK_CONTRAST)
+      ) ??
+      faces.find(steps) ??
+      awayFrom(fill, on, 1)
+    );
+  };
+  const onDanger = tuned('--on-danger', textOnFill(danger, palette));
+  const onWarning = tuned('--on-warning', textOnFill(warning, palette));
+  const onSuccess = tuned('--on-success', textOnFill(success, palette));
+
+  // A quiet word on a listing's state rows (a hidden entry's name under the
+  // cursor, the pointer, or a mark): the tone nearest the row meta, toward
+  // the text, that keeps 4.5:1 on the cursor row, the inactive pane's
+  // cursor, a hovered row, and a marked row and the cursor on it. Where the
+  // text itself sits near 4.5:1 on those rows (Latte, Rosé Pine Dawn,
+  // Solarized Light and Dark, Tokyo Night Day, One Dark) it is the text or
+  // within a shade of it, and a quiet entry is told apart by its glyph in
+  // --control-border-strong, which keeps 3:1 on each of those rows.
+  const listingStateGrounds: readonly Hex[] = [
+    cursorRow,
+    surfaceFill,
+    ...rowHovered,
+    ...markedGrounds
+  ];
+  const textDimOnSurface =
+    shares(0, 100)
+      .map((share) => mix(palette.text, rowMeta, share))
+      .find((tone) => listingStateGrounds.every((on) => contrast(tone, on) >= TEXT_CONTRAST)) ??
+    palette.text;
+
+  // The terminal's cursor: the palette's cursor moved toward the terminal's
+  // text until it stands 3:1 from the terminal's ground, as every mark does;
+  // the cell under a block cursor is drawn in the ground's colour.
+  const terminalCursor =
+    shares(0, 100)
+      .map((share) => mix(palette.text, terminal.cursor, share))
+      .find((tone) => contrast(tone, palette.base) >= MARK_CONTRAST) ?? palette.text;
+
   const selectionCursor = awayFrom(accent, onAccent, SELECTION_CURSOR_KEEP);
   const selectionHit = awayFrom(accent, onAccent, SELECTION_HIT_KEEP);
   // Quiet words on a selected row: the on-accent text mixed toward the
@@ -628,12 +727,15 @@ function derivedTokens(
   // it, and more where that stands less than FILL_STEP apart from it, so
   // hover and press deepen away from the panel as the primary's do. The
   // text in the primary hue is floored after, at 4.5:1 on all three fills.
-  const tonalStep = (from: Hex, least: number) =>
+  const tonalStep = (from: Hex, least: number, step: number) =>
     shares(least, 100)
       .map((share) => mix(accent, from, share))
-      .find((fill) => contrast(fill, from) >= FILL_STEP) ?? accent;
-  const tonalHover = tuned('--tonal-hover', tonalStep(cursorRow, TONAL_HOVER_SHARE));
-  const tonalPressed = tuned('--tonal-pressed', tonalStep(tonalHover, TONAL_PRESSED_SHARE));
+      .find((fill) => contrast(fill, from) >= step) ?? accent;
+  const tonalHover = tuned('--tonal-hover', tonalStep(cursorRow, TONAL_HOVER_SHARE, FILL_STEP));
+  const tonalPressed = tuned(
+    '--tonal-pressed',
+    tonalStep(tonalHover, TONAL_PRESSED_SHARE, PRESSED_FROM_HOVER)
+  );
   const onTonal = tuned(
     '--on-tonal',
     legibleOn(palette.lavender, [cursorRow, tonalHover, tonalPressed], TEXT_CONTRAST)
@@ -658,9 +760,18 @@ function derivedTokens(
     pressedUnder.every((on) => contrast(palette.text, fill(on)) >= TEXT_CONTRAST);
   const blackStands = (share: number) =>
     bare.every((on) => contrast(mix(BLACK, on, share), on) >= PRESSED_CONTRAST);
+  // In a light theme, the least black from the appearance's share up to
+  // twice it that stands PRESSED_FROM_HOVER past the hovered face, which a
+  // text tint darkens where white cannot lift the panel; else the strongest
+  // from the appearance's share down that the text keeps.
+  const blackFromHover = (share: number) =>
+    bare.every((on) => contrast(mix(BLACK, on, share), hovered(on)) >= PRESSED_FROM_HOVER);
   const blackShare =
     appearance === 'light'
-      ? (shares(look.pressedBlack, 2).find((share) => textKeeps((on) => mix(BLACK, on, share))) ??
+      ? (shares(look.pressedBlack, 2 * look.pressedBlack).find(
+          (share) => blackFromHover(share) && textKeeps((on) => mix(BLACK, on, share))
+        ) ??
+        shares(look.pressedBlack, 2).find((share) => textKeeps((on) => mix(BLACK, on, share))) ??
         2)
       : shares(look.pressedBlack, 2 * look.pressedBlack).find(
           (share) => blackStands(share) && textKeeps((on) => mix(BLACK, on, share))
@@ -801,6 +912,10 @@ function derivedTokens(
     // The quietest subtext that keeps 4.5:1 on surface0 fills, the cursor
     // row, and the control trough (Latte needs the text itself).
     '--text-on-surface': textOnSurface,
+    // A quiet word on a listing's state rows (see textDimOnSurface): a
+    // hidden entry stays quieter than a plain one under the cursor, the
+    // pointer, and a mark, where the theme leaves room.
+    '--text-dim-on-surface': textDimOnSurface,
     // Separators and decorative glyphs that are never words (a crumb's
     // slash, a group heading's rule): the quietest neutral from overlay2 up
     // that keeps 3:1 on every bare ground.
@@ -891,10 +1006,11 @@ function derivedTokens(
     // listing, a panel, and the header bar.
     '--row-meta-text': rowMeta,
     // Glass: the specular hairline along a raised surface's top edge, and the
-    // frosted wash every outlined control takes on hover; a pressed outlined
-    // control darkens instead.
+    // frosted wash every outlined control takes on hover, at least
+    // HOVER_FROM_REST from rest (white, or the text's tint on a white panel;
+    // see hoverShare); a pressed outlined control darkens instead.
     '--glass-edge': look.glassEdge,
-    '--hover-wash': translucent(WHITE, look.hoverWhite),
+    '--hover-wash': translucent(hoverTone, hoverShare),
     // A pressed outlined control: black where it darkens the ground enough
     // and keeps the text, else the text's tint (see pressedWash).
     '--pressed-wash': pressedWash,
@@ -937,9 +1053,14 @@ function derivedTokens(
       TEXT_CONTRAST
     ),
     // Text on a solid status fill (a destructive key cap, a status badge).
-    '--on-danger': tuned('--on-danger', textOnFill(danger, palette)),
-    '--on-warning': tuned('--on-warning', textOnFill(warning, palette)),
-    '--on-success': tuned('--on-success', textOnFill(success, palette)),
+    '--on-danger': onDanger,
+    '--on-warning': onWarning,
+    '--on-success': onSuccess,
+    // A solid fill held down (a checked box or radio pressed), one clear
+    // step from its rest fill with its mark kept (see pressedFill).
+    '--accent-pressed': pressedFill(accent, onAccent),
+    '--danger-pressed': pressedFill(danger, onDanger),
+    '--warning-pressed': pressedFill(warning, onWarning),
 
     // Elevation by layer, strength by appearance: a raised part (a segment's
     // thumb, a knob, a lens), a popover (menus, tooltips, notices, the date
@@ -992,7 +1113,7 @@ function derivedTokens(
     // and grey ramp derive from the 16.
     '--terminal-bg': palette.base,
     '--terminal-fg': palette.text,
-    '--terminal-cursor': terminal.cursor,
+    '--terminal-cursor': terminalCursor,
     '--terminal-selection': translucent(accent, look.terminalSelection),
     // The one ink of selected text, over whatever colour the cell had: the
     // text moved until it keeps 4.5:1 on the selection over the terminal's
@@ -1152,6 +1273,10 @@ export const FIXED_TOKENS: Readonly<Record<string, string>> = {
   // The glass-edge hover every button shares: a frosted ring for outlined
   // controls and a lit top edge for filled ones.
   '--hover-frost': 'inset 0 1px 0 var(--glass-edge), inset 0 0 0 1px var(--border-strong)',
+  // The shared press of a quiet control: the pressed inset shadow and the
+  // inner hairline every press carries, laid over --pressed-wash. The
+  // hairline is 1px, as --hover-frost's ring is (the line scale's --line).
+  '--press-frost': 'var(--shadow-pressed), inset 0 0 0 1px var(--border-strong)',
   '--hover-lit': `inset 0 1px 0 ${translucent(WHITE, 40)}, inset 0 -1px 0 ${translucent(BLACK, 12)}`,
   // A disabled control's opacity (DISABLED_OPACITY), and a dragged item's
   // (DRAGGING_OPACITY), the same in every theme.
@@ -1392,7 +1517,11 @@ const BASE_TOKEN_NAMES = [
   '--data-grid-editor-cell',
   '--row-fill',
   '--check-on',
+  '--check-on-pressed',
   '--check-mark',
+  '--row-bar',
+  '--pane-edge-shift',
+  '--pane-pin-ring',
   '--update-note-rows',
   '--pager-height',
   '--menu-font-size',

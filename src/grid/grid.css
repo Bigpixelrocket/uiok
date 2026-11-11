@@ -280,6 +280,18 @@
   --check-edge: var(--control-border-strong);
 }
 
+/* A row action drawn with its word (RowIconAction's worded look) rests in
+   --text-dim, which holds 4.5:1 on the ground but not on the hover wash or
+   the marked tint: there it takes the on-surface words, floored on both.
+   The action the pointer is over, and a destructive one with the focus,
+   keep their own colours. */
+.data-grid.pointer
+  .data-grid-row:hover
+  .pane-icon-act.worded:where(:not(.lit, :hover, .danger:focus-visible)),
+.data-grid-row.marked .pane-icon-act.worded:where(:not(.lit, :hover, .danger:focus-visible)) {
+  color: var(--text-on-surface);
+}
+
 .data-grid-row.marked::before {
   position: absolute;
   inset-block: 0;
@@ -457,4 +469,14 @@
 
 .data-grid-cell.cell-binary {
   color: var(--cell-binary-text);
+}
+
+/* The cell under an open editor drops the cursor's fill, ring, and words:
+   the editor marks the place, and a panel wider than its cell that moves
+   inside the frame leaves the rest of the cell plain, as its row draws it.
+   Last, at the weight of every state rule above, so none paints over it. */
+.data-grid .data-grid-row .data-grid-cell.cursor.editing {
+  background: none;
+  box-shadow: none;
+  color: transparent;
 }

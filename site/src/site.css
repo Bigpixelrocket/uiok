@@ -149,6 +149,9 @@ a {
   height: calc(100vh - var(--site-header-height) - var(--site-legend-height));
   overflow-y: auto;
   padding: var(--space-8) var(--space-6) var(--space-12);
+  /* The current page's entry is scrolled into view (App.tsx) and rests clear
+     of the edge fades. */
+  scroll-padding-block: var(--space-12);
   background: var(--surface);
   border-right: var(--line) solid var(--border);
 }
@@ -318,7 +321,7 @@ a {
 .prose .code-frame,
 .code-block {
   margin: 0 0 var(--space-8);
-  border: var(--line) solid var(--border);
+  border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--terminal-bg);
 }
@@ -540,7 +543,8 @@ a {
   max-width: 360px;
   padding: var(--space-5) var(--space-6);
   border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-md);
+  /* A floating panel takes the menu corner, as every library menu does. */
+  border-radius: var(--radius-lg);
   background: var(--surface);
   box-shadow:
     inset 0 1px 0 var(--glass-edge),
@@ -638,7 +642,7 @@ a {
 .run-frame,
 .legend-frame {
   overflow: hidden;
-  border: var(--line) solid var(--border);
+  border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--ground);
 }

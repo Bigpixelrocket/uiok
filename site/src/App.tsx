@@ -56,6 +56,7 @@ export function App() {
   const page = PAGES.find((candidate) => candidate.route === route) ?? PAGES[0];
 
   const mainRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const shownPage = useRef(page);
 
   useEffect(() => {
@@ -69,6 +70,16 @@ export function App() {
       mainRef.current?.focus({ preventScroll: true });
     }
   }, [page]);
+
+  // The sidebar keeps the current page's entry in view: on load, on every page change, and when
+  // the narrow window's drawer opens. `nearest` leaves an entry already in view where it is, the
+  // nav's scroll padding keeps it clear of the edge fades, and the jump is instant (the nav sets
+  // no smooth scrolling), so nothing animates under reduced motion.
+  useEffect(() => {
+    const current = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (current === null || current === undefined || current.offsetParent === null) return;
+    current.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [page, menuOpen]);
 
   const verbs: readonly LegendVerb[] = useMemo(
     () => [
@@ -198,7 +209,7 @@ export function App() {
           </header>
           {/* In a narrow window the open drawer dims the page beside it; a press there closes it. */}
           <div aria-hidden="true" className="nav-scrim" onClick={() => setMenuOpen(false)} />
-          <nav aria-label="Pages" className="site-nav scroll-fade">
+          <nav aria-label="Pages" className="site-nav scroll-fade" ref={navRef}>
             {groups.map((group) => (
               <section className="nav-group" key={group}>
                 <h2 className="nav-heading overline">{group}</h2>

@@ -432,4 +432,65 @@ describe('the data grid’s cursor, sort, and edit', () => {
     expect(declaredValues(layer, 'background')).toEqual(['var(--surface)']);
     expect(declaredValues(wrapped, 'border').at(-1)).toBe('var(--line) solid var(--accent)');
   });
+
+  it('draws no cursor fill, ring, or words on the cell under an open editor', () => {
+    applyStylesheets(readStylesheet('src/grid/grid.css'));
+    render(
+      <DataGrid
+        cell={(row, column) => ({ text: `${row}-${column}` })}
+        columns={[{ label: 'name' }]}
+        copyText={() => null}
+        editor={{ row: 0, column: 0, node: <input aria-label="Edit" /> }}
+        label="Files"
+        onMarkRow={() => undefined}
+        rowCount={1}
+      />
+    );
+    const cell = screen.getByText('0-0');
+
+    fireEvent.pointerDown(cell);
+    expect(cell.className).toContain('cursor');
+    expect(cell.className).toContain('editing');
+    // declaredValues lists rules in source order; the editing rule is last and outweighs the cursor's.
+    expect(declaredValues(cell, 'box-shadow').at(-1)).toBe('none');
+    expect(declaredValues(cell, 'background').at(-1)).toBe('none');
+    expect(declaredValues(cell, 'color').at(-1)).toBe('transparent');
+    // On a marked row too, whose cursor cell paints its own tint.
+    cell.parentElement?.classList.add('marked');
+    expect(declaredValues(cell, 'background').at(-1)).toBe('none');
+  });
+
+  it('names a heading cut by its column in a tooltip, unless the caller gives a tip', () => {
+    const { rerender } = render(
+      <DataGrid
+        cell={() => ({ text: '' })}
+        columns={[{ label: 'status' }, { label: 'size', tip: 'Bytes on disk' }]}
+        copyText={() => null}
+        label="Files"
+        onSort={() => undefined}
+        rowCount={0}
+        sorts={[{ column: 0, direction: 'ascending', position: 1 }]}
+      />
+    );
+    const name = (label: string): Element =>
+      screen.getByText(label, { selector: '.data-grid-sort-name' });
+
+    expect(name('status').getAttribute('data-tooltip')).toBe('status');
+    expect(name('status').hasAttribute('data-tooltip-cut')).toBe(true);
+    expect(name('size').hasAttribute('data-tooltip')).toBe(false);
+
+    rerender(
+      <DataGrid
+        cell={() => ({ text: '' })}
+        columns={[{ label: 'status' }]}
+        copyText={() => null}
+        label="Files"
+        rowCount={0}
+      />
+    );
+    const heading = screen.getByRole('columnheader');
+
+    expect(heading.getAttribute('data-tooltip')).toBe('status');
+    expect(heading.hasAttribute('data-tooltip-cut')).toBe(true);
+  });
 });

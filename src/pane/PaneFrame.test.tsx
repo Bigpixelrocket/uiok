@@ -1,7 +1,7 @@
 import { render } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
-import { PaneStatus } from './PaneFrame.js';
+import { PanePathBar, PaneStatus } from './PaneFrame.js';
 
 describe('PaneStatus', () => {
   it('carries a summary in words whole as its tooltip, opened while a pane cuts it', () => {
@@ -22,5 +22,34 @@ describe('PaneStatus', () => {
     );
 
     expect(container.querySelector('.pane-summary')?.hasAttribute('data-tooltip')).toBe(false);
+  });
+});
+
+describe('PanePathBar', () => {
+  it('cuts every crumb in an inner box that opens its label only while it is cut', () => {
+    const { container } = render(
+      <PanePathBar heading trail={['Servers', { label: 'local', onOpen: () => {} }, 'shop']} />
+    );
+    const words = [...container.querySelectorAll('.crumb-text')];
+
+    expect(words.map((box) => box.textContent)).toEqual(['Servers', 'local', 'shop']);
+    for (const box of words) {
+      expect(box.getAttribute('data-tooltip')).toBe(box.textContent);
+      expect(box.hasAttribute('data-tooltip-cut')).toBe(true);
+    }
+    // No crumb repeats its label in a tooltip that opens whether cut or not.
+    expect(container.querySelectorAll('.crumb-label[data-tooltip]')).toHaveLength(0);
+    expect(container.querySelector('h2.crumb-label > .crumb-text')?.textContent).toBe('shop');
+  });
+
+  it("keeps a control crumb's tip on the crumb itself, open whether cut or not", () => {
+    const { container } = render(
+      <PanePathBar trail={[{ label: 'Servers', onOpen: () => {}, tip: 'Back to servers' }, 'x']} />
+    );
+    const button = container.querySelector('button.crumb-label');
+
+    expect(button?.getAttribute('data-tooltip')).toBe('Back to servers');
+    expect(button?.hasAttribute('data-tooltip-cut')).toBe(false);
+    expect(button?.querySelector('.crumb-text')?.hasAttribute('data-tooltip')).toBe(false);
   });
 });

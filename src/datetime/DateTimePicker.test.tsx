@@ -100,8 +100,9 @@ describe('DateTimePicker', () => {
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 
-  it('widens a fraction field past three digits to its digit count, and keeps a shorter one at 6ch or more', () => {
+  it('sizes every fraction field to its digit count, and keeps the hour at 6ch or more', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
+    const width = 'calc((var(--date-picker-digits) + 1) * 1ch + 2 * var(--space-4) + 2px)';
     const { rerender } = render(
       <DateTimePicker fraction={6} kind="time" label="Pick" onChange={() => undefined} value="" />
     );
@@ -110,25 +111,30 @@ describe('DateTimePicker', () => {
     const micro = screen.getByRole('textbox', { name: 'Microsecond' });
 
     expect(micro.style.getPropertyValue('--date-picker-digits')).toBe('6');
-    // declaredValues lists rules in source order, not by weight; the picker's
-    // rule outweighs the shared field's later `min-width: 0` by its scope.
-    expect(declaredValues(micro, 'min-width')).toContain(
-      'calc((var(--date-picker-digits) + 1) * 1ch + 2 * var(--space-4) + 2px)'
-    );
+    expect(declaredValues(micro, 'width')).toContain(width);
 
     rerender(
       <DateTimePicker fraction={3} kind="time" label="Pick" onChange={() => undefined} value="" />
     );
     const milli = screen.getByRole('textbox', { name: 'Millisecond' });
 
-    expect(milli.style.getPropertyValue('--date-picker-digits')).toBe('');
-    expect(declaredValues(milli, 'min-width')).toContain('6ch');
-    expect(declaredValues(milli, 'min-width')).not.toContain(
-      'calc((var(--date-picker-digits) + 1) * 1ch + 2 * var(--space-4) + 2px)'
+    expect(milli.style.getPropertyValue('--date-picker-digits')).toBe('3');
+    expect(declaredValues(milli, 'width')).toContain(width);
+    expect(declaredValues(milli, 'max-width')).toContain('100%');
+
+    rerender(
+      <DateTimePicker fraction={1} kind="time" label="Pick" onChange={() => undefined} value="" />
     );
-    expect(declaredValues(screen.getByRole('spinbutton', { name: 'Hour' }), 'min-width')).toContain(
-      '6ch'
-    );
+    // One digit still takes a two-digit field.
+    expect(
+      screen
+        .getByRole('textbox', { name: 'Millisecond' })
+        .style.getPropertyValue('--date-picker-digits')
+    ).toBe('2');
+
+    const hour = screen.getByRole('spinbutton', { name: 'Hour' });
+    expect(declaredValues(hour, 'min-width')).toContain('6ch');
+    expect(declaredValues(hour, 'width')).not.toContain(width);
   });
 
   it('marks today, zero-pads the time fields, and opens a panel placed in the window', () => {
@@ -257,9 +263,9 @@ describe('DateTimePicker', () => {
     expect(declaredValues(well, 'mask-image')).toEqual(['none']);
   });
 
-  it('keeps the time fields on one row and gives a long fraction a row of its own', () => {
+  it('keeps hour, minute, and second on one row and gives every fraction a row of its own', () => {
     applyStylesheets(readStylesheet('src/datetime/datetime.css'));
-    render(
+    const { rerender } = render(
       <DateTimePicker fraction={6} kind="time" label="Pick" onChange={() => undefined} value="" />
     );
 
@@ -270,8 +276,17 @@ describe('DateTimePicker', () => {
 
     expect(declaredValues(row, 'display')).toEqual(['grid']);
     expect(declaredValues(row, 'flex-wrap')).toEqual([]);
+    // Three columns whatever the fraction: its label never sets them.
+    expect(declaredValues(row, 'grid-template-columns')).toEqual(['repeat(3, minmax(6ch, 1fr))']);
     expect(declaredValues(hour, 'grid-column')).toEqual([]);
     expect(declaredValues(micro, 'grid-column')).toEqual(['1 / -1']);
+
+    rerender(
+      <DateTimePicker fraction={3} kind="time" label="Pick" onChange={() => undefined} value="" />
+    );
+    const milli = screen.getByRole('textbox', { name: 'Millisecond' }).parentElement as HTMLElement;
+    expect(declaredValues(milli, 'grid-column')).toEqual(['1 / -1']);
+    expect(declaredValues(row, 'grid-template-columns')).toEqual(['repeat(3, minmax(6ch, 1fr))']);
   });
 
   it('sizes a fraction field to its digits, so it never widens the time row and the panel', () => {

@@ -432,6 +432,42 @@ const RULES: readonly {
   }
 ];
 
+/** The declarations of each block, in file order. */
+function byBlock(all: readonly Declaration[]): Declaration[][] {
+  const blocks = new Map<string, Declaration[]>();
+  for (const declaration of all) {
+    const key = `${declaration.file}#${declaration.block}`;
+    blocks.set(key, [...(blocks.get(key) ?? []), declaration]);
+  }
+  return [...blocks.values()];
+}
+
+/** The divider colours, which draw a rule between parts, never a frame round one. */
+const DIVIDER = /var\(--border(?:-faint)?\)/;
+
+/**
+ * Every `border` shorthand in a divider colour that draws a whole frame: a
+ * block that rounds its corners and turns no side off. A framed surface
+ * (a card, a well, a code block, a list of items) is framed in
+ * --border-strong, as panes, menus, and the grid are; --border at 1.15:1
+ * on the floor, or --border-faint under it, reads as no frame.
+ */
+function faintFrames(all: readonly Declaration[]): Declaration[] {
+  return byBlock(all).flatMap((block) =>
+    block.some((declaration) => declaration.property === 'border-radius') &&
+    !block.some(
+      (declaration) =>
+        /^border-(?:top|right|bottom|left|block|inline)(?:-start|-end)?$/.test(
+          declaration.property
+        ) && /^(?:none|0)$/.test(declaration.value)
+    )
+      ? block.filter(
+          (declaration) => declaration.property === 'border' && DIVIDER.test(declaration.value)
+        )
+      : []
+  );
+}
+
 /** A control height token, the one a square control's width repeats. */
 const CONTROL_HEIGHT = /^var\(--control-height(?:-sm|-xs)?\)$/;
 
@@ -441,12 +477,7 @@ const CONTROL_HEIGHT = /^var\(--control-height(?:-sm|-xs)?\)$/;
  * one in `ch` for a text control's label is not a size).
  */
 function controlWidths(all: readonly Declaration[]): Declaration[] {
-  const byBlock = new Map<string, Declaration[]>();
-  for (const declaration of all) {
-    const key = `${declaration.file}#${declaration.block}`;
-    byBlock.set(key, [...(byBlock.get(key) ?? []), declaration]);
-  }
-  return [...byBlock.values()].flatMap((block) => {
+  return byBlock(all).flatMap((block) => {
     const height = block.find(
       (declaration) => declaration.property === 'height' && CONTROL_HEIGHT.test(declaration.value)
     );
@@ -461,7 +492,7 @@ function controlWidths(all: readonly Declaration[]): Declaration[] {
 }
 
 /** Every declaration that breaks a rule and no exception covers, and every exception left unused. */
-function audit(): { findings: string[]; unused: string[] } {
+function audit(): { findings: string[]; unused: string[]; frames: string[] } {
   const used = new Set<Exception>();
   const findings: string[] = [];
   const all: Declaration[] = [];
@@ -519,12 +550,16 @@ function audit(): { findings: string[]; unused: string[] } {
         (entry) => `${entry.file} ${entry.property} ${entry.value}`
       ),
       ...mixed
-    ]
+    ],
+    frames: faintFrames(all).map(
+      (declaration) =>
+        `${declaration.file}:${declaration.line} ${declaration.selector} { border: ${declaration.value} }`
+    )
   };
 }
 
 describe('scale tokens in the stylesheets', () => {
-  const { findings, unused } = audit();
+  const { findings, unused, frames } = audit();
 
   it('reads every hand-written stylesheet', () => {
     expect(SHEETS).toContain('src/tokens.css');
@@ -537,6 +572,28 @@ describe('scale tokens in the stylesheets', () => {
 
   it('keeps no exception that no longer matches a declaration', () => {
     expect(unused).toEqual([]);
+  });
+
+  it('draws a whole frame with a corner in --border-strong, not a divider colour', () => {
+    expect(frames).toEqual([]);
+  });
+
+  it('tells a frame in a divider colour from a rule and a strong frame', () => {
+    const block = (border: string, ...more: [string, string][]): Declaration[] =>
+      [['border', border], ['border-radius', 'var(--radius-md)'], ...more].map(
+        ([property = '', value = ''], line) => ({
+          file: 'a.css',
+          line,
+          block: 0,
+          selector: '.x',
+          property,
+          value
+        })
+      );
+    expect(faintFrames(block('var(--line) solid var(--border)'))).toHaveLength(1);
+    expect(faintFrames(block('var(--line) solid var(--border-faint)'))).toHaveLength(1);
+    expect(faintFrames(block('var(--line) solid var(--border-strong)'))).toEqual([]);
+    expect(faintFrames(block('var(--line) solid var(--border)', ['border-top', '0']))).toEqual([]);
   });
 
   it('catches a raw value in each guarded property', () => {

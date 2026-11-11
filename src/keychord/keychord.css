@@ -76,16 +76,16 @@
 /* A cap's tones (KeyChord's `tone` and `recording`), so a host sets an
    attribute instead of restating the cap. Each weighs two classes, over the
    plain cap and under a legend's hover and press. A chord changed from its
-   default: an accent frame on an accent wash, its foot kept. The chord
-   Return runs: the solid accent face of a dialog legend's lit cap, its foot
-   in the shade every lit cap uses. A chord that cannot change: glyphs a tone
-   down. A chord being recorded: a 1px accent outline 1px outside the frame,
-   thinner than the focus ring so the two never read as one, and the foot
-   keeps its shape. Without a cap around it a tone changes only the
-   glyph colour. */
+   default: the opaque accent ring (3:1, as it is the cap's only edge) on an
+   accent wash, its foot kept. The chord Return runs: the solid accent face
+   of a dialog legend's lit cap, its foot in the shade every lit cap uses. A
+   chord that cannot change: glyphs a tone down. A chord being recorded: a
+   1px accent outline 1px outside the frame, thinner than the focus ring so
+   the two never read as one, and the foot keeps its shape. Without a cap
+   around it a tone changes only the glyph colour. */
 :where(.keycap, .keylegend, .legend-slot, .filter-escape, .folder-menu-option, .terminal-menu-item)
   .keychord[data-tone='accent'] {
-  border-color: var(--accent-line);
+  border-color: var(--current-ring);
   background: linear-gradient(var(--accent-wash), var(--accent-wash)) var(--surface);
 }
 

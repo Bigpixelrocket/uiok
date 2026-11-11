@@ -57,7 +57,7 @@ The button opens and closes the panel. In the panel, Tab moves through its contr
 
 ## Styling
 
-`.date-picker`, `.date-picker-panel` (fixed, so no scrolling pane or dialog cuts it, at `--z-menu` in the stacking context it is drawn in), `.date-picker-head`, `.date-picker-days`, `.date-picker-week`, `.date-picker-weekday`, `.date-picker-day` (`.outside`, `.today`, `.current`), `.date-picker-time` (one row that never wraps: hour, minute, second, and a short fraction in equal columns; a long fraction on a row of its own across them), `.date-picker-field`, `.date-picker-input` (`.long`; also the shared `.field.field-sm`, its value two digits), `.date-picker-foot`. A fraction field of more than three digits is `.long` and sets `--date-picker-digits` to its digit count, which its width reads.
+`.date-picker`, `.date-picker-panel` (fixed, so no scrolling pane or dialog cuts it, at `--z-menu` in the stacking context it is drawn in), `.date-picker-head`, `.date-picker-days`, `.date-picker-week`, `.date-picker-weekday`, `.date-picker-day` (`.outside`, `.today`, `.current`), `.date-picker-time` (hour, minute, and second on one row that never wraps, in equal columns; a fraction field on a row of its own across them, so a picker with a fraction is as wide as one without, whatever the length of its label), `.date-picker-field`, `.date-picker-input` (`.long` for more than three digits; also the shared `.field.field-sm`, its value two digits). A fraction field sets `--date-picker-digits` to its digit count (two at least), which its width reads. `.date-picker-foot`.
 
 ## Labels read
 

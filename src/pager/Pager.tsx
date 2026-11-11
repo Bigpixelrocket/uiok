@@ -31,10 +31,25 @@ export interface PagerProps {
   /**
    * The pager's height, to match the row it sits in: `inline` (20px steps
    * and menu) in a status line or row, the default; `small` (24px) in a
-   * toolbar of 24px fields and selects.
+   * toolbar of 24px fields and selects; `regular` (28px) in a dialog,
+   * beside its 28px fields.
    */
-  readonly size?: 'inline' | 'small';
+  readonly size?: 'inline' | 'small' | 'regular';
 }
+
+/** The pager's class at each size. */
+const PAGER_CLASS: Readonly<Record<NonNullable<PagerProps['size']>, string>> = {
+  inline: 'pager',
+  small: 'pager pager-small',
+  regular: 'pager pager-regular'
+};
+
+/** The page menu's class at each size: the shared field of that height. */
+const MENU_CLASS: Readonly<Record<NonNullable<PagerProps['size']>, string>> = {
+  inline: 'field field-xs pager-page',
+  small: 'field field-sm pager-page',
+  regular: 'field pager-page'
+};
 
 /** Each step's icon. */
 const STEP_ICONS: Readonly<Record<PagerStep, typeof ChevronLeft>> = {
@@ -94,15 +109,12 @@ export function Pager({
   };
 
   return (
-    <nav
-      aria-label={labels.pages(kind)}
-      className={size === 'small' ? 'pager pager-small' : 'pager'}
-    >
+    <nav aria-label={labels.pages(kind)} className={PAGER_CLASS[size]}>
       {step('begin', 0, !first)}
       {step('previous', page - 1, !first)}
       <select
         aria-label={labels.page(kind)}
-        className={size === 'small' ? 'field field-sm pager-page' : 'field field-xs pager-page'}
+        className={MENU_CLASS[size]}
         onChange={(event) => onPage(Number(event.currentTarget.value) - 1)}
         value={page + 1}
       >

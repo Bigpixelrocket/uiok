@@ -472,7 +472,10 @@
   min-height: calc(2 * var(--line-height-compact) + 2 * var(--space-3) + 2 * var(--line));
   max-height: calc(8 * var(--line-height-compact) + 2 * var(--space-3) + 2 * var(--line));
   margin: 0;
-  padding: var(--space-3) var(--space-4);
+  /* Text starts 12px in, level with the cards and fields above and below
+     it; the block padding stays one line's band so the height formulas
+     above hold. */
+  padding: var(--space-3) var(--space-6);
   overflow: auto;
   list-style: none;
   border: var(--line) solid var(--border-strong);

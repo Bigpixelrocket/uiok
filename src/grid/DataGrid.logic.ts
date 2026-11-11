@@ -155,13 +155,23 @@ export const resizedWidth = (start: number, delta: number): number =>
   Math.max(MINIMUM_COLUMN_WIDTH, Math.round(start + delta));
 
 /**
- * A column's first width from what it holds: its label and up to the first
- * rows' texts, at `charWidth` pixels a character, between 60 and 360 pixels.
+ * A column's first width from what it holds: its label, with `labelRoom`
+ * pixels beside it for what the heading draws there (a sort mark), and up
+ * to the first rows' texts, at `charWidth` pixels a character, between 60
+ * and 360 pixels.
  */
-export function initialWidth(label: string, samples: readonly string[], charWidth: number): number {
-  const longest = Math.max(label.length, ...samples.map((text) => Math.min(text.length, 60)));
+export function initialWidth(
+  label: string,
+  samples: readonly string[],
+  charWidth: number,
+  labelRoom = 0
+): number {
+  const longest = Math.max(
+    label.length * charWidth + labelRoom,
+    ...samples.map((text) => Math.min(text.length, 60) * charWidth)
+  );
 
-  return Math.min(360, Math.max(60, Math.round(longest * charWidth + 20)));
+  return Math.min(360, Math.max(60, Math.round(longest + 20)));
 }
 
 /**

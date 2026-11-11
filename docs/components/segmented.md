@@ -38,6 +38,8 @@ One Tab stop, the checked segment. Right and Down choose the next segment, Left 
 
 `.segmented-choice`, `.segmented-choice-option` (`[aria-checked='true']` is raised).
 
+A host that cannot use the component, such as a row of presets inside a menu whose arrow keys step them, draws the row with these classes on plain buttons: `segmented-choice` on the row, `segmented-choice-option` on each button, and `aria-pressed="true"` on the chosen one. It takes the same trough, raised segment, hover, and press, so a change to the component reaches it; the host keeps only its own sizing and cursor.
+
 - The trough is `--control-track` ringed in `--control-border`; the chosen segment is raised on the surface with a 1px `--control-border-strong` ring (3:1 on the trough) drawn inside it. The track pads by its own ring plus 2px, so 2px of trough shows on every side of the chosen segment, the same as between two segments, the glass edge, and `--shadow-raised`. Unchosen labels are `--text-on-surface`, which keeps 4.5:1 on the trough.
 - Every segment has one weight, chosen or not, so a change of choice never shifts a label.
 - Each segment is a flex box: an icon passed in `render` is drawn 12px (`--icon-sm`) whatever size it was given, centred on the words with the Button's 6px gap. Pass the icon and the words as siblings, with no spaces between them.

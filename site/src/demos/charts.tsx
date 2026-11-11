@@ -1,7 +1,9 @@
 /**
  * Each chart over sample series: a day of requests (drag across it to pick a
  * range), time per state, price against weight (drag to zoom), and a week of
- * sales drawn as any result chart type, then each chart with nothing to draw.
+ * sales drawn as any result chart type; then edge cases (a pie of more slices
+ * than series colours, a lone point between two gaps) and each chart with
+ * nothing to draw.
  */
 
 import { useId, useMemo, useState } from 'react';
@@ -16,6 +18,7 @@ import {
   type ResultChartType
 } from '@bigpixelrocket/uiok/charts';
 
+import { DemoState, DemoStates } from '../DemoStates';
 import { seeded } from './data';
 
 const HOUR = 3_600_000;
@@ -43,6 +46,33 @@ const REQUESTS = (() => {
   }));
   return series;
 })();
+
+/** An hourly series with a lone reading between two gaps, drawn as a dot. */
+const LONE_POINT = [
+  {
+    label: 'GET',
+    points: Array.from({ length: 25 }, (_, hour) => ({
+      at: FROM + hour * HOUR,
+      value: hour >= 10 && hour <= 14 && hour !== 12 ? null : 20 + ((hour * 9) % 14)
+    }))
+  }
+];
+
+/** Twelve kinds of hours: past the eight series colours, slices are hatched and numbered. */
+const KINDS = [
+  'Mon',
+  'Tue',
+  'Wed',
+  'Thu',
+  'Fri',
+  'Sat',
+  'Sun',
+  'Holiday',
+  'Overtime',
+  'Night',
+  'Weekend',
+  'On call'
+];
 
 const SLICES = [
   { label: 'running', value: 14.2 },
@@ -161,6 +191,32 @@ export function ChartsDemo() {
           />
         </div>
       </section>
+      <DemoStates minCell="320px" title="Edge cases">
+        <DemoState label="Twelve slices">
+          <ResultChart
+            categories={KINDS}
+            height={260}
+            series={[{ name: 'hours', values: KINDS.map((_, index) => 4 + ((index * 7) % 11)) }]}
+            stacked={false}
+            title="Hours by kind"
+            type="pie"
+            width={460}
+            xLabel="kind"
+            xValues={[]}
+            yLabel="hours"
+          />
+        </DemoState>
+        <DemoState label="A lone point between two gaps">
+          <LineChart
+            format={(value) => count.format(value)}
+            from={FROM}
+            label="Requests per hour"
+            series={LONE_POINT}
+            timeText={(at) => clock.format(at)}
+            to={TO}
+          />
+        </DemoState>
+      </DemoStates>
       <section>
         <h3 className="demo-subhead">With no data</h3>
         <LineChart

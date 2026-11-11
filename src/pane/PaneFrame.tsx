@@ -1,6 +1,6 @@
 import { Fragment, type ReactElement, type ReactNode } from 'react';
 
-import { cutTooltip, describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
+import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
 
 /** A crumb that is a control: a press goes to the place it names. */
 export interface PaneCrumb {
@@ -35,8 +35,11 @@ export interface PanePathBarProps {
  * The row a pane opens with: a path bar, in the listing look (under
  * `.listing-root`). Its crumbs say where the pane is; one handed as a
  * `PaneCrumb` is a control that goes there. A narrow pane, or a longer
- * language, cuts a crumb with an ellipsis, its whole text in its tooltip
- * (a control's `tip`, when it has one, says what a press does instead). Facts and controls sit at the bar's end (`.path-tools`): a state
+ * language, cuts a crumb with an ellipsis: the crumbs before the last give
+ * way first, the last one only once they have. A cut crumb opens its whole
+ * text as a tooltip, and a crumb in full view opens none (a control's
+ * `tip`, when it has one, says what a press does instead, cut or not).
+ * Facts and controls sit at the bar's end (`.path-tools`): a state
  * as `.path-facts`, compact verbs as `QuietAction` and `.path-star` icon
  * buttons.
  */
@@ -69,19 +72,31 @@ export function PanePathBar({
               )}
               <span className={last ? 'crumb here' : 'crumb'}>
                 {typeof crumb === 'string' ? (
-                  <Label className="crumb-label" {...tooltip(label)}>
-                    {label}
+                  <Label className="crumb-label">
+                    {/* The words are cut in a block box, where the
+                        ellipsis draws; the tooltip opens only while they
+                        are cut, since a whole label needs no repeat. */}
+                    <span className="crumb-text" {...cutTooltip(label)}>
+                      {label}
+                    </span>
                   </Label>
                 ) : (
                   <button
                     className="crumb-label"
                     onClick={crumb.onOpen}
                     type="button"
-                    {...(crumb.tip === undefined ? tooltip(label) : describedTooltip(crumb.tip))}
+                    {...describedTooltip(crumb.tip)}
                   >
                     {/* The words are cut in their own box, so the button's
-                        hit area can reach past its drawn edge. */}
-                    <span className="crumb-text">{label}</span>
+                        hit area can reach past its drawn edge. A tip says
+                        what a press does, so it stands alone; without one
+                        the box shows its whole label while it cuts it. */}
+                    <span
+                      className="crumb-text"
+                      {...(crumb.tip === undefined ? cutTooltip(label) : {})}
+                    >
+                      {label}
+                    </span>
                   </button>
                 )}
                 {last && here}

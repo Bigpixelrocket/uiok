@@ -163,10 +163,11 @@
 /* The caps are the shared key cap (keychord.css). A legend that shows one
    layer at a time sets data-layer to the held modifier, and data-fn while fn
    is held, so its caps take the accent with the layer: accent words on the
-   accent wash, framed in the accent line. KeyLegendStrip lists every layer
-   at once and leaves both at rest. */
+   accent wash, framed in the opaque accent ring (3:1, as the frame is the
+   cap's only edge). KeyLegendStrip lists every layer at once and leaves both
+   at rest. */
 .keylegend:is(:not([data-layer='none']), [data-fn='true']) .keychord {
-  border-color: var(--accent-line);
+  border-color: var(--current-ring);
   background: var(--accent-wash);
   color: var(--accent-text);
 }

@@ -68,9 +68,17 @@ export function middleCut(name: string): { readonly head: string; readonly tail:
 const CLOSING_QUOTE = /^["”“»«]/u;
 
 /**
+ * An opening quote that starts a quoted name: straight, or the opening mark
+ * of the languages `labelParts` reads (“ „ « » ”).
+ */
+const OPENING_QUOTE = /["“„«»”]$/u;
+
+/**
  * A line built from words and names, each `{ name }` cut in its middle:
  * `nameParts(['"', { name }, '" already exists'])`. A cut name keeps its
- * closing quote in its tail, so a quote is never cut on its own. A short
+ * opening quote in its head and its closing quote in its tail, so the words
+ * before the name never take its opening quote away with their cut, and
+ * both quotes stay in view however far the line gives way. A short
  * name, which is never cut in its middle, joins the words around it, so a
  * line that names only short names is words that give way at their end:
  * the words after the name go first, and the name itself only once they
@@ -106,9 +114,19 @@ export function nameParts(segments: readonly (string | { readonly name: string }
 
     if (cut.head === '') {
       addText(cut.tail);
-    } else {
-      parts.push({ kind: 'name', ...cut });
+      continue;
     }
+
+    const last = parts.at(-1);
+    const quote = last?.kind === 'text' ? (OPENING_QUOTE.exec(last.text)?.[0] ?? '') : '';
+
+    if (last?.kind === 'text' && quote !== '') {
+      const text = last.text.slice(0, last.text.length - quote.length);
+
+      if (text === '') parts.pop();
+      else parts[parts.length - 1] = { kind: 'text', text };
+    }
+    parts.push({ kind: 'name', head: quote + cut.head, tail: cut.tail });
   }
 
   return parts;
@@ -125,8 +143,8 @@ const QUOTED = /"([^"]+)"|“([^”]+)”|„([^“”]+)[“”]|«([^»]+)»|�
 
 /**
  * A line that quotes a name (an operation's label, `"name" already
- * exists`), its first quoted name cut in its middle, its closing
- * quote kept with the name's tail, and the rest of the line, later names
+ * exists`), its first quoted name cut in its middle, its opening quote
+ * kept with the name's head and its closing quote with its tail, and the rest of the line, later names
  * included, after it as words that give way at their end:
  * `Copying "Better.Call.Saul…CtrlHD.mkv" to "Seed…`. A
  * line that quotes no name gives way at its end, as plain text does.

@@ -6,7 +6,8 @@
    stylesheet's quiet-control recipe; the menu is the shared field look. */
 .pager {
   /* The steps' height: an inline pager's (a status line or a row) unless the
-     toolbar size (Pager size="small") matches it to the 24px fields there. */
+     toolbar size (Pager size="small") matches it to the 24px fields there,
+     or the dialog size (size="regular") to a dialog's 28px fields. */
   --pager-height: var(--control-height-xs);
   display: flex;
   align-items: center;
@@ -15,6 +16,10 @@
 
 .pager.pager-small {
   --pager-height: var(--control-height-sm);
+}
+
+.pager.pager-regular {
+  --pager-height: var(--control-height);
 }
 
 .pager-step {
@@ -60,9 +65,9 @@ button.pager-step:focus-visible {
   outline-offset: var(--focus-offset-flush);
 }
 
-/* The page menu: the shared field (.field-xs, or .field-sm in the toolbar
-   size) draws its height,
-   edge, chevron, text, and focus; the pager only keeps it from shrinking. */
+/* The page menu: the shared field (.field-xs, .field-sm in the toolbar size,
+   or .field in the dialog size) draws its height, edge, chevron, text, and
+   focus; the pager only keeps it from shrinking. */
 .pager-page {
   flex: none;
 }

@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
+import { THEMES } from '../../themes/catalog.js';
+import { themeTokens } from '../../themes/tokens.js';
 import {
+  TERMINAL_MARK_CONTRAST,
   TERMINAL_MIN_CONTRAST,
   legibleForeground,
   parseTranslucentColor,
+  quietMark,
   selectedForeground,
   terminalContrast
 } from './contrast.logic.js';
@@ -108,4 +112,49 @@ describe('selectedForeground', () => {
 
     expect(terminalContrast(ink, paper)).toBeGreaterThanOrEqual(TERMINAL_MIN_CONTRAST);
   });
+});
+
+describe('quietMark', () => {
+  it('draws the text at half strength where that stands 3:1 from the ground', () => {
+    expect(quietMark({ r: 200, g: 200, b: 200 }, { r: 0, g: 0, b: 0 })).toEqual({
+      r: 100,
+      g: 100,
+      b: 100
+    });
+  });
+
+  it('strengthens toward the text where half strength would fade under 3:1', () => {
+    const paper = { r: 239, g: 241, b: 245 };
+    const ink = { r: 76, g: 79, b: 105 };
+    const mark = quietMark(ink, paper);
+
+    expect(terminalContrast(mark, paper)).toBeGreaterThanOrEqual(TERMINAL_MARK_CONTRAST);
+    expect(terminalContrast(mark, paper)).toBeLessThan(terminalContrast(ink, paper));
+  });
+});
+
+describe('the cursor in every theme', () => {
+  const rgb = (hex: string) => ({
+    r: Number.parseInt(hex.slice(1, 3), 16),
+    g: Number.parseInt(hex.slice(3, 5), 16),
+    b: Number.parseInt(hex.slice(5, 7), 16)
+  });
+
+  it.each(THEMES.map((theme) => [theme.id, theme] as const))(
+    '%s: the block, the text under it, and the unfocused outline keep their floors',
+    (_id, theme) => {
+      const tokens = themeTokens(theme) as Readonly<Record<string, string>>;
+      const ground = rgb(tokens['--terminal-bg'] ?? '');
+      const text = rgb(tokens['--terminal-fg'] ?? '');
+      const cursor = rgb(tokens['--terminal-cursor'] ?? '');
+
+      expect(terminalContrast(cursor, ground)).toBeGreaterThanOrEqual(TERMINAL_MARK_CONTRAST);
+      expect(terminalContrast(legibleForeground(ground, cursor), cursor)).toBeGreaterThanOrEqual(
+        TERMINAL_MIN_CONTRAST
+      );
+      expect(terminalContrast(quietMark(text, ground), ground)).toBeGreaterThanOrEqual(
+        TERMINAL_MARK_CONTRAST
+      );
+    }
+  );
 });

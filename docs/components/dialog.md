@@ -189,7 +189,8 @@ The message is the dialog's description, so a screen reader reads it with the ti
 
 - The title is the question being asked, so it wraps to a second line rather than lose its end, and the strip grows with it; past two lines it ends in an ellipsis and its tooltip holds the whole question.
 - The order is the platform's: the leave verb at the left edge, the action alone at the right, lit. A `danger` action is lit red; a `warning` question rules the strip amber and lights its action in the accent, since its yes is the safe choice.
-- The path list shows every path whole, in monospace. A long path breaks only after a slash, its later lines hang under the first, and the list shows eight lines before it scrolls, framed in `--border-strong` like every framed well, with the shared scroll fade at a cut edge (the fade covers the list's content, never its frame).
+- Pick the tone by what the yes destroys. `danger` (the default) is for an action that destroys something saved: a delete, a drop, an overwrite. Throwing away input the user has not saved yet (leave with unsaved changes, discard an edit) destroys nothing saved, so it is `warning`; pass the tone, since the default would paint it red.
+- The path list shows every path whole, in monospace, its text 12px in from the frame as in every framed well. A long path breaks only after a slash, its later lines hang under the first, and the list shows eight lines before it scrolls, framed in `--border-strong` like every framed well, with the shared scroll fade at a cut edge (the fade covers the list's content, never its frame).
 
 ### Deletes that cannot be undone
 

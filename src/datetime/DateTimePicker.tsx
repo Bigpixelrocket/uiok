@@ -36,9 +36,9 @@ const TIME_FIELDS = [
 ] as const;
 
 /**
- * The most fraction digits a time field's own width shows whole; a longer
- * fraction field (microseconds) widens to its digit count (`.long`, with
- * `--date-picker-digits`).
+ * The most fraction digits a millisecond field holds; a longer fraction
+ * field (microseconds) is `.long`. Every fraction field sits on a row of its
+ * own, as wide as its digits (`--date-picker-digits`).
  */
 const SHORT_FRACTION = 3;
 
@@ -332,14 +332,10 @@ export function DateTimePicker({
                         fraction: event.currentTarget.value.replace(/\D/gu, '').slice(0, fraction)
                       })
                     }
-                    // A text field's own width is 20 characters unless sized,
-                    // which would set every time column and the panel's width.
+                    // A text field's own width is 20 characters unless sized;
+                    // the stylesheet sets it from its digits.
                     size={Math.max(2, fraction)}
-                    style={
-                      fraction > SHORT_FRACTION
-                        ? ({ '--date-picker-digits': fraction } as CSSProperties)
-                        : undefined
-                    }
+                    style={{ '--date-picker-digits': Math.max(2, fraction) } as CSSProperties}
                     value={base.fraction.padEnd(fraction, '0').slice(0, fraction)}
                   />
                 </label>

@@ -28,7 +28,7 @@ import {
   type ScrollDirection
 } from './DataGrid.logic.js';
 import { ICON_SM } from '../icon/index.js';
-import { describedTooltip } from '../tooltip/Tooltip.logic.js';
+import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
 
 /** Every row's height, so the grid can place any row without measuring it. */
 const ROW_HEIGHT = 22;
@@ -36,6 +36,13 @@ const ROW_HEIGHT = 22;
 const FALLBACK_VIEWPORT = 400;
 /** A character's width in the grid's monospace face, for first column widths. */
 const CHAR_WIDTH = 7.8;
+/**
+ * The room a sortable column's heading keeps beside its label for the sort
+ * mark: the chevron (ICON_SM), its gap (`--space-2`), and one digit of its
+ * place in a sort of several, so a heading sized to its label is not cut
+ * when it is sorted.
+ */
+const SORT_MARK_ROOM = ICON_SM + 4 + CHAR_WIDTH;
 /** How far a header moves under the pointer before it is dragged rather than clicked. */
 const DRAG_THRESHOLD = 5;
 /** How long a link's click waits for a second click that edits its cell instead. */
@@ -299,13 +306,15 @@ export function DataGrid({
               { length: Math.min(rowCount, 20) },
               (_, row) => cell(row, index)?.text ?? ''
             ),
-            CHAR_WIDTH
+            CHAR_WIDTH,
+            onSort === undefined ? 0 : SORT_MARK_ROOM
           )
         ])
       )
   );
   const widthOf = (column: DataGridColumn, index: number): number =>
-    widths.get(keyOf(column, index)) ?? initialWidth(column.label, [], CHAR_WIDTH);
+    widths.get(keyOf(column, index)) ??
+    initialWidth(column.label, [], CHAR_WIDTH, onSort === undefined ? 0 : SORT_MARK_ROOM);
   // The rows drawn last while they still cover where the grid stands, a fresh window otherwise.
   const held = committed.current;
   const { from, to } =
@@ -802,7 +811,13 @@ export function DataGrid({
                 onDoubleClick={() => onHeaderDoubleClick?.(index)}
                 onPointerDown={(event) => onHeadingPointerDown(event, index)}
                 role="columnheader"
-                {...describedTooltip(column.tip ?? null)}
+                // A caller's tip tells more than the label; without one, a
+                // label cut by its column shows itself whole, only while cut.
+                {...(column.tip === undefined
+                  ? onSort === undefined
+                    ? cutTooltip(column.label)
+                    : {}
+                  : describedTooltip(column.tip))}
               >
                 {onSort === undefined ? (
                   <span className="data-grid-label">{column.label}</span>
@@ -820,7 +835,12 @@ export function DataGrid({
                     }}
                     type="button"
                   >
-                    <span className="data-grid-sort-name">{column.label}</span>
+                    <span
+                      className="data-grid-sort-name"
+                      {...(column.tip === undefined ? cutTooltip(column.label) : {})}
+                    >
+                      {column.label}
+                    </span>
                     {mark !== undefined && (
                       <span aria-hidden className="data-grid-arrow">
                         {mark.direction === 'ascending' ? (

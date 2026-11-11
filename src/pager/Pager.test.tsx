@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
 import { Pager } from './Pager.js';
 
@@ -90,8 +91,17 @@ describe('Pager', () => {
     expect(screen.getByRole('combobox').classList).toContain('field-xs');
     unmount();
 
-    render(<Pager onPage={() => undefined} page={0} pages={3} size="small" />);
+    const small = render(<Pager onPage={() => undefined} page={0} pages={3} size="small" />);
     expect(screen.getByRole('navigation').classList).toContain('pager-small');
     expect(screen.getByRole('combobox').classList).toContain('field-sm');
+    small.unmount();
+
+    // A dialog's 28px fields: the regular field and 28px steps.
+    applyStylesheets(readStylesheet('src/pager/pager.css'));
+    render(<Pager onPage={() => undefined} page={0} pages={3} size="regular" />);
+    const nav = screen.getByRole('navigation');
+    expect(nav.className).toBe('pager pager-regular');
+    expect(declaredValues(nav, '--pager-height').at(-1)).toBe('var(--control-height)');
+    expect(screen.getByRole('combobox').className).toBe('field pager-page');
   });
 });

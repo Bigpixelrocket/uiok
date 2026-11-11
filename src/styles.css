@@ -96,6 +96,38 @@
   );
 }
 
+/* A meter (a password's strength, a quota): the slider's trough, a crisp
+   bar on --control-track inside the --control-border hairline, filled in
+   the tone of its value: success at the optimum, warning below it, danger
+   at the least good. */
+meter {
+  height: var(--space-2);
+  appearance: none;
+}
+
+meter::-webkit-meter-bar {
+  height: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 var(--line) var(--control-border);
+  background: var(--control-track);
+}
+
+meter::-webkit-meter-optimum-value {
+  border-radius: var(--radius-pill);
+  background: var(--success);
+}
+
+meter::-webkit-meter-suboptimum-value {
+  border-radius: var(--radius-pill);
+  background: var(--warning);
+}
+
+meter::-webkit-meter-even-less-good-value {
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+}
+
 ::placeholder {
   color: var(--text-placeholder);
   opacity: 1;
@@ -310,8 +342,51 @@
      to full text; the track already draws the frame.
    - Pressed (both kinds, and the text-like controls: strip links, grid sort
      labels, palette levels): the face sinks, as Button's does, inside a
-     hairline in --border-strong, so the press holds by shape where the
-     wash is faint, with words in full text. */
+     hairline in --border-strong (--press-frost), so the press holds by
+     shape where the wash is faint, with words in full text.
+
+   A host's own control joins a recipe by class instead of restating it,
+   so it follows every later change to the look: .quiet-control takes the
+   quiet control's hover and press, .quiet-track-item the track item's
+   (wash, then press), and .toggle-chip (below) both for an outlined toggle.
+   The class carries states only, never a rest face, so the host keeps its
+   own size and shape (docs/components/surface.md). */
+
+/* An outlined toggle chip (a mode, a filter, a reading of a field): off, a
+   --control-border outline on a clear ground with words in --text-dim; on
+   (aria-pressed="true"), the one look of "on" below. Hover and press are
+   the quiet control's (above). Heights follow the place, as a field's do:
+   28px, .toggle-chip-sm 24px, .toggle-chip-xs 20px inside a row; the corner
+   follows the height. Before the recipes, so each of them wins over it. */
+.toggle-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  height: var(--control-height);
+  margin: 0;
+  padding: 0 var(--space-4);
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-dim);
+  font: var(--font-weight-regular) var(--font-size-small) / 1 var(--font-ui);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.toggle-chip-sm {
+  height: var(--control-height-sm);
+}
+
+.toggle-chip-xs {
+  height: var(--control-height-xs);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
 :where(
   .pager-step,
   .legend-slot,
@@ -328,7 +403,10 @@
   .data-grid-sort,
   .palette-level,
   .settings-sidebar-page,
-  .settings-sidebar-subsection
+  .settings-sidebar-subsection,
+  .quiet-control,
+  .quiet-track-item,
+  .toggle-chip
 ):where(button, a[href], [role='button'], [role='tab'], [role='radio']) {
   transition: var(--transition-control);
 }
@@ -342,7 +420,9 @@
     .path-star,
     .crumb-label,
     .settings-sidebar-page,
-    .settings-sidebar-subsection
+    .settings-sidebar-subsection,
+    .quiet-control,
+    .toggle-chip
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
     :not(
       :disabled,
@@ -358,13 +438,13 @@
   color: var(--text);
 }
 
-:where(.page-tab, .segmented-choice-option, .date-picker-day, .pane-sort.sortable):where(
-    button,
-    a[href],
-    [role='button'],
-    [role='tab'],
-    [role='radio']
-  ):where(
+:where(
+    .page-tab,
+    .segmented-choice-option,
+    .date-picker-day,
+    .pane-sort.sortable,
+    .quiet-track-item
+  ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
     :not(
       :disabled,
       [aria-disabled='true'],
@@ -394,7 +474,10 @@
     .data-grid-sort,
     .palette-level,
     .settings-sidebar-page,
-    .settings-sidebar-subsection
+    .settings-sidebar-subsection,
+    .quiet-control,
+    .quiet-track-item,
+    .toggle-chip
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
     :not(
       :disabled,
@@ -405,9 +488,7 @@
       [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
     )
   ):active {
-  box-shadow:
-    var(--shadow-pressed),
-    inset 0 0 0 var(--line) var(--border-strong);
+  box-shadow: var(--press-frost);
   background: var(--pressed-wash);
   color: var(--text);
 }
@@ -416,9 +497,10 @@
    filter chip, an open menu's chip): the current item's tint, ring, and
    words, the one look of "on" for a button. The hover and press recipes,
    the shared ones above and each component's own, leave an on toggle out,
-   so it keeps its look under the pointer; a host rule that paints the button's rest face with
-   more weight leaves the on state to this rule (:not([aria-pressed='true'])).
-   A toggle that mirrors a held key keeps its own solid accent. */
+   so it keeps its look under the pointer; a host rule that paints the
+   button's rest face with more weight leaves the on state to this rule
+   (:not([aria-pressed='true'])). A toggle that mirrors a held key keeps
+   its own solid accent. */
 :where(button)[aria-pressed='true'] {
   box-shadow: inset 0 0 0 var(--line) var(--current-ring);
   background: var(--current-bg);

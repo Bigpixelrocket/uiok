@@ -48,7 +48,7 @@
       "--group-dot-ring": "inset 0 0 0 1px rgb(76 79 105 / 28%)",
       "--terminal-bg": "#eff1f5",
       "--terminal-fg": "#4c4f69",
-      "--terminal-cursor": "#dc8a78",
+      "--terminal-cursor": "#b87b74",
       "--terminal-selection": "rgb(29 98 235 / 22%)",
       "--terminal-ansi-0": "#5c5f77",
       "--terminal-ansi-1": "#d20f39",
@@ -158,7 +158,12 @@
       "--cell-binary-text": "#0e5b5f",
       "--surface-recessed": "color-mix(in srgb, var(--surface) 45%, transparent)",
       "--terminal-selection-text": "#4c4f69",
-      "--accent-wash-pressed": "#b9c7e4"
+      "--accent-wash-pressed": "#b9c7e4",
+      "--press-frost": "var(--shadow-pressed), inset 0 0 0 1px var(--border-strong)",
+      "--text-dim-on-surface": "#4d506a",
+      "--accent-pressed": "#1b5bdb",
+      "--danger-pressed": "#c30e35",
+      "--warning-pressed": "#965f14"
     }
   },
   "catppuccin-mocha": {
@@ -312,14 +317,19 @@
       "--dimmed-opacity": "0.45",
       "--chart-area-opacity": "0.16",
       "--control-border-strong": "#9399b2",
-      "--primary-pressed": "#b2bbff",
+      "--primary-pressed": "#b3bcff",
       "--tonal-pressed": "#435276",
       "--well-shade": "rgb(0 0 0 / 24%)",
       "--row-hover": "rgb(205 214 244 / 6%)",
       "--cell-binary-text": "#94e2d5",
       "--surface-recessed": "color-mix(in srgb, var(--surface) 45%, transparent)",
       "--terminal-selection-text": "#cdd6f4",
-      "--accent-wash-pressed": "rgb(137 180 250 / 25%)"
+      "--accent-wash-pressed": "rgb(137 180 250 / 25%)",
+      "--press-frost": "var(--shadow-pressed), inset 0 0 0 1px var(--border-strong)",
+      "--text-dim-on-surface": "#abb2cd",
+      "--accent-pressed": "#9abffb",
+      "--danger-pressed": "#f59bb4",
+      "--warning-pressed": "#fcf0d5"
     }
   }
 }

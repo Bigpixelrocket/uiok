@@ -72,7 +72,8 @@
   direction: ltr;
 }
 
-/* The closing quote of a right-to-left name, after its head. */
+/* The quotes of a right-to-left name: its opening quote before its tail,
+   its closing quote after its head. */
 .name-cut-quote {
   flex: none;
 }

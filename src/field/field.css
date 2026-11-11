@@ -28,13 +28,14 @@
    growing (border plus a 1px ring on the edge), round a slider's knob
    rather than its box; aria-invalid="true" outlines in --danger,
    data-tone="warning" in --warning, and data-tone="accent" (a value
-   changed from its default) in --accent-line; a press sinks the control
+   changed from its default) in --accent; a press sinks the control
    and, on a switch, stretches its knob. Disabled fades once, never twice:
    a field or switch by the base rule, a label with its control as one; an
    empty check box on its own is not faded but drawn flat in its outline,
    so a column of disabled boxes still reads. A check or switch that is on
    takes the accent, the one "on" colour of every toggle; a check may take
-   data-tone="danger" or "warning" for a choice in that tone. The drawn
+   data-tone="danger" or "warning" for a choice in that tone, and an
+   invalid check (aria-invalid="true") takes the danger tone. The drawn
    marks are borders and gradients, not images, so no content policy
    blocks them. */
 
@@ -143,10 +144,12 @@
   outline-color: var(--warning);
 }
 
-/* A value changed from its default (an override): the outline in the
-   accent's line, quieter than the 2px focus edge it never imitates. */
+/* A value changed from its default (an override): a 1px outline in the
+   accent, floored at 3:1 on every ground a field sits on, so the marked
+   field is never fainter than a plain one; it stays apart from the focus
+   edge by weight (focus is the border plus a 1px ring). */
 .field[data-tone='accent']:not([aria-invalid='true']) {
-  border-color: var(--accent-line);
+  border-color: var(--accent);
 }
 
 /* Read-only: the value is there to copy, not to change; the well loses its
@@ -221,6 +224,7 @@ select.field option {
    also matches :indeterminate, and must stay empty. */
 :is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))) {
   --check-on: var(--accent);
+  --check-on-pressed: var(--accent-pressed);
   --check-mark: var(--on-accent);
 
   /* 14px: the box sits on a 13px label's x-height the way an icon of
@@ -273,8 +277,13 @@ select.field option {
   background: var(--check-on);
 }
 
-/* On, the fill takes the lit edge a filled button takes on hover; a press
-   sinks it as a press sinks a button, the fill kept. */
+/* On, the fill takes the lit edge a filled button takes on hover; held,
+   it takes the tone's pressed fill, a step of at least 1.12:1 from the
+   rest fill that the token rules derive as a button's press is (darker in
+   light themes, lighter on near-black grounds). On a 14px box an inset
+   shadow would cover most of the face and cancel a lighter step, so the
+   fill alone says "held". The edge keeps the rest fill, which holds 3:1
+   on every ground where a held fill may not. */
 :is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):is(
     :checked,
     [type='checkbox']:indeterminate
@@ -287,33 +296,34 @@ select.field option {
     :checked,
     [type='checkbox']:indeterminate
   ):active:not(:disabled) {
-  box-shadow: var(--shadow-pressed);
+  box-shadow: none;
+  background-color: var(--check-on-pressed);
 }
 
 /* Tones: a choice whose effect is destructive (danger) or needs a second
-   look (warning) outlines in the tone when off and fills in it when on. */
-:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class])))[data-tone='danger'] {
-  --check-on: var(--danger);
-  --check-mark: var(--on-danger);
-}
-
+   look (warning) outlines in the tone when off and fills in it when on. An
+   invalid choice takes the danger tone whether it is off or on, so a box
+   that is on still says it is wrong; invalid wins over a warning tone. */
 :is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class])))[data-tone='warning'] {
   --check-on: var(--warning);
+  --check-on-pressed: var(--warning-pressed);
   --check-mark: var(--on-warning);
 }
 
-:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class])))[data-tone]:not(
-    :checked,
-    [type='checkbox']:indeterminate
-  ) {
-  border-color: var(--check-on);
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):is(
+  [data-tone='danger'],
+  [aria-invalid='true']
+) {
+  --check-on: var(--danger);
+  --check-on-pressed: var(--danger-pressed);
+  --check-mark: var(--on-danger);
 }
 
-:is(
-    .check,
-    :where(input:is([type='checkbox'], [type='radio']):not([class]))
-  )[aria-invalid='true']:not(:checked, [type='checkbox']:indeterminate) {
-  border-color: var(--danger);
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):is(
+    [data-tone],
+    [aria-invalid='true']
+  ):not(:checked, [type='checkbox']:indeterminate) {
+  border-color: var(--check-on);
 }
 
 /* Disabled, one fade and never two. The base rule leaves a check box out:
@@ -454,9 +464,7 @@ select.field option {
    desktop switch does while held, so a held switch reads apart from a
    hovered one on a dark knob as on a light one. */
 .switch:active:not(:disabled) {
-  box-shadow:
-    var(--shadow-pressed),
-    inset 0 0 0 var(--line) var(--border-strong);
+  box-shadow: var(--press-frost);
 }
 
 .switch:active:not(:disabled)::before {

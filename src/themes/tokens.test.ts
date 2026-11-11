@@ -460,6 +460,9 @@ const ON = {
   'the tonal fill on hover': ['var(--tonal-hover)'],
   'the tonal fill pressed': ['var(--tonal-pressed)'],
   'the accent': ['var(--accent)'],
+  'the accent held': ['var(--accent-pressed)'],
+  'the danger fill held': ['var(--danger-pressed)'],
+  'the warning fill held': ['var(--warning-pressed)'],
   'the danger fill': ['var(--danger)'],
   'the warning fill': ['var(--warning)'],
   'the success fill': ['var(--success)'],
@@ -650,7 +653,19 @@ const PAIRINGS = [
     'a match on the selection'
   ]),
   ...pairs('var(--on-selected-dim)', 4.5, ['the selection', 'the cursor on the selection']),
-  ...pairs('var(--on-accent)', 4.5, ['the accent']),
+  ...pairs('var(--on-accent)', 4.5, ['the accent', 'the accent held']),
+  ...pairs('var(--on-danger)', 4.5, ['the danger fill held']),
+  ...pairs('var(--on-warning)', 4.5, ['the warning fill held']),
+  // A hidden entry's name on a listing's state rows stays quieter than a
+  // plain one where the theme leaves room, and keeps 4.5:1 there.
+  ...pairs('var(--text-dim-on-surface)', 4.5, [
+    'the cursor row',
+    'the inactive cursor',
+    'a hovered row over the ground',
+    'a hovered row over a listing',
+    'a hovered zebra row',
+    ...MARKED_GROUNDS
+  ]),
   ...pairs('var(--on-primary)', 4.5, [
     'the primary',
     'the primary on hover',
@@ -726,6 +741,25 @@ const PAIRINGS = [
     'the current item over the header'
   ]),
   ...pairs('var(--cursor-bar)', 3, ['the cursor row']),
+  // A checked box or radio held down: its pressed fill keeps 3:1 wherever
+  // a box rests. The warning's may not (see 'holds a checked box'), and the
+  // box keeps its resting edge in every tone.
+  ...['accent', 'danger'].flatMap((fill) =>
+    pairs(`var(--${fill}-pressed)`, 3, ['ground', 'panel', 'header', 'listing'])
+  ),
+  // State marks on every row state (an idle or busy ring, a status dot's
+  // ring, a glyph on the other pane's cursor): the row's edge hook
+  // (--control-border-strong, above) or --text-on-surface, both at 3:1.
+  ...pairs('var(--text-on-surface)', 3, [
+    'the cursor row',
+    'the inactive cursor',
+    'a hovered row over the ground',
+    'a hovered row over a listing',
+    'a hovered zebra row',
+    ...MARKED_GROUNDS
+  ]),
+  // The block cursor, and the cell drawn in the ground's colour under it.
+  ...pairs('var(--terminal-cursor)', 3, ['the terminal']),
   // Marks on a selected row (a state dot's ring, an idle ring, the busy
   // spinner, a checkbox's edge) take the on-selected colour, which keeps
   // 3:1 on the selection and the cursor on it.
@@ -843,6 +877,86 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('%s', (_id, the
     }
   });
 
+  it('hovers every control one clear step from rest', () => {
+    const step = (hovered: Hex, rest: Hex) => contrast(hovered, rest);
+    // The frosted wash over every ground an outlined control rests on. A
+    // listing in Solarized Light is lifted by white already and no white
+    // lifts it further; a text tint there would darken the hover onto the
+    // press, which its text holds to 2% black.
+    for (const [on, under] of [
+      ['the ground', ground],
+      ['a panel', surface],
+      ['the header', header],
+      ['a listing', fileList],
+      ['the track', layered(['var(--bg-panel)', 'var(--control-track)'])]
+    ] as const) {
+      const least =
+        theme.id === 'solarized-light' &&
+        on !== 'the ground' &&
+        on !== 'a panel' &&
+        on !== 'the header'
+          ? 1.02
+          : 1.04;
+      expect(
+        step(over('var(--hover-wash)', under, tokens), under),
+        `hover over ${on}`
+      ).toBeGreaterThanOrEqual(least);
+    }
+    // A destructive control's hover, and a chip lit by the accent wash.
+    // Where the text caps the strong accent wash at the wash's own share
+    // (Solarized Light and Tokyo Night Day, whose text leaves no room for
+    // more accent), the chip's hover is carried by the frosted ring alone.
+    const washCapped = tokens['--accent-wash-strong'] === tokens['--accent-wash'];
+    for (const under of [ground, surface]) {
+      expect(
+        step(over('var(--danger-wash)', under, tokens), under),
+        'danger'
+      ).toBeGreaterThanOrEqual(1.04);
+      if (washCapped) continue;
+      expect(
+        step(
+          over('var(--accent-wash-strong)', under, tokens),
+          over('var(--accent-wash)', under, tokens)
+        ),
+        'accent wash'
+      ).toBeGreaterThanOrEqual(1.04);
+    }
+    expect(washCapped).toBe(['solarized-light', 'tokyo-night-day'].includes(theme.id));
+    expect(
+      step(solid('--scrollbar-thumb-hover'), solid('--scrollbar-thumb')),
+      'thumb'
+    ).toBeGreaterThanOrEqual(1.04);
+  });
+
+  it('holds a checked box one clear step from rest while held, its mark kept', () => {
+    for (const fill of ['--accent', '--danger', '--warning']) {
+      expect(contrast(solid(`${fill}-pressed`), solid(fill)), fill).toBeGreaterThanOrEqual(1.12);
+    }
+    // The held warning keeps 3:1 on every ground a box rests on, except
+    // where its black mark leaves no darker face and the header no lighter
+    // one; there the box's resting edge (--warning) holds the boundary.
+    const faint = [ground, surface, header, fileList].some(
+      (under) => ratio('--warning-pressed', under) < 3
+    );
+    expect(faint).toBe(['one-light', 'rose-pine-dawn', 'solarized-light'].includes(theme.id));
+  });
+
+  it('outlines an accent-toned field at least as strongly as a plain one', () => {
+    // Within 2%: One Light's accent stands 4.30:1 on the ground where its
+    // control border stands 4.35:1, a difference no eye can see, and the
+    // hue marks the field besides.
+    for (const under of [ground, surface]) {
+      expect(ratio('--accent', under)).toBeGreaterThanOrEqual(
+        ratio('--control-border', under) * 0.98
+      );
+    }
+  });
+
+  it('keeps a hidden entry no louder than a plain one on a state row', () => {
+    const row = solid('--cursor-row-bg');
+    expect(ratio('--text-dim-on-surface', row)).toBeLessThanOrEqual(ratio('--text', row));
+  });
+
   it('presses an outlined control one clear step from rest and from hover', () => {
     // The face of a quiet control at rest (the ground under it), hovered
     // (the frosted wash), and pressed (--pressed-wash): 1.12:1 from rest,
@@ -899,13 +1013,14 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('%s', (_id, the
         );
       }
     }
-    // The primary and tonal fills hold their full step.
+    // The primary and tonal fills hold their full step: hover 1.10:1 from
+    // rest, and a press 1.12:1 from hover, as every press stands.
     for (const [rest, hover, pressed] of [
       ['--primary', '--primary-hover', '--primary-pressed'],
       ['--tonal', '--tonal-hover', '--tonal-pressed']
     ] as const) {
       expect(contrast(solid(hover), solid(rest)), hover).toBeGreaterThanOrEqual(1.1);
-      expect(contrast(solid(pressed), solid(hover)), pressed).toBeGreaterThanOrEqual(1.1);
+      expect(contrast(solid(pressed), solid(hover)), pressed).toBeGreaterThanOrEqual(1.12);
     }
   });
 

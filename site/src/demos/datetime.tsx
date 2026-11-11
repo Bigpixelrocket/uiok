@@ -1,7 +1,7 @@
 /**
  * Date, time, and date-time fields with the picker beside each; any value
- * can still be typed. Under them, a time to the microsecond and a picker
- * that is disabled.
+ * can still be typed. Under them, a time to the microsecond, a picker that
+ * is disabled, and the regular size beside a dialog's 28px field.
  */
 
 import { useState } from 'react';
@@ -14,6 +14,7 @@ export function DateTimeDemo() {
   const [alarm, setAlarm] = useState('07:30:00');
   const [start, setStart] = useState('2026-11-07 09:15:00.250');
   const [stamp, setStamp] = useState('2026-11-07 09:15:00.250000');
+  const [run, setRun] = useState('2026-11-21 06:00:00');
   return (
     <div className="demo-stack datetime-demo">
       <div className="demo-row">
@@ -91,6 +92,25 @@ export function DateTimeDemo() {
           label="Pick the locked date"
           onChange={() => undefined}
           value="2026-11-01"
+        />
+      </div>
+      <h3 className="demo-subhead">In a dialog</h3>
+      <div className="demo-row">
+        <span className="demo-label">Runs at</span>
+        <input
+          aria-label="Runs at"
+          className="field demo-input wide"
+          onChange={(event) => setRun(event.target.value)}
+          spellCheck={false}
+          value={run}
+        />
+        <DateTimePicker
+          format={(kind, parts, fraction) => formatPicker(kind, parts, fraction, ' ')}
+          kind="datetime"
+          label="Pick the run time"
+          onChange={setRun}
+          size="regular"
+          value={run}
         />
       </div>
     </div>
