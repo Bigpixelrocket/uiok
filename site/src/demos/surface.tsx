@@ -138,7 +138,8 @@ export function SurfaceDemo() {
         <code>{PATH}</code>
       </div>
 
-      <DemoStates title="Joining a recipe">
+      {/* Three columns, one row per recipe: rest, hover, pressed. */}
+      <DemoStates minCell="200px" title="Joining a recipe">
         {STATES.map(({ name, force }) => (
           <DemoState key={`quiet-${name}`} label={`quiet-control, ${name.toLowerCase()}`}>
             <Forced force={force}>

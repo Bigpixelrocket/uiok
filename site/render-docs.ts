@@ -57,10 +57,34 @@ function siteHref(href: string, from: string): string {
   return `${REPOSITORY}${resolved}${anchor === undefined ? '' : `#${anchor}`}`;
 }
 
+/**
+ * An inline code run short enough to keep whole: no space and at most 28
+ * characters, such as a token or attribute name. site.css keeps it on one
+ * line, so a phone-width line does not break it after a hyphen
+ * (`--control-track` into `--` and `control-track`); a longer run still wraps.
+ */
+const CODE_WORD = /^\S{1,28}$/;
+
+const HTML_ESCAPES: Readonly<Record<string, string>> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+};
+
 /** Markdown text as HTML, its links rewritten for the doc at `from`. */
 function markdownHtml(text: string, from: string): string {
   const marked = new Marked({
     gfm: true,
+    renderer: {
+      // Returning false leaves any other run to marked's own codespan.
+      codespan({ text: code }) {
+        if (!CODE_WORD.test(code)) return false;
+        const escaped = code.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char] ?? char);
+        return `<code class="code-word">${escaped}</code>`;
+      }
+    },
     walkTokens: (token) => {
       if (token.type === 'link') {
         const link = token as Tokens.Link;

@@ -5,8 +5,8 @@ The frame around a listing: a path bar it opens with, a status line it closes wi
 ## Example
 
 ```tsx
-import { Listing, RowCursorContext } from '@bigpixelrocket/uiok/listing';
-import { NO_MAIN_VERBS, PanePathBar, PaneStatus, paneKeyAction, QuietAction, usePaneKeys, verbControl, paneRow } from '@bigpixelrocket/uiok/pane';
+import { Listing, RowCursorContext, StateMark } from '@bigpixelrocket/uiok/listing';
+import { NO_MAIN_VERBS, PanePathBar, PaneStatus, PathFact, paneKeyAction, QuietAction, usePaneKeys, verbControl, paneRow } from '@bigpixelrocket/uiok/pane';
 
 function View() {
   const panes = usePaneKeys({
@@ -34,6 +34,9 @@ function View() {
       <aside className={panes.activePane === 'sidebar' ? 'pane active' : 'pane'}>…</aside>
       <div className={panes.activePane === 'main' ? 'pane active' : 'pane'} ref={panes.mainRef}>
         <PanePathBar heading trail={['Servers', 'local']}>
+          <PathFact mark={<StateMark tone="warning" word="" />} tone="warning">
+            2 changes not applied
+          </PathFact>
           <QuietAction icon={Play} label="Start local" lit onClick={start} pageVerb="toggle" word="Start" />
         </PanePathBar>
         <div className="pane-list" data-pane-home tabIndex={-1}>
@@ -51,6 +54,7 @@ function View() {
 ## Frame
 
 - `PanePathBar` (`PanePathBarProps`): `trail` (crumbs, broadest first; a string is a label, a `PaneCrumb` `{ label, onOpen, tip? }` is a button), `mark` (a glyph in the root crumb), `heading` (the last label crumb is the page's `h2`), `here` (drawn inside the last crumb, such as a `CurrentDot`), and children at the bar's end (`.path-tools`). The crumbs before the last give way first, and the last one only once they have, down to one character and its ellipsis, so a long name never runs under the pane's frame. Every crumb cuts its words in an inner `.crumb-text` box, where the ellipsis draws. A crumb cut short opens its whole text as a tooltip, and a crumb shown whole opens none. A button crumb with a `tip` shows the tip instead, cut or not.
+- `PathFact` (`PathFactProps`): a page's state at the bar's end, as one of its children: `tone` (`'danger'` red, `'warning'` amber, none for a plain fact), `mark` (drawn before the words, such as `<StateMark tone="danger" word="" />`), and its words as children (a string). The words cut with an ellipsis once the trail has given what it can, and the whole fact opens as a tooltip only while it is cut.
 - `PaneStatus` (`PaneStatusProps`): the summary as children, and `tools` (compact controls at the line's end), which the summary gives way to. A summary in words that a narrow pane cuts carries itself whole as its tooltip.
 
 ## Compact controls
@@ -92,17 +96,21 @@ DOM helpers: `paneRows`, `paneRow`, `verbControl(root, verb, 'verb' | 'page-verb
 
 ## Styling
 
-`.pane` (`.active` wears the accent on its frame), `.pane-path-row`, `.pane-crumbs`, `.crumb` (`.root`, `.home`, `.here`, `.brief`), `.crumb-label` (a crumb's words in `.crumb-text`), `.crumb-separator`, `.path-tools`, `.path-facts` (`.danger`, `.warning`; its words in `.path-fact-text` to let them cut), `.path-star`, `.pane-act` (`.lit`, `.danger`; its verb in `.pane-act-word`), `.pane-icon-act` (`.worded`, `.danger`), `.pane-list`, `.pane-status`, `.pane-summary`, `.pane-status-tools`.
+`.pane` (`.active` wears the accent on its frame), `.pane-path-row`, `.pane-crumbs` (`--pane-crumb-count`, `data-cramped`), `.crumb` (`.root`, `.home`, `.here`, `.brief`), `.crumb-label` (a crumb's words in `.crumb-text`), `.crumb-separator`, `.path-tools`, `.path-facts` (`.danger`, `.warning`; its words in `.path-fact-text`, as `PathFact` writes it), `.path-star`, `.pane-act` (`.lit`, `.danger`; its verb in `.pane-act-word`), `.pane-icon-act` (`.worded`, `.danger`), `.pane-list`, `.pane-status`, `.pane-summary`, `.pane-status-tools`.
 
-In a path bar too narrow for everything, the trail gives way first, down to room for two cut crumbs, and is clipped at its own box past that (not while a crumb's menu is open, `aria-expanded="true"`), so it never runs under the tools. Then a fact cuts its words, if they sit in `.path-fact-text`; give that box `cutTooltip(words)` so the whole fact opens as a tooltip only while it is cut. Words laid straight into `.path-facts` cannot cut, so such a fact keeps its whole width:
+In a path bar too narrow for everything, things give way in this order:
+
+1. The trail, down to a floor that holds every crumb cut to one character and its ellipsis, the slashes between them, a root's mark, and the current dot. `PanePathBar` sets the crumb count on `.pane-crumbs` as `--pane-crumb-count`; a trail drawn without it keeps a floor of two cut crumbs. Past its floor the trail is clipped at its own box (not while a crumb's menu is open, `aria-expanded="true"`), so it never runs under the tools.
+2. A fact, down to its mark and one character and its ellipsis. `PathFact` writes it with its tooltip. Words laid straight into `.path-facts` (alone or after a `StateMark`) cut too, but carry no tooltip, so use `PathFact` (or its markup, the words in `.path-fact-text` with `cutTooltip(words)`).
+3. Only when even that does not fit, a trail deeper than its row can hold: `PanePathBar` measures what the tools would lose, lowers the trail's floor by that much (`--pane-crumb-fit`), and marks the trail `data-cramped`. Its crumbs then end on its end, so the last crumbs, where the pane is, stay, and the broadest run past its start edge, which fades over `--space-6` instead of cutting a glyph. No control leaves the row. A right-to-left bar keeps step 1's floor.
 
 ```tsx
-<span className="path-facts danger">
-  <StateMark tone="danger" word="" />
-  <span className="path-fact-text" {...cutTooltip(fact)}>
-    {fact}
-  </span>
-</span>
+<PanePathBar heading here={<CurrentDot label="Open" />} trail={[projects, site, 'web']}>
+  <PathFact mark={<StateMark tone="danger" word="" />} tone="danger">
+    Stopped: port 5173 in use
+  </PathFact>
+  <QuietAction icon={Play} label="Start web" lit onClick={start} word="Start" />
+</PanePathBar>
 ```
 
 `QuietAction` draws its verb in `.pane-act-word`. A host that shows its actions as icons alone hides that box the way the base sheet's `.visually-hidden` does (out of flow and clipped, never `font-size: 0` or `display: none`), so the button keeps its tooltip and `aria-label` and only the drawn word goes.

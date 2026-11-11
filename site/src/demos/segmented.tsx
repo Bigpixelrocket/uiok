@@ -36,7 +36,7 @@ export function SegmentedDemo() {
   const [view, setView] = useState<(typeof VIEWS)[number]>('list');
   const [size, setSize] = useState<(typeof SIZES)[number]>('m');
   return (
-    <div className="demo-stack">
+    <div className="demo-stack segmented-demo">
       <div className="demo-row">
         <span className="demo-label" id={viewLabel}>
           View

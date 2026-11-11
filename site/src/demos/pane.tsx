@@ -4,10 +4,23 @@
  * switch panes, Return opens a server or a service's logs, ⌘⏎ starts or
  * stops the cursor's service. The legend under it reads what the cursor
  * row offers. Click into the demo to give it the keys; they return to the
- * page when the focus leaves it.
+ * page when the focus leaves it. Under it, path bars with a fact in each
+ * tone, at full width and in a 300px pane, where the trail gives way and
+ * the fact cuts its words with the whole fact as a tooltip.
  */
 
-import { Copy, FileText, Play, RefreshCw, Server, Square, Trash2 } from 'lucide-react';
+import {
+  Copy,
+  FileText,
+  Folder,
+  Play,
+  RefreshCw,
+  RotateCw,
+  Server,
+  Square,
+  Star,
+  Trash2
+} from 'lucide-react';
 import { useState } from 'react';
 
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
@@ -18,6 +31,7 @@ import {
   column,
   CurrentDot,
   iconLinksColumn,
+  linksColumn,
   Listing,
   Row,
   RowCursorContext,
@@ -27,10 +41,12 @@ import {
   NO_MAIN_VERBS,
   PanePathBar,
   PaneStatus,
+  PathFact,
   paneKeyAction,
   paneRow,
   QuietAction,
   RowIconAction,
+  RowLinkLookContext,
   usePaneKeys,
   verbControl,
   type MainVerbs,
@@ -87,6 +103,79 @@ const readKey = (event: KeyboardEvent): Action | null => {
   // Tab keeps its native walk, so the keys can always leave the demo.
   return action !== null && ['move', 'enter', 'toggle'].includes(action.kind) ? action : null;
 };
+
+/**
+ * Three path bars, each with a fact: a danger fact beside a star and a lit
+ * action, a warning fact beside a refresh, and a plain one. `narrow` sets
+ * them in 300px panes.
+ */
+function PathFacts({
+  narrow = false,
+  say
+}: {
+  readonly narrow?: boolean;
+  readonly say: (what: string) => void;
+}) {
+  const [starred, setStarred] = useState(false);
+  const pane = narrow ? 'pane demo-pane demo-facts-narrow' : 'pane demo-pane';
+  return (
+    <div className="listing-root demo-facts">
+      <section className={`${pane} active`}>
+        <PanePathBar
+          here={<CurrentDot label="Open project" />}
+          trail={[
+            { label: 'Projects', onOpen: () => say('went to Projects'), tip: 'Go to Projects' },
+            { label: 'site', onOpen: () => say('went to site') },
+            'web'
+          ]}
+        >
+          <PathFact mark={<StateMark tone="danger" word="" />} tone="danger">
+            Stopped: port 5173 in use
+          </PathFact>
+          <button
+            aria-label={starred ? 'Remove from favourites' : 'Add to favourites'}
+            aria-pressed={starred}
+            className="path-star"
+            onClick={() => setStarred(!starred)}
+            type="button"
+          >
+            <Star aria-hidden fill={starred ? 'currentColor' : 'none'} size={ICON_SM} />
+          </button>
+          <QuietAction
+            icon={Play}
+            label="Start web"
+            lit
+            onClick={() => say('started web')}
+            word="Start"
+          />
+        </PanePathBar>
+      </section>
+      <section className={pane}>
+        <PanePathBar
+          trail={[{ label: 'Servers', onOpen: () => say('went to Servers') }, 'staging']}
+        >
+          <PathFact mark={<StateMark tone="warning" word="" />} tone="warning">
+            2 changes not applied
+          </PathFact>
+          <button
+            aria-label="Refresh staging"
+            className="path-star"
+            onClick={() => say('refreshed staging')}
+            type="button"
+          >
+            <RefreshCw aria-hidden size={ICON_SM} />
+          </button>
+        </PanePathBar>
+      </section>
+      <section className={pane}>
+        {/* A glyph in the root crumb's slot (`mark`). */}
+        <PanePathBar mark={<Folder aria-hidden size={ICON_SM} />} trail={['Folders']}>
+          <PathFact mark={<StateMark tone="ready" word="" />}>Synced</PathFact>
+        </PanePathBar>
+      </section>
+    </div>
+  );
+}
 
 /** The pane page's demo. */
 export function PaneDemo() {
@@ -276,9 +365,10 @@ export function PaneDemo() {
                   { label: 'Port', align: 'right' },
                   { label: 'Logs', hidden: true },
                   { label: 'Action', hidden: true },
+                  { label: 'Restart', hidden: true },
                   { label: 'Remove', hidden: true }
                 ]}
-                grid={`var(--icon-column) minmax(10ch, 1fr) ${column(10)} ${column(6)} ${column(7)} ${ACTION_COLUMN} ${iconLinksColumn(1, 0)}`}
+                grid={`var(--icon-column) minmax(10ch, 1fr) ${column(10)} ${column(6)} ${column(7)} ${ACTION_COLUMN} ${linksColumn('both', '', ['Restart'])} ${iconLinksColumn(1, 0)}`}
                 title="Service"
               >
                 {rows.map((service) => (
@@ -312,6 +402,18 @@ export function PaneDemo() {
                         verb="toggle"
                         word={service.running ? 'Stop' : 'Start'}
                       />
+                    </Cell>
+                    <Cell className="pane-action-cell">
+                      {/* A row link that names its verb, drawn with its word. */}
+                      <RowLinkLookContext value="both">
+                        <RowIconAction
+                          icon={RotateCw}
+                          label={`Restart ${service.name}`}
+                          onClick={() => setSaid(`restarted ${service.name} on ${open}`)}
+                          softDisabled={!service.running}
+                          word="Restart"
+                        />
+                      </RowLinkLookContext>
                     </Cell>
                     <Cell className="pane-hover-cell">
                       <RowIconAction
@@ -348,6 +450,10 @@ export function PaneDemo() {
       <code className="demo-readout">
         {said === '' ? 'click into the panes, then use the keys' : said}
       </code>
+
+      <h3 className="demo-subhead">Path facts</h3>
+      <PathFacts say={setSaid} />
+      <PathFacts narrow say={setSaid} />
     </div>
   );
 }

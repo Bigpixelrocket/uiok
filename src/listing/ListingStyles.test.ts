@@ -423,14 +423,51 @@ describe('the listing states', () => {
     const text = getComputedStyle(document.querySelector('.path-fact-text') as Element);
 
     expect(crumbs.flexShrink).toBe('1000000');
-    expect(crumbs.minWidth).toBe('min(100%, calc(var(--pane-row-inset) + 10ch))');
+    // The floor holds every crumb cut (the count PanePathBar sets), or two
+    // crumbs' worth without a count, and drops to what the row leaves it.
+    expect(crumbs.minWidth).toMatch(/^min\(\s*100%,\s*var\(--pane-crumb-fit, 100%\),/);
+    expect(crumbs.minWidth).toContain('var(--pane-crumb-room)');
+    expect(crumbs.minWidth).toContain('(var(--pane-row-inset) + 10ch)');
+    expect(crumbs.getPropertyValue('--pane-crumb-room')).toContain(
+      'var(--pane-crumb-count)*(2ch + var(--space-4))'
+    );
+    expect(sheet).toMatch(/@property --pane-crumb-count \{\n\s*syntax: '<integer>';/);
     expect(crumbs.overflowX).toBe('clip');
     expect([text.overflow, text.textOverflow]).toEqual(['hidden', 'ellipsis']);
+    // A cramped trail keeps its last crumbs and fades its start.
+    document.querySelector('.pane-crumbs')?.setAttribute('data-cramped', '');
+    expect(getComputedStyle(document.querySelector('.pane-crumbs') as Element).justifyContent).toBe(
+      'flex-end'
+    );
+    expect(getComputedStyle(document.querySelector('.pane-crumbs') as Element).maskImage).toContain(
+      'transparent'
+    );
     // A crumb's open menu sits inside the trail; the trail clips nothing then.
     document.querySelector('.crumb-label')?.setAttribute('aria-expanded', 'true');
     expect(getComputedStyle(document.querySelector('.pane-crumbs') as Element).overflowX).not.toBe(
       'clip'
     );
+    expect(getComputedStyle(document.querySelector('.pane-crumbs') as Element).maskImage).toBe(
+      'none'
+    );
+    document.body.innerHTML = '';
+  });
+
+  it('lets a fact written as bare words cut too, its mark set in the line', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-path-row">
+      <div class="path-tools"><span class="path-facts danger"><span class="pane-state"></span>Stopped</span></div>
+    </div></section>`;
+    const fact = getComputedStyle(document.querySelector('.path-facts') as Element);
+    const mark = getComputedStyle(document.querySelector('.pane-state') as Element);
+
+    expect([fact.display, fact.overflow, fact.textOverflow]).toEqual([
+      'inline-block',
+      'hidden',
+      'ellipsis'
+    ]);
+    expect(fact.minWidth).toContain('calc-size(max-content');
+    expect([mark.verticalAlign, mark.marginInlineEnd]).toEqual(['middle', 'var(--space-3)']);
     document.body.innerHTML = '';
   });
 

@@ -315,6 +315,12 @@ a {
   box-decoration-break: clone;
 }
 
+/* A short run with no space (a token or attribute name) stays whole, so a
+   phone-width line never breaks it after a hyphen (render-docs.ts marks it). */
+.prose code.code-word {
+  white-space: nowrap;
+}
+
 /* A code block: the frame draws the border and the ground, and the pre inside
    it scrolls sideways under the library's edge fade, which would fade a
    border of the scroller's own (render-docs.ts frames each fenced block). */
@@ -488,6 +494,12 @@ a {
   min-width: 72px;
   color: var(--text-dim);
   font: var(--font-size-small) var(--font-ui);
+}
+
+/* The Segmented demo's longest label ("Plain buttons") is wider than the
+   shared column, so its column is widened to keep every control on one line. */
+.segmented-demo .demo-label {
+  min-width: 80px;
 }
 
 .demo-readout {
@@ -699,6 +711,34 @@ a {
 .pane-demo .pane-list {
   flex: 1;
   overflow: auto;
+}
+
+/* The Listing demo's later panes. The well's pane sizes to its output, so
+   no line stands cut at its foot; an empty block fills its pane, so that
+   pane is given a height; the pinned-column listing is wider than its 360px
+   pane, so its list scrolls sideways. */
+.demo-well-pane > .pane-well-column {
+  flex: 1;
+}
+
+.demo-empty-pane {
+  height: 320px;
+}
+
+.demo-pin {
+  width: min(360px, 100%);
+}
+
+/* The Pane demo's path bars, one pane each, stacked; the narrow set stands
+   at 300px, the width a quarter-width pane reaches. */
+.demo-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.demo-facts-narrow {
+  width: min(300px, 100%);
 }
 
 .charts-demo section {

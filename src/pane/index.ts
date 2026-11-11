@@ -19,9 +19,11 @@ export {
 export {
   PanePathBar,
   PaneStatus,
+  PathFact,
   type PaneCrumb,
   type PanePathBarProps,
-  type PaneStatusProps
+  type PaneStatusProps,
+  type PathFactProps
 } from './PaneFrame.js';
 export {
   isTabStop,
