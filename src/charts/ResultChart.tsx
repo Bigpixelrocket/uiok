@@ -13,7 +13,8 @@ import {
 import { useLabels } from '../labels/UiokProvider.js';
 import { VisuallyHidden } from '../VisuallyHidden.js';
 import { createValueStore, type ValueStore } from '../store/ValueStore.js';
-import { pieArcs, pieTagRoom, pieTags } from './Pie.logic.js';
+import { pieArcs, pieFills, pieTagRoom, pieTags, sliceFill, type SliceFill } from './Pie.logic.js';
+import { SliceHatches, slicePaint, sliceSwatch } from './PieFill.js';
 import {
   STACKABLE_CHART_TYPES,
   cutLabel,
@@ -66,9 +67,12 @@ function ResultChartReadout({
   type,
   categories,
   series,
-  width
+  width,
+  pieFillOf
 }: {
   readonly hover: ValueStore<Hovered | null>;
+  /** A pie's fill for each category it draws, for the read-out's swatch. */
+  readonly pieFillOf: ReadonlyMap<number, SliceFill>;
   readonly type: ResultChartType;
   readonly categories: readonly string[];
   readonly series: readonly ChartSeries[];
@@ -109,7 +113,11 @@ function ResultChartReadout({
           <span>
             <span
               className="chart-swatch"
-              style={{ background: colour(type === 'pie' ? hovered.at : hovered.series) }}
+              style={
+                type === 'pie'
+                  ? sliceSwatch(pieFillOf.get(hovered.at) ?? sliceFill(hovered.at))
+                  : { background: colour(hovered.series) }
+              }
             />
             {type === 'pie'
               ? labels.seriesValue(categories[hovered.at] ?? '', valueAt(0, hovered.at))
@@ -257,6 +265,8 @@ function ResultChartDrawing({
   };
 
   const plot: ReactElement[] = [];
+  /** A pie's fill for each category it draws, by category. */
+  const pieFillOf = new Map<number, SliceFill>();
   // Area fills go under the grid and the outlines (each series' runs, by
   // series), with the masks that cut them.
   const areaRuns: string[][] = [];
@@ -291,6 +301,11 @@ function ResultChartDrawing({
     const kept = slices.flatMap((slice, at) => (slice.value > 0 ? [at] : []));
 
     const tags = numbered ? pieTags(arcs, r) : [];
+    // Past the eight colours, slices are hatched, then crosshatched, so no
+    // two neighbours and no two legend swatches share a fill.
+    const fills = pieFills(kept);
+
+    fills.forEach((fill, at) => pieFillOf.set(kept[at] ?? at, fill));
 
     plot.push(
       <g key="pie" transform={`translate(${plotWidth / 2} ${plotHeight / 2})`}>
@@ -320,7 +335,7 @@ function ResultChartDrawing({
             <path
               className="result-chart-mark"
               d={arc.path}
-              fill={colour(category)}
+              fill={slicePaint(maskPrefix, fills[at] ?? sliceFill(category))}
               data-at={category}
               data-series={0}
               key={category}
@@ -554,6 +569,12 @@ function ResultChartDrawing({
             {title}
           </text>
         )}
+        {type === 'pie' && (
+          <SliceHatches
+            fills={[...pieFillOf.values(), ...legendNames.map((_, at) => sliceFill(at))]}
+            prefix={maskPrefix}
+          />
+        )}
         {/* Each legend entry is a 10px swatch in the series colour, as
             every chart's legend draws it, then its name, placed one after
             another and wrapped by their measured widths. */}
@@ -567,7 +588,7 @@ function ResultChartDrawing({
               <g key={at} transform={`translate(${place.x} ${place.row * LEGEND_ROW})`}>
                 <rect
                   className="result-chart-legend-swatch"
-                  fill={colour(at)}
+                  fill={type === 'pie' ? slicePaint(maskPrefix, sliceFill(at)) : colour(at)}
                   height={10}
                   rx={2}
                   width={10}
@@ -652,6 +673,7 @@ function ResultChartDrawing({
       <ResultChartReadout
         categories={categories}
         hover={hover}
+        pieFillOf={pieFillOf}
         series={series}
         type={type}
         width={width}

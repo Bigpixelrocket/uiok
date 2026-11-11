@@ -5,6 +5,7 @@ import {
   useReducer,
   useRef,
   useState,
+  type CSSProperties,
   type KeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
@@ -713,17 +714,20 @@ export function DataGrid({
                     onDoubleClick={(event) => event.stopPropagation()}
                     onPointerDown={(event) => event.stopPropagation()}
                     ref={editorLayer}
-                    style={{
-                      left: editorShift ?? editorBox.left - 1,
-                      top: editorBox.top - 1,
-                      minWidth: editorBox.width + 2,
-                      // It keeps inside the grid's frame and the window.
-                      maxWidth: Math.max(
-                        EDITOR_MIN_WIDTH,
-                        Math.min(editorBox.well.right - editorBox.well.left, window.innerWidth) -
-                          2 * EDITOR_MARGIN
-                      )
-                    }}
+                    style={
+                      {
+                        '--data-grid-editor-cell': `${editorBox.width + 2}px`,
+                        left: editorShift ?? editorBox.left - 1,
+                        top: editorBox.top - 1,
+                        minWidth: editorBox.width + 2,
+                        // It keeps inside the grid's frame and the window.
+                        maxWidth: Math.max(
+                          EDITOR_MIN_WIDTH,
+                          Math.min(editorBox.well.right - editorBox.well.left, window.innerWidth) -
+                            2 * EDITOR_MARGIN
+                        )
+                      } as CSSProperties
+                    }
                   >
                     {editor.node}
                   </div>,

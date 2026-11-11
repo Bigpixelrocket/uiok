@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { PIE_TAG_REACH, pieArcs, pieTags } from './Pie.logic.js';
+import {
+  DISTINCT_SLICE_FILLS,
+  PIE_TAG_REACH,
+  pieArcs,
+  pieFills,
+  pieTags,
+  sliceFill,
+  type SliceFill
+} from './Pie.logic.js';
 
 describe('pieArcs', () => {
   it('shares the circle among the slices clockwise, leaving out empty ones', () => {
@@ -49,5 +57,39 @@ describe('pieArcs', () => {
     expect(reach(a!)).toBeCloseTo(50 + PIE_TAG_REACH);
     expect(reach(b!)).toBeGreaterThan(reach(a!) + 10);
     expect(rest?.anchor).toBe('end');
+  });
+});
+
+describe('pieFills', () => {
+  const key = (fill: SliceFill): string => `${fill.hue}:${fill.hatch}`;
+  const range = (count: number): number[] => Array.from({ length: count }, (_, at) => at);
+
+  it('draws the first eight slices solid in the eight series colours', () => {
+    expect(pieFills(range(8))).toEqual(range(8).map((hue) => ({ hue, hatch: 'solid' })));
+  });
+
+  it('gives each of the first 24 slices, and so each legend swatch, a fill of its own', () => {
+    const fills = pieFills(range(DISTINCT_SLICE_FILLS)).map(key);
+
+    expect(DISTINCT_SLICE_FILLS).toBe(24);
+    expect(new Set(fills).size).toBe(24);
+    expect(fills[8]).toBe('0:hatch');
+    expect(fills[16]).toBe('0:cross');
+  });
+
+  it('never gives two neighbouring slices, round the circle too, the same fill', () => {
+    for (let count = 2; count <= 60; count++) {
+      const fills = pieFills(range(count)).map(key);
+
+      fills.forEach((fill, at) => {
+        expect(fill, `${count} slices, slice ${at + 1}`).not.toBe(fills[(at + 1) % count]);
+      });
+    }
+  });
+
+  it('keeps the fill of its place for a slice after one of nothing', () => {
+    expect(pieFills([0, 8, 9]).map(key)).toEqual(['0:solid', '0:hatch', '1:hatch']);
+    expect(pieFills([0, 24]).map(key)).toEqual(['0:solid', '0:hatch']);
+    expect(sliceFill(25)).toEqual({ hue: 1, hatch: 'solid' });
   });
 });

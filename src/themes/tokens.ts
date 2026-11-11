@@ -1388,6 +1388,8 @@ const BASE_TOKEN_NAMES = [
   '--segmented-inset',
   '--pane-name-floor',
   '--pane-pin-ground',
+  '--pane-pin-edge',
+  '--data-grid-editor-cell',
   '--row-fill',
   '--check-on',
   '--check-mark',

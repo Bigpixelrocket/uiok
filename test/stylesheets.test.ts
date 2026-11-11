@@ -135,6 +135,50 @@ describe('pointer states of the shared recipes and form controls', () => {
     document.body.innerHTML = '';
   });
 
+  it('keeps an on toggle on under hover and press', () => {
+    const rules = pressedRules();
+    // Every control that can carry aria-pressed, on. A pointer rule written
+    // for the on state names [aria-pressed='true'] outside :not(); any other
+    // that matches one would paint it as an off control under the pointer.
+    document.body.innerHTML = `<div class="listing-root">
+      <button aria-pressed="true">Plain</button>
+      <button class="button button-primary" aria-pressed="true">Primary</button>
+      <button class="button button-tonal" aria-pressed="true">Tonal</button>
+      <button class="button button-neutral" aria-pressed="true">Neutral</button>
+      <button class="button button-danger" aria-pressed="true">Danger</button>
+      <button class="icon-button" aria-label="Wrap" aria-pressed="true"></button>
+      <button class="filter-escape" aria-pressed="true">esc</button>
+      <nav class="pager"><button class="pager-step" aria-pressed="true">Next</button></nav>
+      <div class="key-legend"><button class="legend-slot" aria-pressed="true">Go</button></div>
+      <div class="keylegend-verbs"><button aria-pressed="true">Run</button></div>
+      <button class="pane-act" aria-pressed="true">Open</button>
+      <button class="pane-icon-act" aria-label="Pin" aria-pressed="true"></button>
+      <button class="path-star" aria-label="Star" aria-pressed="true"></button>
+      <button class="crumb-label" aria-pressed="true">site</button>
+      <button class="pane-strip-link" aria-pressed="true">All</button>
+      <button class="palette-level" aria-pressed="true">Level</button>
+      <button class="settings-sidebar-page" aria-pressed="true">Page</button>
+      <button class="settings-sidebar-subsection" aria-pressed="true">Part</button>
+    </div>`;
+    const onRule = (selector: string): boolean =>
+      /\[aria-pressed=['"]?true['"]?\]/.test(
+        selector.replace(/:not\([^()]*(?:\([^()]*\))?[^()]*\)/g, '')
+      );
+    const painted = (rule: CSSStyleRule): boolean =>
+      ['background', 'background-color', 'box-shadow', 'color'].some(
+        (name) => rule.style.getPropertyValue(name) !== ''
+      );
+    const undone = [...document.querySelectorAll('button')].flatMap((element) =>
+      rules
+        .filter(({ rule }) => painted(rule) && !onRule(rule.selectorText))
+        .filter(({ selector }) => element.matches(selector))
+        .map(({ rule }) => `${element.className || element.textContent}: ${rule.selectorText}`)
+    );
+
+    expect(undone).toEqual([]);
+    document.body.innerHTML = '';
+  });
+
   it('lets a press win over a hover on every quiet control', () => {
     const rules = pressedRules();
     document.body.innerHTML = `

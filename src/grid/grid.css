@@ -371,6 +371,21 @@
     var(--shadow-popover);
 }
 
+/* With buttons beside it, the field keeps at least its cell's width
+   (--data-grid-editor-cell, set on the layer), and the panel grows by the
+   buttons, rather than the buttons squeezing the field to a few characters.
+   It outweighs the field's own rule below, which holds a bare field to its
+   cell. */
+.data-grid-editor:has(> :not(input, select, textarea))
+  > :is(
+    input:not([type='checkbox'], [type='radio']),
+    select,
+    textarea,
+    :has(:is(input, select, textarea))
+  ) {
+  min-width: var(--data-grid-editor-cell, 0);
+}
+
 /* A wrapper the caller puts round its field and buttons fills the layer,
    so its field can take what the buttons leave. */
 .data-grid-editor > :has(:is(input, select, textarea)) {

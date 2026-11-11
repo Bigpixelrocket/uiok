@@ -8,7 +8,7 @@ SVG charts painted from the theme's chart tokens, so they follow light, dark, an
 - `ResultChart`: a table of rows drawn as bar, column, line, spline, area, pie, timeline, or scatter, stackable where it makes sense, with title, legend, and axes inside the SVG so it saves whole as a picture.
 - `tokenColour`, `svgMarkup`, `svgPng`: save a chart as SVG text or PNG bytes.
 
-Series take `--chart-1` to `--chart-8` in turn and start over after the eighth. `seriesColour(index)` gives that colour as a `var()` (`seriesColour(2)` is `'var(--chart-3)'`), so a series an app draws outside these charts, in its own legend or plot, matches theirs. The chrome reads `--text`, `--text-dim`, `--row-meta-text`, `--border`, `--border-strong`, `--surface`, `--accent`, and `--hover-wash`.
+Series take `--chart-1` to `--chart-8` in turn and start over after the eighth (a pie's slices then hatch; see `ResultChart` and `PieChart`). `seriesColour(index)` gives that colour as a `var()` (`seriesColour(2)` is `'var(--chart-3)'`), so a series an app draws outside these charts, in its own legend or plot, matches theirs. The chrome reads `--text`, `--text-dim`, `--row-meta-text`, `--border`, `--border-strong`, `--surface`, `--accent`, and `--hover-wash`.
 
 ## Example
 
@@ -124,7 +124,7 @@ Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for 
 | `width`, `height`  | `number`                      | The drawing's size in pixels                                                                         |
 | `svgRef`           | `Ref<SVGSVGElement>`          | Optional. Receives the `<svg>` for `svgMarkup`                                                       |
 
-`ResultChart` is memoised: keep the arrays stable across renders. The legend starts at the plot's left edge and shows at most 24 entries in up to four rows; the title is centred on the plot. Values are written with six significant digits. An area's fill breaks where a value is missing, as its line does. The legend keeps the same 12px of air under its last row whether it fits one row or wraps. A pie with more slices than the eight series colours numbers each slice on a leader outside the rim and its legend entry to match, so a repeated colour never leaves a slice unnamed. A number or time X axis shows at least three ticks and leaves out any label that would touch its neighbour.
+`ResultChart` is memoised: keep the arrays stable across renders. The legend starts at the plot's left edge and shows at most 24 entries in up to four rows; the title is centred on the plot. Values are written with six significant digits. An area's fill breaks where a value is missing, as its line does. The legend keeps the same 12px of air under its last row whether it fits one row or wraps. A pie with more slices than the eight series colours numbers each slice on a leader outside the rim and its legend entry to match. Past the eighth slice the colours come round again hatched (stripes of `--surface` across the hue), and past the sixteenth crosshatched, so the 24 legend entries each have a fill of their own; beyond 24 a slice that would match a neighbour, round the circle too, takes the next of the three, so no two neighbouring slices share a fill. A number or time X axis shows at least three ticks and leaves out any label that would touch its neighbour.
 
 ## Look
 

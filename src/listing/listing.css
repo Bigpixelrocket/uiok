@@ -413,6 +413,28 @@ button.crumb-label::after {
       linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
       linear-gradient(to right, transparent, var(--ground) var(--scroll-fade-inline-start));
   }
+
+  /* Right to left (a dir="rtl" host), a list's inline start is its right
+     edge, so each side fade runs the other way. Every right-to-left rule
+     here reads the dir attribute: bundlers' CSS minifiers rewrite the
+     direction pseudo-class into a list of languages. */
+  :where([dir='rtl'] .listing-root, .listing-root[dir='rtl']) .pane-list {
+    mask-image:
+      linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
+      linear-gradient(
+        to left,
+        transparent,
+        var(--ground) var(--scroll-fade-inline-start),
+        var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+        transparent
+      );
+  }
+
+  :where([dir='rtl'] .listing-root, .listing-root[dir='rtl']) .pane-list:has(.pane-pin-end) {
+    mask-image:
+      linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
+      linear-gradient(to left, transparent, var(--ground) var(--scroll-fade-inline-start));
+  }
 }
 
 :where(.listing-root) :is(.row, .pane-columns) {
@@ -508,7 +530,7 @@ button.crumb-label::after {
   position: absolute;
   top: 5px;
   bottom: 5px;
-  left: round(down, calc(var(--pane-column-gap) / 2), 1px);
+  inset-inline-start: round(down, calc(var(--pane-column-gap) / 2), 1px);
   width: var(--line);
   background: var(--border);
 }
@@ -559,13 +581,13 @@ button.crumb-label::after {
 
 /* The first and the last control reach the strip's own edges. */
 :where(.listing-root) .pane-columns > .row-name .pane-sort {
-  margin-left: calc(-1 * var(--pane-row-inset));
-  padding-left: var(--pane-row-inset);
+  margin-inline-start: calc(-1 * var(--pane-row-inset));
+  padding-inline-start: var(--pane-row-inset);
 }
 
 :where(.listing-root) .pane-columns > :last-child .pane-sort {
-  margin-right: calc(-1 * var(--pane-row-inset));
-  padding-right: var(--pane-row-inset);
+  margin-inline-end: calc(-1 * var(--pane-row-inset));
+  padding-inline-end: var(--pane-row-inset);
 }
 
 /* The strip is the top of a scrolling list, which would clip a ring drawn
@@ -752,7 +774,7 @@ button.crumb-label::after {
    padded with spaces ("Aug  1") keeps its alignment. A value wider than
    its column ends in an ellipsis, never cut through a glyph. */
 :where(.listing-root) .row-meta {
-  padding-left: var(--pane-column-gap);
+  padding-inline-start: var(--pane-column-gap);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: pre;
@@ -1098,9 +1120,17 @@ button.crumb-label::after {
    (`--row-fill`, set by each state rule above) over the ground they stand
    on (`--pane-pin-ground`: the list's inside a `.pane-list`, the surface
    elsewhere; a host on another ground sets it), and a hairline on their
-   leading edge says columns run on under them while any do. */
+   leading edge says columns run on under them while any do. Every side is
+   logical, so a right-to-left listing pins its actions at its left. */
 :where(.listing-root) {
   --pane-pin-ground: var(--surface);
+  /* Which way the hairline's inset shadow falls: onto the cell's leading
+     edge, its left left to right and its right right to left. */
+  --pane-pin-edge: var(--line);
+}
+
+:where([dir='rtl'] .listing-root, .listing-root[dir='rtl']) {
+  --pane-pin-edge: calc(-1 * var(--line));
 }
 
 /* Each pinned cell fills its row's height, so its ground and its hairline
@@ -1108,14 +1138,14 @@ button.crumb-label::after {
    end, centred in the row. */
 :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
   position: sticky;
-  right: 0;
+  inset-inline-end: 0;
   z-index: var(--z-raised);
   align-self: stretch;
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  margin-right: calc(-1 * var(--pane-row-inset));
-  padding-right: var(--pane-row-inset);
+  margin-inline-end: calc(-1 * var(--pane-row-inset));
+  padding-inline-end: var(--pane-row-inset);
   /* Room for the fade it casts over the columns before it (below). */
   overflow: visible;
   background:
@@ -1139,7 +1169,7 @@ button.crumb-label::after {
 
 @container scroll-state(scrollable: inline) {
   :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
-    right: calc(-1 * var(--pane-row-inset));
+    inset-inline-end: calc(-1 * var(--pane-row-inset));
   }
 }
 
@@ -1161,7 +1191,8 @@ button.crumb-label::after {
     content: '';
     position: absolute;
     /* Over a strip cell's own ::before, the rule in its gutter. */
-    inset: 0 100% 0 auto;
+    inset-block: 0;
+    inset-inline: auto 100%;
     width: var(--space-6);
     background: inherit;
     opacity: 0;
@@ -1170,12 +1201,22 @@ button.crumb-label::after {
     animation: uiok-pane-pin-fade linear both;
     animation-timeline: scroll(nearest inline);
   }
+
+  /* Right to left the columns before the cell lie on its right. */
+  :where(
+      [dir='rtl'] .listing-root .pane-listing.pane-pin-end,
+      .listing-root[dir='rtl'] .pane-listing.pane-pin-end
+    )
+    > :is(.row, .pane-columns)
+    > :last-child::before {
+    mask-image: linear-gradient(to left, transparent, var(--ground));
+  }
 }
 
 @keyframes uiok-pane-pin-edge {
   0%,
   95% {
-    box-shadow: inset var(--line) 0 0 var(--border-strong);
+    box-shadow: inset var(--pane-pin-edge) 0 0 var(--border-strong);
   }
 
   100% {

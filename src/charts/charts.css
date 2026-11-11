@@ -406,3 +406,9 @@
 .result-chart-float {
   transform: translateY(-50%);
 }
+
+/* A hatched pie slice's stripes (PieFill.tsx): the surface the slices are
+   parted by, so the hue shows between them in every theme. */
+.pie-hatch-stripe {
+  fill: var(--surface);
+}

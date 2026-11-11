@@ -84,17 +84,20 @@
   color: var(--on-tonal);
 }
 
-.button-primary:hover:enabled:not([aria-disabled='true']) {
+.button-primary:hover:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
   background: var(--primary-hover);
   box-shadow: var(--hover-lit);
 }
 
-.button-tonal:hover:enabled:not([aria-disabled='true']) {
+.button-tonal:hover:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
   background: var(--tonal-hover);
   box-shadow: var(--hover-lit);
 }
 
-:is(.button-neutral, .icon-button):hover:enabled:not([aria-disabled='true']) {
+:is(.button-neutral, .icon-button):hover:enabled:not(
+    [aria-disabled='true'],
+    [aria-pressed='true']
+  ) {
   background: var(--hover-wash);
   box-shadow: var(--hover-frost);
   color: var(--text);
@@ -110,7 +113,7 @@
   color: var(--danger-text);
 }
 
-.button-danger:hover:enabled:not([aria-disabled='true']) {
+.button-danger:hover:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
   background: var(--danger-wash);
   box-shadow: var(--hover-frost);
 }
@@ -119,15 +122,18 @@
    tone (further from its words, so the label keeps its contrast) under the
    pressed shadow; an outline takes the pressed wash, darker than the hover
    wash. Pressed never reads as hovered, nor as the pointer having left. */
-:is(.button-primary, .button-tonal):active:enabled:not([aria-disabled='true']) {
+:is(.button-primary, .button-tonal):active:enabled:not(
+    [aria-disabled='true'],
+    [aria-pressed='true']
+  ) {
   box-shadow: var(--shadow-pressed);
 }
 
-.button-primary:active:enabled:not([aria-disabled='true']) {
+.button-primary:active:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
   background: var(--primary-pressed);
 }
 
-.button-tonal:active:enabled:not([aria-disabled='true']) {
+.button-tonal:active:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
   background: var(--tonal-pressed);
 }
 
@@ -135,14 +141,17 @@
    shadow, as the base sheet's shared press does: where a theme's pressed
    wash barely moves the face, the sunk top edge and the ring still tell a
    press from hover. */
-.button-danger:active:enabled:not([aria-disabled='true']) {
+.button-danger:active:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
   background: var(--danger-wash-strong);
   box-shadow:
     var(--shadow-pressed),
     inset 0 0 0 var(--line) var(--border-strong);
 }
 
-:is(.button-neutral, .icon-button):active:enabled:not([aria-disabled='true']) {
+:is(.button-neutral, .icon-button):active:enabled:not(
+    [aria-disabled='true'],
+    [aria-pressed='true']
+  ) {
   background: var(--pressed-wash);
   box-shadow:
     var(--shadow-pressed),

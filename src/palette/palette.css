@@ -184,14 +184,14 @@
   background: var(--accent-wash);
 }
 
-.palette-level:hover:enabled:not(:active) {
+.palette-level:hover:enabled:not(:active, [aria-pressed='true']) {
   background: var(--accent-wash-strong);
 }
 
 /* Held, the chip keeps the base sheet's sunk face and hairline but its
    fill is the accent's pressed face, one clear step (1.12:1) past its own
    accent hover, which the neutral pressed wash is not. */
-.palette-level:active:enabled {
+.palette-level:active:enabled:not([aria-pressed='true']) {
   background: var(--accent-wash-pressed);
 }
 

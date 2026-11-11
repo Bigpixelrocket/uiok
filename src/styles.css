@@ -349,6 +349,7 @@
       [aria-disabled='true'],
       [aria-selected='true'],
       [aria-checked='true'],
+      [aria-pressed='true'],
       [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
     )
   ):hover {
@@ -369,6 +370,7 @@
       [aria-disabled='true'],
       [aria-selected='true'],
       [aria-checked='true'],
+      [aria-pressed='true'],
       [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
     )
   ):hover {
@@ -399,6 +401,7 @@
       [aria-disabled='true'],
       [aria-selected='true'],
       [aria-checked='true'],
+      [aria-pressed='true'],
       [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
     )
   ):active {
@@ -411,15 +414,25 @@
 
 /* A toggle that is on (a button with aria-pressed="true": a mode, a
    filter chip, an open menu's chip): the current item's tint, ring, and
-   words, the one look of "on" for a button. It weighs one attribute and
-   comes after the hover and press recipes, so an on toggle keeps its look
-   under the pointer; a host rule that paints the button's rest face with
+   words, the one look of "on" for a button. The hover and press recipes,
+   the shared ones above and each component's own, leave an on toggle out,
+   so it keeps its look under the pointer; a host rule that paints the button's rest face with
    more weight leaves the on state to this rule (:not([aria-pressed='true'])).
    A toggle that mirrors a held key keeps its own solid accent. */
 :where(button)[aria-pressed='true'] {
   box-shadow: inset 0 0 0 var(--line) var(--current-ring);
   background: var(--current-bg);
   color: var(--current-text);
+}
+
+/* No hover or press recipe touches an on toggle (each leaves
+   [aria-pressed='true'] out, as it leaves out the chosen item), so the on
+   look holds under the pointer. A press sinks the on face, as every press
+   does, inside the same ring: still on, visibly held. */
+:where(button)[aria-pressed='true']:active:where(:not(:disabled, [aria-disabled='true'])) {
+  box-shadow:
+    var(--shadow-pressed),
+    inset 0 0 0 var(--line) var(--current-ring);
 }
 
 /* A focusable element that the keyboard reached: one ring from the focus
