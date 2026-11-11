@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TooltipLayer } from './Tooltip.js';
-import { tooltip, TOOLTIP_DELAY_MS } from './Tooltip.logic.js';
+import { cutTooltip, tooltip, TOOLTIP_DELAY_MS } from './Tooltip.logic.js';
 
 const rest = (): void => {
   act(() => {
@@ -142,5 +142,60 @@ describe('TooltipLayer', () => {
     rest();
 
     expect(shown()).toBeNull();
+  });
+});
+
+describe('TooltipLayer with a chord given as data, and a tooltip only for cut text', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('draws a chord given as data with key glyphs, named in words', () => {
+    render(
+      <>
+        <button type="button" {...tooltip('Copy Path', { key: 'c', meta: true, alt: true })}>
+          copy
+        </button>
+        <TooltipLayer />
+      </>
+    );
+
+    fireEvent.mouseOver(screen.getByRole('button', { name: 'copy' }));
+    rest();
+
+    const chord = screen.getByRole('tooltip').querySelector('.tooltip-chord kbd.keychord');
+    expect(chord?.getAttribute('aria-label')).toBe('Option Command C');
+    expect(chord?.querySelectorAll('.key-icon')).toHaveLength(2);
+  });
+
+  it('opens a cut tooltip only while its element cuts its text', () => {
+    render(
+      <>
+        <span data-testid="name" {...cutTooltip('report.txt')}>
+          report.txt
+        </span>
+        <TooltipLayer />
+      </>
+    );
+    const name = screen.getByTestId('name');
+    const widths = (scroll: number, client: number): void => {
+      Object.defineProperty(name, 'scrollWidth', { configurable: true, value: scroll });
+      Object.defineProperty(name, 'clientWidth', { configurable: true, value: client });
+    };
+
+    widths(60, 60);
+    fireEvent.mouseOver(name);
+    rest();
+    expect(shown()).toBeNull();
+
+    widths(90, 60);
+    fireEvent.mouseOver(document.body);
+    fireEvent.mouseOver(name);
+    rest();
+    expect(shown()).toBe('report.txt');
   });
 });

@@ -1,5 +1,5 @@
 /**
- * Every button tier, enabled then disabled, at the regular size and then the
+ * Every button tier (primary, tonal, danger, neutral), enabled then disabled, at the regular size and then the
  * small one; icon buttons at both sizes, enabled and disabled; and buttons
  * with an icon beside their label. Icon buttons are named on hover.
  */
@@ -9,12 +9,12 @@ import { useState } from 'react';
 
 import { Button, IconButton, type ButtonVariant } from '@bigpixelrocket/uiok/button';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
-import { chordGlyphs } from '@bigpixelrocket/uiok/keyboard';
 import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 const TIERS: ReadonlyArray<{ readonly variant: ButtonVariant; readonly word: string }> = [
   { variant: 'primary', word: 'Save' },
   { variant: 'tonal', word: 'Install' },
+  { variant: 'danger', word: 'Delete' },
   { variant: 'neutral', word: 'Cancel' }
 ];
 
@@ -43,14 +43,14 @@ export function ButtonDemo() {
         <IconButton
           aria-label="New"
           onClick={press('New')}
-          {...tooltip('New', chordGlyphs({ key: 'n', meta: true }))}
+          {...tooltip('New', { key: 'n', meta: true })}
         >
           <Plus />
         </IconButton>
         <IconButton
           aria-label="Refresh"
           onClick={press('Refresh')}
-          {...tooltip('Refresh', chordGlyphs({ key: 'r', meta: true }))}
+          {...tooltip('Refresh', { key: 'r', meta: true })}
         >
           <RefreshCw />
         </IconButton>

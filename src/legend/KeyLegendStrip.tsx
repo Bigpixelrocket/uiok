@@ -141,7 +141,7 @@ export function KeyLegendStrip({ verbs, pairLabel }: KeyLegendStripProps): React
             onMouseDown={keepFocus}
             tabIndex={-1}
             type="button"
-            {...tooltip(entry.label, chordGlyphs(entry.chord, keys))}
+            {...tooltip(entry.label, entry.chord)}
           >
             <KeyChord chord={entry.chord} />
           </button>

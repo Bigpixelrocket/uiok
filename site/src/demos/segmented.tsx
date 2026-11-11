@@ -1,8 +1,10 @@
 /**
  * One choice of several, with the arrow keys moving the choice, at each
- * control height beside a button of the same height.
+ * control height beside a button of the same height; segments with an icon
+ * beside their words; and a choice that cannot be taken now.
  */
 
+import { Columns3, LayoutGrid, List } from 'lucide-react';
 import { useId, useState, type CSSProperties } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
@@ -14,6 +16,7 @@ const VIEW_WORDS: Readonly<Record<(typeof VIEWS)[number], string>> = {
   grid: 'Grid',
   columns: 'Columns'
 };
+const VIEW_ICONS = { list: List, grid: LayoutGrid, columns: Columns3 } as const;
 const SIZES = ['s', 'm', 'l', 'xl'] as const;
 
 /** A row that sets the segmented choice's height, as a form of regular controls does. */
@@ -25,6 +28,7 @@ export function SegmentedDemo() {
   const viewLabel = useId();
   const regularLabel = useId();
   const sizeLabel = useId();
+  const iconLabel = useId();
   const [view, setView] = useState<(typeof VIEWS)[number]>('list');
   const [size, setSize] = useState<(typeof SIZES)[number]>('m');
   return (
@@ -55,12 +59,33 @@ export function SegmentedDemo() {
         />
         <Button>Apply</Button>
       </div>
+      <div className="demo-row">
+        <span className="demo-label" id={iconLabel}>
+          Icons
+        </span>
+        <SegmentedChoice
+          choices={VIEWS}
+          labelId={iconLabel}
+          onChange={setView}
+          render={(choice) => {
+            const Icon = VIEW_ICONS[choice];
+            return (
+              <>
+                <Icon />
+                {VIEW_WORDS[choice]}
+              </>
+            );
+          }}
+          value={view}
+        />
+      </div>
       <div className="demo-row" style={DENSE}>
         <span className="demo-label" id={sizeLabel}>
           Size
         </span>
         <SegmentedChoice
           choices={SIZES}
+          disabledChoices={['xl']}
           labelId={sizeLabel}
           onChange={setSize}
           render={(choice) => choice.toUpperCase()}

@@ -27,7 +27,7 @@ As the line narrows, the parts give way in this order:
 2. The words before the name, at their end.
 3. The name's tail, at its front.
 
-A short name is never cut in its middle; it joins the words around it. A cut name keeps its closing quote in its tail.
+A short name is never cut in its middle; it joins the words around it. A cut name keeps its closing quote in its tail. A cut head is held to the whole characters that fit before its ellipsis (measured as the line resizes), so the ellipsis always meets the tail with no blank between them; the fraction of a character left over goes to the line's end.
 
 A name whose first letter is in a right-to-left script (Arabic, Hebrew) is cut the mirrored way inside a left-to-right line: its tail, its end, on the left with its ellipsis at its front; its head, its start, on the right with its ellipsis at its end; then its closing quote, so the quotes still close around it.
 

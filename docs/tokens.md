@@ -114,6 +114,8 @@ Reduced motion: under `prefers-reduced-motion: reduce`, `tokens.css` sets the th
 
 A control drawn smaller than `--hit-target` keeps its drawn size and grows its hit area with a pseudo-element: the `.hit-target` utility class, or the same `::after` in a component's sheet. Where neighbours sit closer than the growth (pager steps 2px apart), it grows in the block axis only. The segmented choice reads `--segmented-height` (small by default); a form of regular fields sets it to `var(--control-height)`.
 
+A field's height follows its place, the same in every app: `--control-height` (`.field`) in a dialog or a single prompt, `--control-height-sm` (`.field-sm`) in a page form or a toolbar, `--control-height-xs` (`.field-xs`) inside a row or a path bar. A button or segmented choice on the same line takes the same height. A control, row, or bar height is always one of these tokens: `test/tokenValues.test.ts` fails on a raw `height`, `min-height`, or `max-height` of 12px or more.
+
 ## Focus
 
 One ring for everything focusable. The base sheet draws it with zero weight (`:where(…):focus-visible`), so a component changes only the offset:
@@ -136,7 +138,7 @@ The ring follows the control's `border-radius`, so a control with corners shows 
 | `--icon-lg`     | 16px  | A dialog's title icon, a run header's glyph, empty-state actions |
 | `--icon-column` | 20px  | The leading icon column of a row or menu option                  |
 
-Icons keep lucide's 2px stroke from 12 to 16 px. An icon takes its label's colour; a row's leading icon takes `--text-dim`.
+Every icon keeps lucide's default stroke (2 on its 24-unit grid); a glyph larger than `--icon-lg` passes `absoluteStrokeWidth` ([icon](components/icon.md)). An icon takes its label's colour; a row's leading icon takes `--text-dim`.
 
 ## Layers
 
@@ -144,9 +146,13 @@ Inside a pane (its own stacking context): `--z-below` (-1, a backdrop under its 
 
 ## Exceptions
 
-These stay literal, each with a comment where it is written, and `test/tokenValues.test.ts` lists them:
+`test/tokenValues.test.ts` checks, in every hand-written stylesheet: type sizes, weights, and line heights; corners; layers; durations and easings; gaps, paddings, and margins (logical longhands included); border and outline widths (`--line`, `--line-strong`, a focus token, `0`, or `none`); heights (a token, a percentage, or glyph geometry under 12px); opacity (`0`, `1`, or a token); shadows (a blur only inside a `--shadow-*` token; a ring or edge is crisp); and `color-mix(` (only inside a custom property definition: a tint is a theme token). These stay literal, each with a comment where it is written, and the test lists them:
 
 - Key caps: the 12px key box and its line height, 16 and 18 px cap heights. They are glyph geometry, never a pointer target by themselves.
+- The slider's 12px knob on its 4px trough, glyph geometry.
+- Plot heights in charts (an empty plot's 120px, a scatter plot's 380px drawing and 180px floor) and the Settings dialog's fixed 620px frame: layout sizes, not controls.
+- The shared pulse's 0.35 low point: a keyframe of the motion, not a state's opacity.
+- The docs site's demo frames and brand mark heights.
 - The terminal's 13px on 19px cells (`.pane-well`, `.terminal-failure`): the engine's metric.
 - The activity stripes' 0.9s loop, timed against the stripe period.
 - The palette's fixed 104px drop from the window top: a placement.

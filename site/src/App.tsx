@@ -101,20 +101,25 @@ export function App() {
         return;
       }
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      // Escape closes the open drawer, as a press beside it does.
+      if (event.key === 'Escape' && menuOpen && !isOverlayOpen(document)) {
+        setMenuOpen(false);
+        return;
+      }
       if (isTextEditingTarget(event.target) || isOverlayOpen(document)) return;
       if (event.key === '[') go(stepPage(route, -1));
       if (event.key === ']') go(stepPage(route, 1));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [route]);
+  }, [route, menuOpen]);
 
   const themeIds = theme.appearance === 'light' ? LIGHT_THEME_IDS : DARK_THEME_IDS;
   const commands = useMemo(
     () =>
       PAGES.map((candidate) => ({
         id: candidate.route,
-        label: candidate.title,
+        label: candidate.name,
         hint: candidate.group,
         meta: candidate.route,
         run: () => go(candidate.route)
@@ -191,6 +196,8 @@ export function App() {
               </select>
             </div>
           </header>
+          {/* In a narrow window the open drawer dims the page beside it; a press there closes it. */}
+          <div aria-hidden="true" className="nav-scrim" onClick={() => setMenuOpen(false)} />
           <nav aria-label="Pages" className="site-nav scroll-fade">
             {groups.map((group) => (
               <section className="nav-group" key={group}>
@@ -203,7 +210,7 @@ export function App() {
                         className="nav-link"
                         href={`#${candidate.route}`}
                       >
-                        {candidate.title}
+                        {candidate.name}
                       </a>
                     </li>
                   ))}

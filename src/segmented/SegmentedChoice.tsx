@@ -12,12 +12,19 @@ export interface SegmentedChoiceProps<T extends string | number | null> {
   readonly onChange: (value: T) => void;
   /** What a segment shows for a choice: its words, an icon, or both. */
   readonly render: (choice: T) => ReactNode;
+  /**
+   * Choices that cannot be chosen now: drawn faded where they stand, so the
+   * control keeps its shape, and passed over by a click and the arrow keys.
+   * None unless given; the chosen one should not be among them.
+   */
+  readonly disabledChoices?: readonly T[];
 }
 
 /**
  * One choice of several, drawn as a segmented control and announced as a
  * radio group: one Tab stop (the checked segment), and the arrow keys move
- * the choice, wrapping at the ends, with the focus following it. Its look is
+ * the choice, wrapping at the ends and passing over a disabled choice, with
+ * the focus following it. Its look is
  * its own (`.segmented-choice` in `@bigpixelrocket/uiok/styles.css`), so it draws the same
  * in a dialog and on a page.
  */
@@ -26,15 +33,25 @@ export function SegmentedChoice<T extends string | number | null>({
   choices,
   value,
   onChange,
-  render
+  render,
+  disabledChoices = []
 }: SegmentedChoiceProps<T>): ReactElement {
   const group = useRef<HTMLDivElement>(null);
   const step = (event: KeyboardEvent, delta: number): void => {
     event.preventDefault();
-    const index = (choices.indexOf(value) + delta + choices.length) % choices.length;
+    const from = choices.indexOf(value);
 
-    onChange(choices[index] as T);
-    group.current?.querySelectorAll<HTMLElement>('[role="radio"]')[index]?.focus();
+    // The next choice that can be chosen, at most one lap round.
+    for (let moved = 1; moved < choices.length; moved += 1) {
+      const index = (from + delta * moved + choices.length * moved) % choices.length;
+      const choice = choices[index] as T;
+
+      if (!disabledChoices.includes(choice)) {
+        onChange(choice);
+        group.current?.querySelectorAll<HTMLElement>('[role="radio"]')[index]?.focus();
+        return;
+      }
+    }
   };
 
   return (
@@ -55,6 +72,7 @@ export function SegmentedChoice<T extends string | number | null>({
         <button
           aria-checked={choice === value}
           className="segmented-choice-option"
+          disabled={disabledChoices.includes(choice)}
           key={String(choice)}
           onClick={() => {
             // The chosen segment again changes nothing, so it reads nothing.

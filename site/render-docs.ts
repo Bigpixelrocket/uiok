@@ -68,7 +68,19 @@ function markdownHtml(text: string, from: string): string {
       }
     }
   });
-  return marked.parse(text, { async: false });
+  return framedCodeBlocks(marked.parse(text, { async: false }));
+}
+
+/**
+ * Each code block inside a frame of its own, so the block can scroll
+ * sideways under the library's edge fade (`scroll-fade-x`) without the mask
+ * also fading its border. Marked writes every fenced block as
+ * `<pre><code…>…</code></pre>`; a `<pre>` written in a doc's prose is escaped.
+ */
+function framedCodeBlocks(html: string): string {
+  return html
+    .replaceAll('<pre><code', '<div class="code-frame"><pre class="scroll-fade-x"><code')
+    .replaceAll('</code></pre>', '</code></pre></div>');
 }
 
 /** The doc's title: its first heading without the package path in parentheses. */

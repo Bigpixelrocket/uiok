@@ -86,7 +86,7 @@
   direction: ltr;
 }
 
-/* A row's trailing column: a chord, a version, a count. */
+/* A row's trailing column: a chord (key caps), a version, a count. */
 .palette-trail {
   display: inline-flex;
   align-items: center;
@@ -94,17 +94,22 @@
   padding-left: var(--space-4);
 }
 
-.palette-trail .keychord {
-  color: var(--text-dim);
+/* What a row says after its name when that is a sentence rather than a
+   path: it reads and gives way at its end, in the interface face, as every
+   description does. */
+.palette-context.palette-sentence {
+  direction: ltr;
+  font-family: var(--font-ui);
 }
 
-/* What a row says after its name when that is a sentence or a command line
-   rather than a path: it reads and gives way at its end. */
-.palette-context.palette-sentence {
+/* What a row says after its name when that is a command line (what a
+   script runs): it stays in the monospace face, as anything typed does,
+   and gives way at its end, where a sentence does. */
+.palette-context.palette-command {
   direction: ltr;
 }
 
-/* A row's end in the listing's meta tone: versions, a count, a chord. */
+/* A row's end in the listing's meta tone: versions, a count. */
 .palette-meta {
   display: inline-flex;
   align-items: center;
@@ -114,8 +119,7 @@
 }
 
 /* On the cursor row the quiet words take the tone made for the cursor fill. */
-.folder-menu-option.cursor:not([aria-disabled='true'])
-  :is(.palette-context, .palette-meta, .palette-trail .keychord) {
+.folder-menu-option.cursor:not([aria-disabled='true']) :is(.palette-context, .palette-meta) {
   color: var(--text-on-surface);
 }
 
@@ -166,14 +170,19 @@
   padding: 0 var(--space-3);
   border: var(--line) solid var(--accent-line);
   border-radius: var(--radius-sm);
-  background: var(--accent-wash);
   color: var(--text);
   font: inherit;
   font-weight: var(--font-weight-strong);
   cursor: pointer;
 }
 
-.palette-level:hover:enabled {
+/* The wash weighs nothing, so the base sheet's pressed rule replaces it
+   while the chip is held; hover stands down then, so press outranks it. */
+:where(.palette-level) {
+  background: var(--accent-wash);
+}
+
+.palette-level:hover:enabled:not(:active) {
   background: var(--accent-wash-strong);
 }
 

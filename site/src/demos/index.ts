@@ -15,6 +15,7 @@ import { DialogDemo } from './dialog';
 import { FieldDemo } from './field';
 import { FilterDemo } from './filter';
 import { GridDemo } from './grid';
+import { IconDemo } from './icon';
 import { KeyChordDemo } from './keychord';
 import { LegendDemo } from './legend';
 import { ListingDemo } from './listing';
@@ -26,6 +27,7 @@ import { PaneDemo } from './pane';
 import { RunDemo } from './run';
 import { SegmentedDemo } from './segmented';
 import { SelectAllDemo } from './selectall';
+import { ShellDemo } from './shell';
 import { StoreDemo } from './store';
 import { SurfaceDemo } from './surface';
 import { TabsDemo } from './tabs';
@@ -44,6 +46,7 @@ export const DEMOS: Readonly<Record<string, ComponentType>> = {
   field: FieldDemo,
   filter: FilterDemo,
   grid: GridDemo,
+  icon: IconDemo,
   keychord: KeyChordDemo,
   legend: LegendDemo,
   listing: ListingDemo,
@@ -55,6 +58,7 @@ export const DEMOS: Readonly<Record<string, ComponentType>> = {
   run: RunDemo,
   segmented: SegmentedDemo,
   selectall: SelectAllDemo,
+  shell: ShellDemo,
   store: StoreDemo,
   surface: SurfaceDemo,
   tabs: TabsDemo,

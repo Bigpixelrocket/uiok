@@ -33,11 +33,14 @@ describe('the result chart’s read-out', () => {
     const container = chart('line');
     const svg = container.querySelector('svg') as SVGSVGElement;
 
-    expect(readout(container)).toBe(' ');
+    expect(readout(container)).toBe('');
+    expect(container.querySelector('.result-chart-float')).toBeNull();
     fireEvent.pointerOver(
       container.querySelector('.result-chart-mark[data-series="1"][data-at="2"]') as Element
     );
     expect(readout(container)).toBe('costs, Wed: 4');
+    // The floating read-out beside the mark says the same, with the series' swatch.
+    expect(container.querySelector('.result-chart-float')?.textContent).toBe('Wedcosts: 4');
     fireEvent.pointerOver(
       container.querySelector('.result-chart-mark[data-series="0"][data-at="1"]') as Element
     );
@@ -45,7 +48,8 @@ describe('the result chart’s read-out', () => {
     fireEvent.pointerOver(container.querySelector('.result-chart-baseline') as Element);
     expect(readout(container)).toBe('sales, Tue: 5');
     fireEvent.pointerLeave(svg);
-    expect(readout(container)).toBe(' ');
+    expect(readout(container)).toBe('');
+    expect(container.querySelector('.result-chart-float')).toBeNull();
   });
 
   it('marks every bar and slice with its value, read out as each chart names it', () => {
@@ -78,8 +82,8 @@ describe('the result chart’s read-out', () => {
       />
     );
     const slices = container.querySelectorAll('path.result-chart-mark');
-    // A legend entry is a swatch glyph in the series colour, then its name.
-    const swatch = [...container.querySelectorAll('.result-chart-legend tspan')].find(
+    // A legend entry is a 10px swatch in the series colour, then its name.
+    const swatch = [...container.querySelectorAll('.result-chart-legend text')].find(
       (name) => name.textContent === 'positive'
     )?.previousElementSibling;
 

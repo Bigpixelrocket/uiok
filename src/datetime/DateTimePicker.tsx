@@ -191,6 +191,7 @@ export function DateTimePicker({
           setShown(parse(value) ?? nowParts());
           setOpen(!open);
         }}
+        size="small"
         {...tooltip(hint ?? label)}
       >
         {kind === 'time' ? (

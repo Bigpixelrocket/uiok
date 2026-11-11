@@ -18,6 +18,8 @@ Rules are scoped with `:where(.listing-root)`, so each weighs one class less tha
 | `--pane-path-height`    | `26px`  | The path bar's row                                                              |
 | `--pane-column-gap`     | `1.5ch` | The gutter before each column after the name; the strip's rule stands in it     |
 | `--pane-row-inset`      | `8px`   | The room a row and the strip keep at either edge                                |
+| `--pane-name-floor`     | `14ch`  | The least the name column gives way to before the list scrolls sideways         |
+| `--pane-pin-ground`     | surface | What a pinned action column (`.pane-pin-end`) paints under its cells            |
 | `--pane-grid`           |         | A listing's grid template, set inline by `Listing` and `WellColumn` from `grid` |
 
 ## Example
@@ -36,7 +38,7 @@ import { QuietAction } from '@bigpixelrocket/uiok/pane';
         { label: 'Size', align: 'right', sort },
         { label: 'Action', hidden: true }
       ]}
-      grid={`var(--icon-column) minmax(14ch, 1fr) ${column(12)} ${column(8)} ${ACTION_COLUMN}`}
+      grid={`var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr) ${column(12)} ${column(8)} ${ACTION_COLUMN}`}
       title="Services"
     >
       {services.map((service) => (
@@ -77,7 +79,11 @@ import { QuietAction } from '@bigpixelrocket/uiok/pane';
 
 A listing with rows lays its strip and every row on one grid (CSS subgrid), so a track sized by its content (`auto`, `max-content`) takes its widest cell across all rows and the strip, and every label stands over its values.
 
-Give the name a floor, such as `minmax(14ch, 1fr)`, so it keeps a readable width at a narrow pane while the other columns keep theirs; the list then scrolls sideways rather than cutting every name to two letters. A listing whose rows draw no icon starts its first label past the icon column, over the names.
+Give the name its floor, `minmax(min(var(--pane-name-floor), 100%), 1fr)`, so it keeps a readable width (14 characters) at a narrow pane while the other columns keep theirs; the list then scrolls sideways rather than cutting every name to one letter. The default grid and `WellColumn` use this track. A `.pane-list` fades its foot and a side it scrolls to over 12px while more lies past that edge; its column strip never fades.
+
+Where the listing scrolls sideways inside a box that is not a `.pane-list` (a page that scrolls as a whole), add `pane-pin-end` to the `Listing`'s `className`: its last column, the actions, stays at the scroller's end while the columns before it scroll under, with a hairline on its leading edge while any do. Its cells paint the row's state fill over `--pane-pin-ground`, the list's ground inside a `.pane-list` and the surface elsewhere; set it on a host that stands on another ground.
+
+A listing whose rows draw no icon starts its first label past the icon column, over the names; a section's heading (`Strip` `heading`) keeps the strip's edge. The rule weighs what the label's default placement does, so an app's own scoped rule for the label wins.
 
 - `column(ch)`: a track as wide as `ch` characters plus the gutter.
 - `ACTION_COLUMN`: `column(10)`, the same action column in every listing.
@@ -101,10 +107,12 @@ Rows take no keys themselves; the app's key handler (`usePaneKeys`) moves the cu
 | Look                                         | How you get it                                               | Drawn with                                                                    |
 | -------------------------------------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------- |
 | Keyboard cursor                              | `RowCursorContext` (`.cursor`)                               | `--cursor-row` fill, a 2px `--cursor-bar` on the leading edge                 |
-| Cursor of a pane that does not hold the keys | `.cursor` in a `.pane` beside a `.pane.active`               | `--fill`, no bar                                                              |
+| Cursor of a pane that does not hold the keys | `.cursor` in a `.pane` beside a `.pane.active`               | `--fill`, no bar; its actions in `--text-on-surface`, neither lit nor red     |
 | Selected                                     | `className="selected"` on `Row`                              | `--selected-bg` fill, `--on-selected` words, `--on-selected-dim` quiet words  |
 | Selected under the cursor                    | `.selected` and `.cursor`                                    | `--selected-cursor-bg`, a bar in `--on-selected`                              |
-| Pointer hover                                | `.pointer` on the `.pane-list`, for rows that act on a click | `--hover-wash` on rows other than the cursor and the selection                |
+| Marked (a checkbox column)                   | `className="marked"` on `Row`                                | `--marked-bg` tint, a 2px `--marked-bar` on the leading edge                  |
+| Marked under the cursor                      | `.marked` and `.cursor`                                      | `--marked-cursor-bg`, the `--cursor-bar` and a hairline ring in it            |
+| Pointer hover                                | `.pointer` on the `.pane-list`, for rows that act on a click | `--row-hover` on rows other than the cursor, the selection, and marked rows   |
 | Keyboard focus                               | `Row` `focusable`                                            | the accent ring inside the row's edges                                        |
 | Add row                                      | `className="pane-add"` on `Row`                              | dim words after an accent glyph; accent words on hover, focus, and the cursor |
 
@@ -112,9 +120,9 @@ Leave `.pointer` off a list where the pointer moves the cursor: the cursor is th
 
 ## Styling
 
-`.pane-listing`, `.pane-columns.pane-strip`, `.pane-sort` (`.sortable`, `.active`), `.pane-sort-label`, `.row` (`.cursor`, `.selected`, `.pane-open-row`, `.pane-add`), `.pane-list.pointer`, `.row-icon`, `.row-name`, `.row-meta` (`.align-right`), `.pane-message` (`.danger`), `.pane-empty` with `.pane-empty-actions`, `.pane-row-open` (a name that is a button), `.pane-action-cell`, `.pane-hover-cell` (its icon controls show on hover, focus, and the cursor row), `.pane-state` (`.pane-tone-*`, `.pane-state-dot`, `.pane-state-word`, `.pane-state-busy`), `.pane-path` (`.pane-path-head`, `.pane-path-tail`, `.pane-path-name`), `.pane-well-column`, `.pane-well`, `.pane-strip-link` (`.danger`), `.pane-filter-summary`, `.current-dot`.
+`.pane-listing`, `.pane-columns.pane-strip`, `.pane-sort` (`.sortable`, `.active`), `.pane-sort-label`, `.pane-listing.pane-pin-end`, `.row` (`.cursor`, `.selected`, `.marked`, `.pane-open-row`, `.pane-add`), `.pane-list.pointer`, `.row-icon`, `.row-name`, `.row-meta` (`.align-right`), `.pane-message` (`.danger`), `.pane-empty` with `.pane-empty-actions`, `.pane-row-open` (a name that is a button), `.pane-action-cell`, `.pane-hover-cell` (its icon controls show on hover, focus, and the cursor row), `.pane-state` (`.pane-tone-*`, `.pane-state-dot`, `.pane-state-word`, `.pane-state-busy`), `.pane-path` (`.pane-path-head`, `.pane-path-tail`, `.pane-path-name`), `.pane-well-column`, `.pane-well`, `.pane-strip-link` (`.danger`), `.pane-filter-summary`, `.current-dot`.
 
-A value cut by its column ends in an ellipsis. Words take the text-safe roles, which keep 4.5:1 on the list, the cursor row, the header, and their own washes in every theme: a state's word `--success-text`, `--warning-text`, or `--danger-text`, a lit action and a strip link `--accent-text`. Marks keep the hue tokens (`--success`, `--warning`, `--danger`, `--accent`) and the idle ring `--idle-mark`, each at 3:1.
+A value cut by its column ends in an ellipsis. A row's name, a state's word, a strip label, and a status summary in words carry their whole text as a tooltip, which opens only while the text is cut. On a cursor or marked row every quiet word (the icon, the cells, an idle or busy state's word) takes `--text-on-surface`. A `.pane-message` is a sentence, set in the interface font; a `code` inside it keeps the monospace. Words take the text-safe roles, which keep 4.5:1 on the list, the cursor row, the header, and their own washes in every theme: a state's word `--success-text`, `--warning-text`, or `--danger-text`, a lit action and a strip link `--accent-text`. Marks keep the hue tokens (`--success`, `--warning`, `--danger`, `--accent`) and the idle ring `--idle-mark`, each at 3:1.
 
 A listing with no rows (`empty`) leaves its column labels out, so no header stands over nothing; a control in the strip keeps its place. A pane with nothing in it at all centres a `.pane-empty` block: a glyph in the faint tone, a title (`strong` or `h2`), a sentence, and a `Button` or a `.pane-empty-actions` row of them.
 

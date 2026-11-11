@@ -37,8 +37,8 @@ const elapsed = runElapsedMs({ startedMs, finishedMs }, state, now);
 
 - States and glyphs: waiting (hourglass, dim), running (a turning circle in the accent, still under reduced motion), paused (dim), done (a check, green), failed (a cross, red), stopped (a slashed circle, dim).
 - The headline is 14px semibold in the text colour; `--danger-text` when failed, with the reason under it. A done headline stays in the text colour; the glyph and the bar carry the green. A headline cut short in a narrow view is its own tooltip.
-- The figure is 18px tabular monospace and dims while waiting and once the run settles.
-- The bar is `ActivityBar`'s 8px trough (`--control-track`, ringed in `--control-border`). Its fill is the accent while running, the quiet `--progress-idle` once paused or stopped, so a halted run never outweighs a working one, `--danger` when failed, and `--success` when done. Without a fraction it is the activity stripes, moving only while running, standing still in `--progress-idle` otherwise (waiting included), and in `--danger` when failed.
+- The figure is 18px tabular monospace, semibold while the run goes on. It dims while waiting and once the run settles, to the dim text colour and the regular weight, so the change shows even in themes whose two text colours are close.
+- The bar is `ActivityBar`'s 8px trough (`--control-track`, ringed in `--control-border`). Its fill is the accent while running or waiting, the quiet `--progress-idle` once paused or stopped (`ActivityBar`'s own idle fill, since the header passes `moving` only while running), so a halted run never outweighs a working one, `--danger` when failed, and `--success` when done. Without a fraction it is the activity stripes, moving only while running, standing still in `--progress-idle` otherwise (waiting included), and in `--danger` when failed.
 - Facts sit closer to the bar than the bar sits to the headline; without a bar they line up under the headline, past the glyph.
 - The header sets its own type: sentences and facts in the interface font, the figure in monospace, `code` in a fact in monospace.
 

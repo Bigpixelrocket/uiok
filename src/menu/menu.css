@@ -81,15 +81,42 @@
   white-space: nowrap;
 }
 
-/* Nine whole rows, so the list never ends on half of one; a list that
-   scrolls says so with a thin bar in the base sheet's scrollbar colours. A
-   caller adds .scroll-fade to fade the edge that has more rows. */
+/* Nine whole rows, so the list never ends on half of one (a group heading
+   is one row tall too, so any mix of headings and rows ends whole); a list
+   that scrolls says so with a thin bar in the base sheet's scrollbar
+   colours and fades the edge that has more rows (below). The menu's frame
+   is outside the list, so the fade never erases it. */
 .folder-menu-options {
   /* The options' offset parent, so the cursor row scrolls into view here. */
   position: relative;
   max-height: calc(9 * var(--row-height));
   overflow-y: auto;
   scrollbar-width: thin;
+}
+
+/* The base sheet's block fade (.scroll-fade), on every menu list: its
+   keyframes and lengths, so an edge with nothing past it stays sharp, and
+   its padding-box mask, so the list's scrollbar stays solid. */
+@supports (animation-timeline: scroll()) {
+  .folder-menu-options {
+    --scroll-fade-size: var(--space-6);
+
+    mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
+      linear-gradient(
+        to bottom,
+        transparent,
+        var(--ground) var(--scroll-fade-start),
+        var(--ground) calc(100% - var(--scroll-fade-end)),
+        transparent
+      );
+    mask-clip: padding-box, border-box, padding-box;
+    mask-origin: padding-box, border-box, padding-box;
+    mask-repeat: no-repeat;
+    mask-composite: exclude, exclude, add;
+    animation: uiok-scroll-fade-block linear both;
+    animation-timeline: scroll(self block);
+  }
 }
 
 /* An option: its icon, its name, and a trailing column (a chord, a count).
@@ -106,11 +133,12 @@
   cursor: default;
 }
 
-/* A chord in the trailing column keeps its distance from the name and sits
-   in the dim tone until its row has the cursor. */
+/* A chord in the trailing column keeps its distance from the name. It is
+   drawn as key caps, as every chord in a menu or a palette is (keychord.css
+   lists the menu row), so it keeps the cap's own text on the cap's ground
+   on every row, the cursor row included. */
 .folder-menu-option > .keychord {
-  padding-left: var(--space-5);
-  color: var(--text-dim);
+  margin-left: var(--space-5);
 }
 
 /* The cursor row: the cursor fill and, at its leading edge, the 2px accent
@@ -122,7 +150,7 @@
   box-shadow: inset var(--line-strong) 0 0 var(--cursor-bar);
 }
 
-.folder-menu-option.cursor:not([aria-disabled='true']) :is(.row-icon, .keychord, .row-meta) {
+.folder-menu-option.cursor:not([aria-disabled='true']) :is(.row-icon, .row-meta) {
   color: var(--text-on-surface);
 }
 
@@ -137,14 +165,15 @@
 }
 
 /* A group's name with a hairline running out from it on the same line, so a
-   group costs one short row and still reads as a break. The name is the
+   group costs one row and still reads as a break. It is exactly one row
+   tall, so a list's height in rows holds whatever headings it has. The name is the
    library's small uppercase heading (.overline in the base sheet): caption
    size, strong weight, caps tracking, dim text. */
 .entry-menu-heading {
   display: flex;
   align-items: center;
   gap: var(--space-4);
-  height: var(--control-height-xs);
+  height: var(--row-height);
   padding: var(--space-1) var(--space-3) 0 var(--space-4);
   color: var(--text-dim);
   font: var(--font-weight-strong) var(--font-size-caption)/var(--line-height-compact) var(--font-ui);

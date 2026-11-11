@@ -1,13 +1,17 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 
-import { placeTooltip, TOOLTIP_DELAY_MS } from './Tooltip.logic.js';
+import type { Chord } from '../keyboard/Keyboard.logic.js';
+import { KeyChord } from '../keychord/KeyChord.js';
+import { cutsItsText, placeTooltip, TOOLTIP_DELAY_MS, tooltipChord } from './Tooltip.logic.js';
 
 /** The tooltip on show: the control it belongs to and what it says. */
 interface ShownTooltip {
   readonly anchor: Element;
   readonly label: string;
   readonly shortcut: string | null;
+  /** The chord as data, drawn with key glyphs in place of the text form. */
+  readonly chord: Chord | null;
   /** Where the pointer rested, for a control wide enough to place the tooltip by it. */
   readonly pointerX: number;
 }
@@ -15,9 +19,18 @@ interface ShownTooltip {
 const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
   const label = anchor.getAttribute('data-tooltip');
 
-  return label
-    ? { anchor, label, shortcut: anchor.getAttribute('data-tooltip-shortcut'), pointerX }
-    : null;
+  // A tooltip of the element's own text says nothing while that text is whole.
+  if (!label || (anchor.hasAttribute('data-tooltip-cut') && !cutsItsText(anchor))) {
+    return null;
+  }
+
+  return {
+    anchor,
+    label,
+    shortcut: anchor.getAttribute('data-tooltip-shortcut'),
+    chord: tooltipChord(anchor.getAttribute('data-tooltip-chord')),
+    pointerX
+  };
 };
 
 /**
@@ -34,6 +47,10 @@ const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
  * The box hangs from the body, or from the element in full screen while
  * there is one: nothing outside that element is drawn, so a tooltip left on
  * the body would open behind a full-screen video.
+ *
+ * A chord given as data is drawn with the key glyphs every legend uses, set
+ * without a frame; a chord given as text is printed as given. A tooltip
+ * from `cutTooltip` opens only while its element cuts its own text.
  *
  * The pointer alone opens it. A control keeps its own accessible name, and a
  * tooltip that says more than its element is also the element's description
@@ -135,7 +152,13 @@ export function TooltipLayer(): ReactElement | null {
   return createPortal(
     <div className="tooltip" ref={tipRef} role="tooltip">
       <span className="tooltip-label">{shown.label}</span>
-      {shown.shortcut !== null && <span className="tooltip-shortcut">{shown.shortcut}</span>}
+      {shown.chord !== null ? (
+        <span className="tooltip-shortcut tooltip-chord">
+          <KeyChord chord={shown.chord} />
+        </span>
+      ) : (
+        shown.shortcut !== null && <span className="tooltip-shortcut">{shown.shortcut}</span>
+      )}
     </div>,
     document.fullscreenElement ?? document.body
   );

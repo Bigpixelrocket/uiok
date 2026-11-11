@@ -35,12 +35,12 @@ const TRANSCRIPT = [
   PROMPT
 ].join('\r\n');
 
-/** A terminal host's size; the host's class or style sizes `.terminal`. */
-const HOST = {
-  display: 'grid',
-  height: 240,
-  borderRadius: 'var(--radius-md)',
-  overflow: 'hidden'
+/**
+ * The live terminal's host height: eight 19px lines, the engine's 4px inset
+ * above and below them, and the host's padding and frame.
+ */
+const EIGHT_ROWS = {
+  height: 'calc(8 * 19px + 2 * 4px + 2 * var(--space-4) + 2 * var(--line))'
 } as const;
 
 /** A read-only terminal fed the build log once. */
@@ -61,7 +61,7 @@ function EchoTerminal() {
 
   return (
     <div className="demo-stack">
-      <div style={HOST}>
+      <div className="demo-terminal" style={EIGHT_ROWS}>
         <Terminal
           ariaLabel="Echo terminal"
           onBell={() => setBells((count) => count + 1)}
@@ -100,13 +100,13 @@ export function TerminalDemo() {
   return (
     <div className="demo-stack">
       <span className="demo-label">Read-only log</span>
-      <div style={HOST}>
+      <div className="demo-terminal">
         <BuildLog />
       </div>
       <span className="demo-label">Live terminal</span>
       <EchoTerminal />
       <span className="demo-label">Idle output, nothing printed yet</span>
-      <div style={{ ...HOST, height: 96 }}>
+      <div className="demo-terminal short">
         <Terminal ariaLabel="Output" />
       </div>
     </div>

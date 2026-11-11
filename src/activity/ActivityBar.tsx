@@ -6,7 +6,11 @@ export interface ActivityBarProps {
   readonly fraction: number | null;
   /** The bar's accessible name ("Whole transfer"). */
   readonly label: string;
-  /** Whether the run is working now; only then do the stripes move. */
+  /**
+   * Whether the run is working now. Only then do the stripes move and does a
+   * fill keep the accent; a bar that is not moving dims to the idle tone. A
+   * static meter that is never "working" (space used) passes `true`.
+   */
   readonly moving: boolean;
   /**
    * A class for the track beside its own `activity-bar`, for a host that
@@ -32,7 +36,10 @@ export interface ActivityBarProps {
  * accent fill, so every caller's bar looks the same. The caller's classes
  * sit beside them and win over them, for placement and for a state colour.
  * The stripes take their colour from `--stripe-ink` on the fill, the accent
- * while moving and `--progress-idle` while standing still.
+ * while moving and `--progress-idle` while standing still; a fill does the
+ * same, so a paused or stopped bar never reads as a working one in either
+ * form. Any fraction above zero draws at least a 4px nub, so a run at 1%
+ * still shows it has started.
  */
 export function ActivityBar({
   fraction,
@@ -42,6 +49,7 @@ export function ActivityBar({
   fillClassName
 }: ActivityBarProps): ReactElement {
   const track = className ? `activity-bar ${className}` : 'activity-bar';
+  const motion = moving ? ' moving' : '';
   const fill = fillClassName ? `activity-fill ${fillClassName}` : 'activity-fill';
 
   if (fraction === null) {
@@ -49,7 +57,7 @@ export function ActivityBar({
       <div
         aria-busy={moving}
         aria-label={label}
-        className={`${track} indeterminate${moving ? ' moving' : ''}`}
+        className={`${track} indeterminate${motion}`}
         role="progressbar"
       >
         <div className={`${fill} activity-stripes`} />
@@ -57,16 +65,21 @@ export function ActivityBar({
     );
   }
 
+  const done = Math.min(Math.max(fraction, 0), 1);
+
   return (
     <div
       aria-label={label}
       aria-valuemax={100}
       aria-valuemin={0}
       aria-valuenow={Math.round(fraction * 100)}
-      className={track}
+      className={track + motion}
       role="progressbar"
     >
-      <div className={fill} style={{ width: `${Math.min(Math.max(fraction, 0), 1) * 100}%` }} />
+      <div
+        className={fill}
+        style={{ width: `${done * 100}%`, minWidth: done > 0 ? 'var(--space-2)' : undefined }}
+      />
     </div>
   );
 }

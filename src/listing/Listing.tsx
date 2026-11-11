@@ -16,7 +16,7 @@ import { ICON_SM, Spinner } from '../icon/index.js';
 import type { SortDirection } from '../labels/listing.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { InRowContext, RowLinkLookContext, type LinkLook } from '../pane/PaneActions.js';
-import { describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
+import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
 import { pathParts } from './PathParts.logic.js';
 
 /**
@@ -120,7 +120,7 @@ function SortLabel({
       type="button"
     >
       {align === 'right' && mark}
-      <span className="pane-sort-label" {...tooltip(label)}>
+      <span className="pane-sort-label" {...cutTooltip(label)}>
         {label}
       </span>
       {align !== 'right' && mark}
@@ -154,8 +154,8 @@ export interface StripProps {
  * its listing (`sort`, and `titleSort` for the name's column), whose label is
  * the control that sorts it, named by `listing.sortBy` from the labels. In a
  * table (`table`) it is the header row; `heading` makes the name the
- * section's heading. Every visible label carries its whole text as its
- * tooltip, since a narrow column cuts it with an ellipsis.
+ * section's heading. A visible label that a narrow column cuts with an
+ * ellipsis carries its whole text as its tooltip.
  */
 export function Strip({
   title,
@@ -182,7 +182,7 @@ export function Strip({
       >
         {titleSort === undefined ? (
           <span className="pane-sort">
-            <Title className="pane-sort-label" {...tooltip(titleLabel ?? title)}>
+            <Title className="pane-sort-label" {...cutTooltip(titleLabel ?? title)}>
               {titleLabel ?? title}
             </Title>
           </span>
@@ -211,7 +211,7 @@ export function Strip({
             : entry.control === undefined &&
               (entry.sort === undefined ? (
                 <span className="pane-sort">
-                  <span className="pane-sort-label" {...tooltip(entry.label)}>
+                  <span className="pane-sort-label" {...cutTooltip(entry.label)}>
                     {entry.label}
                   </span>
                 </span>
@@ -550,9 +550,9 @@ export function Row({
         <span
           className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
           role="cell"
-          // A name in words carries itself whole as its tooltip, since a
+          // A name in words carries itself whole as its tooltip while a
           // narrow name column cuts it with an ellipsis.
-          {...(typeof name === 'string' ? tooltip(name) : {})}
+          {...(typeof name === 'string' ? cutTooltip(name) : {})}
         >
           {name}
         </span>
@@ -605,7 +605,8 @@ export interface StateMarkProps {
  * `Spinner`, as `RunHeader` turns). Each tone's mark has its own shape too, so it reads
  * without its hue. Inside a row the word takes the tone too, so a failure
  * reads red and a stopped line dim. A word wider than its column ends in an
- * ellipsis and carries itself whole as its tooltip.
+ * ellipsis and carries itself whole as its tooltip, which a word shown
+ * whole does not open.
  */
 export function StateMark({ tone, word, busy = false }: StateMarkProps): ReactElement {
   return (
@@ -615,7 +616,7 @@ export function StateMark({ tone, word, busy = false }: StateMarkProps): ReactEl
       ) : (
         <span aria-hidden className="pane-state-dot" />
       )}
-      <span className="pane-state-word" {...tooltip(word)}>
+      <span className="pane-state-word" {...cutTooltip(word)}>
         {word}
       </span>
     </span>
@@ -685,9 +686,10 @@ export function WellColumn({
 }: WellColumnProps): ReactElement {
   const classes = className === undefined ? 'pane-well-column' : `pane-well-column ${className}`;
   const strip = <Strip columns={columns} title={title} />;
-  // The strip's name, then each of its columns at its own width.
+  // The strip's name, down to the listing's name floor, then each of its
+  // columns at its own width.
   const style = {
-    '--pane-grid': `var(--icon-column) minmax(0, 1fr) ${columns.map(() => 'auto').join(' ')}`
+    '--pane-grid': `var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr) ${columns.map(() => 'auto').join(' ')}`
   } as CSSProperties;
 
   return label === undefined ? (

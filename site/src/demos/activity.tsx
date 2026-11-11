@@ -1,6 +1,7 @@
 /**
  * A determinate bar under a slider, and the stripes of work with no
- * fraction, moving and standing still. Each bar draws its own track and fill.
+ * fraction, both moving or both standing still (a halted fill dims to the
+ * idle tone, as the stripes do). Each bar draws its own track and fill.
  */
 
 import { useState } from 'react';
@@ -25,9 +26,9 @@ export function ActivityDemo() {
         />
         <code className="demo-readout">{percent}%</code>
       </label>
-      <ActivityBar fraction={percent / 100} label="Uploading 3 files" moving />
+      <ActivityBar fraction={percent / 100} label="Uploading 3 files" moving={moving} />
       <div className="demo-row">
-        <span className="demo-label">No fraction</span>
+        <span className="demo-label">Both bars</span>
         <Button onClick={() => setMoving((value) => !value)} size="small">
           {moving ? 'Pause' : 'Resume'}
         </Button>

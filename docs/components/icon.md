@@ -19,7 +19,11 @@ function Refresh() {
 }
 ```
 
-Pick the size by what the icon sits beside, so the same role is the same size everywhere. Leave `strokeWidth` at lucide's default.
+Pick the size by what the icon sits beside, so the same role is the same size everywhere. A size between the steps (15px) or a literal in CSS is not used: CSS sizes an icon with `var(--icon-sm)`, `var(--icon-md)`, or `var(--icon-lg)`.
+
+## Stroke weight
+
+Every icon has one stroke weight, lucide's default (2 on its 24-unit grid), so no icon looks bolder or thinner than the ones beside it. Pass no `strokeWidth`: a 12px icon at 2.5 or 3 reads as filled in, a tab icon at 1.8 as faint. A glyph drawn larger than `ICON_LG` (an empty state's or a viewer's hero glyph) passes `absoluteStrokeWidth`, which keeps the line at 2px on screen instead of scaling it up with the glyph. `test/iconStroke.test.ts` fails on a `strokeWidth` or a numeric `size` (`size={14}` instead of `ICON_MD`) in the library or the docs site.
 
 ## Spinner
 

@@ -2,10 +2,21 @@
  * Every dialog variant: a rename over the frame (Return renames, Escape
  * cancels), the three confirmation tones, a delete that cannot be undone
  * with a long path list, a long question that wraps, a form that uses the
- * type hooks and a secondary slot, and a frosted sheet whose body scrolls.
+ * type hooks and a secondary slot, a command editor whose legend holds a
+ * destructive secondary verb and wraps to two rows, and a frosted sheet
+ * whose body scrolls.
  */
 
-import { FilePen, KeyRound, Keyboard, LogOut, Power, Server, Trash2 } from 'lucide-react';
+import {
+  FilePen,
+  KeyRound,
+  Keyboard,
+  LogOut,
+  Power,
+  Server,
+  SquareTerminal,
+  Trash2
+} from 'lucide-react';
 import { useId, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
@@ -20,6 +31,7 @@ type Open =
   | 'grant'
   | 'quit'
   | 'connect'
+  | 'command'
   | 'shortcuts'
   | null;
 
@@ -127,6 +139,61 @@ function ConnectDialog({
   );
 }
 
+/**
+ * A command editor whose legend carries a destructive secondary verb in the
+ * danger tone beside the primary, with verbs long enough that the legend
+ * wraps to a second row in the default width.
+ */
+function CommandDialog({
+  onSave,
+  onDelete,
+  onDuplicate,
+  onCancel
+}: {
+  readonly onSave: () => void;
+  readonly onDelete: () => void;
+  readonly onDuplicate: () => void;
+  readonly onCancel: () => void;
+}) {
+  const labelId = useId();
+  const commandId = useId();
+  return (
+    <ModalDialog
+      icon={SquareTerminal}
+      labelId={labelId}
+      legend={{
+        leave: { label: 'Keep Editing' },
+        secondary: [
+          {
+            label: 'Delete Command…',
+            chord: { key: 'Backspace', meta: true },
+            onRun: onDelete,
+            danger: true
+          },
+          { label: 'Duplicate', chord: { key: 'd', meta: true }, onRun: onDuplicate }
+        ],
+        primary: { label: 'Save Changes', onRun: onSave }
+      }}
+      onCancel={onCancel}
+      title="Edit Command"
+      titleAside="~/projects/site"
+    >
+      <div className="demo-stack">
+        <label className="dialog-label" htmlFor={commandId}>
+          Command
+        </label>
+        <input
+          autoFocus
+          className="field demo-input wide"
+          defaultValue="npm run build"
+          id={commandId}
+          spellCheck={false}
+        />
+      </div>
+    </ModalDialog>
+  );
+}
+
 /** A frosted sheet whose long body scrolls between the strip and the legend. */
 function ShortcutsDialog({ onDone }: { readonly onDone: () => void }) {
   const labelId = useId();
@@ -172,6 +239,7 @@ export function DialogDemo() {
         <Button onClick={() => setOpen('grant')}>Grant Access…</Button>
         <Button onClick={() => setOpen('quit')}>Quit…</Button>
         <Button onClick={() => setOpen('connect')}>Connect…</Button>
+        <Button onClick={() => setOpen('command')}>Edit Command…</Button>
         <Button onClick={() => setOpen('shortcuts')}>Shortcuts…</Button>
       </div>
       <code className="demo-readout">
@@ -273,6 +341,14 @@ export function DialogDemo() {
           onCancel={close('cancelled')}
           onConnect={close('connected')}
           onTest={() => setSaid('connection works')}
+        />
+      ) : null}
+      {open === 'command' ? (
+        <CommandDialog
+          onCancel={close('kept editing')}
+          onDelete={close('deleted the command')}
+          onDuplicate={() => setSaid('duplicated')}
+          onSave={close('saved')}
         />
       ) : null}
       {open === 'shortcuts' ? <ShortcutsDialog onDone={close('closed shortcuts')} /> : null}

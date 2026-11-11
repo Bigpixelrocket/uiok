@@ -41,6 +41,30 @@ describe('Button', () => {
   });
 });
 
+describe('the danger and pressed looks', () => {
+  const styles = readStylesheet('src/button/button.css');
+
+  it('draws a danger Button red-outlined, washed red under the pointer and while held', () => {
+    render(<Button variant="danger">Delete</Button>);
+
+    expect(screen.getByRole('button', { name: 'Delete' }).className).toBe('button button-danger');
+    expect(styles).toMatch(
+      /\.button-danger \{\s*border-color: var\(--danger\);\s*color: var\(--danger-text\);/
+    );
+    expect(styles).toMatch(/\.button-danger:hover[^{]*\{\s*background: var\(--danger-wash\);/);
+    expect(styles).toMatch(
+      /\.button-danger:active[^{]*\{\s*background: var\(--danger-wash-strong\);/
+    );
+  });
+
+  it('presses a fill past its hover tone, never back to rest', () => {
+    expect(styles).toMatch(
+      /\.button-primary:active[^{]*\{\s*background: var\(--primary-pressed\);/
+    );
+    expect(styles).toMatch(/\.button-tonal:active[^{]*\{\s*background: var\(--tonal-pressed\);/);
+  });
+});
+
 describe('a disabled Button or IconButton', () => {
   it('fades to --disabled-opacity under an arrow, over its own pointer', () => {
     applyStylesheets(readStylesheet('src/styles.css'));

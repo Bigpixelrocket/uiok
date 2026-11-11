@@ -1,6 +1,8 @@
 /**
  * A command palette: type to filter, ↑ ↓ move, Return runs, Escape clears
- * the query and then closes. The header's Find a page (⌘K) is the same
+ * the query and then closes. Switch Branch… opens a second level, with a
+ * note and a failure under its list; the chip, ←, or Backspace in an empty
+ * field steps back. The header's Find a page (⌘K) is the same
  * palette over the site's pages.
  */
 
@@ -74,7 +76,19 @@ export function PaletteDemo() {
       'Stop and start the dev server',
       <RefreshCw size={size} />
     ),
-    command('branch', 'Switch Branch…', 'Check out another branch', <GitBranch size={size} />),
+    {
+      id: 'branch',
+      label: 'Switch Branch…',
+      hint: 'Check out another branch',
+      icon: <GitBranch size={size} />,
+      level: ['main', 'release/1.4', 'fix/settings-type', 'feat/dark-charts'].map((name) =>
+        command(`branch-${name}`, name, `Check out ${name}`, <GitBranch size={size} />)
+      ),
+      notes: [
+        { text: 'Branches as of 2 minutes ago.' },
+        { text: 'Could not reach origin: offline.', failure: true }
+      ]
+    },
     command('terminal', 'New Terminal', 'Open a shell in this folder', <Terminal size={size} />, {
       key: '`',
       ctrl: true

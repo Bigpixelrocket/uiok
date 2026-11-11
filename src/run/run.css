@@ -74,7 +74,8 @@
 }
 
 /* The figure reads live while the run goes on and dims once it is history
-   (or before it starts). */
+   (or before it starts), in weight as well as colour, since some themes
+   have barely a step between the text and dim text colours. */
 .run-header-figure {
   color: var(--text);
   font-family: var(--font-mono);
@@ -93,19 +94,18 @@
   )
   .run-header-figure {
   color: var(--text-dim);
+  font-weight: var(--font-weight-regular);
 }
 
 /* The bar's trough and fill are ActivityBar's own (.activity-bar,
-   .activity-fill), as are its stripes, which stand still in the idle mark
-   whenever the run is not moving. The header only colours a fill by state:
-   the accent while running or waiting, the quiet idle mark once it stopped
-   short (paused, stopped), so a halted bar never outweighs a working one;
-   the danger mark when failed and the success mark when done. Stripes
-   keep their own colours (a background here would paint over them). */
-.run-header:is([data-state='paused'], [data-state='stopped'])
-  .run-header-bar:not(.indeterminate)
-  .run-header-fill {
-  background: var(--progress-idle);
+   .activity-fill), and so is its idle look: a bar that is not moving fills
+   and stripes in the quiet idle mark, so a halted run (paused, stopped)
+   never outweighs a working one. The header colours a fill only where its
+   state says more: the accent while it waits its turn, the danger mark
+   when failed, and the success mark when done. Stripes keep their own
+   colours (a background here would paint over them). */
+.run-header[data-state='waiting'] .run-header-bar:not(.indeterminate) .run-header-fill {
+  background: var(--accent);
 }
 
 .run-header[data-state='failed'] .run-header-bar:not(.indeterminate) .run-header-fill {

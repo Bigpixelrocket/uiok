@@ -1,6 +1,7 @@
 import {
-  Fragment,
   memo,
+  useLayoutEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type PointerEvent,
@@ -9,6 +10,7 @@ import {
 } from 'react';
 
 import { useLabels } from '../labels/UiokProvider.js';
+import { VisuallyHidden } from '../VisuallyHidden.js';
 import { createValueStore, type ValueStore } from '../store/ValueStore.js';
 import { pieArcs } from './Pie.logic.js';
 import {
@@ -24,7 +26,7 @@ import {
   type ChartSeries,
   type ResultChartType
 } from './ResultChart.logic.js';
-import { domainOf, scaled, tickLabel, ticksOf, type Domain } from './Scatter.logic.js';
+import { domainOf, scaled, tickLabels, ticksOf, type Domain } from './Scatter.logic.js';
 import { seriesColour as colour } from './seriesColour.js';
 
 /** A value as an axis and the read-out write it: six significant digits, no exponent for everyday sizes. */
@@ -37,52 +39,89 @@ const EDGE = 16;
 const LEGEND_ROW = 16;
 const LEGEND_ROWS = 4;
 
-/** What the pointer is on: a series' value at a category, or a slice. */
+/**
+ * What the pointer is on: a series' value at a category, or a slice, and
+ * where its mark sits in the figure (its left, right, and vertical centre in
+ * pixels), so the read-out can stand beside it.
+ */
 interface Hovered {
   readonly series: number;
   readonly at: number;
+  readonly left: number;
+  readonly right: number;
+  readonly middle: number;
 }
 
 /**
- * The value under the pointer, read out under the drawing: it follows the
- * hover on its own, so the pointer moving from mark to mark draws this line
+ * The value under the pointer: a floating read-out beside the hovered mark,
+ * in the look every chart's read-out has (`.line-readout`), and the same
+ * words in a hidden live line for assistive technology. It follows the
+ * hover on its own, so the pointer moving from mark to mark draws this
  * alone, never the chart's marks.
  */
 function ResultChartReadout({
   hover,
   type,
   categories,
-  series
+  series,
+  width
 }: {
   readonly hover: ValueStore<Hovered | null>;
   readonly type: ResultChartType;
   readonly categories: readonly string[];
   readonly series: readonly ChartSeries[];
+  readonly width: number;
 }): ReactElement {
   const labels = useLabels().charts;
   const hovered = useSyncExternalStore(hover.subscribe, hover.get);
-  const shown = (seriesIndex: number, at: number): string => {
+  const valueAt = (seriesIndex: number, at: number): string => {
     const value = series[seriesIndex]?.values[at];
 
-    return labels.seriesCategoryValue(
-      series[seriesIndex]?.name ?? '',
-      categories[at] ?? '',
-      value === null || value === undefined ? labels.noValue : valueText(value)
-    );
+    return value === null || value === undefined ? labels.noValue : valueText(value);
   };
+  const said =
+    hovered === null
+      ? null
+      : type === 'pie'
+        ? labels.seriesValue(categories[hovered.at] ?? '', valueAt(0, hovered.at))
+        : labels.seriesCategoryValue(
+            series[hovered.series]?.name ?? '',
+            categories[hovered.at] ?? '',
+            valueAt(hovered.series, hovered.at)
+          );
 
   return (
-    <p aria-live="polite" className="result-chart-readout">
-      {hovered === null
-        ? // A no-break space keeps the line's height while nothing is hovered.
-          '\u00a0'
-        : type === 'pie'
-          ? labels.seriesValue(
-              categories[hovered.at] ?? '',
-              valueText(series[0]?.values[hovered.at] ?? 0)
-            )
-          : shown(hovered.series, hovered.at)}
-    </p>
+    <>
+      {hovered !== null && (
+        <div
+          aria-hidden
+          className="line-readout result-chart-float"
+          style={{
+            top: hovered.middle,
+            ...(hovered.left > width / 2
+              ? { right: width - hovered.left + 8 }
+              : { left: hovered.right + 8 })
+          }}
+        >
+          {type !== 'pie' && <strong>{categories[hovered.at] ?? ''}</strong>}
+          <span>
+            <span
+              className="chart-swatch"
+              style={{ background: colour(type === 'pie' ? hovered.at : hovered.series) }}
+            />
+            {type === 'pie'
+              ? labels.seriesValue(categories[hovered.at] ?? '', valueAt(0, hovered.at))
+              : labels.seriesValue(
+                  series[hovered.series]?.name ?? '',
+                  valueAt(hovered.series, hovered.at)
+                )}
+          </span>
+        </div>
+      )}
+      <VisuallyHidden aria-live="polite" className="result-chart-readout">
+        {said ?? ''}
+      </VisuallyHidden>
+    </>
   );
 }
 
@@ -118,7 +157,7 @@ export interface ResultChartProps {
  * (a monotone curve), and area (filled to zero, or stacked); pie of one
  * series; timeline over a time axis; and scatter over a number axis. Title,
  * legend, and axis labels are drawn inside the SVG, so its picture saves
- * whole; hovering a value reads it out under the drawing. Each mark names
+ * whole; hovering a value reads it out beside its mark. Each mark names
  * its value in `data-series` and `data-at`, which one listener on the
  * drawing reads, and the hover lives in a store the read-out follows, so
  * the marks draw again only when the chart changes.
@@ -138,6 +177,11 @@ function ResultChartDrawing({
 }: ResultChartProps): ReactElement {
   const labels = useLabels().charts;
   const [hover] = useState(() => createValueStore<Hovered | null>(null));
+  const figure = useRef<HTMLElement>(null);
+  const legend = useRef<SVGGElement>(null);
+  // Each legend name's drawn width, once measured; until then (and where the
+  // engine cannot measure) the layout estimates it from its length.
+  const [legendWidths, setLegendWidths] = useState<readonly number[]>([]);
   const stack = stacked && STACKABLE_CHART_TYPES.has(type);
   const legendNames = (type === 'pie' ? categories : series.map((entry) => entry.name)).slice(
     0,
@@ -158,10 +202,24 @@ function ResultChartDrawing({
   const left =
     type === 'pie' ? EDGE : type === 'bar' ? 110 : Math.max(64, Math.ceil(tickWidth * 6.5) + 30);
   // The legend starts at the plot's left edge and wraps inside its width.
-  const legendPlaces = legendLayout(
-    legendNames.map((name) => cutLabel(name, 24)),
-    width - left - EDGE
-  );
+  const legendTexts = legendNames.map((name) => cutLabel(name, 24));
+  const legendPlaces = legendLayout(legendTexts, width - left - EDGE, legendWidths);
+  const legendKey = legendTexts.join('\n');
+
+  // Measure the names as drawn, so the gap after each is even whatever its glyphs.
+  useLayoutEffect(() => {
+    const texts = [...(legend.current?.querySelectorAll('text') ?? [])];
+    const measured = texts.map((text) =>
+      typeof text.getComputedTextLength === 'function' ? Math.ceil(text.getComputedTextLength()) : 0
+    );
+
+    if (measured.length === 0 || measured.some((value) => !(value > 0))) return;
+    setLegendWidths((held) =>
+      held.length === measured.length && held.every((value, at) => value === measured[at])
+        ? held
+        : measured
+    );
+  }, [legendKey]);
   const legendRows = legendPlaces.reduce((rows, place) => Math.max(rows, place.row + 1), 0);
   const legendTop = title === '' ? 8 : 28;
   const margin = {
@@ -352,26 +410,46 @@ function ResultChartDrawing({
     const at = mark?.getAttribute('data-at');
     const seriesIndex = mark?.getAttribute('data-series');
 
-    if (at === null || at === undefined || seriesIndex === null || seriesIndex === undefined) {
+    if (
+      mark === null ||
+      at === null ||
+      at === undefined ||
+      seriesIndex === null ||
+      seriesIndex === undefined
+    ) {
       return;
     }
 
     const held = hover.get();
-    const next = { series: Number(seriesIndex), at: Number(at) };
 
-    if (held === null || held.series !== next.series || held.at !== next.at) hover.set(next);
+    if (held !== null && held.series === Number(seriesIndex) && held.at === Number(at)) return;
+
+    const box = mark.getBoundingClientRect();
+    const frame = figure.current?.getBoundingClientRect();
+    const x = frame?.left ?? 0;
+    const y = frame?.top ?? 0;
+
+    hover.set({
+      series: Number(seriesIndex),
+      at: Number(at),
+      left: box.left - x,
+      right: box.right - x,
+      middle: (box.top + box.bottom) / 2 - y
+    });
   };
 
   const xAxis = { title: xLabel, kind: type === 'timeline' ? 'time' : 'number' } as const;
-  const xTicks = numericX
-    ? spacedTicks(
-        ticksOf(xDomain, xAxis.kind, Math.max(2, Math.floor(plotWidth / 90))).map((tick) => ({
-          at: scaled(tick, xDomain, 0, plotWidth),
-          text: tickLabel(tick, xAxis, xDomain)
-        })),
-        plotWidth
-      )
+  const xTickValues = numericX
+    ? ticksOf(xDomain, xAxis.kind, Math.max(2, Math.floor(plotWidth / 90)))
     : [];
+  const xTickTexts = tickLabels(xTickValues, xAxis, xDomain);
+  const xTicks = spacedTicks(
+    xTickValues.map((tick, at) => ({
+      at: scaled(tick, xDomain, 0, plotWidth),
+      text: xTickTexts[at] ?? ''
+    })),
+    plotWidth
+  );
   const labelled = shownLabels(
     count,
     type === 'bar' ? plotHeight : plotWidth,
@@ -379,7 +457,7 @@ function ResultChartDrawing({
   );
 
   return (
-    <figure className="result-chart">
+    <figure className="result-chart" ref={figure}>
       <svg
         aria-label={title === '' ? labels.chart : title}
         height={height}
@@ -400,28 +478,31 @@ function ResultChartDrawing({
             {title}
           </text>
         )}
-        {/* Each legend row is one line of text, a square glyph in the
-            series colour before each name, so the browser spaces the
-            entries evenly whatever their glyphs' widths. */}
-        <g transform={`translate(${margin.left} ${legendTop})`}>
-          {Array.from({ length: Math.min(LEGEND_ROWS, legendRows) }, (_unused, row) => (
-            <text className="result-chart-legend" key={row} y={row * LEGEND_ROW + 10}>
-              {legendPlaces.map((place, at) =>
-                place.row === row ? (
-                  <Fragment key={at}>
-                    <tspan
-                      className="result-chart-legend-swatch"
-                      dx={place.x === 0 ? 0 : 14}
-                      fill={colour(at)}
-                    >
-                      ■
-                    </tspan>
-                    <tspan dx={4}>{place.text}</tspan>
-                  </Fragment>
-                ) : null
-              )}
-            </text>
-          ))}
+        {/* Each legend entry is a 10px swatch in the series colour, as
+            every chart's legend draws it, then its name, placed one after
+            another and wrapped by their measured widths. */}
+        <g
+          className="result-chart-legend"
+          ref={legend}
+          transform={`translate(${margin.left} ${legendTop})`}
+        >
+          {legendPlaces.map((place, at) =>
+            place.row < LEGEND_ROWS ? (
+              <g key={at} transform={`translate(${place.x} ${place.row * LEGEND_ROW})`}>
+                <rect
+                  className="result-chart-legend-swatch"
+                  fill={colour(at)}
+                  height={10}
+                  rx={2}
+                  width={10}
+                  y={1}
+                />
+                <text x={14} y={10}>
+                  {place.text}
+                </text>
+              </g>
+            ) : null
+          )}
         </g>
         <g transform={`translate(${margin.left} ${margin.top})`}>
           {type !== 'pie' && (
@@ -491,7 +572,13 @@ function ResultChartDrawing({
           {plot}
         </g>
       </svg>
-      <ResultChartReadout categories={categories} hover={hover} series={series} type={type} />
+      <ResultChartReadout
+        categories={categories}
+        hover={hover}
+        series={series}
+        type={type}
+        width={width}
+      />
     </figure>
   );
 }
@@ -499,7 +586,7 @@ function ResultChartDrawing({
 /**
  * A chart of a table of rows in one of eight types (`ResultChartType`),
  * drawn in SVG from the chart tokens with its title, legend, and axes inside,
- * and a read-out of the value under the pointer. It draws again only when a
+ * and a read-out beside the mark under the pointer. It draws again only when a
  * prop changes, so keep `categories`, `xValues`, and `series` stable.
  */
 export const ResultChart = memo(ResultChartDrawing);

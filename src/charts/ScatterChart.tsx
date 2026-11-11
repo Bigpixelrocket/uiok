@@ -17,7 +17,7 @@ import { tooltip } from '../tooltip/Tooltip.logic.js';
 import {
   domainOf,
   scaled,
-  tickLabel,
+  tickLabels,
   ticksOf,
   zoomedTo,
   type Domain,
@@ -168,6 +168,11 @@ export function ScatterChart({
     }
   };
 
+  const xTicks = ticksOf(domains.x, x.kind, Math.max(2, Math.floor(width / 110)));
+  const yTicks = ticksOf(domains.y, y.kind, Math.max(2, Math.floor(height / 50)));
+  const xTickLabels = tickLabels(xTicks, x, domains.x);
+  const yTickLabels = tickLabels(yTicks, y, domains.y);
+
   return (
     <figure aria-label={label} className="scatter-chart">
       <div className="scatter-frame" ref={frame}>
@@ -180,20 +185,20 @@ export function ScatterChart({
         >
           <g transform={`translate(${MARGIN.left} ${MARGIN.top})`}>
             {points.length > 0 &&
-              ticksOf(domains.x, x.kind, Math.max(2, Math.floor(width / 110))).map((tick) => (
+              xTicks.map((tick, at) => (
                 <g className="scatter-tick" key={`x${tick}`} transform={`translate(${px(tick)} 0)`}>
                   <line className="scatter-grid" y1={0} y2={height} />
                   <text dy="1.2em" textAnchor="middle" y={height + 4}>
-                    {tickLabel(tick, x, domains.x)}
+                    {xTickLabels[at]}
                   </text>
                 </g>
               ))}
             {points.length > 0 &&
-              ticksOf(domains.y, y.kind, Math.max(2, Math.floor(height / 50))).map((tick) => (
+              yTicks.map((tick, at) => (
                 <g className="scatter-tick" key={`y${tick}`} transform={`translate(0 ${py(tick)})`}>
                   <line className="scatter-grid" x1={0} x2={width} />
                   <text dy="0.32em" textAnchor="end" x={-6}>
-                    {tickLabel(tick, y, domains.y)}
+                    {yTickLabels[at]}
                   </text>
                 </g>
               ))}

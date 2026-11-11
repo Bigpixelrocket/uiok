@@ -8,8 +8,9 @@
 
 /* The panel stays beside its button in the document but is placed in the
    window (DateTimePicker sets top and left, flipping above the button when
-   the room below is short), so no scrolling pane or dialog cuts it. It is a
-   menu-level layer in a pane, and over the dialog inside one. */
+   the room below is short). A fixed box is not cut by a scrolling ancestor's
+   overflow, so no pane or dialog clips it; it is a menu-level layer in the
+   stacking context it is drawn in, which in a dialog is the dialog's own. */
 .date-picker-panel {
   position: fixed;
   top: 0;
@@ -33,10 +34,6 @@
   font: var(--font-size-small)/var(--line-height-prose) var(--font-ui);
 }
 
-.dialog .date-picker-panel {
-  z-index: var(--z-dialog-popover);
-}
-
 .date-picker-head {
   display: flex;
   align-items: center;
@@ -52,9 +49,11 @@
 
 .date-picker-week {
   display: grid;
-  /* At least 28px a day; wider when the time row below needs more room,
-     so the days and the fields share one right edge. */
-  grid-template-columns: repeat(7, minmax(28px, 1fr));
+  /* A day is as wide as a regular control, room for a weekday's short name,
+     whatever the time row below asks; a wider panel spreads the days rather
+     than stretch them. */
+  grid-template-columns: repeat(7, var(--control-height));
+  justify-content: space-between;
   gap: var(--space-1);
 }
 
@@ -100,17 +99,22 @@
   color: var(--on-accent);
 }
 
-/* The time fields share the day grid's width: each takes an equal part of
-   the row, and a long fraction field the room its digits need. */
+/* The time fields share one row that never wraps: hour, minute, and second
+   take equal parts of the panel's width, with a short fraction a fourth. A
+   long fraction (microseconds) takes a row of its own across all three, so
+   it never widens the days above it. */
 .date-picker-time {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(6ch, 1fr));
   gap: var(--space-4);
+}
+
+.date-picker-time:has(> .date-picker-field:nth-child(4) > .date-picker-input:not(.long)) {
+  grid-template-columns: repeat(4, minmax(6ch, 1fr));
 }
 
 .date-picker-field {
   display: flex;
-  flex: 1 1 6ch;
   flex-direction: column;
   gap: var(--space-2);
   min-width: 0;
@@ -118,7 +122,7 @@
 }
 
 .date-picker-field:has(> .long) {
-  flex-basis: auto;
+  grid-column: 1 / -1;
 }
 
 /* A time field (the shared .field look, small): two digits centred. Scoped

@@ -22,7 +22,7 @@ describe('ActivityBar', () => {
   it('fills as far as the fraction, clamped, with its value for assistive technology', () => {
     const bar = renderBar(1.4, true);
 
-    expect(bar.className).toBe('activity-bar track');
+    expect(bar.className).toBe('activity-bar track moving');
     expect(bar.firstElementChild?.className).toBe('activity-fill fill');
     expect(bar.getAttribute('aria-valuenow')).toBe('140');
     expect((bar.firstElementChild as HTMLElement).style.width).toBe('100%');
@@ -35,6 +35,23 @@ describe('ActivityBar', () => {
     expect(bar.getAttribute('aria-busy')).toBe('true');
     expect(bar.getAttribute('aria-valuenow')).toBeNull();
     expect(bar.firstElementChild?.className).toBe('activity-fill fill activity-stripes');
+  });
+
+  it('marks a determinate bar moving only while the run works', () => {
+    expect(renderBar(0.4, false).className).toBe('activity-bar track');
+  });
+
+  it('keeps a nub for any fraction above zero, and none at zero', () => {
+    const fill = renderBar(0.01, true).firstElementChild as HTMLElement;
+
+    expect(fill.style.width).toBe('1%');
+    expect(fill.style.minWidth).toBe('var(--space-2)');
+  });
+
+  it('draws no fill at zero', () => {
+    const fill = renderBar(0, true).firstElementChild as HTMLElement;
+
+    expect(fill.style.minWidth).toBe('');
   });
 
   it('stands its stripes still while the run is not working', () => {
@@ -50,7 +67,7 @@ describe('ActivityBar without classes of its own', () => {
     render(<ActivityBar fraction={0.5} label="Indexing" moving />);
     const bar = screen.getByRole('progressbar', { name: 'Indexing' });
 
-    expect(bar.className).toBe('activity-bar');
+    expect(bar.className).toBe('activity-bar moving');
     expect(bar.firstElementChild?.className).toBe('activity-fill');
   });
 });
@@ -66,6 +83,12 @@ describe('the activity stripes', () => {
     expect(styles).not.toMatch(/\.indeterminate > \.activity-stripes\s*\{[^}]*animation:/);
     expect(styles).toMatch(
       /@media \(prefers-reduced-motion: reduce\)\s*\{\s*\.indeterminate\.moving > \.activity-stripes\s*\{\s*animation:\s*none;/
+    );
+  });
+
+  it('dim a determinate fill too whenever the bar is not moving, at no weight', () => {
+    expect(styles).toMatch(
+      /:where\(\.activity-bar:not\(\.moving, \.indeterminate\)\) > :where\(\.activity-fill\)\s*\{[^}]*background:\s*var\(--progress-idle\)/
     );
   });
 

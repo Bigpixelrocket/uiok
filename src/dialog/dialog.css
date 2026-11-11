@@ -25,6 +25,12 @@
   padding-top: calc(var(--dialog-inset-top, var(--space-8)));
 }
 
+/* A host's dialog layer (DialogLayer) only marks where dialogs mount; it
+   draws nothing and takes no room in its parent's layout. */
+.dialog-layer {
+  display: contents;
+}
+
 /* The frosted wash, for overlays that replace the page rather than ask
    about it (a shortcuts list, settings): the modal scrim over the shared
    frost, so each theme keeps its own tone and the page ghosts through. */
@@ -41,11 +47,10 @@
    paths, values) in monospace, through the rules and hooks below. It also
    resets box sizing and the margins of its own text elements. */
 .dialog {
-  /* The tone (ModalDialog's `tone`): the title strip's rule, and in a
-     destructive dialog the lit primary; the icon wears the same colour, with
-     the primary colour for the accent. */
+  /* The tone (ModalDialog's `tone`): the title strip's rule, the icon, and
+     in a destructive dialog the lit primary, one hue for all three. */
   --dialog-tone: var(--accent);
-  --dialog-icon: var(--primary);
+  --dialog-icon: var(--accent);
   box-sizing: border-box;
   width: 360px;
   /* Never taller or wider than the backdrop's inset area: past that the
@@ -74,6 +79,21 @@
     inset 0 1px 0 var(--glass-edge),
     var(--shadow-modal);
   animation: dialog-settle var(--duration-base) var(--ease-out);
+}
+
+/* The width steps a caller picks from by what the body holds (the 360px
+   default above for a question or a name field). The box still never
+   passes the backdrop's inset area, so a narrow window shrinks any step. */
+.dialog.dialog-size-md {
+  width: 480px;
+}
+
+.dialog.dialog-size-lg {
+  width: 640px;
+}
+
+.dialog.dialog-size-xl {
+  width: 880px;
 }
 
 .dialog,
@@ -245,8 +265,11 @@
   flex: none;
   align-items: center;
   gap: var(--space-1);
+  /* One row centres in the bar's height; a legend whose verbs wrap pads
+     its rows off the hairline and the box's edge, and parts them. */
+  row-gap: var(--space-1);
   min-height: var(--bar-height-lg);
-  padding: 0 var(--space-3);
+  padding: var(--space-2) var(--space-3);
   border-top: var(--line) solid var(--border);
 }
 
@@ -260,6 +283,76 @@
   z-index: var(--z-raised);
   margin: 0 calc(-1 * var(--space-6)) calc(-1 * var(--space-6));
   background: var(--surface);
+}
+
+/* A box taller than the window scrolls between its pinned strip and legend,
+   and these fades say there is more: one hangs above the legend while the
+   body continues below, one under the title strip once the body has
+   scrolled past its start. They follow the box's own scroll position, so a
+   box that does not scroll shows neither. The strip and the legend are
+   sticky, which already makes them the fades' containing blocks. */
+.dialog > :is(.dialog-heading, .dialog-legend)::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: var(--space-8);
+  pointer-events: none;
+  opacity: 0;
+}
+
+.dialog > .dialog-legend::after {
+  bottom: 100%;
+  /* Above the legend's hairline, which is its border. */
+  margin-bottom: var(--line);
+  background: linear-gradient(transparent, var(--surface));
+}
+
+.dialog > .dialog-heading::after {
+  top: 100%;
+  /* Below the strip's rule, which is its border. */
+  margin-top: var(--line);
+  background: linear-gradient(var(--surface), transparent);
+}
+
+@supports (animation-timeline: scroll()) {
+  .dialog {
+    scroll-timeline: --dialog-scroll block;
+  }
+
+  .dialog > .dialog-legend::after {
+    animation: dialog-more-below linear both;
+    animation-timeline: --dialog-scroll;
+  }
+
+  .dialog > .dialog-heading::after {
+    animation: dialog-more-above linear both;
+    animation-timeline: --dialog-scroll;
+  }
+}
+
+/* The fade eases out over the last stretch of the scroll, so the end reads
+   as the end. */
+@keyframes dialog-more-below {
+  0%,
+  92% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes dialog-more-above {
+  0% {
+    opacity: 0;
+  }
+
+  8%,
+  100% {
+    opacity: 1;
+  }
 }
 
 .legend-slot {
@@ -302,16 +395,29 @@
 }
 
 /* The verb Return runs is lit like a held key; a destructive one in the
-   danger colour, verb and all. */
+   danger colour, verb and all. A lit cap's foot is its own fill under a
+   fixed shade, darker than the face in every theme, so it keeps the key's
+   shape. */
 .legend-primary .keychord {
   border-color: var(--accent);
+  border-bottom-color: var(--key-foot-shade);
   background: var(--accent);
   color: var(--on-accent);
 }
 
-/* A lit cap's foot is its own fill darkened, so it keeps the key's shape. */
-.legend-primary .keychord {
-  border-bottom-color: color-mix(in srgb, var(--accent) 70%, var(--ground));
+/* A secondary or leave verb that destroys (a Delete… beside the primary)
+   reads in the danger text colour, with the danger wash under the pointer;
+   its cap stays a plain key, since only the primary's cap is lit. */
+.legend-slot.legend-danger {
+  color: var(--danger-text);
+}
+
+.legend-slot.legend-danger:hover:not(:disabled) {
+  background: var(--danger-wash);
+}
+
+.legend-slot.legend-danger:active:not(:disabled) {
+  background: var(--danger-wash-strong);
 }
 
 .dialog[data-tone='danger'] .legend-primary {
@@ -320,7 +426,7 @@
 
 .dialog[data-tone='danger'] .legend-primary .keychord {
   border-color: var(--danger);
-  border-bottom-color: color-mix(in srgb, var(--danger) 70%, var(--ground));
+  border-bottom-color: var(--key-foot-shade);
   background: var(--danger);
   color: var(--on-danger);
 }
@@ -363,13 +469,13 @@
    before the list scrolls, with the shared scroll fade as its cue. */
 .dialog-paths {
   flex: 0 1 auto;
-  min-height: calc(2 * var(--line-height-compact) + 2 * var(--space-3) + 2px);
-  max-height: calc(8 * var(--line-height-compact) + 2 * var(--space-3) + 2px);
+  min-height: calc(2 * var(--line-height-compact) + 2 * var(--space-3) + 2 * var(--line));
+  max-height: calc(8 * var(--line-height-compact) + 2 * var(--space-3) + 2 * var(--line));
   margin: 0;
   padding: var(--space-3) var(--space-4);
   overflow: auto;
   list-style: none;
-  border: var(--line) solid var(--border);
+  border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-sm);
   color: var(--text-dim);
   font-family: var(--font-mono);

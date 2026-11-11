@@ -21,19 +21,31 @@
  * - `z-index`: a layer token, `auto`, or `inherit`;
  * - durations and easings in `transition` and `animation`: a motion token,
  *   `0s`, `linear`, or `steps()`;
- * - `gap`, `padding`, and `margin` (and their longhands): a token, `0`, a
- *   1px line or nudge, `auto`, `inherit`, a length in `ch` (listing columns
- *   are measured in characters), a percentage, or a `calc()` over tokens.
+ * - `gap`, `padding`, and `margin` (and their longhands, logical ones such
+ *   as `padding-inline-start` included): a token, `0`, a 1px line or nudge,
+ *   `auto`, `inherit`, a length in `ch` (listing columns are measured in
+ *   characters), a percentage, or a `calc()` over tokens;
+ * - border and outline widths (`border`, its side and logical longhands,
+ *   `border-width`, `outline`, `outline-width`, `outline-offset`): no raw
+ *   length; `--line`, `--line-strong`, a focus token, `0`, or `none`;
+ * - `height`, `min-height`, `max-height` and their logical forms: a height,
+ *   icon, or space token, a percentage or viewport length, a keyword, a
+ *   1px line, or glyph geometry under 12px (a dot, a tick, a bar's
+ *   thickness, below every scale step); 12px and up is a token or an
+ *   exception;
+ * - `opacity`: `0`, `1`, `inherit`, or a token;
+ * - `box-shadow`: no blur radius outside a shadow token (an elevation is a
+ *   `--shadow-*` token; a crisp ring or edge is drawn with no blur);
+ * - any property: no `color-mix(` outside a custom property definition (a
+ *   tint is a theme token: a wash, a line, a state ground).
  *
  * Custom properties are not checked: `tokens.css` and the site define the
  * scales there, and a component's own hook reads a token. Nor are widths,
- * heights, insets, letter-spacing, borders, or shadows: their values are
- * often geometry of one component (a 22px icon action, a 12px key box) that
- * no scale step names, and a check there would mostly raise false alarms.
- * Heights that are a control, row, or bar height use the height tokens by
- * review, not by this test. A literal that stays literal is listed in
- * `EXCEPTIONS` with its reason; every entry must still match a declaration,
- * so none outlives its reason.
+ * insets, or letter-spacing: their values are often geometry of one
+ * component (a 22px icon action, a 12px key box) that no scale step names,
+ * and a check there would mostly raise false alarms. A literal that stays
+ * literal is listed in `EXCEPTIONS` with its reason; every entry must still
+ * match a declaration, so none outlives its reason.
  */
 
 import { readdirSync, readFileSync } from 'node:fs';
@@ -104,6 +116,57 @@ const EXCEPTIONS: readonly Exception[] = [
     property: 'padding',
     value: /40px 64px|48px/,
     reason: "The docs page's outer margins are a reading layout's, wider than the interface scale."
+  },
+  ...(['height', 'min-height', 'max-height'] as const).map((property) => ({
+    file: 'site/src/site.css',
+    property,
+    value: /^\d+px$/,
+    reason:
+      "A docs page's demo frame (and the brand mark) sizes a sample for reading, not a control."
+  })),
+  {
+    file: 'src/charts/charts.css',
+    property: 'min-height',
+    value: /^1[28]0px$/,
+    reason: 'A plot keeps room to draw its axes and an empty message: plot geometry, not a control.'
+  },
+  {
+    file: 'src/charts/charts.css',
+    property: 'height',
+    value: /^380px$/,
+    reason: "A scatter plot's drawing height, plot geometry."
+  },
+  {
+    file: 'src/field/field.css',
+    property: 'height',
+    value: /^12px$/,
+    reason: "The slider's knob sits on its 4px trough: glyph geometry, not an icon."
+  },
+  {
+    file: 'src/keychord/keychord.css',
+    property: 'height',
+    value: /^1[28]px$/,
+    reason:
+      'A key cap is a glyph box (12px for a letter key, 18px for a cap in a strip), no scale step.'
+  },
+  {
+    file: 'src/legend/legend.css',
+    property: 'height',
+    value: /^18px$/,
+    reason: "A dock key cap matches the strip's 18px key cap, glyph geometry."
+  },
+  {
+    file: 'src/shell/shell.css',
+    property: 'height',
+    value: /^min\(620px, 100%\)$/,
+    reason:
+      "The Settings dialog's fixed frame height, a layout size, not a control; fixed so switching pages never moves the frame."
+  },
+  {
+    file: 'src/styles.css',
+    property: 'opacity',
+    value: /^0\.35$/,
+    reason: "The shared pulse's low point is a keyframe of the motion, not a state's opacity."
   }
 ];
 
@@ -155,8 +218,19 @@ function declarations(file: string, source: string): Declaration[] {
   return found;
 }
 
-/** A value with every `var(…)` taken out, so a token's name never reads as a literal. */
-const withoutVars = (value: string): string => value.replace(/var\(--[\w-]+\)/g, 'TOKEN');
+/**
+ * A value with every `var(…)` taken out, so a token's name never reads as a
+ * literal; a fallback that is itself a token or 0 goes with it
+ * (`var(--hook, var(--space-6))` is a token, `var(--hook, 7px)` is not).
+ */
+function withoutVars(value: string): string {
+  let plain = value;
+  for (;;) {
+    const next = plain.replace(/var\(--[\w-]+(?:,\s*(?:TOKEN|0))?\)/g, 'TOKEN');
+    if (next === plain) return next;
+    plain = next;
+  }
+}
 
 /** A length with a unit that a scale would name. */
 const LENGTH = /(?<![\w.-])-?\d*\.?\d+(?:px|rem|pt)\b/;
@@ -239,11 +313,54 @@ const RULES: readonly { property: RegExp; problem: (value: string) => string | u
     }
   },
   {
-    property: /^(?:gap|row-gap|column-gap|padding(?:-[a-z]+)?|margin(?:-[a-z]+)?)$/,
+    property: /^(?:gap|row-gap|column-gap|padding(?:-[a-z]+){0,2}|margin(?:-[a-z]+){0,2})$/,
     problem: (value) =>
       everyPart(value, /^(?:0|-?1px|auto|inherit|-?\d*\.?\d+(?:ch|%))$/)
         ? undefined
         : 'a space that is not a token'
+  },
+  {
+    property:
+      /^(?:border(?:-(?:top|right|bottom|left|block|inline)(?:-(?:start|end))?)?(?:-width)?|outline(?:-width|-offset)?)$/,
+    problem: (value) =>
+      LENGTH.test(foldCalc(withoutVars(value)).replace(/calc\([^)]*\)/g, 'TOKEN'))
+        ? 'a line width that is not a token'
+        : undefined
+  },
+  {
+    property: /^(?:min-|max-)?(?:height|block-size)$/,
+    problem: (value) =>
+      everyPart(
+        value,
+        /^(?:0|auto|none|inherit|fit-content|min-content|max-content|1px|(?:\d|1[01]|\d\.\d+|1[01]\.\d+)px|\d*\.?\d+(?:%|vh|dvh|svh|lh|em))$/
+      )
+        ? undefined
+        : 'a height that is not a token'
+  },
+  {
+    property: /^opacity$/,
+    problem: (value) =>
+      everyPart(value, /^(?:0|1|inherit)$/) ? undefined : 'an opacity that is not a token'
+  },
+  {
+    property: /^box-shadow$/,
+    problem: (value) =>
+      withoutVars(value)
+        .split(/,(?![^(]*\))/)
+        .some((shadow) => {
+          const lengths = shadow
+            .trim()
+            .split(/\s+/)
+            .filter((part) => /^-?\d*\.?\d+(?:px|rem|em)?$/.test(part));
+          return lengths.length >= 3 && !/^-?0*\.?0+(?:px|rem|em)?$/.test(lengths[2] ?? '0');
+        })
+        ? 'a blurred shadow that is not a shadow token'
+        : undefined
+  },
+  {
+    property: /^[a-z-]+$/,
+    problem: (value) =>
+      value.includes('color-mix(') ? 'a color-mix() outside a custom property' : undefined
   }
 ];
 
@@ -308,11 +425,52 @@ describe('scale tokens in the stylesheets', () => {
       ['transition', 'color 150ms ease'],
       ['animation', 'spin var(--duration-spin) ease-in-out infinite'],
       ['gap', '7px'],
-      ['padding', 'calc(var(--space-2) + 3px)']
+      ['padding', 'calc(var(--space-2) + 3px)'],
+      ['padding-inline-start', '18px'],
+      ['margin-block-end', '3px'],
+      ['border', '1px solid var(--border)'],
+      ['border-inline-start', '2px solid var(--accent)'],
+      ['outline', '2px solid var(--accent)'],
+      ['outline-offset', '3px'],
+      ['height', '22px'],
+      ['min-height', '26px'],
+      ['opacity', '0.35'],
+      ['box-shadow', '0 0 6px var(--accent)'],
+      ['background', 'color-mix(in srgb, var(--accent) 14%, transparent)']
     ] as const;
     for (const [property, value] of bad) {
-      const rule = RULES.find((candidate) => candidate.property.test(property));
-      expect(rule?.problem(value), `${property}: ${value}`).toBeDefined();
+      expect(
+        RULES.filter((candidate) => candidate.property.test(property)).some(
+          (candidate) => candidate.problem(value) !== undefined
+        ),
+        `${property}: ${value}`
+      ).toBe(true);
+    }
+  });
+
+  it('passes a token, a crisp ring, and glyph geometry', () => {
+    const good = [
+      ['border', 'var(--line) solid var(--border)'],
+      ['border-bottom', '0'],
+      ['outline', 'none'],
+      ['outline-offset', 'var(--focus-offset-inset)'],
+      ['height', 'var(--control-height-sm)'],
+      ['height', '6px'],
+      ['max-height', '100%'],
+      ['opacity', 'var(--disabled-opacity)'],
+      ['box-shadow', 'var(--shadow-pressed), inset 0 0 0 var(--line) var(--border-strong)'],
+      ['box-shadow', 'inset 0 1px 0 var(--well-shade)'],
+      ['background', 'var(--accent-wash)']
+    ] as const;
+    for (const [property, value] of good) {
+      expect(
+        RULES.filter((candidate) => candidate.property.test(property)).map((candidate) =>
+          candidate.problem(value)
+        ),
+        `${property}: ${value}`
+      ).toEqual(
+        RULES.filter((candidate) => candidate.property.test(property)).map(() => undefined)
+      );
     }
   });
 });

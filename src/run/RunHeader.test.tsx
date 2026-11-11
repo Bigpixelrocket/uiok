@@ -112,8 +112,11 @@ describe('the progress header look', () => {
   it('fills a halted bar with the quiet idle mark, a failed one in the danger mark', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     const fill = (state: string): string | undefined => {
+      // ActivityBar marks the track moving only while the run works.
+      const moving = state === 'running' ? ' moving' : '';
+
       document.body.innerHTML = `<div class="run-header" data-state="${state}">
-        <div class="activity-bar run-header-bar"><div class="activity-fill run-header-fill"></div></div>
+        <div class="activity-bar run-header-bar${moving}"><div class="activity-fill run-header-fill"></div></div>
       </div>`;
 
       return declaredValues(document.querySelector('.run-header-fill') as Element, 'background').at(
@@ -121,13 +124,31 @@ describe('the progress header look', () => {
       );
     };
 
-    expect(['running', 'paused', 'stopped', 'failed', 'done'].map(fill)).toEqual([
+    expect(['running', 'waiting', 'paused', 'stopped', 'failed', 'done'].map(fill)).toEqual([
+      'var(--accent)',
       'var(--accent)',
       'var(--progress-idle)',
       'var(--progress-idle)',
       'var(--danger)',
       'var(--success)'
     ]);
+    document.body.innerHTML = '';
+  });
+
+  it('dims a settled figure by weight as well as colour', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const figure = (state: string): [string | undefined, string | undefined] => {
+      document.body.innerHTML = `<div class="run-header" data-state="${state}"><span class="run-header-figure">1:23</span></div>`;
+      const element = document.querySelector('.run-header-figure') as Element;
+
+      return [
+        declaredValues(element, 'color').at(-1),
+        declaredValues(element, 'font-weight').at(-1)
+      ];
+    };
+
+    expect(figure('running')).toEqual(['var(--text)', 'var(--font-weight-strong)']);
+    expect(figure('done')).toEqual(['var(--text-dim)', 'var(--font-weight-regular)']);
     document.body.innerHTML = '';
   });
 

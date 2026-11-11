@@ -1,4 +1,4 @@
-import { Fragment, type ReactElement } from 'react';
+import { Fragment, useLayoutEffect, useRef, type ReactElement, type RefObject } from 'react';
 
 import { tooltip } from '../tooltip/Tooltip.logic.js';
 import { partsText, type CutPart } from './NameCut.logic.js';
@@ -9,6 +9,102 @@ const RIGHT_TO_LEFT =
 
 /** The closing quote `nameParts` keeps at a cut name's end. */
 const CLOSING_QUOTE = /["”“»«]$/u;
+
+/** The ellipsis a cut head ends in, as the browser draws it for `text-overflow`. */
+const ELLIPSIS = '\u2026';
+
+/** A canvas context to measure the ellipsis in a head's own face; created once. */
+let measurer: CanvasRenderingContext2D | null | undefined;
+
+/** The width of the ellipsis in `head`'s face, or null where nothing measures text. */
+function ellipsisWidth(head: HTMLElement): number | null {
+  if (measurer === undefined) {
+    try {
+      measurer = document.createElement('canvas').getContext('2d');
+    } catch {
+      measurer = null;
+    }
+  }
+  if (measurer === null) return null;
+  // The `font` shorthand reads back empty in some engines; build it.
+  const face = getComputedStyle(head);
+
+  measurer.font = `${face.fontStyle} ${face.fontWeight} ${face.fontSize} ${face.fontFamily}`;
+  return measurer.measureText(ELLIPSIS).width;
+}
+
+/**
+ * Narrows a cut head to the whole characters that fit before its ellipsis,
+ * and the ellipsis: the box the line's flex gives it is no whole number of
+ * characters, so a fraction of one would stand blank after the ellipsis,
+ * which reads as a space before the tail. The fraction goes to the line's
+ * end instead. A head shown whole, or one with nothing to measure, keeps
+ * the width the line gives it.
+ */
+function snapHead(head: HTMLElement): void {
+  head.style.removeProperty('width');
+  head.style.removeProperty('flex-shrink');
+
+  const text = head.firstChild;
+  const room = head.clientWidth;
+
+  if (!(text instanceof Text) || head.scrollWidth <= room) return;
+
+  const dots = ellipsisWidth(head);
+
+  if (dots === null) return;
+
+  const range = document.createRange();
+  const prefix = (count: number): number => {
+    range.setStart(text, 0);
+    range.setEnd(text, count);
+    return range.getBoundingClientRect().width;
+  };
+  // The most characters that, with the ellipsis, fit the room.
+  let fits = 0;
+  let over = text.length;
+
+  while (over - fits > 1) {
+    const middle = Math.floor((fits + over) / 2);
+
+    if (prefix(middle) + dots <= room) fits = middle;
+    else over = middle;
+  }
+  if (fits === 0) return;
+
+  // Half a pixel more than the characters and the ellipsis: the engine
+  // lays boxes out in fractions of a pixel and would round a width set to
+  // the exact sum below it, then drop one more character.
+  const width = prefix(fits) + dots + 0.5;
+
+  // Held at that width: the words cut after the name, if any, give way by
+  // the fraction instead, at the line's end.
+  if (width < room) {
+    head.style.width = `${width}px`;
+    head.style.flexShrink = '0';
+  }
+}
+
+/**
+ * Keeps each cut head in `line` a whole number of characters wide
+ * (`snapHead`) as its box resizes and its parts change. Nothing to do
+ * where the engine has no ResizeObserver (jsdom).
+ */
+function useSnappedHeads(line: RefObject<HTMLElement | null>, parts: readonly CutPart[]): void {
+  useLayoutEffect(() => {
+    const element = line.current;
+
+    if (element === null || typeof ResizeObserver === 'undefined') return;
+
+    const snap = (): void => {
+      for (const head of element.querySelectorAll<HTMLElement>('.name-cut-head')) snapHead(head);
+    };
+    const observer = new ResizeObserver(snap);
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [line, parts]);
+}
 
 /** Props for {@link NameCut}. */
 export interface NameCutProps {
@@ -63,7 +159,8 @@ function cutName(head: string, tail: string): ReactElement {
  * after the name give way at their end alongside it, the words before it
  * give way at their end only once both have gone as far as they go, and
  * the name's tail, at its front, only once those words have too, so the
- * line always ends in view. A line with a cut name is drawn in parts for
+ * line always ends in view. A cut head is snapped to whole characters, so
+ * its ellipsis meets the tail with no blank between them. A line with a cut name is drawn in parts for
  * sight only, and assistive technology reads it whole once; a line of words
  * alone is drawn and read as it is. The tooltip carries the complete line,
  * including the words around the name. Styled by the `.name-cut` rules;
@@ -74,9 +171,12 @@ export function NameCut({ parts, className }: NameCutProps): ReactElement {
   // one hidden copy; words alone are one span already.
   const cut = parts.some((part) => part.kind === 'name');
   const text = partsText(parts);
+  const box = useRef<HTMLSpanElement>(null);
+
+  useSnappedHeads(box, parts);
 
   return (
-    <span className={className ? `name-cut ${className}` : 'name-cut'} {...tooltip(text)}>
+    <span className={className ? `name-cut ${className}` : 'name-cut'} ref={box} {...tooltip(text)}>
       {cut && <span className="visually-hidden">{text}</span>}
       <span aria-hidden={cut || undefined} className="name-cut-line">
         {parts.map((part, index) =>

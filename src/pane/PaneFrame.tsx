@@ -1,6 +1,6 @@
 import { Fragment, type ReactElement, type ReactNode } from 'react';
 
-import { describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
+import { cutTooltip, describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
 
 /** A crumb that is a control: a press goes to the place it names. */
 export interface PaneCrumb {
@@ -108,12 +108,18 @@ export interface PaneStatusProps {
 /**
  * The line a pane closes with: one summary of what the pane lists or
  * shows, and compact icon controls at its end (`tools`, `RowIconAction`s),
- * which the summary gives way to.
+ * which the summary gives way to. A summary in words that a narrow pane
+ * cuts with an ellipsis carries itself whole as its tooltip.
  */
 export function PaneStatus({ children, tools }: PaneStatusProps): ReactElement {
   return (
     <footer className="pane-status">
-      <span className="pane-summary">{children}</span>
+      <span
+        className="pane-summary"
+        {...(typeof children === 'string' ? cutTooltip(children) : {})}
+      >
+        {children}
+      </span>
       {tools !== undefined && tools !== null && tools !== false && (
         <span className="pane-status-tools">{tools}</span>
       )}

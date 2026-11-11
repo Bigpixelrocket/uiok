@@ -125,7 +125,14 @@ const TOKEN_CONTEXTS = new Set([
  * The literals that stay literal, each a line pattern in one file. Every
  * entry must still match a literal, so none outlives its reason.
  */
-const ALLOWED: readonly { file: string; line: RegExp; reason: string }[] = [];
+const ALLOWED: readonly { file: string; line: RegExp; reason: string }[] = [
+  {
+    file: 'src/terminal/ghostty/contrast.logic.ts',
+    line: /^const (?:BLACK|WHITE): GhosttyColor = \{ r: (?:0|255), g: (?:0|255), b: (?:0|255) \};$/,
+    reason:
+      "A cell's text moves toward black or white until it holds its contrast on the cell's own background: the two ends of that search, not colours the terminal paints from a theme."
+  }
+];
 
 /** CSS's named colours and system colours; `transparent` and `currentColor` are left out on purpose. */
 const NAMED_COLORS = new Set(

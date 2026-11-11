@@ -20,7 +20,7 @@ export function DateTimeDemo() {
         <span className="demo-label">Due</span>
         <input
           aria-label="Due"
-          className="field demo-input"
+          className="field field-sm demo-input"
           onChange={(event) => setDue(event.target.value)}
           spellCheck={false}
           value={due}
@@ -31,7 +31,7 @@ export function DateTimeDemo() {
         <span className="demo-label">Alarm</span>
         <input
           aria-label="Alarm"
-          className="field demo-input"
+          className="field field-sm demo-input"
           onChange={(event) => setAlarm(event.target.value)}
           spellCheck={false}
           value={alarm}
@@ -42,7 +42,7 @@ export function DateTimeDemo() {
         <span className="demo-label">Start</span>
         <input
           aria-label="Start"
-          className="field demo-input wide"
+          className="field field-sm demo-input wide"
           onChange={(event) => setStart(event.target.value)}
           spellCheck={false}
           value={start}
@@ -62,7 +62,7 @@ export function DateTimeDemo() {
         <span className="demo-label">Logged</span>
         <input
           aria-label="Logged"
-          className="field demo-input wide"
+          className="field field-sm demo-input wide"
           onChange={(event) => setStamp(event.target.value)}
           spellCheck={false}
           value={stamp}
@@ -80,7 +80,7 @@ export function DateTimeDemo() {
         <span className="demo-label">Locked</span>
         <input
           aria-label="Locked"
-          className="field demo-input"
+          className="field field-sm demo-input"
           disabled
           readOnly
           value="2026-11-01"

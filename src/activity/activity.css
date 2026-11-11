@@ -7,7 +7,8 @@
    with the trough's rounded ends. Both are written at no weight, so a
    caller's class beside them (a run's state colour, a wider bar) wins. The
    fill moves at the motion scale's fast step, linearly, as every progress
-   fill does. */
+   fill does. Any fraction above zero keeps a 4px nub (set inline by
+   ActivityBar), so a bar at 1% still shows that the work has started. */
 :where(.activity-bar) {
   position: relative;
   display: flex;
@@ -26,6 +27,14 @@
   transition: width var(--duration-fast) linear;
 }
 
+/* A fill that is not moving (paused, stopped, waiting) dims to the idle
+   tone, as standing stripes do, so a halted bar never looks like a working
+   one. At no weight: a caller that shows a settled state (done, failed)
+   colours the fill with its own class and wins. */
+:where(.activity-bar:not(.moving, .indeterminate)) > :where(.activity-fill) {
+  background: var(--progress-idle);
+}
+
 /* ---- Activity stripes ----
 
    The bar of a run that works without reporting how far it has got: diagonal
@@ -42,8 +51,9 @@
    period, not the length of a change. */
 .indeterminate > .activity-stripes {
   --stripe-ink: var(--accent);
+  --stripe-band: color-mix(in srgb, var(--stripe-ink) var(--stripe-ground, 38%), transparent);
   width: 100%;
-  background-color: color-mix(in srgb, var(--stripe-ink) var(--stripe-ground, 38%), transparent);
+  background-color: var(--stripe-band);
   background-image: repeating-linear-gradient(
     -45deg,
     var(--stripe-ink) 0 6px,

@@ -519,7 +519,7 @@ describe('WellColumn', () => {
 
     expect(screen.queryByRole('region')).toBeNull();
     expect(document.querySelector('.pane-well-column')?.getAttribute('style')).toContain(
-      '--pane-grid: var(--icon-column) minmax(0, 1fr) auto'
+      '--pane-grid: var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr) auto'
     );
 
     rerender(

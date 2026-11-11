@@ -236,4 +236,21 @@ describe('DateTimePicker', () => {
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Elsewhere' }));
     expect(screen.queryByRole('dialog')).toBeNull();
   });
+
+  it('keeps the time fields on one row and gives a long fraction a row of its own', () => {
+    applyStylesheets(readStylesheet('src/datetime/datetime.css'));
+    render(
+      <DateTimePicker fraction={6} kind="time" label="Pick" onChange={() => undefined} value="" />
+    );
+
+    open('Pick');
+    const hour = screen.getByRole('spinbutton', { name: 'Hour' }).parentElement as HTMLElement;
+    const micro = screen.getByRole('textbox', { name: 'Microsecond' }).parentElement as HTMLElement;
+    const row = hour.parentElement as HTMLElement;
+
+    expect(declaredValues(row, 'display')).toEqual(['grid']);
+    expect(declaredValues(row, 'flex-wrap')).toEqual([]);
+    expect(declaredValues(hour, 'grid-column')).toEqual([]);
+    expect(declaredValues(micro, 'grid-column')).toEqual(['1 / -1']);
+  });
 });

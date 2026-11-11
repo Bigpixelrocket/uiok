@@ -6,8 +6,9 @@
 
    - .field on an input, select, or textarea: a well in the window ground,
      outlined in --control-border, its contents in the code face (what a
-     user types is a value). 28px (.field), 24px (.field-sm, dense forms and
-     toolbars), 20px (.field-xs, in-row editors and inline controls).
+     user types is a value). The height follows the place, in every app:
+     28px (.field) in a dialog or a single prompt, 24px (.field-sm) in a
+     page form or a toolbar, 20px (.field-xs) inside a row or a path bar.
    - .check on a checkbox or radio: a 14px box (a disc for a radio), filled
      with the accent when on, with the tick, the dash (indeterminate), or
      the dot drawn in --on-accent.
@@ -20,8 +21,11 @@
 
    Every state reads tokens: hover lifts the outline to --text-dim; focus
    draws the 2px accent edge without growing (border plus a 1px ring on the
-   edge); aria-invalid="true" outlines in --danger; disabled fades whole by
-   the base rule. The drawn marks are borders and gradients, not images, so
+   edge); aria-invalid="true" outlines in --danger and data-tone="warning"
+   in --warning; disabled fades whole by the base rule, a check keeping a
+   stronger outline so the faded box still reads. A check or switch that is
+   on takes the accent, the one "on" colour of every toggle; a check may
+   take data-tone="danger" or "warning" for a choice in that tone. The drawn marks are borders and gradients, not images, so
    no content policy blocks them. */
 
 /* -- Text field, textarea, select -- */
@@ -36,7 +40,7 @@
   border-radius: var(--radius-md);
   /* A well: the field sits a touch below the surface, the opposite of a
      button's lit edge. */
-  box-shadow: inset 0 1px 0 var(--pressed-wash);
+  box-shadow: inset 0 1px 0 var(--well-shade);
   background: var(--ground);
   color: var(--text);
   font: var(--font-weight-regular) var(--font-size-small) / 1 var(--font-mono);
@@ -59,7 +63,13 @@
   border-radius: var(--radius-sm);
 }
 
-.field:hover:not(:disabled, :focus-visible, [aria-invalid='true']) {
+.field:hover:not(
+    :disabled,
+    :focus-visible,
+    [aria-invalid='true'],
+    [data-tone],
+    :read-only:not(select)
+  ) {
   border-color: var(--text-dim);
 }
 
@@ -79,9 +89,21 @@
   outline-color: var(--danger);
 }
 
+/* A value that works but needs a second look (overridden, out of date):
+   the outline in the warning tone. Invalid wins over it. */
+.field[data-tone='warning']:not([aria-invalid='true']) {
+  border-color: var(--warning);
+}
+
+.field[data-tone='warning']:not([aria-invalid='true']):focus-visible {
+  outline-color: var(--warning);
+}
+
 /* Read-only: the value is there to copy, not to change; the well loses its
-   depth and sits on the surface it is drawn on. */
-.field:read-only:not(select) {
+   depth and sits on the surface it is drawn on, and its outline drops to
+   the divider grade (a value, not a control), which hover does not lift. */
+.field:read-only:not(select, :disabled) {
+  border-color: var(--border-strong);
   box-shadow: none;
   background: transparent;
 }
@@ -144,19 +166,27 @@ select.field option {
 
 /* -- Checkbox and radio -- */
 
+/* The on fill and the mark drawn on it: the accent, or a tone's. A mixed
+   state belongs to a checkbox only: a radio of a group with nothing chosen
+   also matches :indeterminate, and must stay empty. */
 .check {
+  --check-on: var(--accent);
+  --check-mark: var(--on-accent);
+
   /* 14px: the box sits on a 13px label's x-height the way an icon of
      --icon-md does. */
   display: inline-grid;
   flex: none;
   place-content: center;
   box-sizing: border-box;
-  width: 14px;
-  height: 14px;
+  width: var(--icon-md);
+  height: var(--icon-md);
   margin: 0;
-  border: var(--line) solid var(--control-border);
+  /* A row on a tinted ground (hovered, cursor, marked) sets --check-edge
+     to --control-border-strong on itself; the box inherits it. */
+  border: var(--line) solid var(--check-edge, var(--control-border));
   border-radius: var(--radius-xs);
-  box-shadow: inset 0 1px 0 var(--pressed-wash);
+  box-shadow: inset 0 1px 0 var(--well-shade);
   background: var(--ground);
   vertical-align: middle;
   cursor: pointer;
@@ -175,30 +205,56 @@ select.field option {
   border-color: var(--text-dim);
 }
 
-.check:active:not(:disabled) {
+/* A press on an empty box sinks it; a filled box keeps its fill (below). */
+.check:active:not(:disabled, :checked, [type='checkbox']:indeterminate) {
   background-color: var(--pressed-wash);
 }
 
-.check:is(:checked, :indeterminate) {
-  border-color: var(--accent);
+.check:is(:checked, [type='checkbox']:indeterminate) {
+  border-color: var(--check-on);
   box-shadow: none;
-  background: var(--accent);
+  background: var(--check-on);
 }
 
 /* On, the fill takes the lit edge a filled button takes on hover; a press
-   sinks it as a press sinks a button. */
-.check:is(:checked, :indeterminate):hover:not(:disabled) {
-  border-color: var(--accent);
+   sinks it as a press sinks a button, the fill kept. */
+.check:is(:checked, [type='checkbox']:indeterminate):hover:not(:disabled) {
+  border-color: var(--check-on);
   box-shadow: var(--hover-lit);
 }
 
-.check:is(:checked, :indeterminate):active:not(:disabled) {
+.check:is(:checked, [type='checkbox']:indeterminate):active:not(:disabled) {
   box-shadow: var(--shadow-pressed);
   filter: brightness(0.94);
 }
 
-.check[aria-invalid='true']:not(:checked, :indeterminate) {
+/* Tones: a choice whose effect is destructive (danger) or needs a second
+   look (warning) outlines in the tone when off and fills in it when on. */
+.check[data-tone='danger'] {
+  --check-on: var(--danger);
+  --check-mark: var(--on-danger);
+}
+
+.check[data-tone='warning'] {
+  --check-on: var(--warning);
+  --check-mark: var(--on-warning);
+}
+
+.check[data-tone]:not(:checked, [type='checkbox']:indeterminate) {
+  border-color: var(--check-on);
+}
+
+.check[aria-invalid='true']:not(:checked, [type='checkbox']:indeterminate) {
   border-color: var(--danger);
+}
+
+/* Disabled: the base rule fades the box with its label; the outline steps
+   up to --text-dim and the well flattens to the track, so the faded box
+   still reads as a box (about 2:1) and not as an enabled one. */
+.check:disabled:not(:checked, [type='checkbox']:indeterminate) {
+  border-color: var(--text-dim);
+  box-shadow: none;
+  background: var(--control-track);
 }
 
 /* The tick: two sides of a 4 by 8 box, turned, so its strokes are 2px
@@ -208,7 +264,7 @@ select.field option {
   width: 5px;
   height: 9px;
   margin-top: calc(-1 * var(--space-1));
-  border: solid var(--on-accent);
+  border: solid var(--check-mark);
   border-width: 0 var(--line-strong) var(--line-strong) 0;
   transform: rotate(45deg);
   content: '';
@@ -220,7 +276,7 @@ select.field option {
   height: var(--line-strong);
   margin-top: 0;
   border: 0;
-  background: var(--on-accent);
+  background: var(--check-mark);
   transform: none;
   content: '';
 }
@@ -229,22 +285,25 @@ select.field option {
   width: 6px;
   height: 6px;
   border-radius: var(--radius-pill);
-  background: var(--on-accent);
+  background: var(--check-mark);
   content: '';
 }
 
 /* -- Switch -- */
 
+/* The track is as tall as a check box (--icon-md), so a switch and a check
+   share a line. */
 /* A checkbox drawn as a pill track with a knob: the input itself, so it
    keeps the checkbox's keyboard and screen reader behaviour and fades as a
    whole under the disabled rule. Off: the knob at the start on the control
-   outline's track; on: at the end on the primary. */
+   outline's track; on: at the end on the accent, the same "on" colour a
+   checked box takes. */
 .switch {
   position: relative;
   flex: none;
   box-sizing: border-box;
   width: 24px;
-  height: 14px;
+  height: var(--icon-md);
   margin: 0;
   border: 0;
   border-radius: var(--radius-pill);
@@ -271,11 +330,11 @@ select.field option {
 }
 
 .switch:checked {
-  background: var(--primary);
+  background: var(--accent);
 }
 
 .switch:checked::before {
-  background: var(--on-primary);
+  background: var(--on-accent);
   transform: translateX(10px);
 }
 
@@ -289,8 +348,9 @@ select.field option {
 
 /* -- Range -- */
 
-/* A slider (seek, volume): a 4px trough in --control-border with the part
-   up to the value in the accent, and a 12px knob on the surface. The
+/* A slider (seek, volume): a 4px trough on --control-track inside a
+   --control-border hairline (the trough every track in the library uses),
+   the part up to the value in the accent, and a 12px knob on the surface. The
    platform fills no part of the track by itself, so the host sets
    --range-fill to the value's share (style="--range-fill: 40%"); without
    it the whole trough is plain. */
@@ -309,9 +369,10 @@ select.field option {
 .range::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 var(--line) var(--control-border);
   background:
     linear-gradient(var(--accent), var(--accent)) 0 0 / var(--range-fill) 100% no-repeat,
-    var(--control-border);
+    var(--control-track);
 }
 
 .range::-webkit-slider-thumb {

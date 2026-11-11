@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { DialogLegendModel } from './DialogLegend.logic.js';
+import { DialogLayer } from './DialogLayer.js';
 import { ModalDialog } from './ModalDialog.js';
 
 /**
@@ -489,5 +490,62 @@ describe('ModalDialog legend', () => {
 
     expect(dialog.dataset.pinned).toBeUndefined();
     expect(dialog.style.getPropertyValue('--dialog-top')).toBe('');
+  });
+});
+
+describe('where ModalDialog mounts', () => {
+  it('mounts into the enclosing DialogLayer, after the content, and keeps its keys and focus', () => {
+    const onCancel = vi.fn();
+
+    render(
+      <section className="space">
+        <DialogLayer>
+          <div className="pane">
+            <ModalDialog labelId="layer-title" onCancel={onCancel} title="Rename">
+              <p>Body</p>
+            </ModalDialog>
+          </div>
+        </DialogLayer>
+      </section>
+    );
+
+    const dialog = screen.getByRole('dialog');
+    const layer = document.querySelector('.space > .dialog-layer');
+
+    // Outside the pane, inside the space root, so rules under the root still apply.
+    expect(dialog.closest('.pane')).toBeNull();
+    expect(backdropOf(dialog).parentElement).toBe(layer);
+    expect(document.activeElement).toBe(dialog);
+
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('mounts into its own container ahead of any layer', () => {
+    const container = document.createElement('div');
+
+    document.body.append(container);
+    render(
+      <DialogLayer>
+        <ModalDialog container={container} labelId="own" onCancel={vi.fn()} title="Rename">
+          <p>Body</p>
+        </ModalDialog>
+      </DialogLayer>
+    );
+
+    expect(container.contains(screen.getByRole('dialog'))).toBe(true);
+    container.remove();
+  });
+
+  it('renders in place with neither', () => {
+    render(
+      <div className="pane">
+        <ModalDialog labelId="here" onCancel={vi.fn()} title="Rename">
+          <p>Body</p>
+        </ModalDialog>
+      </div>
+    );
+
+    expect(screen.getByRole('dialog').closest('.pane')).not.toBeNull();
   });
 });

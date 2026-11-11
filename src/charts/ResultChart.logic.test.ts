@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   cutLabel,
+  legendLayout,
   shownLabels,
   splinePath,
   stackedRanges,
@@ -64,5 +65,13 @@ describe('the chart of a table', () => {
         expect(y).toBeLessThanOrEqual(high);
       }
     });
+  });
+
+  it('lays the legend out by measured widths where it has them, wrapping inside the width', () => {
+    expect(legendLayout(['a', 'b', 'c'], 110, [40, 20, 30])).toEqual([
+      { text: 'a', x: 0, row: 0 },
+      { text: 'b', x: 68, row: 0 },
+      { text: 'c', x: 0, row: 1 }
+    ]);
   });
 });

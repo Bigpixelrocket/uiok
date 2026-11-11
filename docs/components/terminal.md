@@ -99,6 +99,8 @@ An interactive terminal takes every key into a hidden input element and encodes 
 
 Colours come from the `--terminal-*` tokens every theme sets (`--terminal-bg`, `--terminal-fg`, `--terminal-cursor`, `--terminal-selection`, `--terminal-ansi-0` to `-15`), from which the terminal derives xterm's 256-colour palette. It reads them again on every appearance or theme change (`subscribeThemeChange`). On a page without UIOK's stylesheet it falls back to Catppuccin Mocha.
 
+A cell's text keeps a minimum contrast of 4.5:1 against that cell's own background, as terminals with a "minimum contrast" setting do: a foreground under it (a truecolour or 256-colour shade near the ground, ANSI black on a dark ground) is drawn mixed toward white or black, whichever stands further from the cell's background, only as far as the floor needs, so its hue survives (a red error stays red, only lighter). Backgrounds, and block and box-drawing shapes, keep the colour the program asked for.
+
 Text is `--font-mono` at 13px on 19px lines, 4px in from the mount's edges; a host padding the other 8px puts the text 12px from its edge, where a listing's path bar starts its own. A proportional face is refused for the engine's default monospace stack. The rules live in `terminal.css`, which `styles.css` imports: `.terminal` (the host, sized by `className`), `.terminal-mount`, `.terminal-canvas`, `.terminal-scrollbar`, `.terminal-failure`, and `.terminal-menu`.
 
 - The scrollback thumb reads `--scrollbar-thumb`, and `--scrollbar-thumb-hover` while the pointer or the keyboard is on the rail.

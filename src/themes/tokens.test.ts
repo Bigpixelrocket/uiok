@@ -206,7 +206,10 @@ describe("an app's own tokens", () => {
     // A component's hook and the base sheet's tokens are among them.
     expect(names).toContain('--stripe-ground');
     expect(names).toContain('--z-tooltip');
-    for (const name of names) {
+    // An app's own hooks the library reads only behind a fallback
+    // (`var(--channel, var(--accent))`): an app defines them as extra tokens.
+    const appHooks = new Set(['--channel', '--channel-text']);
+    for (const name of [...names].filter((each) => !appHooks.has(each))) {
       expect(() => themeStylesheet({ extraFixed: { [name]: '0' } })).toThrow(
         `extraFixed redefines ${name}`
       );
@@ -406,8 +409,29 @@ const ON = {
   panel: ['var(--bg-panel)'],
   header: ['var(--bg-header)'],
   listing: ['var(--bg-panel)', 'var(--file-list-bg)'],
-  'the column strip': ['color-mix(in srgb, var(--bg-header) 40%, var(--bg-panel))'],
+  'the column strip': ['var(--strip)'],
+  'a zebra row': ['var(--bg)', 'var(--row-zebra)'],
   'the cursor row': ['var(--bg-panel)', 'var(--cursor-row-bg)'],
+  'the inactive cursor': ['var(--bg-panel)', 'var(--file-list-bg)', 'var(--fill)'],
+  'a hovered listing': ['var(--bg-panel)', 'var(--file-list-bg)', 'var(--hover-wash)'],
+  'a hovered row over the ground': ['var(--bg)', 'var(--row-hover)'],
+  'a hovered row over a listing': ['var(--bg-panel)', 'var(--file-list-bg)', 'var(--row-hover)'],
+  'a hovered zebra row': ['var(--bg)', 'var(--row-zebra)', 'var(--row-hover)'],
+  'a marked row over a listing': ['var(--bg-panel)', 'var(--file-list-bg)', 'var(--marked-bg)'],
+  'a marked row under the cursor over a panel': ['var(--bg-panel)', 'var(--marked-cursor-bg)'],
+  'a marked row under the cursor over a listing': [
+    'var(--bg-panel)',
+    'var(--file-list-bg)',
+    'var(--marked-cursor-bg)'
+  ],
+  'an edited cell over the ground': ['var(--bg)', 'var(--warning-wash)'],
+  'an edited cell over a panel': ['var(--bg-panel)', 'var(--warning-wash)'],
+  'a strongly edited cell over the ground': ['var(--bg)', 'var(--warning-wash-strong)'],
+  'a strongly edited cell over a panel': ['var(--bg-panel)', 'var(--warning-wash-strong)'],
+  'a pressed control over the ground': ['var(--bg)', 'var(--pressed-wash)'],
+  'a pressed control over a panel': ['var(--bg-panel)', 'var(--pressed-wash)'],
+  'a pressed control over the header': ['var(--bg-header)', 'var(--pressed-wash)'],
+  'a pressed control over the strip': ['var(--strip)', 'var(--pressed-wash)'],
   'a surface0 fill': ['var(--bg-panel)', 'var(--fill)'],
   'a hovered panel': ['var(--bg-panel)', 'var(--hover-wash)'],
   'a hovered ground': ['var(--bg)', 'var(--hover-wash)'],
@@ -419,10 +443,17 @@ const ON = {
   'the current item over the ground': ['var(--bg)', 'var(--current-bg)'],
   'the current item over the header': ['var(--bg-header)', 'var(--current-bg)'],
   'the accent wash over the header': ['var(--bg-header)', 'var(--accent-wash)'],
+  'the accent wash over a zebra row': ['var(--bg)', 'var(--row-zebra)', 'var(--accent-wash)'],
   'the strong accent wash over a panel': ['var(--bg-panel)', 'var(--accent-wash-strong)'],
+  'the strong accent wash over a listing': [
+    'var(--bg-panel)',
+    'var(--file-list-bg)',
+    'var(--accent-wash-strong)'
+  ],
   'the track over a panel': ['var(--bg-panel)', 'var(--control-track)'],
   'the track over the ground': ['var(--bg)', 'var(--control-track)'],
   'the track over the header': ['var(--bg-header)', 'var(--control-track)'],
+  'a hovered track over a panel': ['var(--bg-panel)', 'var(--control-track)', 'var(--hover-wash)'],
   'a match over a listing': ['var(--bg-panel)', 'var(--file-list-bg)', 'var(--match-bg)'],
   'a match over the cursor row': ['var(--bg-panel)', 'var(--cursor-row-bg)', 'var(--match-bg)'],
   'selected text over a panel': ['var(--bg-panel)', 'var(--text-selection-bg)'],
@@ -431,8 +462,10 @@ const ON = {
   'a match on the selection': ['var(--selection-hit)'],
   'the primary': ['var(--primary)'],
   'the primary on hover': ['var(--primary-hover)'],
+  'the primary pressed': ['var(--primary-pressed)'],
   'the tonal fill': ['var(--tonal)'],
   'the tonal fill on hover': ['var(--tonal-hover)'],
+  'the tonal fill pressed': ['var(--tonal-pressed)'],
   'the accent': ['var(--accent)'],
   'the danger fill': ['var(--danger)'],
   'the warning fill': ['var(--warning)'],
@@ -443,6 +476,45 @@ const ON = {
 
 type Ground = keyof typeof ON;
 
+/**
+ * Every state ground a row or an item takes: the cursor row and the
+ * inactive pane's cursor, a hovered row, a marked row and the cursor on it,
+ * the current item, and an edited cell. A quiet word on any of them is
+ * --text-on-surface; every other word keeps its own colour there.
+ */
+const STATE_GROUNDS: readonly Ground[] = [
+  'the cursor row',
+  'the inactive cursor',
+  'a hovered panel',
+  'a hovered listing',
+  'a hovered row over the ground',
+  'a hovered row over a listing',
+  'a hovered zebra row',
+  'a marked row over the ground',
+  'a marked row over a panel',
+  'a marked row over a listing',
+  'a marked row under the cursor',
+  'a marked row under the cursor over a panel',
+  'a marked row under the cursor over a listing',
+  'the current item over a panel',
+  'the current item over the ground',
+  'the current item over the header',
+  'an edited cell over the ground',
+  'an edited cell over a panel',
+  'a strongly edited cell over the ground',
+  'a strongly edited cell over a panel'
+];
+
+/** The grounds a marked row, and the cursor on it, take. */
+const MARKED_GROUNDS: readonly Ground[] = [
+  'a marked row over the ground',
+  'a marked row over a panel',
+  'a marked row over a listing',
+  'a marked row under the cursor',
+  'a marked row under the cursor over a panel',
+  'a marked row under the cursor over a listing'
+];
+
 /** Every ground a word in a pane is drawn on. */
 const WORD_GROUNDS: readonly Ground[] = [
   'ground',
@@ -450,13 +522,15 @@ const WORD_GROUNDS: readonly Ground[] = [
   'header',
   'listing',
   'the column strip',
-  'the cursor row',
-  'a hovered panel',
-  'a marked row over the ground',
-  'a marked row over a panel',
-  'the current item over a panel',
-  'the current item over the ground',
-  'the current item over the header'
+  ...STATE_GROUNDS
+];
+
+/** The grounds a pressed outlined control takes. */
+const PRESSED_GROUNDS: readonly Ground[] = [
+  'a pressed control over the ground',
+  'a pressed control over a panel',
+  'a pressed control over the header',
+  'a pressed control over the strip'
 ];
 
 /** `fg` at `floor` on each of `grounds`, as rows of the pairing table. */
@@ -479,8 +553,14 @@ const PAIRINGS = [
   // Words.
   ...pairs('var(--text)', 4.5, [
     ...WORD_GROUNDS,
+    ...PRESSED_GROUNDS,
+    'a hovered track over a panel',
+    'a zebra row',
     'a surface0 fill',
-    'a marked row under the cursor',
+    'the accent wash over the header',
+    'the accent wash over a zebra row',
+    'the strong accent wash over a panel',
+    'the strong accent wash over a listing',
     'the track over a panel',
     'the track over the ground',
     'the track over the header',
@@ -504,17 +584,47 @@ const PAIRINGS = [
   ]),
   ...pairs('var(--text-placeholder)', 4.5, ['ground', 'panel', 'header']),
   ...pairs('var(--text-on-surface)', 4.5, [
+    ...STATE_GROUNDS,
     'a surface0 fill',
-    'the cursor row',
     'the track over a panel',
     'the track over the ground',
     'the track over the header'
   ]),
-  ...pairs('var(--row-meta-text)', 4.5, ['listing', 'panel', 'header']),
+  ...pairs('var(--row-meta-text)', 4.5, [
+    'listing',
+    'panel',
+    'header',
+    'ground',
+    'a zebra row',
+    'the column strip',
+    'a hovered panel',
+    'a hovered listing'
+  ]),
+  ...pairs('var(--cell-binary-text)', 4.5, ['ground', 'panel', 'a zebra row', ...STATE_GROUNDS]),
+  ...[
+    'rosewater',
+    'flamingo',
+    'pink',
+    'mauve',
+    'red',
+    'maroon',
+    'peach',
+    'yellow',
+    'green',
+    'teal',
+    'sky',
+    'sapphire',
+    'blue',
+    'lavender',
+    'subtext0',
+    'overlay2'
+  ].flatMap((role) => pairs(`var(--syntax-${role})`, 4.5, ['ground', 'panel'])),
   ...pairs('var(--accent-text)', 4.5, [
     ...WORD_GROUNDS,
     'the accent wash over the header',
-    'the strong accent wash over a panel'
+    'the accent wash over a zebra row',
+    'the strong accent wash over a panel',
+    'the strong accent wash over a listing'
   ]),
   ...STATUSES.flatMap((status) => [
     ...pairs(`var(--${status}-text)`, 4.5, WORD_GROUNDS),
@@ -537,23 +647,53 @@ const PAIRINGS = [
   ]),
   ...pairs('var(--on-selected-dim)', 4.5, ['the selection', 'the cursor on the selection']),
   ...pairs('var(--on-accent)', 4.5, ['the accent']),
-  ...pairs('var(--on-primary)', 4.5, ['the primary', 'the primary on hover']),
-  ...pairs('var(--on-tonal)', 4.5, ['the tonal fill', 'the tonal fill on hover']),
+  ...pairs('var(--on-primary)', 4.5, [
+    'the primary',
+    'the primary on hover',
+    'the primary pressed'
+  ]),
+  ...pairs('var(--on-tonal)', 4.5, [
+    'the tonal fill',
+    'the tonal fill on hover',
+    'the tonal fill pressed'
+  ]),
   ...pairs('var(--on-danger)', 4.5, ['the danger fill']),
   ...pairs('var(--on-warning)', 4.5, ['the warning fill']),
   ...pairs('var(--on-success)', 4.5, ['the success fill']),
   ...pairs('var(--terminal-fg)', 4.5, ['the terminal']),
 
   // Marks, outlines, and lines.
-  ...[...Array(16).keys()].flatMap((index) =>
-    pairs(`var(--terminal-ansi-${index})`, 3, ['the terminal'])
-  ),
-  ...pairs('var(--control-border)', 3, ['ground', 'panel', 'header', 'listing']),
+  // The 16 terminal colours are the published palette: the renderer floors
+  // each cell's text against that cell's background (src/terminal).
+  ...pairs('var(--control-border)', 3, ['ground', 'panel', 'header', 'listing', 'a zebra row']),
+  ...pairs('var(--control-border-strong)', 3, [
+    'ground',
+    'panel',
+    'header',
+    'listing',
+    'a zebra row',
+    'the cursor row',
+    'the inactive cursor',
+    'a hovered row over the ground',
+    'a hovered row over a listing',
+    'a hovered zebra row',
+    'the track over a panel',
+    'the track over the ground',
+    'the track over the header',
+    ...MARKED_GROUNDS
+  ]),
   ...pairs('var(--scrollbar-thumb)', 3, ['ground', 'panel', 'header']),
   ...pairs('var(--bg-panel)', 3, ['the off track']),
   ...pairs('var(--idle-mark)', 3, ['listing', 'the cursor row', 'panel', 'ground']),
   ...STATUSES.flatMap((status) =>
-    pairs(`var(--${status})`, 3, ['ground', 'panel', 'header', 'listing', 'the cursor row'])
+    pairs(`var(--${status})`, 3, [
+      'ground',
+      'panel',
+      'header',
+      'listing',
+      'the cursor row',
+      'the inactive cursor'
+    ])
   ),
   ...pairs('var(--success)', 3, ['the track over a panel', 'the track over the ground']),
   ...pairs('var(--danger)', 3, ['the track over a panel', 'the track over the ground']),
@@ -565,14 +705,22 @@ const PAIRINGS = [
     'listing',
     'the cursor row',
     'the track over a panel',
-    'the track over the ground'
+    'the track over the ground',
+    ...MARKED_GROUNDS,
+    'the current item over a panel',
+    'the current item over the ground',
+    'the current item over the header'
+  ]),
+  ...pairs('var(--current-ring)', 3, [
+    'ground',
+    'panel',
+    'header',
+    'the current item over a panel',
+    'the current item over the ground',
+    'the current item over the header'
   ]),
   ...pairs('var(--cursor-bar)', 3, ['the cursor row']),
-  ...pairs('var(--marked-bar)', 3, [
-    'a marked row over the ground',
-    'a marked row over a panel',
-    'a marked row under the cursor'
-  ]),
+  ...pairs('var(--marked-bar)', 3, MARKED_GROUNDS),
   ...pairs('var(--primary-mark)', 3, ['listing', 'the cursor row', 'panel', 'ground']),
   ...pairs('var(--text-faint)', 3, ['ground', 'panel', 'header']),
   ...[1, 2, 3, 4, 5, 6, 7, 8].flatMap((index) =>
@@ -634,13 +782,92 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('%s', (_id, the
     );
   });
 
+  /** The accent's share in a translucent accent token, in percent. */
+  const shareOf = (name: string) => {
+    const match = /\/ (\d+)%\)$/.exec(tokens[name] ?? '');
+    return Number(match?.[1] ?? Number.NaN);
+  };
+
   it('stands a marked row apart from the ground, or keeps the text and lets its bar carry the mark', () => {
-    for (const on of ['var(--bg)', 'var(--bg-panel)']) {
-      const tint = layered([on, 'var(--marked-bg)']);
-      const apart = contrast(tint, layered([on])) >= 1.25;
-      // Where the tint cannot stand 1.25:1 apart and keep the text, the text wins.
-      const stronger = over('color-mix(in srgb, var(--accent) 1%, var(--marked-bg))', tint, tokens);
-      expect(apart || contrast(over('var(--text)', stronger, tokens), stronger) < 4.6).toBe(true);
+    const marked = shareOf('--marked-bg');
+    expect(marked).toBeLessThanOrEqual(20);
+    const accent = solid('--accent');
+    const textAt = (share: number, on: Hex) => {
+      const tint = over(`color-mix(in srgb, var(--accent) ${share}%, transparent)`, on, tokens);
+      return contrast(over('var(--text)', tint, tokens), tint);
+    };
+    const apart = [ground, surface].every(
+      (on) => contrast(over('var(--marked-bg)', on, tokens), on) >= 1.25
+    );
+    // Where the tint cannot stand 1.25:1 apart within the cap and keep the
+    // text with room for the cursor's step, the text wins: one point more
+    // would drop it under 4.5:1.
+    const atLimit =
+      marked === 20 || [ground, surface, fileList].some((on) => textAt(marked + 5, on) < 4.5);
+    expect(apart || atLimit, `marked at ${marked}% of ${accent}`).toBe(true);
+  });
+
+  it('always shows the cursor on a marked row', () => {
+    expect(shareOf('--marked-cursor-bg') - shareOf('--marked-bg')).toBeGreaterThanOrEqual(4);
+  });
+
+  it('draws a hovered row apart from every row ground, a zebra row included', () => {
+    for (const layers of [
+      ['var(--bg)'],
+      ['var(--bg-panel)'],
+      ['var(--bg-panel)', 'var(--file-list-bg)'],
+      ['var(--bg)', 'var(--row-zebra)']
+    ]) {
+      const under = layered(layers);
+      expect(contrast(over('var(--row-hover)', under, tokens), under)).toBeGreaterThanOrEqual(1.12);
+    }
+  });
+
+  it('shows a press on an outlined control, and a step past hover on a fill', () => {
+    if (theme.appearance === 'dark') {
+      // Black cannot darken a near-black ground, so a dark theme's press lifts it.
+      // Its face stands apart from its hovered face too, unless a tint one
+      // point stronger would take the text under 4.5:1 (Solarized Dark).
+      const lifted = /^rgb\((\d+) (\d+) (\d+) \/ (\d+)%\)$/.exec(tokens['--pressed-wash'] ?? '');
+      const share = Number(lifted?.[4] ?? 0);
+      const noRoom =
+        lifted !== null &&
+        [ground, surface, header].some((on) => {
+          const stronger = over(
+            `color-mix(in srgb, var(--text) ${share + 1}%, transparent)`,
+            on,
+            tokens
+          );
+          return contrast(over('var(--text)', stronger, tokens), stronger) < 4.5;
+        });
+      for (const on of [ground, surface, header]) {
+        const pressed = over('var(--pressed-wash)', on, tokens);
+        expect(contrast(pressed, on)).toBeGreaterThanOrEqual(1.12);
+        if (!noRoom) {
+          expect(contrast(pressed, over('var(--hover-wash)', on, tokens))).toBeGreaterThanOrEqual(
+            1.05
+          );
+        }
+      }
+    }
+    for (const [rest, hover, pressed] of [
+      ['--primary', '--primary-hover', '--primary-pressed'],
+      ['--tonal', '--tonal-hover', '--tonal-pressed']
+    ] as const) {
+      expect(solid(pressed), pressed).not.toBe(solid(hover));
+      expect(solid(pressed), pressed).not.toBe(solid(rest));
+    }
+  });
+
+  it('never draws a stopped bar weightier than a running one on the trough', () => {
+    for (const layers of [
+      ['var(--bg-panel)', 'var(--control-track)'],
+      ['var(--bg)', 'var(--control-track)']
+    ]) {
+      const track = layered(layers);
+      expect(contrast(solid('--progress-idle'), track)).toBeLessThanOrEqual(
+        contrast(solid('--accent'), track) + 0.05
+      );
     }
   });
 

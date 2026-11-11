@@ -15,7 +15,7 @@ UIOK is an open-source (MIT) React 19 UI library published to npm as `@bigpixelr
 
 ```text
 src/index.ts                  # the public API: one `export * from './<area>/index.js'` line per area
-src/styles.css                # base stylesheet, shipped as @bigpixelrocket/uiok/styles.css: imports the theme tokens, tokens.css, one sheet per component, field.css and surface.css; the theme's selection, placeholder, caret, and scrollbar colours, .overline, .frost, .scroll-fade, the shared hover and press recipes of quiet controls, the zero-weight focus ring, the .hit-target utility, .spinner, uiok-spin and uiok-pulse, the disabled-control rule
+src/styles.css                # base stylesheet, shipped as @bigpixelrocket/uiok/styles.css: imports the theme tokens, tokens.css, one sheet per component, field.css, surface.css, and shell.css; the theme's selection, placeholder, caret, and scrollbar colours, the zero-weight floor for an unclassed text input, textarea, or select, .overline, .frost, .scroll-fade (-end, -x; the padding box only, so a scroller keeps its frame), the shared hover and press recipes of quiet controls (one pseudo-class each, the chosen item left out), the zero-weight focus ring, the .hit-target utility, .spinner, uiok-spin and uiok-pulse, the disabled-control rule
 src/tokens.css                # the tokens no theme changes: type, space, radius, line, motion (with --transition-control), height, focus, icon, and z-index scales, the reduced-motion rule over the durations, and the typed lengths .scroll-fade animates (docs/tokens.md)
 src/VisuallyHidden.tsx        # a root-level component, its test beside it (VisuallyHidden.test.tsx)
 src/<area>/index.ts           # an area's public surface, importable as @bigpixelrocket/uiok/<area>; modules, tests, and its .css sit beside it
@@ -28,15 +28,16 @@ src/themes/themes.generated.css # the generated token stylesheet, committed; the
 src/themes/tokens.test.ts     # contrast invariants in every theme; Latte and Mocha frozen in catppuccin-tokens.fixture.json
 src/labels/                   # UiokProvider, useLabels, mergeLabels; UiokLabels.ts composes one group per area (keys.ts, charts.ts); docs/labels.md
 src/keyboard/                 # browser-key guard, overlay selectors and watchOverlays (public contract), page select-all hold, chord words and glyphs
-src/tooltip/                  # TooltipLayer (mount once) and the tooltip() / describedTooltip() attributes it reads
-src/button/                   # Button (primary, tonal, neutral) and IconButton
+src/tooltip/                  # TooltipLayer (mount once) and the tooltip() / describedTooltip() / cutTooltip() attributes it reads; a chord may be text or a chord object drawn as key glyphs
+src/button/                   # Button (primary, tonal, neutral, danger) and IconButton
 src/activity/ src/segmented/ src/keychord/ src/filter/  # ActivityBar, SegmentedChoice, KeyChord, FilterIcon and FilterEscape
 src/legend/                   # KeyLegendStrip and legendUnits / fittingUnits / moreLabel / moreListAction; pair labels are the app's
 src/store/ src/clock/         # ValueStore, sameData/sameProps, useStableHandlers, keepUnchanged*; useClock
 src/icon/                     # ICON_SM, ICON_MD, ICON_LG (sizes.ts): the sizes for lucide's size prop, mirroring --icon-* in tokens.css; Spinner, the one turning ring (StateMark busy, RunHeader running)
-src/field/                    # the form controls as classes on native elements (field.css: .field, .check, .switch, labels, notes, problems, groups, the label-column grid) and Check, a checkbox whose state can be mixed (docs/components/field.md)
+src/field/                    # the form controls as classes on native elements (field.css: .field and its heights by place, .check with its tones, .switch, .range, labels, notes, problems, groups, the label-column grid) and Check, a checkbox whose state can be mixed (docs/components/field.md)
 src/surface/surface.css       # .notice and its tones, .card; a stylesheet without a module, so no area export (docs/components/surface.md)
-src/dialog/                   # ModalDialog frame, DialogLegend footer and legendKeyAction (which slot a key runs), ConfirmDialog; dialog labels in src/labels/dialog.ts
+src/shell/shell.css           # the shell's shared surfaces as classes: the Settings dialog (frame, sidebar, pages, subsections, a file's problems), the theme picker and miniatures, the Updates card and notes, the update pill's entrance, .channel-tag, the sign-in prompts, the load failure; a stylesheet without a module, so no area export (docs/components/shell.md)
+src/dialog/                   # ModalDialog frame, DialogLayer (where a host's dialogs mount, above its content), DialogLegend footer and legendKeyAction (which slot a key runs), ConfirmDialog; dialog labels in src/labels/dialog.ts
 src/run/                      # RunHeader progress header and the RunProgress state and elapsed-time helpers
 src/listing/                  # Listing, Strip, Row, Cell, RowCursorContext, StateMark, PathCell, WellColumn, CurrentDot; listing.css is the whole listing look under .listing-root, panes included
 src/pane/                     # PanePathBar, PaneStatus, QuietAction, RowIconAction; usePaneKeys over PaneKeys (DOM readers) and PaneKeys.logic (key mapping)
@@ -47,13 +48,14 @@ src/menu/ src/palette/        # matchQuery, MenuQuery.logic (refusal, cursor, le
 src/charts/                   # Line, Pie, Scatter, and ResultChart over pure *.logic.ts geometry; Drawing.ts saves a chart as SVG or PNG; series colours --chart-1..8 (seriesColour.ts)
 src/terminal/                 # Terminal over Ghostty's VT engine (ghostty/: runtime, core, renderer, surface; vendor/ WebAssembly and fonts/ symbols font, each with its LICENSE); not in src/index.ts, only @bigpixelrocket/uiok/terminal
 docs/components/<area>.md     # per area: purpose, props, example, keyboard behaviour, labels read
-test/colorLiterals.test.ts    # no colour literal in src/ outside the token blocks, the catalog, and the terminal's fallbackColors.ts; only ids and attributes imported from src/themes/
+test/colorLiterals.test.ts    # no colour literal in src/ outside the token blocks, the catalog, the terminal's fallbackColors.ts, and the black and white ends of its contrast search; only ids and attributes imported from src/themes/
 test/api.test.ts              # every public export has a docblock (TypeScript checker over src/index.ts and src/terminal/index.ts)
 test/fileFetch.ts             # serves the terminal's vendored WebAssembly to fetch in the engine suites
 test/cancelKey.test.ts        # no library module writes the ⌘. chord; Escape is the one cancel key
 test/stylesheets.ts           # CSS test helpers: readStylesheet (follows @import), applyStylesheets, declaredValues
-test/stylesheets.test.ts      # src/styles.css imports every component stylesheet; no hover or press highlight on a disabled control; component sheets name grounds by role (--ground, --surface, --fill), not palette name, and set words in a text role, never a bare hue outside a mark
-test/tokenValues.test.ts      # no raw font size, weight, line height, radius, z-index, duration, easing, or space in a stylesheet where a scale token exists; exceptions listed with reasons
+test/stylesheets.test.ts      # src/styles.css imports every component stylesheet; no hover or press highlight on a disabled control; component sheets name grounds by role (--ground, --surface, --fill), not palette name, and set words in a text role, never a bare hue or syntax colour outside a mark
+test/tokenValues.test.ts      # no raw font size, weight, line height, radius, z-index, duration, easing, space (logical longhands too), line width, height, or opacity, no blurred shadow outside a shadow token, and no color-mix() outside a custom property, in any hand-written stylesheet; exceptions listed with reasons
+test/iconStroke.test.ts       # no strokeWidth and no numeric size on an icon in src/ or site/src: lucide's default stroke, the ICON_* sizes
 test/setup.ts                 # Testing Library cleanup after each test; calls no app code
 scripts/build.mjs             # cleans dist/, runs tsc -p tsconfig.build.json, copies src/**/*.css, *.wasm, *.woff2, and vendored LICENSE files
 scripts/verify-pack.mjs       # no source maps; every exports target packed; each area resolves as @bigpixelrocket/uiok/<area>; packed @imports resolve; every new URL('./…', import.meta.url) asset, the terminal's licences, and NOTICE packed

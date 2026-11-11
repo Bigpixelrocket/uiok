@@ -82,19 +82,40 @@ const WASH = {
 } as const;
 
 /**
- * The tint of the current item (the open page, the chosen tab) at most, and
- * the ring around it; the tint steps down where the text on it would fall
- * under 4.5:1.
+ * The tint of the current item (the open page, the chosen tab) at most; the
+ * tint steps down where the text on it would fall under 4.5:1.
  */
 const CURRENT_TINT = 18;
-const CURRENT_RING = 55;
 
-/** The least share of the accent in a marked row's tint, and how much more a cursor on it adds. */
+/**
+ * The share of the accent in a marked row's tint: at least MARKED_TINT and
+ * at most MARKED_TINT_MAX, so the same state reads alike in every theme. A
+ * cursor on a marked row adds MARKED_CURSOR_STEP where the text keeps its
+ * contrast, and never less than MARKED_CURSOR_MIN, so the cursor always
+ * shows on a marked row.
+ */
 const MARKED_TINT = 16;
+const MARKED_TINT_MAX = 20;
 const MARKED_CURSOR_STEP = 10;
+const MARKED_CURSOR_MIN = 4;
+
+/** The text's share in a zebra row's tint (`--row-zebra`). */
+const ZEBRA_TINT = 3;
+
+/**
+ * The least a state wash stands apart from what it lies on: a hovered row
+ * from its row (`--row-hover`), and a pressed control from its ground and
+ * from its own hovered face (`--pressed-wash`).
+ */
+const ROW_HOVER_CONTRAST = 1.12;
+const PRESSED_CONTRAST = 1.12;
+const PRESSED_FROM_HOVER = 1.05;
 
 /** How far a state laid over a fill moves the fill away from the text on it, in percent of the fill kept. */
 const PRIMARY_HOVER_KEEP = 88;
+const PRIMARY_PRESSED_KEEP = 76;
+/** A pressed tonal fill that can step no further toward the accent steps back from its text instead, this far. */
+const TONAL_PRESSED_KEEP = 70;
 const SELECTION_CURSOR_KEEP = 80;
 const SELECTION_HIT_KEEP = 70;
 
@@ -117,6 +138,12 @@ const DISABLED_OPACITY = 0.5;
 /** How opaque an item being dragged is drawn (`--dragging-opacity`), the same in every theme. */
 const DRAGGING_OPACITY = 0.5;
 
+/** How opaque a part set back while another is lit is drawn (`--dimmed-opacity`). */
+const DIMMED_OPACITY = 0.45;
+
+/** How opaque the fill under a chart's area series is (`--chart-area-opacity`). */
+const CHART_AREA_OPACITY = 0.16;
+
 /**
  * What a theme's appearance decides on its own, the same for every theme of
  * that appearance: how much each wash and lift shows over the grounds.
@@ -137,7 +164,10 @@ const BY_APPEARANCE: Readonly<
       readonly fileListLift: number;
       /** The accent's opacity under the terminal's selection. */
       readonly terminalSelection: number;
-      /** A pressed outlined control's darkening, black's share over its ground. */
+      /**
+       * Black's share in a well's inner top shade (`--well-shade`), and the
+       * most a pressed outlined control darkens (`--pressed-wash`).
+       */
       readonly pressedBlack: number;
       /**
        * Shadow strength, black's share, by layer. A dark ground swallows a
@@ -208,6 +238,26 @@ function textOnFill(fill: Hex, palette: ThemePalette): Hex {
  */
 function awayFrom(fill: Hex, on: Hex, keep: number): Hex {
   return mix(fill, luminance(on) > 0.5 ? BLACK : WHITE, keep);
+}
+
+/**
+ * `color` moved only as far as it needs to keep `ratio` on every one of
+ * `grounds`: toward the first ground while it still keeps it (a tone that
+ * passes with room to spare is quietened), else away from it as `legibleOn`
+ * moves it. A mark drawn this way sits just over its floor, so it never
+ * outweighs a mark held at the same floor by rule.
+ */
+function nearestLegible(color: Hex, grounds: readonly Hex[], ratio: number): Hex {
+  const keeps = (tone: Hex) => grounds.every((ground) => contrast(tone, ground) >= ratio);
+  if (!keeps(color)) return legibleOn(color, grounds, ratio);
+  const toward = grounds[0] ?? WHITE;
+  let tone = color;
+  for (let share = 99; share > 0; share -= 1) {
+    const next = mix(color, toward, share);
+    if (!keeps(next)) break;
+    tone = next;
+  }
+  return tone;
 }
 
 /** The distance between two colours' sRGB channels, 0 to 441. */
@@ -315,13 +365,103 @@ function derivedTokens(
   const header = tuned('--bg-header', palette.crust);
   const bare: readonly Hex[] = [ground, panel, header];
   const surfaceFill = tuned('--cursor-bg', palette.surface0);
+  // A listing's lift over the panel surface.
+  const fileList = mix(WHITE, panel, look.fileListLift);
+  // A listing's column strip: the header bar at 40% over the panel.
+  const strip = mix(header, panel, 40);
+  // A zebra row: the text's faint tint over the ground.
+  const zebra = mix(palette.text, ground, ZEBRA_TINT);
+  // What a row sits on: a panel, the ground (a grid), and a listing.
+  const rows: readonly Hex[] = [panel, ground, fileList];
+  // The frosted wash an outlined control takes on hover, over a ground.
+  const hovered = (on: Hex) => mix(WHITE, on, look.hoverWhite);
+  const shares = (from: number, to: number) =>
+    from <= to
+      ? [...Array(to - from + 1).keys()].map((step) => from + step)
+      : [...Array(from - to + 1).keys()].map((step) => from - step);
+  // Whether the text keeps 4.5:1 on `tint` at `share` over every one of `on`.
+  const holds = (tint: Hex, share: number, on: readonly Hex[]) =>
+    on.every((under) => contrast(palette.text, mix(tint, under, share)) >= TEXT_CONTRAST);
+
+  // A status hue's strong wash: at most WASH.statusStrong, as strong as the
+  // text keeps 4.5:1 on it over every bare ground and a listing.
+  const statusStrong = (mark: Hex) =>
+    shares(WASH.statusStrong, WASH.status).find((share) =>
+      holds(mark, share, [...bare, fileList])
+    ) ?? WASH.status;
+
+  // The accent's state tints, for a given accent. A marked row (a row ticked
+  // in a list with a checkbox column): the accent's least tint from
+  // MARKED_TINT up to MARKED_TINT_MAX that stands MARKED_CONTRAST apart from
+  // the panel and the ground and keeps the text at 4.5:1, with room for the
+  // cursor's step on it. Where no tint does both (Solarized Light), the text
+  // wins: the strongest tint that keeps it, and the row's bar carries the
+  // mark. A cursor on a marked row adds MARKED_CURSOR_STEP where the text
+  // keeps 4.5:1, and never less than MARKED_CURSOR_MIN. The current item:
+  // the accent's tint at most CURRENT_TINT, stepped down until the text
+  // keeps 4.5:1 on it over every bare ground. With `markFloor`, each tint
+  // also stays light enough that the accent keeps 3:1 on it, for a theme
+  // whose accent cannot move (an override).
+  const stateShares = (tint: Hex, markFloor: boolean) => {
+    const fits = (share: number, on: readonly Hex[]) =>
+      holds(tint, share, on) &&
+      (!markFloor || on.every((under) => contrast(tint, mix(tint, under, share)) >= MARK_CONTRAST));
+    const keeps = (share: number) => fits(share, rows) && fits(share + MARKED_CURSOR_MIN, rows);
+    const marked =
+      shares(MARKED_TINT, MARKED_TINT_MAX).find(
+        (share) =>
+          keeps(share) &&
+          [panel, ground].every((on) => contrast(mix(tint, on, share), on) >= MARKED_CONTRAST)
+      ) ??
+      shares(MARKED_TINT_MAX, 1).find(keeps) ??
+      1;
+    const markedCursor =
+      shares(marked + MARKED_CURSOR_STEP, marked + MARKED_CURSOR_MIN).find((share) =>
+        fits(share, rows)
+      ) ?? marked + MARKED_CURSOR_MIN;
+    const current = shares(CURRENT_TINT, 4).find((share) => fits(share, bare)) ?? 4;
+    return { marked, markedCursor, current };
+  };
+  const cursorRowOf = (tint: Hex) => tuned('--cursor-row-bg', mix(tint, panel, look.cursorRow));
+
   // The accent: the blue, moved until the text on it keeps 4.5:1, as a
-  // selected row's name sits on it.
-  const accent = tuned(
-    '--accent',
-    legibleOn(palette.blue, [onFill(palette.blue, palette)], TEXT_CONTRAST)
-  );
+  // selected row's name sits on it; then moved on, a percent at a time, until
+  // it keeps 3:1 as a checked box, a ring, or a bar on every ground it marks:
+  // the bare grounds, a listing, the cursor row, and its own marked and
+  // current tints (Tokyo Night Day and One Light deepen a little). Where
+  // the accent is a theme's own (an override) or no step keeps both its
+  // text and its marks, the tints step down instead.
+  const accentBase = legibleOn(palette.blue, [onFill(palette.blue, palette)], TEXT_CONTRAST);
+  const accentMarks = (tint: Hex) => {
+    const state = stateShares(tint, false);
+    return [
+      ...bare,
+      fileList,
+      cursorRowOf(tint),
+      ...rows.map((on) => mix(tint, on, state.marked)),
+      ...rows.map((on) => mix(tint, on, state.markedCursor)),
+      ...bare.map((on) => mix(tint, on, state.current))
+    ].every((on) => contrast(tint, on) >= MARK_CONTRAST);
+  };
+  const accentAway = luminance(ground) > 0.18 ? BLACK : WHITE;
+  const accentMoved =
+    overrides['--accent'] === undefined
+      ? shares(100, 60)
+          .map((share) => mix(accentBase, accentAway, share))
+          .find(
+            (tint) => contrast(onFill(tint, palette), tint) >= TEXT_CONTRAST && accentMarks(tint)
+          )
+      : undefined;
+  const accent = tuned('--accent', accentMoved ?? accentBase);
   const onAccent = tuned('--on-accent', onFill(accent, palette));
+  const cursorRow = cursorRowOf(accent);
+  const state = stateShares(accent, accentMoved === undefined);
+  const marked = (on: Hex) => mix(accent, on, state.marked);
+  const markedCursor = (on: Hex) => mix(accent, on, state.markedCursor);
+  const current = (on: Hex) => mix(accent, on, state.current);
+  const markedGrounds: readonly Hex[] = [...rows.map(marked), ...rows.map(markedCursor)];
+  const currentGrounds: readonly Hex[] = bare.map(current);
+
   // The neutral ramp from the quietest tone a word may wear to the text itself.
   const quiet: readonly Hex[] = [palette.subtext0, palette.subtext1, palette.text];
   // The neutral ramp a mark or a control's outline steps up, quietest first.
@@ -336,69 +476,40 @@ function derivedTokens(
   // A recessed surface, such as a tab behind the selected one: the panel at
   // 45% over the ground. The group marks keep their ring rule against it.
   const recessed = mix(panel, ground, 45);
-  // A listing's lift over the panel surface.
-  const fileList = mix(WHITE, panel, look.fileListLift);
-  // A listing's column strip: the header bar at 40% over the panel.
-  const strip = mix(header, panel, 40);
-  // The frosted wash an outlined control takes on hover, over a ground.
-  const hovered = (on: Hex) => mix(WHITE, on, look.hoverWhite);
-  const cursorRow = tuned('--cursor-row-bg', mix(accent, panel, look.cursorRow));
 
-  // A marked row (a row ticked in a list with a checkbox column): the
-  // accent's least tint from MARKED_TINT up that stands MARKED_CONTRAST
-  // apart from the panel and the ground and keeps the text at 4.5:1; a
-  // cursor on a marked row adds a step.
-  // Where no tint does both (Solarized Light), the text wins: the strongest
-  // tint that keeps it, and the row's bar carries the mark.
-  const textHolds = (share: number, on: readonly Hex[]) =>
-    on.every((under) => contrast(palette.text, mix(accent, under, share)) >= TEXT_CONTRAST);
-  const shares = (from: number, to: number) =>
-    from <= to
-      ? [...Array(to - from + 1).keys()].map((step) => from + step)
-      : [...Array(from - to + 1).keys()].map((step) => from - step);
-  const markedShare =
-    shares(MARKED_TINT, MARKED_TINT + 20).find(
-      (share) =>
-        textHolds(share, [panel, ground]) &&
-        [panel, ground].every((on) => contrast(mix(accent, on, share), on) >= MARKED_CONTRAST)
-    ) ??
-    shares(MARKED_TINT + 20, 8).find((share) => textHolds(share, [panel, ground])) ??
-    8;
-  const markedCursorShare =
-    shares(markedShare + MARKED_CURSOR_STEP, markedShare).find((share) =>
-      textHolds(share, [panel, ground])
-    ) ?? markedShare;
-  const marked = (on: Hex) => mix(accent, on, markedShare);
-  // The current item: the accent's tint at most CURRENT_TINT, stepped down
-  // until the text keeps 4.5:1 on it over every bare ground.
-  const currentShare = shares(CURRENT_TINT, 4).find((share) => textHolds(share, bare)) ?? 4;
-  const current = (on: Hex) => mix(accent, on, currentShare);
-
-  // Every ground a coloured word or a quiet word is drawn on in a pane: the
-  // bare grounds, a listing, its column strip, the cursor row, a hovered
-  // panel, a marked row, and the current item.
-  const wordGrounds: readonly Hex[] = [
-    panel,
-    ground,
-    header,
-    fileList,
-    strip,
-    cursorRow,
-    hovered(panel),
-    marked(panel),
-    marked(ground),
-    ...bare.map(current)
-  ];
+  // A row under the pointer: the text's least tint from 4% that stands
+  // ROW_HOVER_CONTRAST apart from every row ground (a zebra row included),
+  // darker on a light ground and lighter on a dark one, with the text kept.
+  const rowHoverUnder: readonly Hex[] = [...rows, zebra];
+  const rowHoverShare =
+    shares(4, 16).find((share) =>
+      rowHoverUnder.every((on) => {
+        const lit = mix(palette.text, on, share);
+        return (
+          contrast(lit, on) >= ROW_HOVER_CONTRAST && contrast(palette.text, lit) >= TEXT_CONTRAST
+        );
+      })
+    ) ?? 16;
+  const rowHovered: readonly Hex[] = rowHoverUnder.map((on) =>
+    mix(palette.text, on, rowHoverShare)
+  );
 
   // --text-dim sits on the ground, a panel, and the header bar, hovered or not.
   const textDim = tuned(
     '--text-dim',
     firstLegible(quiet, [...bare, ...bare.map(hovered)], TEXT_CONTRAST)
   );
-  // A row's meta on a listing, and a dialog's context on the title strip.
+  // A row's meta on a listing, the ground, a zebra row, the column strip,
+  // and under the frosted hover wash; a dialog's context on the title strip.
+  // On every state ground (a row under --row-hover included) a quiet word
+  // turns --text-on-surface, so the meta keeps its tone at rest.
   const rowMeta = tuned(
     '--row-meta-text',
-    firstLegible([palette.overlay2, ...quiet], [fileList, panel, header], TEXT_CONTRAST)
+    firstLegible(
+      [palette.overlay2, ...quiet],
+      [fileList, panel, header, ground, zebra, strip, hovered(fileList), hovered(panel)],
+      TEXT_CONTRAST
+    )
   );
   const primary = tuned(
     '--primary',
@@ -408,26 +519,59 @@ function derivedTokens(
 
   // The trough of a segmented choice and a progress bar: the text's tint,
   // the strongest from 8% down that keeps the accent fill at 3:1 on it over
-  // a panel and the ground, and the text at 4.5:1 over every bare ground; a
-  // --control-border ring draws its edge.
+  // a panel and the ground, and the text at 4.5:1 over every bare ground,
+  // hovered or not (a hovered segment); a --control-border ring draws its
+  // edge.
   const trackShare =
     shares(8, 3).find(
       (share) =>
         [panel, ground].every(
           (on) => contrast(accent, mix(palette.text, on, share)) >= MARK_CONTRAST
         ) &&
-        bare.every((on) => contrast(palette.text, mix(palette.text, on, share)) >= TEXT_CONTRAST)
+        bare.every((on) => {
+          const track = mix(palette.text, on, share);
+          return (
+            contrast(palette.text, track) >= TEXT_CONTRAST &&
+            contrast(palette.text, hovered(track)) >= TEXT_CONTRAST
+          );
+        })
     ) ?? 3;
   const tracks = bare.map((on) => mix(palette.text, on, trackShare));
-  const textOnSurface = tuned(
-    '--text-on-surface',
-    firstLegible(quiet, [surfaceFill, cursorRow, ...tracks], TEXT_CONTRAST)
-  );
 
   // Status marks: the palette hue, moved until it keeps 3:1 as a dot or an
-  // icon on every ground a mark sits on.
-  const markGrounds: readonly Hex[] = [panel, ground, header, fileList, cursorRow];
+  // icon on every ground a mark sits on, the inactive cursor's fill included.
+  const markGrounds: readonly Hex[] = [panel, ground, header, fileList, cursorRow, surfaceFill];
   const warning = tuned('--warning', legibleOn(palette.yellow, markGrounds, MARK_CONTRAST));
+  // An edited cell: the warning's washes over the ground and a panel.
+  const editedGrounds: readonly Hex[] = [ground, panel].flatMap((on) => [
+    mix(warning, on, WASH.status),
+    mix(warning, on, statusStrong(warning))
+  ]);
+
+  // Every state ground a row or an item takes: the cursor row and the
+  // inactive pane's cursor (--fill), a hovered row, a marked row and the
+  // cursor on it, the current item, and an edited cell. A quiet word on any
+  // of them is --text-on-surface, and every coloured word keeps 4.5:1 on
+  // each.
+  const stateGrounds: readonly Hex[] = [
+    cursorRow,
+    surfaceFill,
+    hovered(panel),
+    hovered(fileList),
+    ...rowHovered,
+    ...markedGrounds,
+    ...currentGrounds,
+    ...editedGrounds
+  ];
+  const textOnSurface = tuned(
+    '--text-on-surface',
+    firstLegible(quiet, [...stateGrounds, ...tracks], TEXT_CONTRAST)
+  );
+
+  // Every ground a coloured word is drawn on: the bare grounds, a listing,
+  // its column strip, and every state ground.
+  const wordGrounds: readonly Hex[] = [panel, ground, header, fileList, strip, ...stateGrounds];
+
   // The success green is also a finished run's bar on the control trough.
   const success = tuned(
     '--success',
@@ -445,7 +589,7 @@ function derivedTokens(
         ...wordGrounds,
         ...[panel, ground].flatMap((on) => [
           mix(mark, on, WASH.status),
-          mix(mark, on, WASH.statusStrong)
+          mix(mark, on, statusStrong(mark))
         ])
       ],
       TEXT_CONTRAST
@@ -461,23 +605,100 @@ function derivedTokens(
     [accent, selectionCursor],
     TEXT_CONTRAST
   );
-  const controlBorder = firstLegible(marks, [...bare, fileList], MARK_CONTRAST);
+  // A control's outline keeps 3:1 wherever a control rests: the bare
+  // grounds, a listing, and a zebra row. On a tinted ground (a segment's
+  // thumb on the trough, a checkbox on a hovered, cursor, or marked row) it
+  // is the stronger outline, so a field at rest keeps its quiet edge.
+  const controlBorder = firstLegible(marks, [...bare, fileList, zebra], MARK_CONTRAST);
+  const controlBorderStrong = firstLegible(
+    marks,
+    [...bare, fileList, zebra, ...tracks, cursorRow, surfaceFill, ...rowHovered, ...markedGrounds],
+    MARK_CONTRAST
+  );
   const onTonal = tuned('--on-tonal', legibleOn(palette.lavender, [cursorRow], TEXT_CONTRAST));
   // The tonal fill on hover: the accent's strongest step from 14% over the
-  // tonal fill that keeps its text at 4.5:1.
-  const tonalHover = mix(
-    accent,
-    cursorRow,
-    shares(14, 0).find(
-      (share) => contrast(onTonal, mix(accent, cursorRow, share)) >= TEXT_CONTRAST
-    ) ?? 0
+  // tonal fill that keeps its text at 4.5:1; pressed, a step further toward
+  // the accent where the text keeps it, else the hover moved away from the
+  // text.
+  // Where no step toward the accent keeps the text (the tonal text is as
+  // dark or as light as the accent), each state moves the fill away from
+  // its text instead, so hover and press still show.
+  const awayFromText = (fill: Hex, keep: number) =>
+    mix(fill, luminance(onTonal) > luminance(fill) ? BLACK : WHITE, keep);
+  const tonalHoverShare = shares(14, 1).find(
+    (share) => contrast(onTonal, mix(accent, cursorRow, share)) >= TEXT_CONTRAST
   );
-  // A tint the text keeps 4.5:1 on, from `most` percent of the accent down,
-  // over every ground in `under`; transparent where none does.
+  const tonalHover =
+    tonalHoverShare === undefined
+      ? awayFromText(cursorRow, PRIMARY_HOVER_KEEP)
+      : mix(accent, cursorRow, tonalHoverShare);
+  const tonalPressed =
+    (tonalHoverShare === undefined
+      ? undefined
+      : shares(tonalHoverShare + 12, tonalHoverShare + 3)
+          .map((share) => mix(accent, cursorRow, share))
+          .find((fill) => contrast(onTonal, fill) >= TEXT_CONTRAST)) ??
+    awayFromText(cursorRow, TONAL_PRESSED_KEEP);
+
+  // A press on an outlined control. In a light theme, black at the
+  // appearance's share, stepped down where the text on it would fall under
+  // 4.5:1 (the recipe's inner line carries the press there). In a dark
+  // theme, the least black from the appearance's share up to twice it that
+  // stands PRESSED_CONTRAST apart from every bare ground; where black cannot
+  // darken a ground that far (the near-black grounds of the darkest
+  // themes), the text's least tint that lifts the face as far, at least
+  // PRESSED_FROM_HOVER apart from its hovered face (under it where the text
+  // leaves no room above it, as in Solarized Dark).
+  const pressedUnder: readonly Hex[] = [...bare, strip];
+  const textKeeps = (fill: (on: Hex) => Hex) =>
+    pressedUnder.every((on) => contrast(palette.text, fill(on)) >= TEXT_CONTRAST);
+  const blackStands = (share: number) =>
+    bare.every((on) => contrast(mix(BLACK, on, share), on) >= PRESSED_CONTRAST);
+  const blackShare =
+    appearance === 'light'
+      ? (shares(look.pressedBlack, 2).find((share) => textKeeps((on) => mix(BLACK, on, share))) ??
+        2)
+      : shares(look.pressedBlack, 2 * look.pressedBlack).find(
+          (share) => blackStands(share) && textKeeps((on) => mix(BLACK, on, share))
+        );
+  const tintKeeps = (share: number) => textKeeps((on) => mix(palette.text, on, share));
+  const tintStands = (share: number) =>
+    bare.every((on) => contrast(mix(palette.text, on, share), on) >= PRESSED_CONTRAST);
+  // Where the text leaves no tint both far enough from rest and from hover
+  // (Solarized Dark), the strongest tint the text keeps that stands apart
+  // from rest; the recipe's inner line marks the press beside it.
+  const tintShare =
+    blackShare === undefined
+      ? (shares(4, 30).find(
+          (share) =>
+            tintKeeps(share) &&
+            tintStands(share) &&
+            bare.every(
+              (on) => contrast(mix(palette.text, on, share), hovered(on)) >= PRESSED_FROM_HOVER
+            )
+        ) ??
+        shares(30, 4).find((share) => tintKeeps(share) && tintStands(share)) ??
+        10)
+      : undefined;
+  const pressedWash =
+    blackShare === undefined
+      ? translucent(palette.text, tintShare ?? 10)
+      : translucent(BLACK, blackShare);
+
+  // An accent tint the text keeps 4.5:1 on, the strongest from `most`
+  // percent of the accent down over every ground in `under`; transparent
+  // where none does.
+  const accentShare = (most: number, under: readonly Hex[]) =>
+    shares(most, 1).find((step) => holds(accent, step, under));
   const accentTint = (most: number, under: readonly Hex[]) => {
-    const share = shares(most, 1).find((step) => textHolds(step, under));
+    const share = accentShare(most, under);
     return share === undefined ? 'transparent' : translucent(accent, share);
   };
+  // The accent's washes: a band or a marked column (over a zebra row too),
+  // and what stands out from a wash (a hovered level), each as strong as the
+  // text on it allows.
+  const washShare = accentShare(WASH.accent, [...bare, fileList, zebra]) ?? 0;
+  const washStrongShare = accentShare(WASH.accentStrong, [...bare, fileList]) ?? 0;
   const series = chartSeries(palette, [panel, ground]);
 
   // Each group hue's palette role, unless the theme draws it apart
@@ -524,12 +745,21 @@ function derivedTokens(
     // every bare ground and a listing. Also a scrollbar's thumb and an idle
     // status ring.
     '--control-border': tuned('--control-border', controlBorder),
+    // A control's outline on a tinted ground: a segment's thumb on its
+    // trough, a checkbox on a hovered, cursor, or marked row. The quietest
+    // neutral from surface2 up that keeps 3:1 on each of them.
+    '--control-border-strong': controlBorderStrong,
     // The trough of a segmented choice and a progress bar: the text's tint
     // over whatever is under it; text on it is --text-on-surface.
     '--control-track': translucent(palette.text, trackShare),
-    // A stopped or paused progress bar on the trough: the quietest neutral
-    // from surface2 up that keeps 3:1 on the trough.
-    '--progress-idle': firstLegible(marks, tracks, MARK_CONTRAST),
+    // A stopped or paused progress bar on the trough: surface2 moved only as
+    // far as it needs to keep 3:1 on the trough, never weightier than the
+    // accent of a running bar there.
+    '--progress-idle': nearestLegible(
+      palette.surface2,
+      [tracks[0] ?? ground, tracks[1] ?? panel],
+      MARK_CONTRAST
+    ),
     // An idle status mark (a hollow ring: stopped, not started): the
     // quietest neutral from surface2 up that keeps 3:1 on a listing, the
     // cursor row, a panel, and the ground.
@@ -560,10 +790,7 @@ function derivedTokens(
         accent,
         [
           ...wordGrounds,
-          ...bare.flatMap((on) => [
-            mix(accent, on, WASH.accent),
-            mix(accent, on, WASH.accentStrong)
-          ])
+          ...bare.flatMap((on) => [mix(accent, on, washShare), mix(accent, on, washStrongShare)])
         ],
         TEXT_CONTRAST
       )
@@ -577,12 +804,14 @@ function derivedTokens(
     '--selection-hit': selectionHit,
     // A marked row's tint (an accent wash floored apart from the ground),
     // and the same row under the cursor.
-    '--marked-bg': translucent(accent, markedShare),
-    '--marked-cursor-bg': translucent(accent, markedCursorShare),
+    '--marked-bg': translucent(accent, state.marked),
+    '--marked-cursor-bg': translucent(accent, state.markedCursor),
     // The current item (the open page, the chosen tab): its own tint, never
-    // the cursor's, with the text at 4.5:1 on it, and a ring.
-    '--current-bg': translucent(accent, currentShare),
-    '--current-ring': translucent(accent, CURRENT_RING),
+    // the cursor's, with the text at 4.5:1 on it, and an opaque ring at 3:1
+    // on the bare grounds and on the tint, which marks the item in every
+    // theme however faint the tint has to be.
+    '--current-bg': translucent(accent, state.current),
+    '--current-ring': legibleOn(accent, [...bare, ...currentGrounds], MARK_CONTRAST),
     // A fuzzy match's characters: the accent's wash (at most WASH.accent)
     // that keeps the text at 4.5:1 on a listing, a panel, and the cursor row;
     // its underline (--match-mark) carries the mark where the wash cannot.
@@ -606,6 +835,8 @@ function derivedTokens(
     '--primary': primary,
     '--on-primary': onPrimary,
     '--primary-hover': awayFrom(primary, onPrimary, PRIMARY_HOVER_KEEP),
+    // A pressed primary: a step past its hover, away from its text.
+    '--primary-pressed': awayFrom(primary, onPrimary, PRIMARY_PRESSED_KEEP),
     // The middle button tier (.button-tonal) for a row's routine positive
     // action such as Install: the cursor row's tint (--tonal) with text in
     // the primary hue and a hairline, a quiet step below the solid primary and
@@ -615,6 +846,8 @@ function derivedTokens(
     '--on-tonal': onTonal,
     '--tonal-border': tuned('--tonal-border', mix(accent, cursorRow, 25)),
     '--tonal-hover': tonalHover,
+    // A pressed tonal button: a step past its hover, the text kept at 4.5:1.
+    '--tonal-pressed': tonalPressed,
     '--tonal-hover-brightness': tuned('--tonal-hover-brightness', look.tonalHoverBrightness),
     // Listings lift themselves off the ground, so rows read as a pane rather
     // than as the ground.
@@ -633,7 +866,20 @@ function derivedTokens(
     // control darkens instead.
     '--glass-edge': look.glassEdge,
     '--hover-wash': translucent(WHITE, look.hoverWhite),
-    '--pressed-wash': translucent(BLACK, look.pressedBlack),
+    // A pressed outlined control: black where it darkens the ground enough
+    // and keeps the text, else the text's tint (see pressedWash).
+    '--pressed-wash': pressedWash,
+    // A well's inner top shade (a text field, a checkbox), black in every
+    // theme; never a state.
+    '--well-shade': translucent(BLACK, look.pressedBlack),
+    // A row under the pointer (a grid or listing that acts on click): the
+    // text's tint, darker on a light ground and lighter on a dark one,
+    // standing apart from every row ground, a zebra row included.
+    '--row-hover': translucent(palette.text, rowHoverShare),
+    // The accent's washes, each as strong as the text on it allows: a band
+    // or a marked column, and what stands out from a wash.
+    '--accent-wash': translucent(accent, washShare),
+    '--accent-wash-strong': translucent(accent, washStrongShare),
     // Status marks (dots, icons, bars), each floored at 3:1 on the grounds
     // a mark sits on; the danger red at 4.5:1 on a panel.
     '--warning': warning,
@@ -644,6 +890,18 @@ function derivedTokens(
     '--danger-text': tuned('--danger-text', statusText(danger)),
     '--warning-text': tuned('--warning-text', statusText(warning)),
     '--success-text': tuned('--success-text', statusText(success)),
+    // What stands out from a status wash (a badge, an edited cell's mark):
+    // each hue at most WASH.statusStrong, as strong as the text on it allows.
+    '--danger-wash-strong': translucent(danger, statusStrong(danger)),
+    '--warning-wash-strong': translucent(warning, statusStrong(warning)),
+    '--success-wash-strong': translucent(success, statusStrong(success)),
+    // A binary value in a grid cell: the palette's teal as a word, moved
+    // until it keeps 4.5:1 on every ground a cell takes.
+    '--cell-binary-text': legibleOn(
+      palette.teal,
+      [ground, panel, zebra, cursorRow, ...stateGrounds],
+      TEXT_CONTRAST
+    ),
     // Text on a solid status fill (a destructive key cap, a status badge).
     '--on-danger': tuned('--on-danger', textOnFill(danger, palette)),
     '--on-warning': tuned('--on-warning', textOnFill(warning, palette)),
@@ -693,39 +951,39 @@ function derivedTokens(
     // A terminal, which a terminal engine reads as literal colours, so each
     // is hex or rgb(): the theme's own terminal palette over its base, and
     // the accent under the selection, which is drawn over the cell colours.
-    // Each of the 16 is moved only as far as it needs to keep 3:1 on the
-    // terminal's ground, the minimum contrast terminals offer, so ANSI black
-    // on a dark ground and ANSI white on a light one still read. The
-    // 256-colour cube and grey ramp derive from the 16.
+    // The 16 are the published colours: the renderer keeps each cell's text
+    // at 4.5:1 on that cell's own background, so ANSI black on a dark ground
+    // and ANSI white on a light one read as text while a program that paints
+    // a background in them gets the colour it asked for. The 256-colour cube
+    // and grey ramp derive from the 16.
     '--terminal-bg': palette.base,
     '--terminal-fg': palette.text,
     '--terminal-cursor': terminal.cursor,
     '--terminal-selection': translucent(accent, look.terminalSelection),
     ...(Object.fromEntries(
-      terminal.ansi.map((color, index) => [
-        `--terminal-ansi-${index}`,
-        legibleOn(color, [palette.base], MARK_CONTRAST)
-      ])
+      terminal.ansi.map((color, index) => [`--terminal-ansi-${index}`, color])
     ) as Record<`--terminal-ansi-${number}`, Hex>),
 
     // Syntax highlighting: Shiki's Catppuccin theme maps each token colour to
     // its palette role, so a highlighter can follow these by the same names.
-    '--syntax-rosewater': palette.rosewater,
-    '--syntax-flamingo': palette.flamingo,
-    '--syntax-pink': palette.pink,
-    '--syntax-mauve': palette.mauve,
-    '--syntax-red': palette.red,
-    '--syntax-maroon': palette.maroon,
-    '--syntax-peach': palette.peach,
-    '--syntax-yellow': palette.yellow,
-    '--syntax-green': palette.green,
-    '--syntax-teal': palette.teal,
-    '--syntax-sky': palette.sky,
-    '--syntax-sapphire': palette.sapphire,
-    '--syntax-blue': palette.blue,
-    '--syntax-lavender': palette.lavender,
-    '--syntax-subtext0': palette.subtext0,
-    '--syntax-overlay2': palette.overlay2,
+    // Highlighted code is read as text, so each role is moved only as far as
+    // it needs to keep 4.5:1 on the ground and a panel, where code is shown.
+    '--syntax-rosewater': legibleOn(palette.rosewater, [ground, panel], TEXT_CONTRAST),
+    '--syntax-flamingo': legibleOn(palette.flamingo, [ground, panel], TEXT_CONTRAST),
+    '--syntax-pink': legibleOn(palette.pink, [ground, panel], TEXT_CONTRAST),
+    '--syntax-mauve': legibleOn(palette.mauve, [ground, panel], TEXT_CONTRAST),
+    '--syntax-red': legibleOn(palette.red, [ground, panel], TEXT_CONTRAST),
+    '--syntax-maroon': legibleOn(palette.maroon, [ground, panel], TEXT_CONTRAST),
+    '--syntax-peach': legibleOn(palette.peach, [ground, panel], TEXT_CONTRAST),
+    '--syntax-yellow': legibleOn(palette.yellow, [ground, panel], TEXT_CONTRAST),
+    '--syntax-green': legibleOn(palette.green, [ground, panel], TEXT_CONTRAST),
+    '--syntax-teal': legibleOn(palette.teal, [ground, panel], TEXT_CONTRAST),
+    '--syntax-sky': legibleOn(palette.sky, [ground, panel], TEXT_CONTRAST),
+    '--syntax-sapphire': legibleOn(palette.sapphire, [ground, panel], TEXT_CONTRAST),
+    '--syntax-blue': legibleOn(palette.blue, [ground, panel], TEXT_CONTRAST),
+    '--syntax-lavender': legibleOn(palette.lavender, [ground, panel], TEXT_CONTRAST),
+    '--syntax-subtext0': legibleOn(palette.subtext0, [ground, panel], TEXT_CONTRAST),
+    '--syntax-overlay2': legibleOn(palette.overlay2, [ground, panel], TEXT_CONTRAST),
 
     // A listing's ground (.listing-root): a white lift over a light panel
     // with no second tint over the ground; nothing in a dark theme.
@@ -819,19 +1077,23 @@ export const FIXED_TOKENS: Readonly<Record<string, string>> = {
   '--scrollbar-thumb-hover': 'var(--text-dim)',
   // A fuzzy match's underline, which survives any row colour.
   '--match-mark': 'var(--accent)',
+  // A listing's column strip and any band like it: the header bar at 40%
+  // over the panel.
+  '--strip': 'color-mix(in srgb, var(--bg-header) 40%, var(--bg-panel))',
+  // Every other row of a striped table: the text's faint tint.
+  '--row-zebra': `color-mix(in srgb, var(--text) ${ZEBRA_TINT}%, transparent)`,
+  // The darker foot of a lit key cap (a default or destructive key), laid
+  // over the cap's own fill so it darkens it in every theme.
+  '--key-foot-shade': translucent(BLACK, 30),
 
   // Washes and lines of each hue (WASH), over whatever is under them. A wash
   // tints a band or a row; the strong wash marks what stands out from a
   // wash; a line draws a hue's rule or ring. The token rules floor the text
-  // drawn on each.
-  '--accent-wash': `color-mix(in srgb, var(--accent) ${WASH.accent}%, transparent)`,
-  '--accent-wash-strong': `color-mix(in srgb, var(--accent) ${WASH.accentStrong}%, transparent)`,
+  // drawn on each. The accent's two washes are set per theme, each as strong
+  // as the text on it allows.
   '--danger-wash': `color-mix(in srgb, var(--danger) ${WASH.status}%, transparent)`,
   '--warning-wash': `color-mix(in srgb, var(--warning) ${WASH.status}%, transparent)`,
   '--success-wash': `color-mix(in srgb, var(--success) ${WASH.status}%, transparent)`,
-  '--danger-wash-strong': `color-mix(in srgb, var(--danger) ${WASH.statusStrong}%, transparent)`,
-  '--warning-wash-strong': `color-mix(in srgb, var(--warning) ${WASH.statusStrong}%, transparent)`,
-  '--success-wash-strong': `color-mix(in srgb, var(--success) ${WASH.statusStrong}%, transparent)`,
   '--accent-line': `color-mix(in srgb, var(--accent) ${WASH.line}%, transparent)`,
   '--danger-line': `color-mix(in srgb, var(--danger) ${WASH.line}%, transparent)`,
   '--warning-line': `color-mix(in srgb, var(--warning) ${WASH.line}%, transparent)`,
@@ -850,6 +1112,13 @@ export const FIXED_TOKENS: Readonly<Record<string, string>> = {
   // (DRAGGING_OPACITY), the same in every theme.
   '--disabled-opacity': `${DISABLED_OPACITY}`,
   '--dragging-opacity': `${DRAGGING_OPACITY}`,
+  // A part set back while another is lit (DIMMED_OPACITY): the unlit slices
+  // of a pie while one is pointed at.
+  '--dimmed-opacity': `${DIMMED_OPACITY}`,
+  // The fill under a chart's area series (CHART_AREA_OPACITY): light enough
+  // that overlapping series stay close to their own hue, with the 2px line
+  // carrying the colour.
+  '--chart-area-opacity': `${CHART_AREA_OPACITY}`,
 
   // A pressed control's inset shadow; every other shadow is a layer's
   // (--shadow-raised, --shadow-popover, --shadow-modal), set per theme.
@@ -1064,6 +1333,7 @@ const BASE_TOKEN_NAMES = [
   // The hooks a component stylesheet declares or reads.
   '--stripe-ink',
   '--stripe-ground',
+  '--stripe-band',
   '--dialog-tone',
   '--dialog-icon',
   '--dialog-top',
@@ -1080,7 +1350,18 @@ const BASE_TOKEN_NAMES = [
   '--field-label-width',
   '--field-chevron-end',
   '--range-fill',
-  '--notice-tone'
+  '--notice-tone',
+  '--check-edge',
+  '--terminal-bell-wash',
+  '--terminal-bell-line',
+  '--segmented-inset',
+  '--pane-name-floor',
+  '--pane-pin-ground',
+  '--row-fill',
+  '--check-on',
+  '--check-mark',
+  '--update-note-rows',
+  '--channel-tag-bg'
 ] as const;
 
 /** Every token name uiok defines: the fixed tokens, those a theme sets, and the stylesheet's own. */

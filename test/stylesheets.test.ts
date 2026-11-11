@@ -90,6 +90,71 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
   });
 });
 
+describe('pointer states of the shared recipes and form controls', () => {
+  /** Every style rule whose selector names a pointer state, with that state read as always on. */
+  const pressedRules = (): { selector: string; rule: CSSStyleRule }[] => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    return [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules])
+      .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
+      .filter((rule) =>
+        /:(?:hover|active)\b/.test(rule.selectorText.replace(/:not\([^()]*\)/g, ''))
+      )
+      .map((rule) => ({
+        selector: rule.selectorText.replace(/:(?:hover|active)\b/g, ':where(*)'),
+        rule
+      }));
+  };
+
+  it('keeps a checked or mixed box filled while it is pressed', () => {
+    const rules = pressedRules();
+    document.body.innerHTML = `<input type="checkbox" class="check" checked>`;
+    const box = document.querySelector('input') as HTMLInputElement;
+    const washes = rules
+      .filter(({ selector }) => box.matches(selector))
+      .filter(({ rule }) => /pressed-wash/.test(rule.style.getPropertyValue('background-color')));
+
+    expect(washes.map(({ rule }) => rule.selectorText)).toEqual([]);
+    document.body.innerHTML = '';
+  });
+
+  it('gives the chosen tab, segment, or page neither hover nor press', () => {
+    const rules = pressedRules();
+    document.body.innerHTML = `
+      <button class="page-tab" role="tab" aria-selected="true">Rows</button>
+      <button class="segmented-choice-option" role="radio" aria-checked="true">Day</button>
+      <button class="pager-step" aria-current="page">4</button>
+      <button class="crumb-label" aria-current="location">site</button>`;
+    const chosen = [...document.querySelectorAll('button')].flatMap((element) =>
+      rules
+        .filter(({ selector }) => selector.startsWith(':where(') && element.matches(selector))
+        .map(({ rule }) => `${element.className}: ${rule.selectorText}`)
+    );
+
+    expect(chosen).toEqual([]);
+    document.body.innerHTML = '';
+  });
+
+  it('lets a press win over a hover on every quiet control', () => {
+    const rules = pressedRules();
+    document.body.innerHTML = `
+      <button class="page-tab" role="tab" aria-selected="false">Rows</button>
+      <button class="pane-sort sortable">Size</button>
+      <button class="crumb-label">site</button>
+      <button class="pager-step">Next</button>`;
+    for (const element of document.querySelectorAll('button')) {
+      const matched = rules.filter(
+        ({ selector, rule }) =>
+          rule.style.getPropertyValue('background') !== '' && element.matches(selector)
+      );
+      const last = matched.at(-1);
+
+      expect(last?.rule.selectorText, element.className).toMatch(/:active\b/);
+    }
+    document.body.innerHTML = '';
+  });
+});
+
 /** A rule of a component sheet: its file, selector, and declarations, comments blanked. */
 interface SheetRule {
   readonly file: string;
@@ -113,26 +178,39 @@ describe('colour roles in the component sheets', () => {
   // The palette-named grounds are the source the role aliases read
   // (docs/themes.md); a sheet names the role: --ground, --surface,
   // --surface-header, --fill, --cursor-row.
+  // A theme picker's miniature sits in a [data-theme-preview] scope, which
+  // sets only the palette names; the role aliases resolve on :root, so
+  // inside the preview they would paint the worn theme, not the previewed one.
+  const previewScope = (file: string, selector: string): boolean =>
+    file === 'src/shell/shell.css' && selector.startsWith('.theme-preview');
+
   it('paints grounds through their role names, not the palette names', () => {
-    const raw = sheetRules.flatMap(({ file, selector, body }) =>
-      [...body.matchAll(/var\(--(?:bg|bg-panel|bg-header|cursor-bg|cursor-row-bg)\)/g)].map(
-        ([use]) => `${file} ${selector}: ${use}`
-      )
-    );
+    const raw = sheetRules
+      .filter(({ file, selector }) => !previewScope(file, selector))
+      .flatMap(({ file, selector, body }) =>
+        [...body.matchAll(/var\(--(?:bg|bg-panel|bg-header|cursor-bg|cursor-row-bg)\)/g)].map(
+          ([use]) => `${file} ${selector}: ${use}`
+        )
+      );
 
     expect(raw).toEqual([]);
   });
 
   // A hue as a mark (an icon, a dot, a bar) needs 3:1, which the hue token
   // holds; as words it needs 4.5:1, which only its text role holds
-  // (--accent-text, --danger-text, --warning-text, --success-text). So a
+  // (--accent-text, --danger-text, --warning-text, --success-text). A syntax
+  // hue (--syntax-*) is a palette colour with no text floor at all. So a
   // hue is a text colour only on a selector that draws a mark, by its name
   // or by being an icon or a pseudo-element.
   it('sets words in a text role, never a bare hue', () => {
     const mark =
-      /svg|icon|glyph|dot|mark|pane-state|arrow|chevron|spinner|caret|bar\b|knob|thumb|::?(?:before|after)|\.keychord/;
+      /svg|icon|glyph|dot|mark|arrow|chevron|spinner|caret|bar\b|knob|thumb|::?(?:before|after)|\.keychord/;
     const hued = sheetRules.flatMap(({ file, selector, body }) =>
-      [...body.matchAll(/(?:^|;)\s*color:\s*(var\(--(?:accent|danger|warning|success|primary)\))/g)]
+      [
+        ...body.matchAll(
+          /(?:^|;)\s*color:\s*(var\(--(?:accent|danger|warning|success|primary|syntax-[a-z-]+)\))/g
+        )
+      ]
         .filter(() => !mark.test(selector))
         .map(([, use]) => `${file} ${selector}: color ${use}`)
     );

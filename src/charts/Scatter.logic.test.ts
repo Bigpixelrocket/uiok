@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { domainOf, scaled, tickLabel, ticksOf, unscaled, zoomedTo } from './Scatter.logic.js';
+import {
+  domainOf,
+  scaled,
+  tickLabel,
+  tickLabels,
+  ticksOf,
+  unscaled,
+  zoomedTo
+} from './Scatter.logic.js';
 
 describe('the scatter chart’s geometry', () => {
   it('spares a twentieth of the span around the values, half a step around categories', () => {
@@ -62,5 +70,15 @@ describe('the scatter chart’s geometry', () => {
     const tiny = { min: 1e6, max: 1e6 + 1e-9 };
 
     expect(zoomedTo({ x: 0, y: 0 }, { x: 10, y: 10 }, { x: tiny, y: tiny }, 200, 100)).toBeNull();
+  });
+
+  it('labels ticks close together for their size by their offset from the first', () => {
+    const axis = { title: '', kind: 'number' } as const;
+    const domain = { min: 1_793_550_000_000, max: 1_794_150_000_000 };
+    const ticks = ticksOf(domain, 'number', 6);
+    const labels = tickLabels(ticks, axis, domain);
+
+    expect(labels.slice(1)).toEqual(ticks.slice(1).map((_tick, at) => `+${(at + 1) * 100}M`));
+    expect(tickLabels([0, 50, 100], axis, { min: 0, max: 100 })).toEqual(['0', '50', '100']);
   });
 });

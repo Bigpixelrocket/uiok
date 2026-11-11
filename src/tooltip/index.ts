@@ -2,10 +2,13 @@
 
 export { TooltipLayer } from './Tooltip.js';
 export {
+  cutsItsText,
+  cutTooltip,
   describedTooltip,
   placeTooltip,
   tooltip,
   TOOLTIP_DELAY_MS,
+  tooltipChord,
   type TooltipAnchorBox,
   type TooltipAttributes,
   type TooltipExtent,

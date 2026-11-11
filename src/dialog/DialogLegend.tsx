@@ -11,6 +11,7 @@ interface LegendSlotProps {
   readonly chord: Chord;
   readonly verb: DialogLegendVerb;
   readonly primary?: boolean;
+  readonly danger?: boolean;
   readonly onRun: () => void;
 }
 
@@ -20,10 +21,20 @@ interface LegendSlotProps {
  * order and never taking focus from a press, because its key is the
  * keyboard's way to it.
  */
-function LegendSlot({ chord, verb, primary = false, onRun }: LegendSlotProps): ReactElement {
+function LegendSlot({
+  chord,
+  verb,
+  primary = false,
+  danger = false,
+  onRun
+}: LegendSlotProps): ReactElement {
+  const className = ['legend-slot', primary && 'legend-primary', danger && 'legend-danger']
+    .filter(Boolean)
+    .join(' ');
+
   return (
     <button
-      className={primary ? 'legend-slot legend-primary' : 'legend-slot'}
+      className={className}
       disabled={verb.disabled}
       onClick={onRun}
       onMouseDown={(event) => event.preventDefault()}
@@ -50,7 +61,8 @@ export interface DialogLegendProps {
  * A dialog's footer drawn as a key legend: the leave verb on Escape and any
  * secondary verbs line up from the left edge, the primary stands alone at
  * the right edge with its cap lit (in the danger colour inside a
- * destructive dialog), Return's unless it names its own chord. The slots
+ * destructive dialog), Return's unless it names its own chord. A secondary
+ * verb marked `danger` reads in the danger colour. The slots
  * are the keys' pointer targets; the keys themselves are bound by whatever
  * holds the legend: `ModalDialog`, which renders it as its last child, or a
  * surface without a dialog frame (a palette), which binds them itself with
@@ -64,7 +76,13 @@ export function DialogLegend({ legend, onLeave }: DialogLegendProps): ReactEleme
     <div className="dialog-legend">
       {leave && <LegendSlot chord={ESCAPE} onRun={onLeave} verb={leave} />}
       {secondary.map((slot) => (
-        <LegendSlot chord={slot.chord} key={slot.label} onRun={slot.onRun} verb={slot} />
+        <LegendSlot
+          chord={slot.chord}
+          danger={slot.danger}
+          key={slot.label}
+          onRun={slot.onRun}
+          verb={slot}
+        />
       ))}
       {primary && (
         <LegendSlot chord={primary.chord ?? RETURN} onRun={primary.onRun} primary verb={primary} />

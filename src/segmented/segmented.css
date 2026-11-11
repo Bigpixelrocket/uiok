@@ -12,7 +12,12 @@
    concentric with the track's. Hover and press come from the base sheet's
    track recipe (a wash, no ring); the chosen segment's raised look outweighs
    them. Every segment has one weight, chosen or not,
-   so a change of choice never moves a label. */
+   so a change of choice never moves a label. A segment is a flex box: an
+   icon (12px, whatever its caller passed) and its words share one centre
+   line and the Button's icon-to-label gap. Its side padding is
+   --segmented-inset, which a narrow host shortens instead of restating the
+   padding. A segment that cannot be chosen now fades like every disabled
+   control and takes no hover or press. */
 .segmented-choice {
   box-sizing: border-box;
   display: inline-flex;
@@ -28,9 +33,14 @@
 
 .segmented-choice-option {
   box-sizing: border-box;
+  display: inline-flex;
   flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
   height: calc(var(--segmented-height, var(--control-height-sm)) - 2 * var(--space-1));
-  padding: 0 var(--space-6);
+  margin: 0;
+  padding: 0 var(--segmented-inset, var(--space-6));
   border: none;
   border-radius: calc(var(--radius-md) - var(--space-1));
   background: transparent;
@@ -43,11 +53,22 @@
   cursor: pointer;
 }
 
+.segmented-choice-option > svg {
+  flex: none;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+}
+
+/* The chosen segment is raised: its ring (--control-border-strong, 3:1 on
+   the trough) drawn inside it, so one pixel of trough always separates it
+   from the track's own ring; the glass edge on the row just under that ring
+   (the ring, listed first, covers the edge's top row); the raised shadow
+   below. */
 .segmented-choice-option[aria-checked='true'] {
   background: linear-gradient(var(--hover-wash), transparent), var(--surface);
   box-shadow:
-    inset 0 1px 0 var(--glass-edge),
-    0 0 0 var(--line) var(--control-border),
+    inset 0 0 0 var(--line) var(--control-border-strong),
+    inset 0 calc(2 * var(--line)) 0 var(--glass-edge),
     var(--shadow-raised);
   color: var(--text);
 }

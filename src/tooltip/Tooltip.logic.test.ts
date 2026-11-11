@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { describedTooltip, placeTooltip, tooltip } from './Tooltip.logic.js';
+import {
+  cutTooltip,
+  describedTooltip,
+  placeTooltip,
+  tooltip,
+  tooltipChord
+} from './Tooltip.logic.js';
 
 const viewport = { width: 800, height: 600 };
 const tip = { width: 100, height: 24 };
@@ -13,6 +19,31 @@ describe('tooltip', () => {
     });
     expect(tooltip('Close Tab', null)).toEqual({ 'data-tooltip': 'Close Tab' });
     expect(tooltip('Close Tab')).toEqual({ 'data-tooltip': 'Close Tab' });
+  });
+
+  it('writes a chord given as data both as text and as data it can read back', () => {
+    const attributes = tooltip('Find', { key: 'f', meta: true });
+
+    expect(attributes['data-tooltip-shortcut']).toBe('⌘F');
+    expect(tooltipChord(attributes['data-tooltip-chord'] ?? null)).toEqual({
+      key: 'f',
+      meta: true
+    });
+  });
+
+  it('reads nothing back from a missing or malformed chord', () => {
+    expect(tooltipChord(null)).toBeNull();
+    expect(tooltipChord('⌘F')).toBeNull();
+    expect(tooltipChord('{"key":1}')).toBeNull();
+    expect(tooltipChord('{"key":"f","meta":"yes"}')).toBeNull();
+  });
+
+  it('marks a tooltip of cut text, and gives none without a label', () => {
+    expect(cutTooltip('report.txt')).toEqual({
+      'data-tooltip': 'report.txt',
+      'data-tooltip-cut': ''
+    });
+    expect(cutTooltip('')).toEqual({});
   });
 
   it('gives no tooltip without a label', () => {

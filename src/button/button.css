@@ -4,13 +4,15 @@
    are drawn: they carry their own font, size, and box model, so no
    surrounding stylesheet restyles them, and a consumer never overrides them
    (a layout class may set width or alignment only). Tiers: primary for a
-   view's one main action, tonal for a row's routine positive action, neutral
-   for the rest. A neutral button and an icon button are outlined in
+   view's one main action, tonal for a row's routine positive action, danger
+   for a button that destroys something, neutral for the rest. A neutral
+   button and an icon button are outlined in
    --control-border, the 3:1 line every control a pointer acts on shares.
    Fills carry the glass edge (a lit top edge) at rest; hover deepens a fill
    to its own hover token and lays a frosted wash on an outline; a press
-   sinks the face. Every control with the frosted hover takes this
-   transition list, so the change eases the same everywhere. */
+   sinks the face to a pressed tone one step past hover. Every control with
+   the frosted hover takes --transition-control, so the change eases the
+   same everywhere. */
 .button,
 .icon-button {
   display: inline-flex;
@@ -31,11 +33,7 @@
   font-weight: var(--font-weight-strong);
   line-height: 1;
   white-space: nowrap;
-  transition:
-    background-color var(--duration-fast),
-    border-color var(--duration-fast),
-    box-shadow var(--duration-fast),
-    color var(--duration-fast);
+  transition: var(--transition-control);
 }
 
 .button {
@@ -102,19 +100,39 @@
   color: var(--text);
 }
 
-/* A press sinks the face: a fill drops back to its resting tone under the
+/* A danger button is outlined, not filled: a --danger outline (4.5:1 on a
+   panel, so it clears the 3:1 an outline needs) and --danger-text words at
+   rest, the danger wash under the pointer, the stronger danger
+   wash while held. Red is kept for what destroys, so a view never shows a
+   solid red button beside its primary action. */
+.button-danger {
+  border-color: var(--danger);
+  color: var(--danger-text);
+}
+
+.button-danger:hover:enabled:not([aria-disabled='true']) {
+  background: var(--danger-wash);
+  box-shadow: var(--hover-frost);
+}
+
+/* A press sinks the face. A fill steps past its hover tone to its pressed
+   tone (further from its words, so the label keeps its contrast) under the
    pressed shadow; an outline takes the pressed wash, darker than the hover
-   wash, so pressed never reads as hovered. */
-:is(.button-primary, .button-tonal):active:enabled:not([aria-disabled='true']) {
+   wash. Pressed never reads as hovered, nor as the pointer having left. */
+:is(.button-primary, .button-tonal, .button-danger):active:enabled:not([aria-disabled='true']) {
   box-shadow: var(--shadow-pressed);
 }
 
 .button-primary:active:enabled:not([aria-disabled='true']) {
-  background: var(--primary);
+  background: var(--primary-pressed);
 }
 
 .button-tonal:active:enabled:not([aria-disabled='true']) {
-  background: var(--tonal);
+  background: var(--tonal-pressed);
+}
+
+.button-danger:active:enabled:not([aria-disabled='true']) {
+  background: var(--danger-wash-strong);
 }
 
 :is(.button-neutral, .icon-button):active:enabled:not([aria-disabled='true']) {
@@ -123,11 +141,11 @@
   color: var(--text);
 }
 
-/* A primary or tonal button that cannot act drops its tier and is drawn as
-   a disabled neutral button: a faded tinted fill would leave its label
-   unreadable on a murky colour. The base rule fades it like every other
+/* A primary, tonal, or danger button that cannot act drops its tier and is
+   drawn as a disabled neutral button: a faded tinted fill or a faded red
+   line would leave it murky. The base rule fades it like every other
    disabled control. */
-:is(.button-primary, .button-tonal):is(:disabled, [aria-disabled='true']) {
+:is(.button-primary, .button-tonal, .button-danger):is(:disabled, [aria-disabled='true']) {
   border-color: var(--control-border);
   background: transparent;
   box-shadow: none;

@@ -11,6 +11,11 @@
   align-items: center;
   gap: var(--space-3) var(--space-4);
   padding-inline-start: calc(var(--line) + var(--space-3));
+  /* Its words in the interface face at the size of the small buttons beside
+     them, whatever the host's root sets. */
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
 }
 
 .select-all-check {

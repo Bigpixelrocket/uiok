@@ -11,10 +11,12 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react';
+import { createPortal } from 'react-dom';
 
 import { isKeyKept } from '../keyboard/BrowserKeys.js';
 import { isTextEditingTarget } from '../keyboard/Keyboard.logic.js';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
+import { DialogLayerContext } from './DialogLayer.js';
 import { DialogLegend } from './DialogLegend.js';
 import { legendKeyAction, type DialogLegendModel } from './DialogLegend.logic.js';
 
@@ -163,6 +165,14 @@ export interface ModalDialogProps {
   readonly onOutsidePress?: () => void;
   /** The body, between the title strip and the legend. */
   readonly children: ReactNode;
+  /**
+   * The element the dialog mounts into, for a dialog that must paint above
+   * something it is drawn inside (a pane that isolates its layers). Left
+   * out, the dialog mounts into the enclosing `DialogLayer`, or in place
+   * when there is none. Rules scoped under an element reach the dialog only
+   * when the container is inside it.
+   */
+  readonly container?: Element;
 }
 
 /**
@@ -177,14 +187,33 @@ export interface ModalDialogProps {
  * (`MODAL_SELECTOR`), which an app shell reads to mute its own chords while
  * the dialog is open. The dialog itself takes focus when it opens with
  * nothing inside focused, so its keys work before any control is chosen.
- * With `pinTop` the box keeps the top edge it opened at. Dialogs supply
- * only their content and verbs.
+ * With `pinTop` the box keeps the top edge it opened at. It mounts into
+ * `container` when given, else into the enclosing `DialogLayer`, else in
+ * place. Dialogs supply only their content and verbs.
  *
  * Styled by the `.dialog-backdrop` and `.dialog` rules in `@bigpixelrocket/uiok/styles.css`
  * (`docs/components/dialog.md`); a caller sets only a dialog's size and its
  * body's layout, through `className`.
  */
-export function ModalDialog({
+export function ModalDialog({ container, ...frame }: ModalDialogProps): ReactElement | null {
+  const layer = useContext(DialogLayerContext);
+  const target = container ?? layer;
+
+  // A layer whose element is not in the document yet: the dialog waits one
+  // commit for it rather than open in place and move.
+  if (target === null) {
+    return null;
+  }
+
+  return target === undefined ? (
+    <DialogFrame {...frame} />
+  ) : (
+    createPortal(<DialogFrame {...frame} />, target)
+  );
+}
+
+/** The dialog itself, wherever `ModalDialog` mounts it. */
+function DialogFrame({
   title,
   labelId,
   describedBy,
@@ -198,7 +227,7 @@ export function ModalDialog({
   onCancel,
   onOutsidePress = onCancel,
   children
-}: ModalDialogProps): ReactElement {
+}: Omit<ModalDialogProps, 'container'>): ReactElement {
   const dialogRef = useRef<HTMLDivElement>(null);
   const claimEnclosingFocus = useContext(NestedFocusContext);
   // How many dialogs nested inside this one hold the focus; a count, since

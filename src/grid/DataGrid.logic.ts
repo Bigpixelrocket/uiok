@@ -182,3 +182,19 @@ export function dropPlace(
 
   return x < (edges[0]?.left ?? 0) ? 0 : edges.length - 1;
 }
+
+/**
+ * Where the inline editor's layer starts, in window pixels: over its cell
+ * (`left`), unless a layer wider than the cell would cross the well's right
+ * edge, when it moves left to end `margin` inside it, never past the well's
+ * left edge.
+ */
+export function editorLeft(
+  left: number,
+  width: number,
+  well: { readonly left: number; readonly right: number },
+  margin: number
+): number {
+  if (left + width <= well.right) return left;
+  return Math.max(well.left, Math.min(left, well.right - margin - width));
+}

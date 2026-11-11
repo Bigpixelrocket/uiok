@@ -173,20 +173,22 @@ export const cutLabel = (text: string, limit = 18): string =>
 
 /**
  * Where each legend entry goes: one after another on a row, each as wide
- * as its swatch, its text at about 6.5 pixels a character, and a gap,
- * wrapping to the next row where the next would pass `width`.
+ * as its 10px swatch and 4px gap, its text (`widths`, the drawn width of
+ * each, where measured; about 6.5 pixels a character where not), and a
+ * 14px gap, wrapping to the next row where the next would pass `width`.
  */
 export function legendLayout(
   texts: readonly string[],
-  width: number
+  width: number,
+  widths: readonly number[] = []
 ): { readonly text: string; readonly x: number; readonly row: number }[] {
   let x = 0;
   let row = 0;
 
-  return texts.map((text) => {
-    const span = 14 + Array.from(text).length * 6.5 + 14;
+  return texts.map((text, at) => {
+    const span = 14 + (widths[at] ?? Array.from(text).length * 6.5) + 14;
 
-    if (x > 0 && x + span > width) {
+    if (x > 0 && x + span - 14 > width) {
       x = 0;
       row += 1;
     }

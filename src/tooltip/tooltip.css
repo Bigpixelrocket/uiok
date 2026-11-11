@@ -53,3 +53,15 @@
   letter-spacing: var(--tracking-caps);
   white-space: nowrap;
 }
+
+/* The chord drawn as keys: the same 12px glyphs and 10px letters as a
+   legend's caps, without the cap, as tall as the title's first line so a
+   wrapped title keeps the chord beside its opening words. */
+.tooltip-chord {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  height: 1lh;
+  font: var(--font-weight-medium) var(--font-size-small)/var(--line-height-prose) var(--font-ui);
+  letter-spacing: 0;
+}

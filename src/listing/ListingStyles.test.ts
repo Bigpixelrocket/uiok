@@ -148,7 +148,9 @@ describe("the frame's compact controls", () => {
       .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
       .map((rule) => rule.selectorText)
       .filter((selector) => /:hover\b/.test(selector.replace(/:not\([^()]*\)/g, '')))
-      .map((selector) => selector.replace(/:hover\b/g, ''));
+      // Hover stands as a match-anything test, so a selector that lists it
+      // with other states (`:is(:hover, :active)`) stays valid.
+      .map((selector) => selector.replace(/:hover\b/g, ':where(*)'));
     const lit = (disabled: boolean): string[] => {
       document.body.innerHTML = `<fieldset${disabled ? ' disabled' : ''} class="listing-root">
         <button class="pane-act">Start</button>
@@ -179,5 +181,66 @@ describe("the frame's compact controls", () => {
     expect(declaredValues(rest as Element, 'opacity')).toEqual(['0']);
     expect(declaredValues(cursor as Element, 'opacity')).toEqual([]);
     document.body.innerHTML = '';
+  });
+});
+
+describe('the listing states', () => {
+  const colour = (element: Element | null): string =>
+    getComputedStyle(element as Element).getPropertyValue('color');
+
+  it('sets every quiet word on a cursor or marked row in the on-surface tone', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="row cursor" id="cursor"><span class="row-icon"></span><span class="row-name">a</span>
+        <span class="row-meta"><span class="pane-state pane-tone-muted">idle</span></span>
+        <span class="row-meta"><span class="pane-state pane-tone-busy">saving</span></span>
+      </div>
+      <div class="row marked" id="marked"><span class="row-icon"></span><span class="row-name">b</span>
+        <span class="row-meta"><span class="pane-state pane-tone-muted">idle</span></span>
+      </div>
+      <div class="row" id="rest"><span class="row-icon"></span><span class="row-name">c</span>
+        <span class="row-meta"><span class="pane-state pane-tone-muted">idle</span></span>
+      </div>
+    </section>`;
+
+    for (const id of ['cursor', 'marked']) {
+      for (const word of document.querySelectorAll(`#${id} :is(.row-meta, .pane-state)`)) {
+        expect(colour(word)).toBe('var(--text-on-surface)');
+      }
+    }
+    expect(colour(document.querySelector('#rest .pane-state'))).toBe('var(--row-meta-text)');
+    document.body.innerHTML = '';
+  });
+
+  it('lights the row actions only on the cursor row of the pane that holds the keys', () => {
+    applyStylesheets(styles);
+    const pane = (active: boolean): string => `<div class="pane${active ? ' active' : ''}">
+      <div class="row cursor"><span class="row-meta">
+        <button class="pane-act" type="button">Stop</button>
+        <button class="pane-icon-act danger" type="button"></button>
+      </span></div></div>`;
+    document.body.innerHTML = `<section class="listing-root">${pane(true)}${pane(false)}</section>`;
+    const [lit, danger, quiet, quietDanger] = document.querySelectorAll('button');
+
+    expect(colour(lit as Element)).toBe('var(--accent-text)');
+    expect(colour(danger as Element)).toBe('var(--danger-text)');
+    expect(colour(quiet as Element)).toBe('var(--text-on-surface)');
+    expect(colour(quietDanger as Element)).toBe('var(--text-on-surface)');
+    document.body.innerHTML = '';
+  });
+
+  it("starts a no-icon listing's first label past the icon column, below an app's own placement", () => {
+    // The rule weighs what the label's default does, so any scoped app rule
+    // that places the label wins, and a section's heading keeps the edge.
+    expect(sheet).toMatch(
+      /^:where\(\.listing-root \.pane-listing:has\(> \.row\):not\(:has\(> \.row > \.row-icon:not\(:empty\)\)\)\)\n\s*> \.pane-columns\n\s*> \.row-name:where\(:not\(:has\(h3\)\)\) \{\n\s*grid-column: 2;/m
+    );
+  });
+
+  it('keeps the press of a crumb and a sort label over their hover', () => {
+    // Their hover is the base sheet's shared recipe, which weighs what the
+    // pressed one does; a heavier component hover would win over a press.
+    expect(sheet).not.toMatch(/crumb-label:hover/);
+    expect(sheet).not.toMatch(/\.pane-sort\.sortable:hover/);
   });
 });

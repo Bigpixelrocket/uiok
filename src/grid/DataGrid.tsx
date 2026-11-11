@@ -16,6 +16,7 @@ import { createPortal, flushSync } from 'react-dom';
 
 import {
   dropPlace,
+  editorLeft,
   gridMove,
   initialWidth,
   movedCell,
@@ -38,6 +39,10 @@ const CHAR_WIDTH = 7.8;
 const DRAG_THRESHOLD = 5;
 /** How long a link's click waits for a second click that edits its cell instead. */
 const LINK_WAIT_MS = 300;
+/** How far inside the grid's frame an editor wider than its cell ends (--space-4). */
+const EDITOR_MARGIN = 8;
+/** The narrowest an editor's layer is held to, however narrow the grid. */
+const EDITOR_MIN_WIDTH = 160;
 
 /** A column of the grid. */
 export interface DataGridColumn {
@@ -230,6 +235,10 @@ export function DataGrid({
 }: DataGridProps): ReactElement {
   const id = useId();
   const viewport = useRef<HTMLDivElement>(null);
+  /** The frame around the scrolling well, which an editor's layer keeps inside. */
+  const frame = useRef<HTMLDivElement>(null);
+  /** The open editor's layer, measured to keep it inside the frame. */
+  const editorLayer = useRef<HTMLDivElement>(null);
   const header = useRef<HTMLDivElement>(null);
   /** Where the grid stood when it last scrolled; kept while it is out of layout (a hidden pane). */
   const scrollTop = useRef(0);
@@ -249,9 +258,15 @@ export function DataGrid({
   /** A drag just ended, so the click it ends with sorts nothing. */
   const dragged = useRef(false);
   /** Where the cell being edited sits in the window, which its editor is drawn over. */
-  const [editorBox, setEditorBox] = useState<{ left: number; top: number; width: number } | null>(
-    null
-  );
+  const [editorBox, setEditorBox] = useState<{
+    readonly left: number;
+    readonly top: number;
+    readonly width: number;
+    /** The frame's left and right edges, which the layer keeps between. */
+    readonly well: { readonly left: number; readonly right: number };
+  } | null>(null);
+  /** Where the editor's layer starts once measured against the frame. */
+  const [editorShift, setEditorShift] = useState<number | null>(null);
   /** A link's click waiting to see whether a double-click edits its cell instead. */
   const pendingLink = useRef<number | null>(null);
   const canEdit = (row: number, column: number): boolean =>
@@ -401,8 +416,21 @@ export function DataGrid({
     const place = (): void => {
       const target = document.getElementById(`${id}-${editorRow}-${editorColumn}`);
       const box = target?.getBoundingClientRect();
+      const well = frame.current?.getBoundingClientRect();
 
-      setEditorBox(box === undefined ? null : { left: box.left, top: box.top, width: box.width });
+      setEditorBox(
+        box === undefined
+          ? null
+          : {
+              left: box.left,
+              top: box.top,
+              width: box.width,
+              well:
+                well === undefined
+                  ? { left: 0, right: window.innerWidth }
+                  : { left: well.left, right: well.right }
+            }
+      );
     };
 
     place();
@@ -414,6 +442,24 @@ export function DataGrid({
       setEditorBox(null);
     };
   }, [id, editorRow, editorColumn, from, to]);
+
+  // A layer wider than its cell (a field with buttons beside it) that would
+  // cross the frame's right edge moves left to end inside it, measured
+  // before it paints; it follows whatever the caller's editor draws.
+  useLayoutEffect(() => {
+    const layer = editorLayer.current;
+    const next =
+      editorBox === null || layer === null
+        ? null
+        : editorLeft(
+            editorBox.left - 1,
+            layer.getBoundingClientRect().width,
+            editorBox.well,
+            EDITOR_MARGIN
+          );
+
+    setEditorShift((held) => (held === next ? held : next));
+  }, [editorBox, editor]);
 
   /** Scrolls a row into the viewport, below the header. */
   const reveal = (row: number): void => {
@@ -638,12 +684,17 @@ export function DataGrid({
                     onClick={(event) => event.stopPropagation()}
                     onDoubleClick={(event) => event.stopPropagation()}
                     onPointerDown={(event) => event.stopPropagation()}
+                    ref={editorLayer}
                     style={{
-                      left: editorBox.left - 1,
+                      left: editorShift ?? editorBox.left - 1,
                       top: editorBox.top - 1,
                       minWidth: editorBox.width + 2,
-                      // It keeps inside the window, however far right its cell lies.
-                      maxWidth: Math.max(160, window.innerWidth - editorBox.left - 8)
+                      // It keeps inside the grid's frame and the window.
+                      maxWidth: Math.max(
+                        EDITOR_MIN_WIDTH,
+                        Math.min(editorBox.well.right - editorBox.well.left, window.innerWidth) -
+                          2 * EDITOR_MARGIN
+                      )
                     }}
                   >
                     {editor.node}
@@ -660,113 +711,120 @@ export function DataGrid({
     );
   }
 
+  // The frame draws the border and corners; the well inside it scrolls, so
+  // the fade on columns past the frame (`.scroll-fade-x`) never erases them.
   return (
     <div
-      aria-activedescendant={cursor === null ? undefined : cellId(cursor.row, cursor.column)}
-      aria-colcount={columns.length}
-      aria-label={label}
-      aria-multiselectable={onMarkRow === undefined ? undefined : true}
-      aria-rowcount={rowCount + 1}
-      // Columns past the frame fade at the side they hide on (`.scroll-fade-x`).
-      className={pointer ? 'data-grid scroll-fade-x pointer' : 'data-grid scroll-fade-x'}
-      onKeyDown={onKeyDown}
-      ref={viewport}
-      role="grid"
+      className={pointer ? 'data-grid pointer' : 'data-grid'}
+      ref={frame}
+      // The frame's own height, border included; the well fills what is left.
       style={{ maxHeight: maxHeight }}
-      tabIndex={0}
     >
       <div
-        aria-rowindex={1}
-        className="data-grid-header"
-        ref={header}
-        role="row"
-        style={{ gridTemplateColumns: template }}
+        aria-activedescendant={cursor === null ? undefined : cellId(cursor.row, cursor.column)}
+        aria-colcount={columns.length}
+        aria-label={label}
+        aria-multiselectable={onMarkRow === undefined ? undefined : true}
+        aria-rowcount={rowCount + 1}
+        className="data-grid-scroll scroll-fade-x"
+        onKeyDown={onKeyDown}
+        ref={viewport}
+        role="grid"
+        tabIndex={0}
       >
-        {rowLead !== undefined && <div className="data-grid-lead" />}
-        {columns.map((column, index) => {
-          const mark = marks.find((entry) => entry.column === index);
+        <div
+          aria-rowindex={1}
+          className="data-grid-header"
+          ref={header}
+          role="row"
+          style={{ gridTemplateColumns: template }}
+        >
+          {rowLead !== undefined && <div className="data-grid-lead" />}
+          {columns.map((column, index) => {
+            const mark = marks.find((entry) => entry.column === index);
 
-          return (
-            <div
-              aria-colindex={index + 1}
-              aria-sort={mark?.direction}
-              className={[
-                'data-grid-heading',
-                column.align === 'right' ? 'align-right' : '',
-                markedColumns?.has(index) === true ? 'marked' : '',
-                dragging?.from === index ? 'dragging' : '',
-                dragging !== null && dragging.to === index && dragging.from !== index
-                  ? dragging.to < dragging.from
-                    ? 'drop-before'
-                    : 'drop-after'
-                  : '',
-                onReorder === undefined ? '' : 'draggable'
-              ]
-                .filter(Boolean)
-                .join(' ')}
-              key={keyOf(column, index)}
-              onClick={(event) => {
-                if (draggedClick(event)) return;
-                onMarkColumn?.(index);
-              }}
-              onDoubleClick={() => onHeaderDoubleClick?.(index)}
-              onPointerDown={(event) => onHeadingPointerDown(event, index)}
-              role="columnheader"
-              {...describedTooltip(column.tip ?? null)}
-            >
-              {onSort === undefined ? (
-                <span className="data-grid-label">{column.label}</span>
-              ) : (
-                <button
-                  className="data-grid-label data-grid-sort"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    // A double-click's second click (`detail` 2) leaves the sort its first made.
-                    if (draggedClick(event) || event.detail > 1) return;
-                    onSort(index, {
-                      add: event.shiftKey && !event.altKey,
-                      remove: event.altKey || event.ctrlKey
-                    });
-                  }}
-                  type="button"
-                >
-                  {column.label}
-                  {mark !== undefined && (
-                    <span aria-hidden className="data-grid-arrow">
-                      {mark.direction === 'ascending' ? (
-                        <ChevronUp size={ICON_SM} />
-                      ) : (
-                        <ChevronDown size={ICON_SM} />
-                      )}
-                      {marks.length > 1 && <small>{mark.position}</small>}
-                    </span>
-                  )}
-                </button>
-              )}
-              <span
-                aria-hidden
-                className="data-grid-resize"
-                onPointerDown={(event) => onResizeStart(event, index)}
-              />
+            return (
+              <div
+                aria-colindex={index + 1}
+                aria-sort={mark?.direction}
+                className={[
+                  'data-grid-heading',
+                  column.align === 'right' ? 'align-right' : '',
+                  markedColumns?.has(index) === true ? 'marked' : '',
+                  dragging?.from === index ? 'dragging' : '',
+                  dragging !== null && dragging.to === index && dragging.from !== index
+                    ? dragging.to < dragging.from
+                      ? 'drop-before'
+                      : 'drop-after'
+                    : '',
+                  onReorder === undefined ? '' : 'draggable'
+                ]
+                  .filter(Boolean)
+                  .join(' ')}
+                key={keyOf(column, index)}
+                onClick={(event) => {
+                  if (draggedClick(event)) return;
+                  onMarkColumn?.(index);
+                }}
+                onDoubleClick={() => onHeaderDoubleClick?.(index)}
+                onPointerDown={(event) => onHeadingPointerDown(event, index)}
+                role="columnheader"
+                {...describedTooltip(column.tip ?? null)}
+              >
+                {onSort === undefined ? (
+                  <span className="data-grid-label">{column.label}</span>
+                ) : (
+                  <button
+                    className="data-grid-label data-grid-sort"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      // A double-click's second click (`detail` 2) leaves the sort its first made.
+                      if (draggedClick(event) || event.detail > 1) return;
+                      onSort(index, {
+                        add: event.shiftKey && !event.altKey,
+                        remove: event.altKey || event.ctrlKey
+                      });
+                    }}
+                    type="button"
+                  >
+                    <span className="data-grid-sort-name">{column.label}</span>
+                    {mark !== undefined && (
+                      <span aria-hidden className="data-grid-arrow">
+                        {mark.direction === 'ascending' ? (
+                          <ChevronUp size={ICON_SM} />
+                        ) : (
+                          <ChevronDown size={ICON_SM} />
+                        )}
+                        {marks.length > 1 && <small>{mark.position}</small>}
+                      </span>
+                    )}
+                  </button>
+                )}
+                <span
+                  aria-hidden
+                  className="data-grid-resize"
+                  onPointerDown={(event) => onResizeStart(event, index)}
+                />
+              </div>
+            );
+          })}
+          {rowAction !== undefined && <div className="data-grid-action" />}
+        </div>
+        <div
+          className={rowCount === 0 ? 'data-grid-body empty' : 'data-grid-body'}
+          role="rowgroup"
+          style={rowCount === 0 ? undefined : { height: rowCount * ROW_HEIGHT }}
+        >
+          {rowCount === 0 && empty !== undefined ? (
+            <div className="data-grid-empty" role="row">
+              <div aria-colspan={columns.length} role="gridcell">
+                {empty}
+              </div>
             </div>
-          );
-        })}
-        {rowAction !== undefined && <div className="data-grid-action" />}
-      </div>
-      <div
-        className={rowCount === 0 ? 'data-grid-body empty' : 'data-grid-body'}
-        role="rowgroup"
-        style={rowCount === 0 ? undefined : { height: rowCount * ROW_HEIGHT }}
-      >
-        {rowCount === 0 && empty !== undefined ? (
-          <div className="data-grid-empty" role="row">
-            <div aria-colspan={columns.length} role="gridcell">
-              {empty}
-            </div>
-          </div>
-        ) : (
-          rows
-        )}
+          ) : (
+            rows
+          )}
+        </div>
       </div>
     </div>
   );

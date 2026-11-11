@@ -71,7 +71,7 @@
 }
 
 .pie-chart:has(.pie-slice.lit) .pie-slice:not(.lit) {
-  opacity: 0.45;
+  opacity: var(--dimmed-opacity);
 }
 
 .pie-slice.lit {
@@ -328,8 +328,9 @@
 
 /* ResultChart, the chart of a table: its title, legend, axes and their
    labels, grid, and marks in the chart tokens, drawn inside the SVG so its
-   picture saves whole, and a read-out of the value under the pointer. */
+   picture saves whole, and the shared read-out beside the hovered mark. */
 .result-chart {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
@@ -360,8 +361,10 @@
   stroke-linejoin: round;
 }
 
+/* Unstacked areas overlap, so each fill is faint enough that a mix of two
+   or three still reads as its own hues; the 2px line carries the colour. */
 .result-chart-area {
-  fill-opacity: 0.35;
+  fill-opacity: var(--chart-area-opacity);
   stroke: none;
 }
 
@@ -375,9 +378,8 @@
   stroke-width: var(--line-strong);
 }
 
-.result-chart-readout {
-  min-height: var(--line-height-compact);
-  margin: 0;
-  color: var(--row-meta-text);
-  font-variant-numeric: tabular-nums;
+/* The read-out beside the hovered mark, centred on it; the words are also
+   in a hidden live line (.result-chart-readout) for assistive technology. */
+.result-chart-float {
+  transform: translateY(-50%);
 }

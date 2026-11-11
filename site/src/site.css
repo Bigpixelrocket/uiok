@@ -312,14 +312,22 @@ a {
   box-decoration-break: clone;
 }
 
-.prose pre,
-.code-block pre {
+/* A code block: the frame draws the border and the ground, and the pre inside
+   it scrolls sideways under the library's edge fade, which would fade a
+   border of the scroller's own (render-docs.ts frames each fenced block). */
+.prose .code-frame,
+.code-block {
   margin: 0 0 var(--space-8);
-  padding: var(--space-6) var(--space-6);
-  overflow-x: auto;
   border: var(--line) solid var(--border);
   border-radius: var(--radius-md);
   background: var(--terminal-bg);
+}
+
+.prose pre,
+.code-block pre {
+  margin: 0;
+  padding: var(--space-6) var(--space-6);
+  overflow-x: auto;
   color: var(--terminal-fg);
   font: var(--font-size-small)/var(--line-height-prose) var(--font-mono);
 }
@@ -657,6 +665,23 @@ a {
   overflow-x: auto;
 }
 
+/* A terminal host in a demo: framed on the terminal's own ground, so an idle
+   well still shows where it stands and no terminal bleeds into the page. The
+   host sizes the terminal inside it; `.short` is an idle well's height. */
+.demo-terminal {
+  display: grid;
+  height: 240px;
+  padding: var(--space-4);
+  overflow: hidden;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--terminal-bg);
+}
+
+.demo-terminal.short {
+  height: 96px;
+}
+
 .keyboard-demo {
   display: flex;
   flex-direction: column;
@@ -924,13 +949,6 @@ a {
   color: var(--primary-mark);
 }
 
-@media (max-width: 860px) {
-  .scale-row {
-    grid-template-columns: minmax(0, 1fr) 6ch minmax(0, 1fr);
-    gap: var(--space-4);
-  }
-}
-
 /* ---- Home ---- */
 
 .hero {
@@ -984,6 +1002,13 @@ a {
   gap: var(--space-5);
 }
 
+/* The text links wrap as one item, so neither is left alone on a row. */
+.hero-links {
+  display: inline-flex;
+  gap: var(--space-5);
+  white-space: nowrap;
+}
+
 .hero-link {
   font: var(--font-size-body) var(--font-mono);
 }
@@ -1032,17 +1057,6 @@ a {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
-  margin: 0 0 var(--space-8);
-  border: var(--line) solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--terminal-bg);
-}
-
-.code-block pre {
-  margin: 0;
-  border: none;
-  border-radius: var(--radius-md) 0 0 var(--radius-md);
-  background: none;
 }
 
 .code-block .copy-button {
@@ -1070,14 +1084,16 @@ a {
 
 /* ---- Narrow windows ---- */
 
-@media (max-width: 860px) {
-  /* The header takes two rows: the menu, the wordmark, and find on the
-     first, the appearance switch and the theme on the second. */
-  :root {
-    --site-header-height: calc(2 * var(--control-height) + var(--space-4) + 2 * var(--space-5));
-  }
+/* The drawer's scrim exists only while the drawer is open in a narrow window. */
+.nav-scrim {
+  display: none;
+}
 
-  /* A phone has no keyboard to legend; the strip gives its room back. */
+/* A tablet-wide window: the pages move into a drawer behind the menu button,
+   and the header keeps its one row with the labelled find button. */
+@media (max-width: 860px) {
+  /* A window this narrow is usually touched, not typed at; the legend strip
+     gives its room back. */
   .shell {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
@@ -1091,10 +1107,8 @@ a {
   }
 
   .site-header {
-    flex-wrap: wrap;
-    align-content: center;
-    row-gap: var(--space-4);
-    padding-block: var(--space-5);
+    gap: var(--space-5);
+    padding-inline: var(--space-8);
   }
 
   .menu-toggle {
@@ -1115,19 +1129,82 @@ a {
     display: none;
   }
 
-  /* The open drawer dims the page beside it, under the drawer and the
-     header. It takes no clicks, so the page works as it did. */
-  .shell[data-menu='open']::before {
-    content: '';
+  /* The open drawer dims the page beside it, under the drawer and below the
+     header; a press on the dimmed page closes the drawer. */
+  .shell[data-menu='open'] .nav-scrim {
+    display: block;
     position: fixed;
     inset: var(--site-header-height) 0 0;
     z-index: var(--z-panel);
     background: var(--scrim);
-    pointer-events: none;
+  }
+
+  /* The find button gives way before the theme controls do: its words end in
+     an ellipsis rather than pushing the header onto a second row. */
+  .find-button {
+    flex: 0 1 220px;
+    min-width: 0;
+    margin-left: var(--space-2);
+  }
+
+  .find-words {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .theme-switcher {
+    flex: 0 1 auto;
+    min-width: 0;
+  }
+
+  /* The theme's name keeps its width; the find button is what gives way. */
+  .theme-select {
+    flex: none;
+    min-width: 0;
+    text-overflow: ellipsis;
+  }
+
+  .site-main {
+    padding: var(--space-12) var(--space-10) var(--space-16);
+  }
+
+  .charts-pair {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .scale-row {
+    grid-template-columns: minmax(0, 1fr) 6ch minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+
+/* Below the room for its words and chord both, the find button keeps its
+   words. */
+@media (max-width: 680px) {
+  .find-button .keychord {
+    display: none;
+  }
+}
+
+/* A phone: the header takes two rows (the menu, the wordmark, and find on the
+   first; the appearance switch and the theme on the second), and find
+   collapses to its icon. */
+@media (max-width: 560px) {
+  :root {
+    --site-header-height: calc(2 * var(--control-height) + var(--space-4) + 2 * var(--space-5));
+  }
+
+  .site-header {
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: var(--space-4);
+    padding-block: var(--space-5);
   }
 
   .find-button {
-    min-width: 0;
+    flex: none;
     margin-left: auto;
   }
 
@@ -1138,23 +1215,16 @@ a {
 
   .theme-switcher {
     flex: 1 0 100%;
-    min-width: 0;
     margin-left: 0;
   }
 
   .theme-select {
     flex: 1 1 auto;
-    min-width: 0;
     max-width: 200px;
-    text-overflow: ellipsis;
   }
 
   .site-main {
     padding: var(--space-10) var(--space-8) var(--space-16);
-  }
-
-  .charts-pair {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .pane-demo-sidebar {

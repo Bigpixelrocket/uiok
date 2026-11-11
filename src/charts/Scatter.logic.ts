@@ -208,6 +208,33 @@ export function tickLabel(value: number, axis: ScatterAxis, domain: Domain): str
     : `${day} ${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}`;
 }
 
+/** An offset from an axis's first tick, short and signed ("+100M", "+2.5K"). */
+const offsetLabel = (offset: number): string =>
+  `+${new Intl.NumberFormat('en-US', { notation: 'compact', maximumSignificantDigits: 3 }).format(offset)}`;
+
+/**
+ * The labels of an axis's ticks, in order. A number axis whose ticks lie
+ * so close together for their size that their short forms would differ
+ * only past the fourth digit ("1.7936T", "1.7937T") labels the first tick
+ * in full and each other by how far past it it lies ("+100M"), so the
+ * steps read at a glance. Any other axis labels each tick on its own
+ * (`tickLabel`).
+ */
+export function tickLabels(ticks: readonly number[], axis: ScatterAxis, domain: Domain): string[] {
+  const [first, second] = ticks;
+
+  if (axis.kind === 'number' && first !== undefined && second !== undefined) {
+    const largest = Math.max(...ticks.map((tick) => Math.abs(tick)));
+
+    if (largest >= LONG_NUMBER && second - first < largest / 1000) {
+      return ticks.map((tick, at) =>
+        at === 0 ? numberLabel(tick, domain) : offsetLabel(tick - first)
+      );
+    }
+  }
+  return ticks.map((tick) => tickLabel(tick, axis, domain));
+}
+
 /**
  * The domains a rectangle dragged from one pixel to another zooms to, in a
  * plot of `width` by `height` (y grows upward), or null for a rectangle too

@@ -99,12 +99,15 @@ export function Home() {
           <Button onClick={() => (window.location.hash = '/theming')} variant="tonal">
             Try the themes
           </Button>
-          <a className="hero-link" href="https://github.com/Bigpixelrocket/uiok">
-            GitHub
-          </a>
-          <a className="hero-link" href="https://www.npmjs.com/package/@bigpixelrocket/uiok">
-            npm
-          </a>
+          {/* The two links wrap as one, so neither is left alone on a row. */}
+          <span className="hero-links">
+            <a className="hero-link" href="https://github.com/Bigpixelrocket/uiok">
+              GitHub
+            </a>
+            <a className="hero-link" href="https://www.npmjs.com/package/@bigpixelrocket/uiok">
+              npm
+            </a>
+          </span>
         </div>
       </section>
 
@@ -170,7 +173,7 @@ export function Home() {
       <section className="home-section">
         <h2>Install</h2>
         <div className="code-block">
-          <pre>
+          <pre className="scroll-fade-x">
             <code>{INSTALL}</code>
           </pre>
           <CopyButton text={INSTALL} />
@@ -190,7 +193,7 @@ export function Home() {
           <code>TooltipLayer</code> near the root, then use the components:
         </p>
         <div className="code-block">
-          <pre>
+          <pre className="scroll-fade-x">
             <code>{QUICK_START}</code>
           </pre>
           <CopyButton text={QUICK_START} />

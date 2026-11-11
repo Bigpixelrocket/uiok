@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { DataGrid } from './DataGrid.js';
 
 /** Gives every element the viewport's height, which jsdom never lays out. */
@@ -325,5 +326,43 @@ describe('the data grid’s cursor, sort, and edit', () => {
 
     expect(field.closest('.data-grid-editor')?.parentElement).toBe(host);
     host.remove();
+  });
+
+  it('frames a scrolling well, and keeps its header one height and its right edge single', () => {
+    applyStylesheets(readStylesheet('src/grid/grid.css'));
+    render(
+      <DataGrid
+        cell={(row, column) => ({ text: `${row}-${column}` })}
+        columns={[{ label: 'name' }, { label: 'size' }]}
+        copyText={() => null}
+        label="Files"
+        onSort={() => undefined}
+        rowCount={1}
+        sort={{ column: 1, direction: 'ascending' }}
+      />
+    );
+    const well = screen.getByRole('grid');
+    const frame = well.parentElement as HTMLElement;
+
+    // The fade masks the well; the frame, which draws the border, has none.
+    expect(well.classList.contains('scroll-fade-x')).toBe(true);
+    expect(frame.classList.contains('data-grid')).toBe(true);
+    expect(frame.classList.contains('scroll-fade-x')).toBe(false);
+    expect(declaredValues(frame, 'border')).toHaveLength(1);
+    expect(declaredValues(well, 'border')).toEqual([]);
+
+    // A sort label is a box of the row's height off the baseline, so a mark
+    // never grows the header.
+    const sorted = screen.getByRole('button', { name: 'size' });
+
+    expect(sorted.querySelector('.data-grid-arrow')).not.toBeNull();
+    expect(declaredValues(sorted, 'display')).toEqual(['flex']);
+    expect(declaredValues(sorted, 'height')).toEqual(['var(--row-height-dense)']);
+
+    // The last cell leaves the right edge to the frame.
+    const cells = screen.getAllByRole('gridcell');
+
+    expect(declaredValues(cells.at(-1) as Element, 'border-right-style').at(-1)).toBe('none');
+    expect(declaredValues(cells[0] as Element, 'border-right-style')).toEqual([]);
   });
 });

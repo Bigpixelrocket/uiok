@@ -10,6 +10,7 @@
 import { FileText, FolderOpen, Plus, Server, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
+import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import {
   ACTION_COLUMN,
   Cell,
@@ -98,7 +99,7 @@ export function ListingDemo() {
                 <Row
                   className={selected.has(file.id) ? 'selected' : undefined}
                   key={file.id}
-                  mark={<FileText size={14} />}
+                  mark={<FileText size={ICON_MD} />}
                   name={file.name}
                   onOpen={() => open(file.id)}
                   rowKey={file.id}
@@ -141,7 +142,7 @@ export function ListingDemo() {
               {SERVERS.map((server) => (
                 <Row
                   key={server}
-                  mark={<Server size={14} />}
+                  mark={<Server size={ICON_MD} />}
                   name={server}
                   onOpen={() => setOpened(server)}
                   rowKey={server}
@@ -149,7 +150,7 @@ export function ListingDemo() {
               ))}
               <Row
                 className="pane-add"
-                mark={<Plus size={14} />}
+                mark={<Plus size={ICON_MD} />}
                 name="Add server…"
                 onOpen={() => setOpened('add a server')}
                 rowKey="add"

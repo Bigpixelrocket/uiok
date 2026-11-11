@@ -1,6 +1,7 @@
 /**
  * Canvas 2D drawing of a Ghostty render snapshot: backgrounds and selection
- * in runs, text in same-style runs clipped to their cells, block elements and
+ * in runs, text in same-style runs clipped to their cells and drawn at the
+ * terminal's minimum contrast against each cell's own background, block elements and
  * box drawing as shapes snapped to device pixels, decorations, and the cursor.
  * Only dirty rows are repainted unless a full frame is forced.
  */
@@ -12,6 +13,7 @@ import {
   type GhosttyColor,
   type GhosttySnapshot
 } from './core.js';
+import { legibleForeground } from './contrast.logic.js';
 import { DEFAULT_SELECTION_BACKGROUND } from './fallbackColors.js';
 import {
   ghosttySpriteCodepoint,
@@ -43,6 +45,30 @@ function cssColor(color: GhosttyColor): string {
     cssColors.set(color, text);
   }
   return text;
+}
+
+// By a cell's background, then its foreground: the colour its text is
+// drawn in. The engine hands out one object per color, so each pair is
+// floored once and keeps one CSS text.
+const inks = new WeakMap<GhosttyColor, WeakMap<GhosttyColor, GhosttyColor>>();
+
+/**
+ * The colour a cell's text is drawn in: its foreground, moved only as far
+ * as the terminal's minimum contrast against the cell's own background
+ * needs (`legibleForeground`). A background stays as the program asked.
+ */
+function cellInk(cell: GhosttyCell): GhosttyColor {
+  let byForeground = inks.get(cell.background);
+  if (byForeground === undefined) {
+    byForeground = new WeakMap();
+    inks.set(cell.background, byForeground);
+  }
+  let ink = byForeground.get(cell.foreground);
+  if (ink === undefined) {
+    ink = legibleForeground(cell.foreground, cell.background);
+    byForeground.set(cell.foreground, ink);
+  }
+  return ink;
 }
 
 function sameTextStyle(left: GhosttyCell, right: GhosttyCell): boolean {
@@ -530,6 +556,8 @@ export function renderGhosttySnapshot(options: {
           if (!next || ghosttySpriteCodepoint(next.text) < 0 || !sameTextStyle(next, first)) break;
           runEnd += 1;
         }
+        // Block and box shapes keep the program's colour: they draw a
+        // picture or a frame, whose colour is the point, not text to read.
         if (!first.invisible) {
           const color = cssColor(first.foreground);
           context.fillStyle = color;
@@ -551,10 +579,16 @@ export function renderGhosttySnapshot(options: {
         runStart = runEnd;
         continue;
       }
+      const firstInk = cellInk(first);
+      // A run splits where the floor draws its text in another colour, so
+      // each cell's text keeps the contrast of its own background.
       const runEnd = ghosttyTextRunEnd(
         row.cells,
         runStart,
-        (cell) => ghosttySpriteCodepoint(cell.text) < 0 && sameTextStyle(cell, first)
+        (cell) =>
+          ghosttySpriteCodepoint(cell.text) < 0 &&
+          sameTextStyle(cell, first) &&
+          ghosttyColorsEqual(cellInk(cell), firstInk)
       );
       const text =
         runEnd === runStart + 1
@@ -565,7 +599,7 @@ export function renderGhosttySnapshot(options: {
               .join('');
       if (!first.invisible && text.trim().length > 0) {
         const font = fonts[(first.bold ? 2 : 0) + (first.italic ? 1 : 0)]!;
-        const color = cssColor(first.foreground);
+        const color = cssColor(firstInk);
         const x = padding + runStart * metrics.width;
         const y = top + metrics.baseline;
         const maxWidth = (runEnd - runStart) * metrics.width;
@@ -668,7 +702,7 @@ export function renderGhosttySnapshot(options: {
       if (!cell || (!cell.underline && !cell.strikethrough && !cell.overline && !hoveredLink)) {
         continue;
       }
-      context.fillStyle = cssColor(cell.foreground);
+      context.fillStyle = cssColor(cellInk(cell));
       // Decorations span the cell's device edges so a decorated run is unbroken.
       const left = columnEdge(column) / pixelRatio;
       const width = (columnEdge(column + 1) - columnEdge(column)) / pixelRatio;

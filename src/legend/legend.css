@@ -38,7 +38,8 @@
 /* The dock only shows what is held, so its keys are drawn as keys, not
    buttons: no pointer, and a fixed box whatever the glyph. They are the
    shared key cap (keychord.css) in a fixed width: 18px tall with the 2px
-   foot, so the dock and the verbs' caps are one key. */
+   foot and the 1px pad above it, so the dock and the verbs' caps are one
+   key and the glyph lands on whole pixels. */
 .keylegend-dock .keylegend-key {
   display: inline-flex;
   align-items: center;
@@ -46,7 +47,7 @@
   box-sizing: border-box;
   width: 24px;
   height: 18px;
-  padding: 0;
+  padding: 0 0 var(--line);
   border: var(--line) solid var(--border-strong);
   border-bottom-width: var(--line-strong);
   border-radius: var(--radius-sm);
@@ -60,17 +61,21 @@
   height: var(--icon-sm);
 }
 
+/* A held key fills with the accent and keeps its foot, a shade darker than
+   its face in every theme, the same shape as a dialog's lit key. */
 .keylegend-dock .keylegend-key.held {
   background: var(--accent);
   border-color: var(--accent);
+  border-bottom-color: var(--key-foot-shade);
   color: var(--on-accent);
 }
 
 /* The fn key sits first in the dock, where a laptop keyboard prints it; it
-   is wider than the modifier glyphs because it is a word. */
+   is wider than the modifier glyphs because it is a word, set as every key
+   word is (esc, space). */
 .keylegend-dock .keylegend-dock-fn {
   width: 28px;
-  font: var(--font-size-caption) var(--font-mono);
+  font: var(--font-weight-strong) var(--font-size-key) var(--font-mono);
 }
 
 /* The verbs as one line of whole places. A place that does not fit wraps
@@ -123,6 +128,28 @@
 .keylegend-verbs .keylegend-cap {
   gap: 0;
   padding: 0 calc(var(--space-3) / 2);
+}
+
+/* A cap that is its own button is opaque and covers the button whole, so
+   a wash on the button would never show: hover and press answer on the cap
+   itself, as the filter's escape key does, over the cap's own ground. */
+.keylegend-verbs .keylegend-cap:is(:hover, :active) {
+  background: none;
+  box-shadow: none;
+}
+
+.keylegend-verbs .keylegend-cap .keychord {
+  transition: var(--transition-control);
+}
+
+.keylegend-verbs .keylegend-cap:hover:enabled .keychord {
+  background: linear-gradient(var(--hover-wash), var(--hover-wash)) var(--surface);
+  box-shadow: var(--hover-frost);
+}
+
+.keylegend-verbs .keylegend-cap:active:enabled .keychord {
+  background: linear-gradient(var(--pressed-wash), var(--pressed-wash)) var(--surface);
+  box-shadow: var(--shadow-pressed);
 }
 
 .keylegend-pair-label {

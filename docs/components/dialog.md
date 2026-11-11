@@ -5,6 +5,7 @@ Every modal dialog shares one frame and one footer: a title strip that says what
 - `ModalDialog`: the frame, its focus rules, and the one keydown path for its keys.
 - `DialogLegend`: the key legend footer, with `legendKeyAction` deciding which slot a keystroke runs.
 - `ConfirmDialog`: the one confirmation, built on both.
+- `DialogLayer`: where a host's dialogs mount, so they paint above every pane.
 
 ## Example
 
@@ -66,15 +67,53 @@ function RenameDialog({ name, onRename, onCancel }) {
 | `onCancel`       | `() => void`                        |            | Escape and the esc slot                                                                                 |
 | `onOutsidePress` | `() => void`                        | `onCancel` | A press on the backdrop                                                                                 |
 | `children`       | `ReactNode`                         |            | The body                                                                                                |
+| `container`      | `Element`                           |            | Where the dialog mounts; left out, the enclosing `DialogLayer`, or in place without one                 |
 
 `containTab(event, container)` is the frame's Tab containment, exported for a modal surface without the frame (a palette) to call from its keydown handler.
+
+### Where a dialog mounts (`DialogLayer`)
+
+A dialog must paint above every pane, the ones drawn after it included. Rendered in place, inside a pane that isolates its layers (every `.pane` under `.listing-root` sets `isolation: isolate`), its backdrop's `--z-dialog` counts only inside that pane, and a later pane (a console docked under the page) paints over the box and its legend.
+
+Wrap a host's content once in `DialogLayer` (`DialogLayerProps`: `children`), inside the element that carries its scoping classes and outside every pane:
+
+```tsx
+import { DialogLayer } from '@bigpixelrocket/uiok/dialog';
+
+<section className="space-root my-space listing-root">
+  <DialogLayer>
+    <MySpace />
+  </DialogLayer>
+</section>;
+```
+
+Every `ModalDialog` and `ConfirmDialog` rendered anywhere inside then mounts into the layer, an element drawn after the content with `display: contents`, so it takes no room. What stays the same:
+
+- Rules written under the root (`.my-space .my-form`) still reach the dialog body, since the layer sits inside the root.
+- Context, focus handling, Tab containment, and React event bubbling are unchanged: the dialog keeps its place in the React tree, and its keydown handler already ignores keys from a dialog portalled out of it. Native listeners on the root still hear its keys, since the layer is inside the root.
+- Theme tokens follow it, since the theme attributes live on the document's root element.
+
+A dialog's own `container` prop overrides the layer, for one mounted elsewhere (`document.body`, which loses any rule scoped under a root). A dialog rendered before the layer's element exists waits one commit for it rather than open in place and move. Without a layer or a `container`, a dialog renders in place, as before.
+
+### Size
+
+The box hugs its form: pick the narrowest step that holds the body's widest row (labels and fields at their natural width, plus the 12px insets), by adding its class through `className`. Every step shrinks with a narrow window, since the box never passes the backdrop's inset area, so no `min(…, 100vw - …)` is needed.
+
+| Step            | Class             | Width | For                                                                             |
+| --------------- | ----------------- | ----- | ------------------------------------------------------------------------------- |
+| small (default) | none              | 360px | A question, a name field, a short choice                                        |
+| medium          | `.dialog-size-md` | 480px | A form with a label column and one-line fields (a connection, a server, a user) |
+| large           | `.dialog-size-lg` | 640px | Two columns of fields, a short table or list, a code field                      |
+| extra large     | `.dialog-size-xl` | 880px | A wide table, a log, a chart or a map                                           |
+
+A dialog whose form is narrower than its step by a column's width or more is on the wrong step. Set a width of your own only for a body with a fixed natural size (a picture at its pixel size).
 
 ### The frame
 
 - The box is the surface colour with a strong hairline, radius 8, the lit top edge (`--glass-edge`), and the modal layer's lift (`--shadow-modal`, stronger in dark themes), centred over a clear backdrop that covers the whole viewport (`--z-dialog`), so the page stays readable behind it. `frosted` lays the modal scrim (`--scrim`) and the shared frost (`--frost`) over the window instead.
 - The backdrop keeps 16px round the box. Its top inset is the hook `--dialog-inset-top`: a host whose window draws its own title bar sets it to that bar's height plus a margin (for example `calc(48px + 8px)` on its shell root), so no dialog ever covers the bar.
-- The box is never taller than the backdrop's inset area. Past that it scrolls, with the title strip pinned at the top and the legend at the bottom. A body that should scroll on its own (a long form between fixed parts) takes `.dialog-body` with the shared `.scroll-fade`, and shrinks first.
-- The title strip is at least 34px of `--surface-header` with the lit top edge, ruled at the bottom in the tone: the icon (16px), the title at 12px, and the context pushed to the right edge. The title takes the room; the context keeps at least 12 characters (or 40% of the strip), so where the dialog acts never vanishes. Both are cut with an ellipsis and a string of either is its own tooltip.
+- The box is never taller than the backdrop's inset area. Past that it scrolls, with the title strip pinned at the top and the legend at the bottom. A fade hangs above the legend while more of the body lies below and under the strip once the body has scrolled past its start, following the box's own scroll, so a box that does not scroll shows neither. A body that should scroll on its own (a long form between fixed parts) takes `.dialog-body` with the shared `.scroll-fade`, and shrinks first.
+- The title strip is at least 34px of `--surface-header` with the lit top edge, ruled at the bottom in the tone: the icon (16px, in the tone too, so each tone is one hue), the title at 12px, and the context pushed to the right edge. The title takes the room; the context keeps at least 12 characters (or 40% of the strip), so where the dialog acts never vanishes. Both are cut with an ellipsis and a string of either is its own tooltip.
 - `aria-modal="true"` is the overlay contract's modal cue (`MODAL_SELECTOR` in `@bigpixelrocket/uiok/keyboard`), which an app shell reads to mute its own chords while a dialog is open.
 - A caller sets a dialog's size and body layout through `className`, never the frame's look.
 
@@ -101,7 +140,7 @@ Field contents take their face from the shared form controls. The hooks weigh on
 
 ## The legend (`DialogLegendModel`)
 
-The footer is 34px under a hairline, with no fill of its own (in the frame it takes the box's fill, since a tall body scrolls under it). Each verb is a slot: its key cap, then the verb. A legend holds four slots at most. Each cap is 18px with the key cap's 2px foot. A slot eases into the shared quiet hover and sinks into the shared pressed look (`src/styles.css`), so a press reads apart from a hover. The primary's cap is lit in the accent; in a destructive dialog the cap is `--danger` with its glyph in `--on-danger`, and the verb is `--danger-text`.
+The footer is at least 34px under a hairline, with 4px above and below its slots, so a legend whose verbs wrap to a second row keeps them off the hairline and the box's edge, 2px apart, with no fill of its own (in the frame it takes the box's fill, since a tall body scrolls under it). Each verb is a slot: its key cap, then the verb. A legend holds four slots at most. Each cap is 18px with the key cap's 2px foot. A slot eases into the shared quiet hover and sinks into the shared pressed look (`src/styles.css`), so a press reads apart from a hover. The primary's cap is lit in the accent; in a destructive dialog the cap is `--danger` with its glyph in `--on-danger`, and the verb is `--danger-text`. A lit cap's foot is its fill under the fixed `--key-foot-shade`, so it is darker than the face in every theme. A secondary verb with `danger: true` (a Delete… beside the primary) reads in `--danger-text`, with `--danger-wash` under the pointer and `--danger-wash-strong` pressed; its cap stays a plain key.
 
 | Field       | Type                        | Meaning                                                                           |
 | ----------- | --------------------------- | --------------------------------------------------------------------------------- |
@@ -109,7 +148,7 @@ The footer is 34px under a hairline, with no fill of its own (in the frame it ta
 | `secondary` | up to two `LegendSecondary` | After the leave verb, in order of use, each on its own `chord`, with its `onRun`  |
 | `primary`   | `LegendPrimary`             | The forward verb, alone at the right edge, lit; on Return unless it has a `chord` |
 
-Every verb has a `label` and may be `disabled`. `LegendPrimary` adds `chord` (its key when not Return) and `yieldsReturn`.
+Every verb has a `label` and may be `disabled`. `LegendSecondary` adds `danger`, for a verb that destroys; the primary takes its colour from the dialog's tone instead. `LegendPrimary` adds `chord` (its key when not Return) and `yieldsReturn`.
 
 The rules:
 
@@ -150,7 +189,7 @@ The message is the dialog's description, so a screen reader reads it with the ti
 
 - The title is the question being asked, so it wraps to a second line rather than lose its end, and the strip grows with it; past two lines it ends in an ellipsis and its tooltip holds the whole question.
 - The order is the platform's: the leave verb at the left edge, the action alone at the right, lit. A `danger` action is lit red; a `warning` question rules the strip amber and lights its action in the accent, since its yes is the safe choice.
-- The path list shows every path whole, in monospace. A long path breaks only after a slash, its later lines hang under the first, and the list shows eight lines before it scrolls, with the shared scroll fade at a cut edge.
+- The path list shows every path whole, in monospace. A long path breaks only after a slash, its later lines hang under the first, and the list shows eight lines before it scrolls, framed in `--border-strong` like every framed well, with the shared scroll fade at a cut edge (the fade covers the list's content, never its frame).
 
 ### Deletes that cannot be undone
 
@@ -158,7 +197,7 @@ People confirm a delete out of habit, ⌘⌫ then Return, without reading. With 
 
 ## Styling
 
-`.dialog-backdrop`, `.frosted`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-context`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.confirm-dialog`, `.dialog-message`, `.dialog-paths`. The frame declares `--dialog-tone` and `--dialog-icon`, and reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
+`.dialog-backdrop`, `.frosted`, `.dialog-layer`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-context`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.legend-danger`, `.confirm-dialog`, `.dialog-message`, `.dialog-paths`. The frame declares `--dialog-tone` and `--dialog-icon`, reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
 
 ## Labels read
 

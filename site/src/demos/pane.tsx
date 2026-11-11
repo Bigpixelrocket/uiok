@@ -10,7 +10,7 @@
 import { Copy, FileText, Play, RefreshCw, Server, Square, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { ICON_SM } from '@bigpixelrocket/uiok/icon';
+import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 import { KeyLegendStrip, type LegendVerb } from '@bigpixelrocket/uiok/legend';
 import {
   ACTION_COLUMN,
@@ -226,7 +226,7 @@ export function PaneDemo() {
                   <Row
                     className={key === open ? 'pane-open-row' : undefined}
                     key={key}
-                    mark={<Server size={14} />}
+                    mark={<Server size={ICON_MD} />}
                     name={key}
                     onOpen={() => {
                       setOpen(key);
@@ -284,7 +284,7 @@ export function PaneDemo() {
                 {rows.map((service) => (
                   <Row
                     key={service.id}
-                    mark={<FileText size={14} />}
+                    mark={<FileText size={ICON_MD} />}
                     name={service.name}
                     rowKey={service.id}
                   >

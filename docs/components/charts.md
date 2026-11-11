@@ -128,7 +128,7 @@ Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for 
 
 ## Look
 
-Every chart shares one vocabulary: caption-size type with tabular figures; a 10px swatch with a 2px corner, a dash for a line series; a left axis and a baseline in `--border-strong` with grid lines in `--border-faint`, never a box; a hovered mark ringed in `--text`; a dragged range in `--accent-wash`. Hovering a `LineChart` puts a dot on every line at the guide and a read-out in the tooltip's look. Hovering a pie slice or its legend row lights both and steps the other slices back.
+Every chart shares one vocabulary: caption-size type with tabular figures; a 10px swatch with a 2px corner, a dash for a line series; a left axis and a baseline in `--border-strong` with grid lines in `--border-faint`, never a box; a hovered mark ringed in `--text`; a dragged range in `--accent-wash`. Hovering a `LineChart` puts a dot on every line at the guide and a read-out in the tooltip's look; hovering a `ResultChart` mark puts the same read-out beside it. An axis whose ticks lie too close together for their size to tell apart in short form (epoch milliseconds on a number axis) labels the first tick in full and the rest by their offset from it (`+100M`). Area fills are faint (`--chart-area-opacity`) so overlapping series keep their own hues; the unlit pie slices step back to `--dimmed-opacity`. Hovering a pie slice or its legend row lights both and steps the other slices back.
 
 A chart with no values keeps its plot's place and centres one dim line in it (`charts.noValue`): a `LineChart` draws its axes only, a `PieChart` a dashed ring, a `ScatterChart` its axes and titles, and a `ResultChart` its title, axes, and titles. The rules are `.chart-empty` (an HTML plot) and `.chart-empty-text` (inside an SVG).
 
@@ -144,7 +144,7 @@ Nothing is fetched: the SVG is loaded from its own `data:` URL. Writing the byte
 
 - Every `ScatterChart` point is a focusable `role="button"`; Return or Space picks it.
 - Pointer drags: `LineChart` picks a range with `onSelect`, `ScatterChart` zooms to a rectangle of at least 4 pixels a side (Reset zoom undoes it). A zoom finer than a double can resolve is refused.
-- Read-outs: `LineChart` shows a `role="status"` box at the nearest moment; `ResultChart` writes the hovered value to a polite live line under the drawing.
+- Read-outs: `LineChart` shows a `role="status"` box at the nearest moment; `ResultChart` floats the same box beside the hovered mark and writes its words to a visually hidden polite live line.
 
 ## Styling
 

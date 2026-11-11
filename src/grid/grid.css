@@ -2,12 +2,19 @@
 
    Rows of one height on a scrolling well, under a header that stays put,
    cells cut to their column with an ellipsis, the cursor cell ringed in the
-   accent. */
+   accent.
+
+   The frame (.data-grid) draws the border, the corners, and the ground and
+   clips to them; the well inside it (.data-grid-scroll) scrolls and fades
+   the side that hides columns. The fade is a mask, which would erase a
+   border on the box it masks, so the frame stays whole at every scroll. */
 .data-grid {
   position: relative;
+  display: flex;
+  flex-direction: column;
   width: max-content;
   max-width: 100%;
-  overflow: auto;
+  overflow: hidden;
   border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--ground);
@@ -17,9 +24,26 @@
   box-sizing: border-box;
 }
 
-/* The grid scrolls and clips: its ring, and the rings of the sort labels in
-   its sticky header and the links in its cut cells, sit inside. */
-.data-grid:focus-visible,
+.data-grid-scroll {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* The well holds the keyboard; its ring is the frame's, drawn inside the
+   border so a clipping pane never cuts it and the fade never erases it. */
+.data-grid-scroll:focus-visible {
+  outline: none;
+}
+
+.data-grid:has(> .data-grid-scroll:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset-inset);
+}
+
+/* The sort labels in the sticky header and the links in cut cells sit in a
+   box that clips: their rings sit inside. */
 .data-grid-sort:focus-visible,
 .data-grid-link:focus-visible {
   outline-offset: var(--focus-offset-inset);
@@ -48,9 +72,15 @@
 }
 
 .data-grid-sort {
-  display: inline-flex;
+  /* A box of the row's height off the text baseline, so a sort mark never
+     adds its descent to the line and the header keeps one height sorted or
+     not. As wide as its words, so a click beside them marks the column. */
+  display: flex;
+  align-items: center;
   gap: var(--space-2);
+  width: fit-content;
   max-width: 100%;
+  height: var(--row-height-dense);
   padding: 0;
   border: none;
   background: none;
@@ -67,15 +97,27 @@
    under it: the sort mark goes before the label instead of after. */
 .data-grid-heading.align-right .data-grid-sort {
   flex-direction: row-reverse;
+  margin-inline-start: auto;
+}
+
+/* A label longer than its column ends in an ellipsis before the mark. */
+.data-grid-sort-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* The sort mark: the chevron the listing's sort draws, and the column's
    place in a sort of several. */
 .data-grid-arrow {
   display: inline-flex;
+  flex: none;
   align-items: center;
-  align-self: center;
   color: var(--text);
+}
+
+.data-grid-arrow svg {
+  display: block;
 }
 
 .data-grid-arrow small {
@@ -100,6 +142,13 @@
 .data-grid-resize:hover,
 .data-grid-resize:active {
   border-right: var(--line-strong) solid var(--accent);
+}
+
+/* The last column ends at the frame, which draws that edge: its own line
+   would double it. The last handle keeps its hit area and its accent line
+   while it is used. */
+.data-grid-heading:last-child .data-grid-resize:not(:hover, :active) {
+  border-right-color: transparent;
 }
 
 .data-grid-body {
@@ -142,7 +191,7 @@
 }
 
 .data-grid-row:nth-child(even) {
-  background: color-mix(in srgb, var(--text) 3%, transparent);
+  background: var(--row-zebra);
 }
 
 .data-grid-cell {
@@ -153,6 +202,10 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: default;
+}
+
+.data-grid-cell:last-child {
+  border-right: none;
 }
 
 .data-grid-cell.align-right,
@@ -206,17 +259,25 @@
   text-decoration-color: var(--accent-text);
 }
 
-/* The row under the pointer, a marked row, and a marked column. A marked
-   row is a tint with a bar on its leading edge, apart from the cursor
-   cell's ring and from the zebra rows; the bar is drawn over the lead and
-   the first cell, whatever fills them. */
-.data-grid.pointer .data-grid-row:hover {
-  background: var(--hover-wash);
+/* The row under the pointer, a marked row, and a marked column. The hover
+   is a wash of the text colour, so it reads in light and dark themes alike
+   and apart from a zebra row; a marked row keeps its own tint under the
+   pointer. A marked row is a tint with a bar on its leading edge, apart
+   from the cursor cell's ring and from the zebra rows; the bar is drawn
+   over the lead and the first cell, whatever fills them. */
+.data-grid.pointer .data-grid-row:not(.marked):hover {
+  background: var(--row-hover);
 }
 
-.data-grid-row.marked,
-.data-grid-row.marked:hover {
+.data-grid-row.marked {
   background: var(--marked-bg);
+}
+
+/* A lead checkbox on a tinted row keeps its edge at 3:1 (.check reads the
+   hook). The cursor is a cell, so it never tints the lead. */
+.data-grid.pointer .data-grid-row:hover,
+.data-grid-row.marked {
+  --check-edge: var(--control-border-strong);
 }
 
 .data-grid-row.marked::before {
@@ -229,12 +290,16 @@
   content: '';
 }
 
+/* A cell whose state replaces its row's paints its tint over the bare
+   ground, not over the row's tint, so the text sits on the one ground its
+   colour is floored on. */
 .data-grid-row.marked .data-grid-cell.cursor {
-  background: var(--marked-cursor-bg);
+  background: linear-gradient(var(--marked-cursor-bg), var(--marked-cursor-bg)) var(--ground);
 }
 
-/* A marked column lights its cells and underlines its heading; on a marked
-   row the row's tint alone, so two tints never stack under the text. */
+/* A marked column lights its cells and underlines its heading, whose words
+   go to full text on the tint; on a marked row the row's tint alone, so two
+   tints never stack under the text. */
 .data-grid-cell.marked,
 .data-grid-heading.marked {
   background: var(--accent-wash);
@@ -242,9 +307,10 @@
 
 .data-grid-heading.marked {
   box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--accent);
+  color: var(--text);
 }
 
-.data-grid-row.marked .data-grid-cell.marked:not(.cursor) {
+.data-grid-row.marked .data-grid-cell.marked:not(.cursor, .cell-edited) {
   background: none;
 }
 
@@ -319,18 +385,32 @@
   outline-offset: var(--focus-offset-flush);
 }
 
-.data-grid-cell.cell-edited {
-  background: var(--warning-wash-strong);
+/* A value edited but not saved: the warning tint over the bare ground,
+   whatever row it sits in, and a warning corner, the spreadsheet's mark,
+   which holds where the tint alone is faint. */
+.data-grid-cell.cell-edited,
+.data-grid-row.marked .data-grid-cell.cell-edited {
+  background:
+    linear-gradient(225deg, var(--warning) var(--space-3), transparent var(--space-3)),
+    linear-gradient(var(--warning-wash-strong), var(--warning-wash-strong)) var(--ground);
 }
 
 /* Values that are not text: a missing value (SQL NULL) set apart from the
    word, and bytes shown by their kind and size. The classes are hooks a
-   caller sets through a cell's className. */
+   caller sets through a cell's className. On a row or cell in a state the
+   quiet word takes the text role floored on state grounds; the italic keeps
+   it apart from a value. */
 .data-grid-cell.cell-null {
   color: var(--row-meta-text);
   font-style: italic;
 }
 
+.data-grid.pointer .data-grid-row:hover .data-grid-cell.cell-null,
+.data-grid-row.marked .data-grid-cell.cell-null,
+.data-grid-cell.cell-null:is(.cursor, .marked, .cell-edited) {
+  color: var(--text-on-surface);
+}
+
 .data-grid-cell.cell-binary {
-  color: var(--syntax-teal);
+  color: var(--cell-binary-text);
 }

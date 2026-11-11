@@ -1,7 +1,10 @@
 /**
  * Notices in each tone, in the flow and floated; a card; the overline
- * heading; and a list that fades where it scrolls on.
+ * heading; a list that fades where it scrolls on, and two framed scrollers
+ * whose frames stay solid while their contents fade.
  */
+
+import type { CSSProperties } from 'react';
 
 import { CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react';
 
@@ -9,6 +12,26 @@ import { Button } from '@bigpixelrocket/uiok/button';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 
 const LINES = Array.from({ length: 30 }, (_, index) => `line ${index + 1}`);
+
+/** A framed scroller: the fade stays inside the frame, which never fades. */
+const FRAMED: CSSProperties = {
+  boxSizing: 'border-box',
+  width: '220px',
+  maxHeight: '200px',
+  margin: 0,
+  border: 'var(--line) solid var(--border-strong)',
+  borderRadius: 'var(--radius-md)'
+};
+
+/** A strip pinned to the top of its scroller, which an end-only fade leaves solid. */
+const STICKY: CSSProperties = {
+  position: 'sticky',
+  top: 0,
+  padding: 'var(--space-2) var(--space-4)',
+  borderBottom: 'var(--line) solid var(--border)',
+  background: 'var(--surface-header)',
+  color: 'var(--text-dim)'
+};
 
 /** The notices and cards page's demo. */
 export function SurfaceDemo() {
@@ -56,6 +79,23 @@ export function SurfaceDemo() {
           <li key={line}>{line}</li>
         ))}
       </ul>
+
+      <h3 className="demo-subhead">Scroll fade in a frame</h3>
+      <div className="demo-row" style={{ alignItems: 'flex-start' }}>
+        <ul className="demo-scroll scroll-fade" style={FRAMED}>
+          {LINES.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+        <div className="demo-scroll scroll-fade-end" style={{ ...FRAMED, padding: 0 }}>
+          <div style={STICKY}>Sticky header, end fade only</div>
+          <ul style={{ margin: 0, padding: 'var(--space-4) var(--space-12)' }}>
+            {LINES.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      </div>
     </div>
   );
 }

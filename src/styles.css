@@ -33,6 +33,10 @@
 @import './field/field.css';
 @import './surface/surface.css';
 
+/* The shell's shared surfaces: Settings dialog, theme picker, update card,
+   channel tag, sign-in prompts, load failure (docs/components/shell.md). */
+@import './shell/shell.css';
+
 /* ---- What the browser would otherwise draw in its own colours ---- */
 
 /* Selected text, a field's placeholder, its caret, a native check or
@@ -51,13 +55,42 @@
   accent-color: var(--accent);
 }
 
+/* A text input, textarea, or select that carries no class of its own still
+   takes the theme: an outline in --control-border on the window ground,
+   the theme's text, the page's face. It weighs nothing, so .field and any
+   host rule win over every part of it; a checkbox, radio, or slider keeps
+   the platform's drawing in the accent (above). */
+:where(
+  input:not([type]),
+  input:is(
+    [type='text'],
+    [type='search'],
+    [type='number'],
+    [type='email'],
+    [type='url'],
+    [type='password'],
+    [type='tel']
+  ),
+  textarea,
+  select
+) {
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-sm);
+  background: var(--ground);
+  color: var(--text);
+  font-family: inherit;
+}
+
 ::placeholder {
   color: var(--text-placeholder);
   opacity: 1;
 }
 
+/* Selected text takes the one colour the selection tint is floored for,
+   so dim, meta, and toned words stay legible while selected. */
 ::selection {
   background: var(--text-selection-bg);
+  color: var(--text);
 }
 
 /* ---- Shared recipes ---- */
@@ -83,45 +116,82 @@
 /* A scrolling box whose content runs past an edge fades over the last
    --scroll-fade-size at that edge, so a clipped row reads as "more", not
    as a cut. On the scrolling element itself: .scroll-fade for the block
-   edges, .scroll-fade-x for the inline edges, both for all four. The
-   lengths follow the scroll position (a scroll-driven animation), so an
-   edge with nothing past it stays sharp, and a box that does not scroll
-   never fades. The mask covers the whole box, its border and any sticky
-   strip included: put it on a borderless scroller, and use only the inline
-   fade under a sticky header. Engines without scroll timelines draw no
-   fade. */
+   edges, .scroll-fade-end for the block end only (a scroller whose sticky
+   strip sits at its start), .scroll-fade-x for the inline edges; combine
+   one block class with .scroll-fade-x for both axes. The lengths follow
+   the scroll position (a scroll-driven animation), so an edge with nothing
+   past it stays sharp, and a box that does not scroll never fades.
+
+   The fade covers the padding box only: the scroller's own border, corners,
+   and scrollbar stay solid, so a framed scroller keeps its frame (two
+   opaque layers cut the border ring out of the mask and the fade is added
+   back inside it). What scrolls inside fades, the box's own background
+   included, so a scroller whose ground differs from what is behind it
+   paints that ground on a wrapper. A sticky strip at a faded edge fades
+   too: use .scroll-fade-end under a sticky header. Engines without scroll
+   timelines draw no fade. */
 @supports (animation-timeline: scroll()) {
   .scroll-fade,
+  .scroll-fade-end,
   .scroll-fade-x {
     --scroll-fade-size: var(--space-6);
+
+    mask-clip: padding-box, border-box, padding-box;
+    mask-origin: padding-box, border-box, padding-box;
+    mask-repeat: no-repeat;
+    mask-composite: exclude, exclude, add;
   }
 
   .scroll-fade {
-    mask-image: linear-gradient(
-      to bottom,
-      transparent,
-      var(--ground) var(--scroll-fade-start),
-      var(--ground) calc(100% - var(--scroll-fade-end)),
-      transparent
-    );
+    mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
+      linear-gradient(
+        to bottom,
+        transparent,
+        var(--ground) var(--scroll-fade-start),
+        var(--ground) calc(100% - var(--scroll-fade-end)),
+        transparent
+      );
+    animation: uiok-scroll-fade-block linear both;
+    animation-timeline: scroll(self block);
+  }
+
+  .scroll-fade-end {
+    mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
+      linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent);
     animation: uiok-scroll-fade-block linear both;
     animation-timeline: scroll(self block);
   }
 
   .scroll-fade-x {
-    mask-image: linear-gradient(
-      to right,
-      transparent,
-      var(--ground) var(--scroll-fade-inline-start),
-      var(--ground) calc(100% - var(--scroll-fade-inline-end)),
-      transparent
-    );
+    mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
+      linear-gradient(
+        to right,
+        transparent,
+        var(--ground) var(--scroll-fade-inline-start),
+        var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+        transparent
+      );
     animation: uiok-scroll-fade-inline linear both;
     animation-timeline: scroll(self inline);
   }
 
+  /* Both axes: the two fades intersect inside the frame. */
+  :is(.scroll-fade, .scroll-fade-end).scroll-fade-x {
+    mask-clip: padding-box, border-box, padding-box, padding-box;
+    mask-origin: padding-box, border-box, padding-box, padding-box;
+    mask-composite: exclude, exclude, intersect, add;
+    animation:
+      uiok-scroll-fade-block linear both,
+      uiok-scroll-fade-inline linear both;
+    animation-timeline: scroll(self block), scroll(self inline);
+  }
+
   .scroll-fade.scroll-fade-x {
     mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
       linear-gradient(
         to bottom,
         transparent,
@@ -136,11 +206,19 @@
         var(--ground) calc(100% - var(--scroll-fade-inline-end)),
         transparent
       );
-    mask-composite: intersect;
-    animation:
-      uiok-scroll-fade-block linear both,
-      uiok-scroll-fade-inline linear both;
-    animation-timeline: scroll(self block), scroll(self inline);
+  }
+
+  .scroll-fade-end.scroll-fade-x {
+    mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
+      linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
+      linear-gradient(
+        to right,
+        transparent,
+        var(--ground) var(--scroll-fade-inline-start),
+        var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+        transparent
+      );
   }
 }
 
@@ -187,19 +265,25 @@
 }
 
 /* Hover and press for every quiet control: one look per kind, written once
-   here so no component restates it. Each rule weighs one class (every part
-   but the pointer state sits in :where()), so a component's own state rule
-   (current, checked, lit, the cursor row) still wins over it, and it wins
-   over a component's rest rule by coming after it. Only a control that can
-   act takes them: a button, a link, or a role a control has, not disabled.
+   here so no component restates it. Each rule weighs one pseudo-class
+   (every other part sits in :where()), so hover and press weigh the same
+   and press, written last, wins while the pointer is down; a component's
+   own state rule (current, checked, lit, the cursor row) still wins over
+   both, and they win over a component's rest rule by coming after it. A
+   component must not give its hover more weight than this, or its press
+   shows the hover look. Only a control that can act takes them: a button,
+   a link, or a role a control has, not disabled, and not the chosen item
+   (the selected tab, the checked segment, the current page), which a
+   press would not change.
 
-   - Quiet control (an outlined-on-hover action): the frosted wash and ring,
-     words to full text, as the neutral Button.
-   - Tab or segment in a track: the wash alone, words to full text; the
-     track already draws the frame.
-   - Pressed (both kinds, and the text-like controls: crumbs, sort labels,
-     strip links, palette levels): the face sinks,
-     as Button's does. */
+   - Quiet control (an outlined-on-hover action, a crumb): the frosted wash
+     and ring, words to full text, as the neutral Button.
+   - Tab, segment, or sort label in a track or strip: the wash alone, words
+     to full text; the track already draws the frame.
+   - Pressed (both kinds, and the text-like controls: strip links, grid sort
+     labels, palette levels): the face sinks, as Button's does, inside a
+     hairline in --border-strong, so the press holds by shape where the
+     wash is faint, with words in full text. */
 :where(
   .pager-step,
   .legend-slot,
@@ -225,22 +309,37 @@
     .keylegend-verbs button,
     .pane-act,
     .pane-icon-act,
-    .path-star
+    .path-star,
+    .crumb-label
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
-    :not(:disabled, [aria-disabled='true'])
+    :not(
+      :disabled,
+      [aria-disabled='true'],
+      [aria-selected='true'],
+      [aria-checked='true'],
+      [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
+    )
   ):hover {
   box-shadow: var(--hover-frost);
   background: var(--hover-wash);
   color: var(--text);
 }
 
-:where(.page-tab, .segmented-choice-option, .date-picker-day):where(
+:where(.page-tab, .segmented-choice-option, .date-picker-day, .pane-sort.sortable):where(
     button,
     a[href],
     [role='button'],
     [role='tab'],
     [role='radio']
-  ):where(:not(:disabled, [aria-disabled='true'])):hover {
+  ):where(
+    :not(
+      :disabled,
+      [aria-disabled='true'],
+      [aria-selected='true'],
+      [aria-checked='true'],
+      [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
+    )
+  ):hover {
   background: var(--hover-wash);
   color: var(--text);
 }
@@ -261,10 +360,19 @@
     .data-grid-sort,
     .palette-level
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
-    :not(:disabled, [aria-disabled='true'])
+    :not(
+      :disabled,
+      [aria-disabled='true'],
+      [aria-selected='true'],
+      [aria-checked='true'],
+      [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
+    )
   ):active {
-  box-shadow: var(--shadow-pressed);
+  box-shadow:
+    var(--shadow-pressed),
+    inset 0 0 0 var(--line) var(--border-strong);
   background: var(--pressed-wash);
+  color: var(--text);
 }
 
 /* A focusable element that the keyboard reached: one ring from the focus

@@ -25,8 +25,10 @@ import tokensDoc from '../../docs/tokens.md?doc';
 export interface SitePage {
   /** The hash route, from `/`. */
   readonly route: string;
-  /** The sidebar's name for it. */
+  /** The page's own title, as its first heading reads; the window title uses it. */
   readonly title: string;
+  /** The short name the sidebar and Find a page list it by. */
+  readonly name: string;
   readonly group: 'Guides' | 'Components';
   readonly Page: ComponentType;
 }
@@ -42,6 +44,19 @@ const COMPONENT_DOCS = Object.fromEntries(
   ).map(([path, doc]) => [/([a-z][a-z-]*)\.md$/.exec(path)?.[1] ?? path, doc])
 );
 
+/**
+ * Short names for areas whose doc title is a sentence rather than a
+ * component's name, so the sidebar lists every area as one short entry; the
+ * page keeps its full title.
+ */
+const AREA_NAMES: Readonly<Record<string, string>> = {
+  filter: 'Filter',
+  icon: 'Icons',
+  shell: 'Shell',
+  store: 'Store',
+  surface: 'Surfaces'
+};
+
 /** Areas a guide already covers, so they get no second page. */
 const GUIDE_AREAS = new Set(['keyboard']);
 
@@ -51,18 +66,32 @@ const docPage = (doc: RenderedDoc, Demo?: ComponentType): ComponentType =>
   };
 
 const guides: readonly SitePage[] = [
-  { route: '/', title: 'Home', group: 'Guides', Page: Home },
-  { route: '/theming', title: 'Theming', group: 'Guides', Page: docPage(themesDoc, ThemingDemo) },
+  { route: '/', title: 'Home', name: 'Home', group: 'Guides', Page: Home },
+  {
+    route: '/theming',
+    title: 'Theming',
+    name: 'Theming',
+    group: 'Guides',
+    Page: docPage(themesDoc, ThemingDemo)
+  },
   {
     route: '/tokens',
     title: 'Scale tokens',
+    name: 'Scale tokens',
     group: 'Guides',
     Page: docPage(tokensDoc, TokensDemo)
   },
-  { route: '/labels', title: 'Labels', group: 'Guides', Page: docPage(labelsDoc, LabelsDemo) },
+  {
+    route: '/labels',
+    title: 'Labels',
+    name: 'Labels',
+    group: 'Guides',
+    Page: docPage(labelsDoc, LabelsDemo)
+  },
   {
     route: '/keyboard',
     title: 'Keyboard',
+    name: 'Keyboard',
     group: 'Guides',
     Page: docPage(keyboardDoc, KeyboardDemo)
   }
@@ -73,10 +102,11 @@ const components: readonly SitePage[] = Object.entries(COMPONENT_DOCS)
   .map(([area, doc]) => ({
     route: `/components/${area}`,
     title: doc.title,
+    name: AREA_NAMES[area] ?? doc.title,
     group: 'Components' as const,
     Page: docPage(doc, DEMOS[area])
   }))
-  .sort((a, b) => a.title.localeCompare(b.title));
+  .sort((a, b) => a.name.localeCompare(b.name));
 
 /** Every page, in sidebar order. */
 export const PAGES: readonly SitePage[] = [...guides, ...components];

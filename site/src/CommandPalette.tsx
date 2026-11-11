@@ -1,7 +1,10 @@
 /**
  * A command palette over the library's palette frame and menu parts: a
  * filtered list of commands, a cursor the arrows move, and Return to run.
- * The shell uses it to find a page; the palette page uses it as its demo.
+ * A command can open a second level of commands, named in a chip before the
+ * field (the chip, ←, or Backspace in an empty field steps back), and notes
+ * can stand under the list. The shell uses it to find a page; the palette
+ * page uses it as its demo.
  */
 
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -22,7 +25,21 @@ export interface Command {
   readonly meta?: string;
   /** The command's chord, drawn as key caps at the row's end. */
   readonly chord?: KeyChordProps['chord'];
-  readonly run: () => void;
+  /**
+   * The commands of a level this command opens, named after its label; the
+   * command then steps into the level instead of running.
+   */
+  readonly level?: readonly Command[];
+  /** Notes under the list while the palette stands in this command's level. */
+  readonly notes?: readonly PaletteNote[];
+  readonly run?: () => void;
+}
+
+/** A line under a palette's list: a plain note, or a failure in the danger tone. */
+export interface PaletteNote {
+  readonly text: string;
+  /** Draws the line as a failure. */
+  readonly failure?: boolean;
 }
 
 /** Props for {@link CommandPalette}. */
@@ -30,6 +47,8 @@ export interface CommandPaletteProps {
   readonly label: string;
   readonly placeholder: string;
   readonly commands: readonly Command[];
+  /** Notes under the list at the first level. */
+  readonly notes?: readonly PaletteNote[];
   /** Called on Escape, a press outside, and after a command runs. */
   readonly onClose: () => void;
 }
@@ -45,7 +64,17 @@ function rowsFor(commands: readonly Command[], query: string) {
 }
 
 /** A modal command palette; render it inside `.listing-root`. */
-export function CommandPalette({ label, placeholder, commands, onClose }: CommandPaletteProps) {
+export function CommandPalette({
+  label,
+  placeholder,
+  commands: firstLevel,
+  notes: firstNotes,
+  onClose
+}: CommandPaletteProps) {
+  // The command whose level the palette stands in; null at the first level.
+  const [opener, setOpener] = useState<Command | null>(null);
+  const commands = opener?.level ?? firstLevel;
+  const notes = opener === null ? firstNotes : opener.notes;
   const [query, setQuery] = useState('');
   const [cursor, setCursor] = useState<number | null>(0);
   const [bell, setBell] = useState(0);
@@ -71,9 +100,21 @@ export function CommandPalette({ label, placeholder, commands, onClose }: Comman
     document.getElementById(`${listId}-${cursor}`)?.scrollIntoView?.({ block: 'nearest' });
   }, [cursor, query, listId]);
 
+  /** Moves to another level with an empty query and the cursor on its first row. */
+  const enter = (next: Command | null) => {
+    setOpener(next);
+    setQuery('');
+    setRefused(null);
+    setCursor(0);
+  };
+
   const run = (command: Command) => {
+    if (command.level !== undefined) {
+      enter(command);
+      return;
+    }
     onClose();
-    command.run();
+    command.run?.();
   };
 
   return (
@@ -84,6 +125,11 @@ export function CommandPalette({ label, placeholder, commands, onClose }: Comman
         count={query === '' ? null : `${rows.length} of ${commands.length}`}
         inputRef={inputRef}
         label={label}
+        level={
+          opener === null
+            ? null
+            : { title: opener.label.replace(/…$/, ''), onBack: () => enter(null) }
+        }
         listId={listId}
         placeholder={placeholder}
         refused={refused}
@@ -111,6 +157,15 @@ export function CommandPalette({ label, placeholder, commands, onClose }: Comman
             event.preventDefault();
             setCursor(moveMenuCursor(cursor, -1, rows.length));
           }
+          // ← or Backspace in an empty field steps back out of a level.
+          if (
+            opener !== null &&
+            query === '' &&
+            (event.key === 'ArrowLeft' || event.key === 'Backspace')
+          ) {
+            event.preventDefault();
+            enter(null);
+          }
           if (event.key === 'Enter' && cursor !== null) {
             const row = rows[cursor];
             if (row !== undefined) run(row.command);
@@ -127,12 +182,7 @@ export function CommandPalette({ label, placeholder, commands, onClose }: Comman
           if (event.key === 'Tab') event.preventDefault();
         }}
       />
-      <div
-        className="folder-menu-options scroll-fade"
-        id={listId}
-        role="listbox"
-        aria-label={label}
-      >
+      <div className="folder-menu-options" id={listId} role="listbox" aria-label={label}>
         {rows.map((row, index) => (
           <div
             aria-selected={index === cursor}
@@ -161,6 +211,21 @@ export function CommandPalette({ label, placeholder, commands, onClose }: Comman
           </div>
         ))}
       </div>
+      {notes === undefined || notes.length === 0 ? null : (
+        <div className="palette-notes">
+          {notes.map((note) => (
+            <p
+              className={
+                note.failure === true ? 'folder-menu-note palette-failure' : 'folder-menu-note'
+              }
+              key={note.text}
+              role={note.failure === true ? 'alert' : undefined}
+            >
+              {note.text}
+            </p>
+          ))}
+        </div>
+      )}
     </Palette>
   );
 }

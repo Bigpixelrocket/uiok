@@ -132,14 +132,21 @@
 
 /* The visual bell: a veil of the terminal's own text color over the screen
    that fades out over --duration-slow, which BELL_FLASH_MS
-   (Terminal.logic.ts) matches, so it reads in both flavors. Under reduced motion it is a still tint at the edges instead, on
-   for the same time and off again with no fade. */
+   (Terminal.logic.ts) matches, so it reads in both flavors. Under reduced
+   motion it is a still tint at the edges instead, on
+   for the same time and off again with no fade. Both mixes are named on the
+   mount, so the veil and the edge read one definition each. */
+.terminal-mount {
+  --terminal-bell-wash: color-mix(in srgb, var(--terminal-fg) 12%, transparent);
+  --terminal-bell-line: color-mix(in srgb, var(--terminal-fg) 40%, transparent);
+}
+
 .terminal-mount[data-bell]::after {
   content: '';
   position: absolute;
   inset: 0;
   z-index: var(--z-local-overlay);
-  background: color-mix(in srgb, var(--terminal-fg) 12%, transparent);
+  background: var(--terminal-bell-wash);
   pointer-events: none;
   opacity: 0;
   animation: terminal-bell var(--duration-slow) var(--ease-out);
@@ -154,8 +161,7 @@
 @media (prefers-reduced-motion: reduce) {
   .terminal-mount[data-bell]::after {
     background: none;
-    box-shadow: inset 0 0 0 var(--line-strong)
-      color-mix(in srgb, var(--terminal-fg) 40%, transparent);
+    box-shadow: inset 0 0 0 var(--line-strong) var(--terminal-bell-line);
     opacity: 1;
     animation: none;
   }

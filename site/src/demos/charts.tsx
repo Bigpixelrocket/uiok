@@ -61,6 +61,8 @@ const PARCELS = (() => {
 })();
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+/** Each day's number in its month, the scatter type's number axis. */
+const DAY_NUMBERS = DAYS.map((_, index) => 2 + index);
 const SALES = [
   { name: 'online', values: [42, 51, 47, 63, 71, 88, 64] },
   { name: 'in store', values: [30, 28, 35, 33, 41, 57, 49] },
@@ -153,24 +155,34 @@ export function ChartsDemo() {
             title="Sales by day"
             type={type}
             width={640}
-            xLabel="day"
-            xValues={xValues}
+            xLabel={type === 'scatter' ? 'day of November' : 'day'}
+            xValues={type === 'scatter' ? DAY_NUMBERS : xValues}
             yLabel="orders"
           />
         </div>
       </section>
       <section>
         <h3 className="demo-subhead">With no data</h3>
+        <LineChart
+          format={(value) => count.format(value)}
+          from={FROM}
+          label="Requests per ten minutes, none yet"
+          series={[]}
+          timeText={(at) => clock.format(at)}
+          to={TO}
+        />
         <div className="charts-pair">
-          <LineChart
-            format={(value) => count.format(value)}
-            from={FROM}
-            label="Requests per ten minutes, none yet"
-            series={[]}
-            timeText={(at) => clock.format(at)}
-            to={TO}
-          />
           <PieChart format={(value) => `${value} h`} label="Time per state, none yet" slices={[]} />
+          <div className="charts-scatter">
+            <ScatterChart
+              label="Price against weight, none yet"
+              onPick={() => undefined}
+              picked={null}
+              points={[]}
+              x={{ title: 'weight (kg)', kind: 'number' }}
+              y={{ title: 'price ($)', kind: 'number' }}
+            />
+          </div>
         </div>
         <div className="result-chart-frame">
           <ResultChart

@@ -1,26 +1,87 @@
+import type { Chord } from '../keyboard/Keyboard.logic.js';
+import { chordGlyphs } from '../keyboard/KeyChord.logic.js';
+
 /** The attributes that give an element a tooltip; `TooltipLayer` reads them on hover. */
 export interface TooltipAttributes {
   readonly 'data-tooltip'?: string;
+  /** The chord as text ("⌘T"), for a reader that does not draw key glyphs. */
   readonly 'data-tooltip-shortcut'?: string;
+  /** The chord as data, which `TooltipLayer` draws with the key glyphs of every legend. */
+  readonly 'data-tooltip-chord'?: string;
+  /** Present when the tooltip only shows while the element cuts its own text. */
+  readonly 'data-tooltip-cut'?: string;
 }
 
 /**
  * Gives an element a tooltip: a short title and, for a verb the keyboard also
- * runs, its chord as text ("⌘T"). Spread the result onto the element; without
- * a label the element gets no tooltip. Every hover tooltip goes through
- * here, never the `title` attribute.
+ * runs, its chord. Pass the chord itself (`{ key: 't', meta: true }`) and the
+ * tooltip draws it with the same key glyphs as a legend's caps; a chord
+ * already written as text ("⌘T") is printed as given. Spread the result onto
+ * the element; without a label the element gets no tooltip. Every hover
+ * tooltip goes through here, never the `title` attribute.
  */
 export function tooltip(
   label: string | null | undefined,
-  shortcut?: string | null
+  shortcut?: string | Chord | null
 ): TooltipAttributes {
   if (!label) {
     return {};
   }
 
-  return shortcut
+  if (!shortcut) {
+    return { 'data-tooltip': label };
+  }
+
+  return typeof shortcut === 'string'
     ? { 'data-tooltip': label, 'data-tooltip-shortcut': shortcut }
-    : { 'data-tooltip': label };
+    : {
+        'data-tooltip': label,
+        'data-tooltip-shortcut': chordGlyphs(shortcut),
+        'data-tooltip-chord': JSON.stringify(shortcut)
+      };
+}
+
+/**
+ * Reads back a chord `tooltip()` wrote as data, or null when the attribute
+ * is missing or is not a chord, in which case the text form is shown.
+ */
+export function tooltipChord(data: string | null): Chord | null {
+  if (data === null) {
+    return null;
+  }
+
+  try {
+    const parsed: unknown = JSON.parse(data);
+    const chord = parsed as Partial<Record<keyof Chord, unknown>> | null;
+
+    return chord !== null &&
+      typeof chord === 'object' &&
+      typeof chord.key === 'string' &&
+      (['ctrl', 'alt', 'shift', 'meta'] as const).every(
+        (mod) => chord[mod] === undefined || typeof chord[mod] === 'boolean'
+      )
+      ? (chord as Chord)
+      : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * An element's own text as its tooltip, shown only while the element cuts
+ * that text (an ellipsis on a name too long for its column), so a tooltip
+ * never repeats words that are already in full view. The element itself
+ * must be the box that clips (`overflow: hidden` with an ellipsis):
+ * `TooltipLayer` opens it only while the element's content is wider or
+ * taller than its box. Without a label the element gets no tooltip.
+ */
+export function cutTooltip(label: string | null | undefined): TooltipAttributes {
+  return label ? { 'data-tooltip': label, 'data-tooltip-cut': '' } : {};
+}
+
+/** Whether an element marked with `cutTooltip` cuts its text now, and so may show it. */
+export function cutsItsText(element: Element): boolean {
+  return element.scrollWidth > element.clientWidth || element.scrollHeight > element.clientHeight;
 }
 
 /**

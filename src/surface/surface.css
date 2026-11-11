@@ -8,7 +8,8 @@
      --text, and an optional action at the end. Tones: .notice-danger,
      .notice-warning, .notice-success; none is neutral. .notice-card floats
      it on a raised panel (a notice over the page, not in its flow).
-   - .card: a lifted panel that groups one subject's lines. */
+   - .card: a lifted panel that groups one subject's lines, framed in
+     --border-strong like every framed surface (panes, menus, the grid). */
 
 .notice {
   /* The tone's mark (bar and glyph), 3:1 on every ground by its token. */
@@ -67,9 +68,11 @@
   margin-inline-start: auto;
 }
 
+/* A framed surface: the surface inset (12px) on every side, like a card
+   and a dialog. */
 .notice-card {
   align-items: center;
-  padding: var(--space-4) var(--space-4) var(--space-4) var(--space-6);
+  padding: var(--space-6);
   border: var(--line) solid var(--border-strong);
   border-inline-start: var(--line-strong) solid var(--notice-tone);
   border-radius: var(--radius-md);
@@ -85,7 +88,7 @@
   box-sizing: border-box;
   min-width: 0;
   padding: var(--space-6);
-  border: var(--line) solid var(--border);
+  border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--card-bg);
 }

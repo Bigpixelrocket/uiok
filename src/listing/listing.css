@@ -43,6 +43,12 @@
   /* The space a row and the column strip keep clear at either edge of the
      listing; the strip's first and last headers reach across it. */
   --pane-row-inset: var(--space-4);
+
+  /* The least a name column gives way to in a narrow pane, in the listing's
+     own characters, so a name keeps enough to be told apart; past it the
+     list scrolls sideways (the default grid, WellColumn, and the documented
+     name track `minmax(min(var(--pane-name-floor), 100%), 1fr)`). */
+  --pane-name-floor: 14ch;
 }
 
 /* A pane is a frame on the window ground: ::before draws the hairline and
@@ -174,13 +180,9 @@ button.crumb-label::after {
   align-items: center;
 }
 
-/* Only a crumb that is a control reacts to the pointer; its pressed look is
-   the base sheet's shared recipe. */
-button.crumb-label:hover:enabled {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
-  color: var(--text);
-}
+/* Only a crumb that is a control reacts to the pointer: its hover and
+   pressed looks are the base sheet's shared quiet recipes, which weigh the
+   same, so a press shows over the hover. */
 
 /* The trail's last crumb is where the pane is. */
 .crumb.here .crumb-label {
@@ -190,7 +192,8 @@ button.crumb-label:hover:enabled {
 /* A slash is a separator, never words: the faint tone. */
 .crumb-separator {
   flex: none;
-  padding: 0 1px;
+  /* Clear of a crumb's hover box and focus ring on either side. */
+  padding: 0 var(--space-1);
   color: var(--text-faint);
 }
 
@@ -228,15 +231,25 @@ button.crumb-label:hover:enabled {
 }
 
 /* A page's facts and compact controls at its path bar's end. The last
-   control's words end on the row inset, over the rows' actions: a quiet
-   action pads its words by --space-3 on that side. */
+   item's words or glyph end on the row inset, over the rows' actions: facts
+   end there as they are, and a padded control reaches back over the inset
+   by its own padding (a quiet action's --space-3 after its words, a star's
+   --space-2 either side of its glyph). */
 :where(.listing-root) .path-tools {
   display: flex;
   flex: 0 1 auto;
   align-items: center;
   gap: var(--space-4);
   min-width: 0;
-  padding-right: calc(var(--pane-row-inset) - var(--space-3));
+  padding-right: var(--pane-row-inset);
+}
+
+:where(.listing-root) .path-tools > .pane-act:last-child {
+  margin-right: calc(-1 * var(--space-3));
+}
+
+:where(.listing-root) .path-tools > .path-star:last-child {
+  margin-right: calc(-1 * var(--space-2));
 }
 
 /* A page's state at the path bar's end: its dot and words; a failure reads
@@ -341,6 +354,16 @@ button.crumb-label:hover:enabled {
   color: var(--danger-text);
 }
 
+/* The cursor row of a pane that does not hold the keys (see the neutral
+   cursor below) runs nothing, so its actions are neither lit nor red: the
+   on-surface words that keep 4.5:1 on its neutral fill. The pointer still
+   lights one it is over. */
+:where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane))
+  .row.cursor
+  :is(.pane-act, .pane-icon-act):not(:hover, :focus-visible) {
+  color: var(--text-on-surface);
+}
+
 /* The list takes programmatic focus after a keyboard sort; it is not in the
    Tab order, so no focus ring belongs on it. */
 :where(.listing-root) .pane-list:focus {
@@ -352,6 +375,48 @@ button.crumb-label:hover:enabled {
   min-height: 0;
   overflow-y: auto;
   background: var(--file-list-bg);
+  /* What a pinned action column (`.pane-pin-end`) paints under its cells. */
+  --pane-pin-ground: linear-gradient(var(--file-list-bg), var(--file-list-bg)), var(--surface);
+}
+
+/* A list cut at its foot, or at a side it scrolls to, fades over the last
+   --scroll-fade-size there, so a sliced row or column reads as "more", as
+   every other scroller does. Its head never fades: the column strip pinned
+   there stays whole. The lengths are the base sheet's scroll-fade lengths
+   on its timelines; an edge with nothing past it stays sharp, and a list
+   that does not scroll never fades. */
+@supports (animation-timeline: scroll()) {
+  :where(.listing-root) .pane-list {
+    --scroll-fade-size: var(--space-6);
+
+    mask-image:
+      linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
+      linear-gradient(
+        to right,
+        transparent,
+        var(--ground) var(--scroll-fade-inline-start),
+        var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+        transparent
+      );
+    mask-composite: intersect;
+    animation:
+      uiok-scroll-fade-block linear both,
+      uiok-scroll-fade-inline linear both;
+    animation-timeline: scroll(self block), scroll(self inline);
+  }
+
+  /* A list whose listing pins its actions at the end fades only its foot:
+     the pinned column stands where the inline fade would fall, and its
+     hairline already says columns run on under it. */
+  :where(.listing-root) .pane-list:has(.pane-pin-end) {
+    mask-image: linear-gradient(
+      to bottom,
+      var(--ground) calc(100% - var(--scroll-fade-end)),
+      transparent
+    );
+    animation: uiok-scroll-fade-block linear both;
+    animation-timeline: scroll(self block);
+  }
 }
 
 :where(.listing-root) :is(.row, .pane-columns) {
@@ -360,7 +425,10 @@ button.crumb-label:hover:enabled {
      wide as its widest cell plus the gutter before it. A listing sets the
      template on itself; the column strip shares it so every label sits over
      its column. */
-  grid-template-columns: var(--pane-grid, var(--icon-column) minmax(0, 1fr));
+  grid-template-columns: var(
+    --pane-grid,
+    var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr)
+  );
   align-items: center;
   box-sizing: border-box;
   padding: 0 var(--pane-row-inset);
@@ -377,7 +445,10 @@ button.crumb-label:hover:enabled {
    in the listing (a message, an app's own block) spans every track. */
 :where(.listing-root) .pane-listing:where([role='table']) {
   display: grid;
-  grid-template-columns: var(--pane-grid, var(--icon-column) minmax(0, 1fr));
+  grid-template-columns: var(
+    --pane-grid,
+    var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr)
+  );
   align-content: start;
   padding: 0 var(--pane-row-inset);
 }
@@ -409,7 +480,7 @@ button.crumb-label:hover:enabled {
   top: 0;
   z-index: var(--z-raised);
   height: var(--pane-columns-height);
-  background: color-mix(in srgb, var(--surface-header) 40%, var(--surface));
+  background: var(--strip);
   border-bottom: var(--line) solid var(--border);
 }
 
@@ -507,19 +578,16 @@ button.crumb-label:hover:enabled {
   outline-offset: var(--focus-offset-inset);
 }
 
-/* A label that sorts is a control: the quiet wash under the pointer, with
-   rounded corners like the frame's other compact controls; its pressed look
-   is the base sheet's shared recipe. A label that only names its column
-   takes no pointer state. */
+/* A label that sorts is a control, with rounded corners like the frame's
+   other compact controls: its hover (the wash, full words) and pressed looks
+   are the base sheet's shared track recipes, which weigh the same, so a
+   press shows over the hover. The column it sorts by keeps full words. A
+   label that only names its column takes no pointer state. */
 :where(.listing-root) .pane-sort.sortable {
   border-radius: var(--radius-sm);
 }
 
-:where(.listing-root) .pane-sort.sortable:hover {
-  background: var(--hover-wash);
-}
-
-:where(.listing-root) :is(.pane-sort.sortable:hover, .pane-sort.active) {
+:where(.listing-root) .pane-sort.active {
   color: var(--text);
 }
 
@@ -528,11 +596,14 @@ button.crumb-label:hover:enabled {
 }
 
 /* A listing whose rows draw no icon starts its first label over the names,
-   past the empty icon column, as the rows' values start. */
-:where(.listing-root)
-  .pane-listing:has(> .row):not(:has(> .row > .row-icon:not(:empty)))
+   past the empty icon column, as the rows' values start. A section's
+   heading (`Strip` `heading`) is no column label and keeps the strip's
+   edge, as the headings of the sections around it do. The listing's part
+   weighs nothing, so the rule weighs what the label's default above does,
+   and an app's own placement of the label wins. */
+:where(.listing-root .pane-listing:has(> .row):not(:has(> .row > .row-icon:not(:empty))))
   > .pane-columns
-  > .row-name {
+  > .row-name:where(:not(:has(h3))) {
   grid-column: 2;
 }
 
@@ -540,7 +611,11 @@ button.crumb-label:hover:enabled {
    leading edge, the block cursor of a terminal, so the row is found at a
    glance whatever the fill's contrast with the list. */
 :where(.listing-root) .row.cursor {
-  background: var(--cursor-row);
+  --row-fill: var(--cursor-row);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
   box-shadow: inset var(--line-strong) 0 0 var(--cursor-bar);
 }
 
@@ -549,15 +624,55 @@ button.crumb-label:hover:enabled {
    window reads as the one the keys move. A lone pane, or a set of panes
    none of which is active, keeps its cursor as it is. */
 :where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane)) .row.cursor {
-  background: var(--fill);
+  --row-fill: var(--fill);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
   box-shadow: none;
 }
 
+/* A marked row (`.marked`), in a listing whose rows carry a checkbox: the
+   accent tint and a 2px bar on its leading edge in the marked tone, as a
+   marked grid row. Under the cursor the tint steps up and the row keeps
+   both marks: the cursor's bar, and a hairline ring in the cursor's tone,
+   so the cursor shows on a marked row whatever the two tints' distance in
+   a theme. A pane that does not hold the keys draws its marked cursor row
+   with the stronger tint and the marked bar alone. */
+:where(.listing-root) .row.marked {
+  --row-fill: var(--marked-bg);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
+  box-shadow: inset var(--line-strong) 0 0 var(--marked-bar);
+}
+
+:where(.listing-root) .row.marked.cursor {
+  --row-fill: var(--marked-cursor-bg);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
+  box-shadow:
+    inset var(--line-strong) 0 0 var(--cursor-bar),
+    inset 0 0 0 var(--line) var(--cursor-bar);
+}
+
+:where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane)) .row.marked.cursor {
+  box-shadow: inset var(--line-strong) 0 0 var(--marked-bar);
+}
+
 /* Under the pointer, in a list whose rows act on a click (`.pane-list.pointer`),
-   a row other than the cursor takes the quiet hover wash. Where the pointer
+   a row other than the cursor takes the row hover wash, which moves away
+   from the list's ground in either appearance. Where the pointer
    moves the cursor itself, leave the class off: the cursor is the hover. */
-:where(.listing-root) .pane-list.pointer .row:hover:not(.cursor, .selected) {
-  background: var(--hover-wash);
+:where(.listing-root) .pane-list.pointer .row:hover:not(.cursor, .selected, .marked) {
+  --row-fill: var(--row-hover);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
 }
 
 /* A focusable row (`Row` `focusable`) rings inside its edges: the list
@@ -584,9 +699,16 @@ button.crumb-label:hover:enabled {
   font-weight: var(--font-weight-strong);
 }
 
-/* Dim row text switches to the on-surface tone over the cursor highlight;
-   --text-dim misses 4.5:1 contrast on the cursor row in the light flavor. */
-:where(.listing-root) .row.cursor :is(.row-icon, .row-meta) {
+/* Quiet row words (the icon, the cells, an idle or busy state's word)
+   switch to the on-surface tone over a state fill, the cursor's (either
+   pane's), a mark's, or the row hover wash: the quiet tone misses 4.5:1 on
+   those fills in several themes, and --text-on-surface is floored on each.
+   A selection paints its own words (below). */
+:where(.listing-root) .row:is(.cursor, .marked) :is(.row-icon, .row-meta),
+:where(.listing-root) .row:is(.cursor, .marked) .pane-state:is(.pane-tone-muted, .pane-tone-busy),
+:where(.listing-root .pane-list.pointer)
+  .row:hover:not(.selected)
+  :is(.row-icon, .row-meta, .pane-state:is(.pane-tone-muted, .pane-tone-busy)) {
   color: var(--text-on-surface);
 }
 
@@ -770,7 +892,11 @@ button.crumb-label:hover:enabled {
     calc(var(--pane-row-inset) + var(--icon-column));
   box-sizing: border-box;
   color: var(--row-meta-text);
-  font-size: var(--font-size-small);
+  /* A sentence, so the interface font, though the list around it is set in
+     the listing's monospace; a name or a value inside it (`code`) keeps
+     the monospace. */
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
 }
 
 :where(.listing-root) .pane-message.danger {
@@ -861,7 +987,7 @@ button.crumb-label:hover:enabled {
   height: 6px;
   border-radius: var(--radius-pill);
   background: transparent;
-  box-shadow: inset 0 0 0 calc(var(--line) * 1.5) var(--idle-mark);
+  box-shadow: inset 0 0 0 var(--line) var(--idle-mark);
 }
 
 :where(.listing-root) .pane-tone-ready > .pane-state-dot {
@@ -901,7 +1027,7 @@ button.crumb-label:hover:enabled {
 
 /* The busy spinner is the shared Spinner (it turns and stands still under
    reduced motion on its own); the state only colours it. */
-:where(.listing-root) .pane-state-busy {
+:where(.listing-root) .pane-state > svg.pane-state-busy {
   color: var(--accent);
 }
 
@@ -958,6 +1084,51 @@ button.crumb-label:hover:enabled {
   overflow: visible;
 }
 
+/* A listing that may be wider than what scrolls it (`.pane-pin-end` on the
+   `Listing`) keeps its last column, the actions, in view at the scroller's
+   end: those cells, and the strip's over them, stick there while the
+   columns before them scroll under. They paint the row's state fill
+   (`--row-fill`, set by each state rule above) over the ground they stand
+   on (`--pane-pin-ground`: the list's inside a `.pane-list`, the surface
+   elsewhere; a host on another ground sets it), and a hairline on their
+   leading edge says columns run on under them while any do. */
+:where(.listing-root) {
+  --pane-pin-ground: var(--surface);
+}
+
+:where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
+  position: sticky;
+  right: 0;
+  z-index: var(--z-raised);
+  margin-right: calc(-1 * var(--pane-row-inset));
+  padding-right: var(--pane-row-inset);
+  background:
+    linear-gradient(var(--row-fill, transparent), var(--row-fill, transparent)),
+    var(--pane-pin-ground);
+}
+
+:where(.listing-root .pane-listing.pane-pin-end) > .pane-columns > :last-child {
+  background: var(--strip);
+}
+
+@supports (animation-timeline: scroll()) {
+  :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
+    animation: uiok-pane-pin-edge linear both;
+    animation-timeline: scroll(nearest inline);
+  }
+}
+
+@keyframes uiok-pane-pin-edge {
+  0%,
+  95% {
+    box-shadow: inset var(--line) 0 0 var(--border-strong);
+  }
+
+  100% {
+    box-shadow: inset 0 0 0 var(--border-strong);
+  }
+}
+
 /* A row's secondary controls show on its hover, its keyboard focus, and the
    cursor, whose keys run them. They fade rather than hide, so a pointer
    finds them where they stand. */
@@ -977,6 +1148,16 @@ button.crumb-label:hover:enabled {
 :where(.listing-root) .row .row-meta.pane-path {
   display: flex;
   min-width: 0;
+  /* Its words a whole number of characters wide (the gutter is its
+     padding, inside the width), so a cut head's ellipsis meets the next
+     folder with no sliver of a character between them; the slack falls
+     past the name, at the column's end. Half a pixel more keeps the engine,
+     which lays boxes out in fractions of a pixel, from rounding the last
+     whole character out. */
+  box-sizing: border-box;
+  width: calc(
+    round(down, calc(100% - var(--pane-column-gap)), 1ch) + var(--pane-column-gap) + 0.5px
+  );
 }
 
 :where(.listing-root) .pane-path-head {
@@ -1058,12 +1239,16 @@ button.crumb-label:hover:enabled {
    is the selection's cursor fill and a bar in the on-selection tone. A
    selection keeps its fill in a pane that does not hold the keys. */
 :where(.listing-root) .row.selected {
-  background: var(--selected-bg);
+  --row-fill: var(--selected-bg);
+
+  background: var(--row-fill);
   color: var(--on-selected);
 }
 
 :where(.listing-root) .row.cursor.selected {
-  background: var(--selected-cursor-bg);
+  --row-fill: var(--selected-cursor-bg);
+
+  background: var(--row-fill);
   box-shadow: inset var(--line-strong) 0 0 var(--on-selected);
 }
 

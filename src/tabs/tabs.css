@@ -17,6 +17,11 @@
      covers it rather than stacking on it. */
   box-shadow: inset 0 calc(-1 * var(--line)) 0 var(--border);
   scrollbar-width: none;
+  /* A scrolled strip comes to rest with a tab's edge on the fade's inner
+     edge, never with a label cut mid-word; the padding is the fade's width,
+     where PageTabs scrolls the current tab, so the two never fight. */
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: var(--space-12);
 }
 
 /* The fade is a mask, so it shows whatever lies under the strip; a mask
@@ -55,6 +60,7 @@
   font: var(--font-size-small) var(--font-ui);
   white-space: nowrap;
   cursor: pointer;
+  scroll-snap-align: start end;
 }
 
 /* The name keeps the width of its bold self, so no tab moves sideways when
