@@ -64,14 +64,15 @@ A page's rows are `field-grid` ([Field](field.md)) at the small size, every page
 
 ### A settings file's problems
 
-| Class                         | What it is                                                                            |
-| ----------------------------- | ------------------------------------------------------------------------------------- |
-| `settings-file-name`          | A file's name in the code face (on its `field-label`)                                 |
-| `settings-file-path`          | A path in the code face, cut with an ellipsis (give it a tooltip with the whole path) |
-| `settings-file-action`        | On a `Button` at the end of a file's line                                             |
-| `settings-file-problems`      | The list of a file's problems                                                         |
-| `settings-file-problem`       | On a `notice` (`notice-danger` for a problem, plain and dim for a note)               |
-| `settings-file-problem-place` | Where it is (line and key), above what is wrong                                       |
+| Class                         | What it is                                                                                                                   |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `settings-file-name`          | A file's name in the code face (on its `field-label`)                                                                        |
+| `settings-file-path`          | A path in the code face, cut with an ellipsis (give it a tooltip with the whole path)                                        |
+| `settings-file-action`        | On a `Button` at the end of a file's line                                                                                    |
+| `settings-file-problems`      | The list of a file's problems                                                                                                |
+| `settings-file-problem`       | On a `notice` (`notice-danger` for a problem with `CircleAlert`, plain and dim for a note with `Info`), its tone glyph first |
+| `settings-file-problem-text`  | With `notice-text`, after the glyph: where it is over what is wrong                                                          |
+| `settings-file-problem-place` | Where it is (line and key), above what is wrong                                                                              |
 
 ## Theme picker
 

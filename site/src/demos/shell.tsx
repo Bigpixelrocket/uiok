@@ -12,6 +12,7 @@ import {
   CircleCheck,
   Download,
   FileText,
+  Info,
   KeyRound,
   LoaderCircle,
   Palette as PaletteIcon,
@@ -340,16 +341,22 @@ function FilesPage(): ReactElement {
             </div>
             <ul className="settings-file-problems">
               <li className="settings-file-problem notice notice-danger">
-                <span className="settings-file-problem-place">
-                  Line 12, <code>appearance.theme</code>
+                <CircleAlert aria-hidden size={ICON_MD} />
+                <span className="notice-text settings-file-problem-text">
+                  <span className="settings-file-problem-place">
+                    Line 12, <code>appearance.theme</code>
+                  </span>
+                  <span>Expected one of system, light, or dark.</span>
                 </span>
-                <span>Expected one of system, light, or dark.</span>
               </li>
               <li className="settings-file-problem notice">
-                <span className="settings-file-problem-place">
-                  Line 30, <code>window.zoom</code>
+                <Info aria-hidden size={ICON_MD} />
+                <span className="notice-text settings-file-problem-text">
+                  <span className="settings-file-problem-place">
+                    Line 30, <code>window.zoom</code>
+                  </span>
+                  <span>This version does not know this key; it is kept as it is.</span>
                 </span>
-                <span>This version does not know this key; it is kept as it is.</span>
               </li>
             </ul>
           </div>

@@ -50,7 +50,8 @@
    item's tint and ring. Its subsections unfold under it on a rail, the one
    in view in the text colour with the rail lit beside it. A name too long
    for the sidebar wraps onto a second compact line rather than losing its
-   end. Hover and press are the quiet control's; the chosen row takes
+   end, between words, and inside a word only when the word alone cannot
+   fit (never with a hyphen the browser guessed). Hover and press are the quiet control's; the chosen row takes
    neither. The focus ring is the base sheet's, drawn inside the row. */
 .settings-sidebar-page,
 .settings-sidebar-subsection {
@@ -70,8 +71,8 @@
   font-size: var(--font-size-small);
   line-height: var(--line-height-compact);
   text-align: start;
-  overflow-wrap: anywhere;
-  hyphens: auto;
+  overflow-wrap: break-word;
+  hyphens: manual;
   transition: var(--transition-control);
 }
 
@@ -297,7 +298,10 @@
   list-style: none;
 }
 
-.settings-file-problem {
+/* A problem is the notice's row: its tone glyph, then this text, where it
+   is over what is wrong. */
+.settings-file-problem-text {
+  display: flex;
   flex-direction: column;
   gap: 1px;
 }
