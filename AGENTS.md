@@ -33,14 +33,14 @@ src/button/                   # Button (primary, tonal, neutral, danger) and Ico
 src/activity/ src/segmented/ src/keychord/ src/filter/  # ActivityBar, SegmentedChoice, KeyChord, FilterIcon and FilterEscape
 src/legend/                   # KeyLegendStrip and legendUnits / fittingUnits / moreLabel / moreListAction; pair labels are the app's
 src/store/ src/clock/         # ValueStore, sameData/sameProps, useStableHandlers, keepUnchanged*; useClock
-src/icon/                     # ICON_SM, ICON_MD, ICON_LG (sizes.ts): the sizes for lucide's size prop, mirroring --icon-* in tokens.css; Spinner, the one turning ring (StateMark busy, RunHeader running)
+src/icon/                     # ICON_SM, ICON_MD, ICON_LG, ICON_XL (sizes.ts): the sizes for lucide's size prop, mirroring --icon-* in tokens.css; Spinner, the one turning ring (StateMark busy, RunHeader running)
 src/field/                    # the form controls as classes on native elements (field.css: .field and its heights by place, .check with its tones, .switch, .range, labels, notes, problems, groups, the label-column grid) and Check, a checkbox whose state can be mixed (docs/components/field.md)
 src/surface/surface.css       # .notice and its tones, .card; a stylesheet without a module, so no area export (docs/components/surface.md)
 src/shell/shell.css           # the shell's shared surfaces as classes: the Settings dialog (frame, sidebar, pages, subsections, a file's problems), the theme picker and miniatures, the Updates card and notes, the update pill's entrance, .channel-tag, the sign-in prompts, the load failure; a stylesheet without a module, so no area export (docs/components/shell.md)
 src/dialog/                   # ModalDialog frame, DialogLayer (where a host's dialogs mount, above its content), DialogLegend footer and legendKeyAction (which slot a key runs), ConfirmDialog; dialog labels in src/labels/dialog.ts
 src/run/                      # RunHeader progress header and the RunProgress state and elapsed-time helpers
 src/listing/                  # Listing, Strip, Row, Cell, RowCursorContext, StateMark, PathCell, WellColumn, CurrentDot; listing.css is the whole listing look under .listing-root, panes included
-src/pane/                     # PanePathBar, PaneStatus, QuietAction, RowIconAction; usePaneKeys over PaneKeys (DOM readers) and PaneKeys.logic (key mapping)
+src/pane/                     # PanePathBar, PathFact, PaneStatus, QuietAction, RowIconAction; usePaneKeys over PaneKeys (DOM readers) and PaneKeys.logic (key mapping)
 src/namecut/ src/text/        # NameCut with labelParts/nameParts; MarkedText with highlightSegments
 src/grid/ src/datetime/       # DataGrid (virtualised rows, cursor cell, sort, resize, reorder, inline editor layer); DateTimePicker with parsePicker/formatPicker
 src/pager/ src/tabs/ src/selectall/ # Pager with page arithmetic and selectorPages; PageTabs; SelectAllBar with checkedAfterClick
