@@ -476,7 +476,10 @@
   overflow: auto;
   list-style: none;
   border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-sm);
+  /* A well of several lines takes the pane and card corner, as every other
+     well does; inside the dialog's 8px corner and 12px inset it stays
+     concentric enough. */
+  border-radius: var(--radius-md);
   color: var(--text-dim);
   font-family: var(--font-mono);
   font-size: var(--font-size-small);

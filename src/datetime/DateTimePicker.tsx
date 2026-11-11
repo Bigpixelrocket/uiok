@@ -70,6 +70,12 @@ export interface DateTimePickerProps {
   /** Whether the button is disabled. */
   readonly disabled?: boolean;
   /**
+   * The button's height, to match the field beside it: `small` (24px) beside
+   * a page or toolbar field (`.field-sm`), the default; `regular` (28px)
+   * beside a dialog's field (`.field`).
+   */
+  readonly size?: 'regular' | 'small';
+  /**
    * Writes picked parts as the field's value; `formatPicker` (ISO 8601,
    * date and time joined by `T`) unless given. A store that joins them with
    * a space passes `(kind, parts, fraction) => formatPicker(kind, parts, fraction, ' ')`.
@@ -109,6 +115,7 @@ export function DateTimePicker({
   label,
   hint,
   disabled = false,
+  size = 'small',
   format = formatPicker,
   parse = parsePicker
 }: DateTimePickerProps): ReactElement {
@@ -191,7 +198,7 @@ export function DateTimePicker({
           setShown(parse(value) ?? nowParts());
           setOpen(!open);
         }}
-        size="small"
+        size={size}
         {...tooltip(hint ?? label)}
       >
         {kind === 'time' ? (
@@ -325,6 +332,9 @@ export function DateTimePicker({
                         fraction: event.currentTarget.value.replace(/\D/gu, '').slice(0, fraction)
                       })
                     }
+                    // A text field's own width is 20 characters unless sized,
+                    // which would set every time column and the panel's width.
+                    size={Math.max(2, fraction)}
                     style={
                       fraction > SHORT_FRACTION
                         ? ({ '--date-picker-digits': fraction } as CSSProperties)

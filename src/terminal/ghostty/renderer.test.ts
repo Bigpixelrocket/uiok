@@ -904,6 +904,30 @@ describe('renderGhosttySnapshot with measured ink', () => {
     ]);
   });
 
+  it('draws selected text in the selection ink, floored on the selection over its cell', () => {
+    const { context, events } = recordingContext(() => ({ ascent: 9, descent: 3 }));
+    const plain: GhosttyCell = { ...cell('p'), foreground: { r: 90, g: 90, b: 90 } };
+    const picked: GhosttyCell = { ...plain, text: 's', selected: true };
+    renderGhosttySnapshot({
+      context,
+      snapshot: snapshotOf([[plain, picked]]),
+      metrics: { width: 10, height: 20, baseline: 15 },
+      fontSize: 12,
+      fontFamily: 'monospace',
+      padding: 4,
+      forceFull: false,
+      cursorOn: false,
+      selectionBackground: 'rgb(255 255 255 / 50%)',
+      selectionForeground: { r: 128, g: 128, b: 128 },
+      textInk: new GhosttyTextInkCache()
+    });
+    const texts = events.filter((event) => event.startsWith('text '));
+
+    // The plain cell lifts on the black ground; the selected one starts from
+    // the selection ink and darkens to read on the mid-grey selection.
+    expect(texts).toEqual(['text rgb(117, 117, 117) p 4 19 10', 'text rgb(23, 23, 23) s 14 19 10']);
+  });
+
   it('gives a run whose ink leaves its row a clip of its own', () => {
     const { context, events } = recordingContext((text) =>
       text === 'g' ? { ascent: 9, descent: 6 } : { ascent: 9, descent: 3 }

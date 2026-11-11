@@ -55,7 +55,7 @@ Without `onInput` the terminal is read-only, for a log: `<Terminal ariaLabel="In
 
 `TerminalAction` is `'clear' | 'line-start' | 'line-end' | 'word-back' | 'word-forward' | 'delete-to-line-start'`, macOS Terminal's: clear to start (the scrollback and the rows above the cursor, the program is not told), and readline's line-editing moves, sent as the bytes readline and zsh's line editor read (`⌃A`, `⌃E`, `⎋b`, `⎋f`, `⌃U`). The app decides which chords run them; UIOK binds none.
 
-The engine loads lazily, once per page, on the first terminal. Writes, resets, and focus requests that arrive before it is ready are held and applied in order once it is. When it cannot start, the terminal shows `labels.terminal.startFailed` in its place and keeps acknowledging written output, so a host's flow control never stalls on it.
+The engine loads lazily, once per page, on the first terminal. Writes, resets, and focus requests that arrive before it is ready are held and applied in order once it is. When it cannot start, the terminal shows `labels.terminal.startFailed` in its place as a danger notice (the tone bar and the alert glyph, `role="alert"`) on the terminal's own ground and keeps acknowledging written output, so a host's flow control never stalls on it.
 
 ## Scrollback
 
@@ -97,9 +97,9 @@ An interactive terminal takes every key into a hidden input element and encodes 
 
 ## Look
 
-Colours come from the `--terminal-*` tokens every theme sets (`--terminal-bg`, `--terminal-fg`, `--terminal-cursor`, `--terminal-selection`, `--terminal-ansi-0` to `-15`), from which the terminal derives xterm's 256-colour palette. It reads them again on every appearance or theme change (`subscribeThemeChange`). On a page without UIOK's stylesheet it falls back to Catppuccin Mocha.
+Colours come from the `--terminal-*` tokens every theme sets (`--terminal-bg`, `--terminal-fg`, `--terminal-cursor`, `--terminal-selection`, `--terminal-selection-text`, `--terminal-ansi-0` to `-15`), from which the terminal derives xterm's 256-colour palette. It reads them again on every appearance or theme change (`subscribeThemeChange`). On a page without UIOK's stylesheet it falls back to Catppuccin Mocha.
 
-A cell's text keeps a minimum contrast of 4.5:1 against that cell's own background, as terminals with a "minimum contrast" setting do: a foreground under it (a truecolour or 256-colour shade near the ground, ANSI black on a dark ground) is drawn mixed toward white or black, whichever stands further from the cell's background, only as far as the floor needs, so its hue survives (a red error stays red, only lighter). Backgrounds, and block and box-drawing shapes, keep the colour the program asked for.
+A cell's text keeps a minimum contrast of 4.5:1 against that cell's own background, as terminals with a "minimum contrast" setting do: a foreground under it (a truecolour or 256-colour shade near the ground, ANSI black on a dark ground) is drawn mixed toward white or black, whichever stands further from the cell's background, only as far as the floor needs, so its hue survives (a red error stays red, only lighter). Backgrounds, and block and box-drawing shapes, keep the colour the program asked for. Selected text is drawn in one ink, `--terminal-selection-text`, as a terminal's selection foreground is, held at the same floor against what is behind it: the selection laid over the cell's own background.
 
 Text is `--font-mono` at 13px on 19px lines, 4px in from the mount's edges; a host padding the other 8px puts the text 12px from its edge, where a listing's path bar starts its own. A proportional face is refused for the engine's default monospace stack. The rules live in `terminal.css`, which `styles.css` imports: `.terminal` (the host, sized by `className`), `.terminal-mount`, `.terminal-canvas`, `.terminal-scrollbar`, `.terminal-failure`, and `.terminal-menu`.
 

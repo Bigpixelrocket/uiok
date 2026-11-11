@@ -58,8 +58,9 @@
 /* A text input, textarea, or select that carries no class of its own still
    takes the theme: an outline in --control-border on the window ground,
    the theme's text, the page's face. It weighs nothing, so .field and any
-   host rule win over every part of it; a checkbox, radio, or slider keeps
-   the platform's drawing in the accent (above). */
+   host rule win over every part of it. A checkbox or radio with no class
+   takes the .check look (field.css); a slider, or a box with a class of
+   its own, keeps the platform's drawing in the accent (above). */
 :where(
   input:not([type]),
   input:is(
@@ -81,6 +82,20 @@
   font-family: inherit;
 }
 
+/* A resizable box's corner grip (a textarea, a resizable frame): two short
+   diagonal strokes in the control outline on a clear ground, where the
+   platform would draw its grey hatch. */
+::-webkit-resizer {
+  background: linear-gradient(
+    135deg,
+    transparent 0 55%,
+    var(--control-border) 55% 62%,
+    transparent 62% 74%,
+    var(--control-border) 74% 81%,
+    transparent 81%
+  );
+}
+
 ::placeholder {
   color: var(--text-placeholder);
   opacity: 1;
@@ -96,8 +111,9 @@
 /* ---- Shared recipes ---- */
 
 /* The small uppercase heading over a group (a menu's section, a settings
-   group, a sidebar's set of pages). */
-.overline {
+   group, a sidebar's set of pages). A menu's group heading wears it too. */
+.overline,
+.entry-menu-heading {
   margin: 0;
   color: var(--text-dim);
   font: var(--font-weight-strong) var(--font-size-caption) / var(--line-height-compact)
@@ -129,7 +145,19 @@
    included, so a scroller whose ground differs from what is behind it
    paints that ground on a wrapper. A sticky strip at a faded edge fades
    too: use .scroll-fade-end under a sticky header. Engines without scroll
-   timelines draw no fade. */
+   timelines draw no fade.
+
+   --scroll-fade-size is the fade's depth, 12px by default (enough for a
+   line of prose); a list of whole rows sets it to its row height
+   (var(--row-height)) on the scroller, so the last whole row fades through
+   its words instead of losing a sliver.
+
+   Hazard: a mask clips everything painted inside the masked box, a
+   position: fixed child included (a full-screen surface, a date picker's
+   or menu's panel), because the mask makes the box their containing block
+   for painting. A scroller that can hold a popover or a fixed surface
+   drops its fade class while one is open, or mounts the popover outside
+   the scroller. */
 @supports (animation-timeline: scroll()) {
   .scroll-fade,
   .scroll-fade-end,
@@ -298,7 +326,9 @@
   .pane-sort.sortable,
   .pane-strip-link,
   .data-grid-sort,
-  .palette-level
+  .palette-level,
+  .settings-sidebar-page,
+  .settings-sidebar-subsection
 ):where(button, a[href], [role='button'], [role='tab'], [role='radio']) {
   transition: var(--transition-control);
 }
@@ -310,7 +340,9 @@
     .pane-act,
     .pane-icon-act,
     .path-star,
-    .crumb-label
+    .crumb-label,
+    .settings-sidebar-page,
+    .settings-sidebar-subsection
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
     :not(
       :disabled,
@@ -358,7 +390,9 @@
     .pane-sort.sortable,
     .pane-strip-link,
     .data-grid-sort,
-    .palette-level
+    .palette-level,
+    .settings-sidebar-page,
+    .settings-sidebar-subsection
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
     :not(
       :disabled,
@@ -373,6 +407,19 @@
     inset 0 0 0 var(--line) var(--border-strong);
   background: var(--pressed-wash);
   color: var(--text);
+}
+
+/* A toggle that is on (a button with aria-pressed="true": a mode, a
+   filter chip, an open menu's chip): the current item's tint, ring, and
+   words, the one look of "on" for a button. It weighs one attribute and
+   comes after the hover and press recipes, so an on toggle keeps its look
+   under the pointer; a host rule that paints the button's rest face with
+   more weight leaves the on state to this rule (:not([aria-pressed='true'])).
+   A toggle that mirrors a held key keeps its own solid accent. */
+:where(button)[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 var(--line) var(--current-ring);
+  background: var(--current-bg);
+  color: var(--current-text);
 }
 
 /* A focusable element that the keyboard reached: one ring from the focus
@@ -449,23 +496,34 @@
 
 /* A control that cannot act right now: a disabled field or button, a menu
    row or an option marked aria-disabled, a label whose checkbox or field is
-   disabled. It keeps its place and its words, faded whole (words, icon, and
-   fill) to --disabled-opacity, and the pointer stays an arrow over it. Inside
-   one already faded it fades no further. :root weighs it over a page's own
+   disabled, a field box whose input is. It keeps its place and its words,
+   faded whole (words, icon, and fill) to --disabled-opacity, and the pointer
+   stays an arrow over it. Inside one already faded it fades no further. A
+   checkbox or radio is left out: a .check draws its own disabled look
+   (field.css), and a box the platform draws already greys itself, so a
+   second fade would stack on the first. :root weighs it over a page's own
    cursor and opacity for a control; a control that hides its native input (a
    switch, a radio row) keeps the input hidden with a heavier rule and fades
    what it draws instead. A hover or cursor-row highlight leaves out a
    disabled control in its own rule (:enabled, :not([aria-disabled='true'])). */
 :root
   :is(
-    :is(button, input, select, textarea):disabled,
+    :is(
+      button,
+      input:not([type='checkbox'], [type='radio']),
+      input.switch,
+      select,
+      textarea
+    ):disabled,
     :is(button, [role^='menuitem'], [role='option'])[aria-disabled='true'],
-    label:is([data-disabled], :has(> :is(input, select, textarea):disabled))
+    label:is([data-disabled], :has(> :is(input, select, textarea):disabled)),
+    .field-box:has(> input:disabled)
   ):not(
     :where(
         :is(button, input, select, textarea):disabled,
         [aria-disabled='true'],
-        label:is([data-disabled], :has(> :is(input, select, textarea):disabled))
+        label:is([data-disabled], :has(> :is(input, select, textarea):disabled)),
+        .field-box:has(> input:disabled)
       )
       *
   ) {

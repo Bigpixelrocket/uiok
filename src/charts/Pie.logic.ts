@@ -9,10 +9,15 @@ export interface PieSlice {
   readonly value: number;
 }
 
-/** A slice as drawn: its share of the whole and its path in a circle of radius `r` at the origin. */
+/**
+ * A slice as drawn: its share of the whole, its path in a circle of radius
+ * `r` at the origin, and the turn (from twelve o'clock, clockwise) at its
+ * middle, where a tag naming it points.
+ */
 export interface PieArc extends PieSlice {
   readonly share: number;
   readonly path: string;
+  readonly middle: number;
 }
 
 /** A point on the circle of radius `r` at `turn` turns from twelve o'clock, clockwise. */
@@ -43,6 +48,64 @@ export function pieArcs(slices: readonly PieSlice[], r: number): PieArc[] {
         ? `M 0 ${-r} A ${r} ${r} 0 1 1 0 ${r} A ${r} ${r} 0 1 1 0 ${-r} Z`
         : `M 0 0 L ${pointAt(r, start)} A ${r} ${r} 0 ${share > 0.5 ? 1 : 0} 1 ${pointAt(r, turn)} Z`;
 
-    return { ...slice, share, path };
+    return { ...slice, share, path, middle: start + share / 2 };
   });
 }
+
+/** A slice's tag outside the pie: a leader from the rim to `x`, `y`, where its number stands. */
+export interface PieTag {
+  /** The leader's start, on the rim. */
+  readonly fromX: number;
+  readonly fromY: number;
+  /** The leader's end and the tag's anchor point. */
+  readonly x: number;
+  readonly y: number;
+  /** Which way the tag's text runs from its anchor. */
+  readonly anchor: 'start' | 'middle' | 'end';
+}
+
+/** How far out a tag stands from the rim, on its first ring and on its second. */
+export const PIE_TAG_REACH = 8;
+const SECOND_RING = 14;
+
+/**
+ * Where each slice's number goes when colours alone cannot tell slices apart
+ * (more slices than series colours): just outside the rim at the slice's
+ * middle, on a short leader, or a ring further out where it would come
+ * within `gap` pixels of the tag before it, so neighbouring thin slices
+ * keep apart. A chart draws the pie `pieTagRoom` smaller to make the room.
+ */
+export function pieTags(arcs: readonly PieArc[], r: number, gap = 14): PieTag[] {
+  let previous: { x: number; y: number; ring: number } | null = null;
+
+  return arcs.map((arc) => {
+    const angle = arc.middle * 2 * Math.PI;
+    const at = (radius: number) => ({ x: radius * Math.sin(angle), y: -radius * Math.cos(angle) });
+    let ring = 0;
+    let end = at(r + PIE_TAG_REACH);
+
+    if (
+      previous !== null &&
+      previous.ring === 0 &&
+      Math.hypot(end.x - previous.x, end.y - previous.y) < gap
+    ) {
+      ring = 1;
+      end = at(r + PIE_TAG_REACH + SECOND_RING);
+    }
+    previous = { ...end, ring };
+
+    const rim = at(r);
+    const sideways = Math.abs(Math.sin(angle));
+
+    return {
+      fromX: rim.x,
+      fromY: rim.y,
+      x: end.x,
+      y: end.y,
+      anchor: sideways < 0.3 ? 'middle' : end.x > 0 ? 'start' : 'end'
+    };
+  });
+}
+
+/** How much smaller a pie draws to make room for its tags outside the rim, both rings and the numbers on them. */
+export const pieTagRoom = PIE_TAG_REACH + SECOND_RING + 16;

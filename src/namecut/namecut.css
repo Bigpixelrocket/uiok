@@ -24,7 +24,9 @@
 
 /* A head that has to give way keeps room for a character and its ellipsis,
    in whatever face the line is set: a character is about 1ch, and the
-   ellipsis about 1em in a proportional face. */
+   ellipsis about 1em in a proportional face. That floor is the widest the
+   two can be; NameCut narrows a cut box (this head, and the words around
+   the name) to what it shows, so no blank stands after its ellipsis. */
 .name-cut-head {
   flex: 0 10000000000 auto;
   min-width: calc(1ch + 1em);

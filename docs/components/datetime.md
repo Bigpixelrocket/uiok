@@ -29,18 +29,19 @@ import { DateTimePicker, formatPicker } from '@bigpixelrocket/uiok/datetime';
 
 ## Props (`DateTimePickerProps`)
 
-| Prop       | Type                                | Meaning                                                                   |
-| ---------- | ----------------------------------- | ------------------------------------------------------------------------- |
-| `kind`     | `'date' \| 'time' \| 'datetime'`    | What it picks                                                             |
-| `value`    | `string`                            | The field's value as typed                                                |
-| `onChange` | `(value: string) => void`           | The picked value, written by `format`                                     |
-| `label`    | `string`                            | The button's accessible name                                              |
-| `hint`     | `string`                            | What hovering the button says; `label` by default                         |
-| `fraction` | `number`                            | Digits of a second a time keeps, 0 to 6; 0                                |
-| `firstDay` | `number`                            | The week's first day, 1 Monday to 7 Sunday; 1                             |
-| `disabled` | `boolean`                           | Disables the button                                                       |
-| `format`   | `(kind, parts, fraction) => string` | Writes picked parts; `formatPicker` (ISO 8601) by default                 |
-| `parse`    | `(value) => PickerParts \| null`    | Reads the value; `parsePicker` by default; null opens the picker on today |
+| Prop       | Type                                | Meaning                                                                                                                              |
+| ---------- | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `kind`     | `'date' \| 'time' \| 'datetime'`    | What it picks                                                                                                                        |
+| `value`    | `string`                            | The field's value as typed                                                                                                           |
+| `onChange` | `(value: string) => void`           | The picked value, written by `format`                                                                                                |
+| `label`    | `string`                            | The button's accessible name                                                                                                         |
+| `hint`     | `string`                            | What hovering the button says; `label` by default                                                                                    |
+| `fraction` | `number`                            | Digits of a second a time keeps, 0 to 6; 0                                                                                           |
+| `firstDay` | `number`                            | The week's first day, 1 Monday to 7 Sunday; 1                                                                                        |
+| `disabled` | `boolean`                           | Disables the button                                                                                                                  |
+| `size`     | `'regular' \| 'small'`              | The button's height, matching its field: `small` (24px, beside `.field-sm`) by default, `regular` (28px, beside a dialog's `.field`) |
+| `format`   | `(kind, parts, fraction) => string` | Writes picked parts; `formatPicker` (ISO 8601) by default                                                                            |
+| `parse`    | `(value) => PickerParts \| null`    | Reads the value; `parsePicker` by default; null opens the picker on today                                                            |
 
 ## Value format
 

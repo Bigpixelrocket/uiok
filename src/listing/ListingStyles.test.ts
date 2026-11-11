@@ -116,7 +116,11 @@ describe("the frame's compact controls", () => {
       act.getPropertyValue('height'),
       icon.getPropertyValue('width'),
       icon.getPropertyValue('height')
-    ]).toEqual(['var(--control-height-xs)', '22px', 'var(--control-height-xs)']);
+    ]).toEqual([
+      'var(--control-height-xs)',
+      'var(--control-height-xs)',
+      'var(--control-height-xs)'
+    ]);
     // jsdom drops a padding shorthand that holds var(), so read the rule.
     expect(sheet).toMatch(/^\.pane-act \{[^}]*padding: 0 var\(--space-3\) 0 var\(--space-2\);/m);
     document.body.innerHTML = '';
@@ -226,6 +230,107 @@ describe('the listing states', () => {
     expect(colour(danger as Element)).toBe('var(--danger-text)');
     expect(colour(quiet as Element)).toBe('var(--text-on-surface)');
     expect(colour(quietDanger as Element)).toBe('var(--text-on-surface)');
+    document.body.innerHTML = '';
+  });
+
+  it('keeps a worded action on a marked row in the on-surface tone, a lit one lit', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="row marked"><span class="row-meta">
+        <button class="pane-icon-act worded" type="button">Drop</button>
+        <button class="pane-act" type="button">Open</button>
+        <button class="pane-act lit" type="button">Start</button>
+      </span></div></section>`;
+    const [worded, quiet, lit] = document.querySelectorAll('button');
+
+    expect(colour(worded as Element)).toBe('var(--text-on-surface)');
+    expect(colour(quiet as Element)).toBe('var(--text-on-surface)');
+    expect(colour(lit as Element)).toBe('var(--accent-text)');
+    document.body.innerHTML = '';
+  });
+
+  it('lets no cursor, mark, or pointer rule recolour a word on a selected row', () => {
+    // Every element is hovered: `:hover` reads as a class each one carries,
+    // so a hover rule weighs what it does and matches as it would under the
+    // pointer, the excluding ones (`:not(:hover)`) included.
+    applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
+    const words = `<span class="row-icon"></span><span class="row-name">a</span>
+      <span class="row-meta">2 MB</span>
+      <span class="row-meta"><span class="pane-state pane-tone-muted"><span class="pane-state-dot"></span><span class="pane-state-word">stopped</span></span></span>
+      <span class="row-meta"><span class="pane-state pane-tone-busy"><span class="pane-state-dot"></span><span class="pane-state-word">restarting</span></span></span>
+      <span class="row-meta pane-path"><span class="pane-path-head">~/a/</span><span class="pane-path-tail">b/</span><span class="pane-path-name">c</span></span>
+      <span class="row-meta pane-action-cell">
+        <button class="pane-act" type="button">Open</button>
+        <button class="pane-act lit" type="button">Start</button>
+        <button class="pane-act danger" type="button">Remove</button>
+        <button class="pane-icon-act worded" type="button">Drop</button>
+        <button class="pane-icon-act danger" type="button"></button>
+      </span>`;
+    const rows = ['cursor selected', 'marked selected', 'marked cursor selected', 'selected']
+      .map((states) => `<div class="row pane-add ${states}">${words}</div>`)
+      .join('');
+    const pane = (active: boolean): string =>
+      `<div class="pane${active ? ' active' : ''}"><div class="pane-list pointer">${rows}</div></div>`;
+    document.body.innerHTML = `<section class="listing-root">${pane(true)}${pane(false)}</section>`;
+    for (const element of document.body.querySelectorAll('*')) element.classList.add('is-hovered');
+
+    const dim = '.row-meta:not(.pane-path, .pane-action-cell), .pane-path-head, .pane-path-tail';
+    const full =
+      '.row-icon, .row-name, .pane-path-name, .pane-state-word, button, .row-meta > .pane-state';
+
+    for (const element of document.querySelectorAll(dim)) {
+      expect(colour(element)).toBe('var(--on-selected-dim)');
+    }
+    for (const element of document.querySelectorAll(full)) {
+      expect([element.className, colour(element)]).toEqual([
+        element.className,
+        expect.stringMatching(/^(var\(--on-selected\)|)$/)
+      ]);
+      // A word that sets no colour of its own inherits its cell's.
+      if (colour(element) === '') {
+        expect(colour(element.closest('.pane-state, .row'))).toBe('var(--on-selected)');
+      }
+    }
+  });
+
+  it('rings the quiet and busy marks and the busy spinner in the selection tone', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="row selected"><span class="row-meta">
+        <span class="pane-state pane-tone-muted"><span class="pane-state-dot" id="muted"></span></span>
+        <span class="pane-state pane-tone-busy"><span class="pane-state-dot" id="busy"></span></span>
+        <span class="pane-state pane-tone-busy"><svg class="pane-state-busy" id="spinner"></svg></span>
+        <span class="pane-state pane-tone-ready"><span class="pane-state-dot" id="ready"></span></span>
+      </span></div>
+      <div class="row selected cursor"><span class="row-meta">
+        <span class="pane-state pane-tone-busy"><span class="pane-state-dot" id="busy-cursor"></span></span>
+      </span></div></section>`;
+    const shadow = (id: string): string =>
+      getComputedStyle(document.getElementById(id) as Element).getPropertyValue('box-shadow');
+
+    expect(shadow('muted')).toBe('inset 0 0 0 var(--line) var(--on-selected)');
+    expect(shadow('busy')).toBe('inset 0 0 0 var(--line-strong) var(--on-selected)');
+    expect(shadow('busy-cursor')).toBe('inset 0 0 0 var(--line-strong) var(--on-selected)');
+    // A filled mark keeps its outer hairline.
+    expect(shadow('ready')).toBe('0 0 0 var(--line) var(--on-selected)');
+    expect(colour(document.getElementById('spinner'))).toBe('var(--on-selected)');
+    document.body.innerHTML = '';
+  });
+
+  it('stretches the pinned action cells and squares the strip cell over them', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane-listing pane-pin-end" role="table">
+        <div class="pane-columns pane-strip"><span class="row-name"></span><span class="row-meta pane-col-blank"></span></div>
+        <div class="row"><span class="row-name">a</span><span class="row-meta pane-action-cell"></span></div>
+      </div></section>`;
+    const [strip, cell] = [...document.querySelectorAll('.row-meta')].map((element) =>
+      getComputedStyle(element)
+    );
+
+    expect([strip?.alignSelf, cell?.alignSelf]).toEqual(['stretch', 'stretch']);
+    expect([strip?.position, cell?.position]).toEqual(['sticky', 'sticky']);
+    expect(strip?.borderRadius).toBe('0px');
     document.body.innerHTML = '';
   });
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { linePath, nearestMoment, timeTickLabels, valueDomain } from './Line.logic.js';
+import { linePath, lonePoints, nearestMoment, timeTickLabels, valueDomain } from './Line.logic.js';
 
 describe('the line chart’s geometry', () => {
   it('starts the value axis at zero, below it only for negative values, with room above', () => {
@@ -30,6 +30,22 @@ describe('the line chart’s geometry', () => {
         (value) => value
       )
     ).toBe('');
+  });
+
+  it('finds the values a line cannot show: one alone, or one between two gaps', () => {
+    expect(lonePoints([{ at: 5, value: 2 }])).toEqual([{ at: 5, value: 2 }]);
+    expect(
+      lonePoints([
+        { at: 1, value: 1 },
+        { at: 2, value: 2 },
+        { at: 3, value: null },
+        { at: 4, value: 4 },
+        { at: 5, value: null },
+        { at: 6, value: 6 },
+        { at: 7, value: 7 }
+      ])
+    ).toEqual([{ at: 4, value: 4 }]);
+    expect(lonePoints([{ at: 1, value: null }])).toEqual([]);
   });
 
   it('finds the moment nearest the pointer', () => {

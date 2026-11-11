@@ -340,13 +340,23 @@ a {
   font: inherit;
 }
 
-.prose table {
-  display: block;
+/* A table scrolls sideways in its own box (render-docs.ts wraps each one)
+   under the edge fade, rather than squeezing a column to a word per line. */
+.prose .table-scroll {
   max-width: 100%;
   margin: 0 0 var(--space-8);
   overflow-x: auto;
+}
+
+.prose table {
   border-collapse: collapse;
   font-size: var(--font-size-body);
+}
+
+/* The last column of a reference table is its description: it keeps room for
+   a few words a line, and a narrow window scrolls the table instead. */
+.prose td:last-child {
+  min-width: 24ch;
 }
 
 .prose th,
@@ -550,8 +560,10 @@ a {
   color: var(--text-dim);
 }
 
+/* Room for the open menu at its tallest (the query row, nine rows, and the
+   note), so it ends inside the demo's frame. */
 .menu-demo {
-  min-height: 320px;
+  min-height: 344px;
 }
 
 /* The menu opens under the button that opened it. */
@@ -724,112 +736,6 @@ a {
   display: flex;
   flex-direction: column;
   gap: var(--space-5);
-}
-
-.theme-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: var(--space-5);
-}
-
-/* A miniature painted from the preview tokens its data-theme-preview sets.
-   It reads the palette names (--bg, --bg-panel, --bg-header) on purpose: the
-   role aliases resolve on the root, so inside a preview scope they would
-   still show the worn theme. */
-.theme-tile {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border: var(--line) solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg);
-  color: var(--text);
-  font: var(--font-size-small) var(--font-mono);
-  text-align: left;
-  cursor: pointer;
-}
-
-.theme-tile[aria-pressed='true'] {
-  outline: var(--line-strong) solid var(--accent);
-  outline-offset: var(--focus-offset);
-}
-
-.theme-tile-window {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: var(--line) solid var(--border);
-  border-radius: var(--radius-md);
-  background: var(--bg-panel);
-}
-
-.theme-tile-bar {
-  height: 10px;
-  background: var(--bg-header);
-  border-bottom: var(--line) solid var(--border);
-}
-
-.theme-tile-body {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-4);
-}
-
-.theme-tile-line {
-  height: 4px;
-  width: 60%;
-  border-radius: var(--radius-xs);
-  background: var(--text-dim);
-}
-
-.theme-tile-line.strong {
-  width: 80%;
-  background: var(--text);
-}
-
-.theme-tile-chips {
-  display: flex;
-  gap: var(--space-1);
-}
-
-.chip {
-  width: 10px;
-  height: 10px;
-  border-radius: var(--radius-pill);
-}
-
-.chip-1 {
-  background: var(--terminal-ansi-1);
-}
-
-.chip-2 {
-  background: var(--terminal-ansi-2);
-}
-
-.chip-3 {
-  background: var(--terminal-ansi-3);
-}
-
-.chip-4 {
-  background: var(--terminal-ansi-4);
-}
-
-.chip-5 {
-  background: var(--terminal-ansi-5);
-}
-
-.chip-6 {
-  background: var(--terminal-ansi-6);
-}
-
-.theme-tile-button {
-  align-self: flex-end;
-  width: 34px;
-  height: 9px;
-  border-radius: var(--radius-sm);
-  background: var(--primary);
 }
 
 .token-roles {
@@ -1139,31 +1045,16 @@ a {
     background: var(--scrim);
   }
 
-  /* The find button gives way before the theme controls do: its words end in
-     an ellipsis rather than pushing the header onto a second row. */
+  /* The header keeps one row by steps, never by cutting words: the find
+     button drops its chord, then its words (the steps below), and the theme
+     controls keep their full width. */
   .find-button {
-    flex: 0 1 220px;
-    min-width: 0;
+    flex: none;
     margin-left: var(--space-2);
   }
 
-  .find-words {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
   .theme-switcher {
-    flex: 0 1 auto;
-    min-width: 0;
-  }
-
-  /* The theme's name keeps its width; the find button is what gives way. */
-  .theme-select {
     flex: none;
-    min-width: 0;
-    text-overflow: ellipsis;
   }
 
   .site-main {
@@ -1182,15 +1073,33 @@ a {
 
 /* Below the room for its words and chord both, the find button keeps its
    words. */
-@media (max-width: 680px) {
+@media (max-width: 760px) {
+  .find-button {
+    min-width: 0;
+  }
+
   .find-button .keychord {
     display: none;
   }
 }
 
+/* Below the room for its words, find collapses to its icon (a square button,
+   its name in the tooltip and its label), so the row still fits with its inset
+   down to the phone step. */
+@media (max-width: 680px) {
+  .find-button {
+    justify-content: center;
+    width: var(--control-height);
+    padding: 0;
+  }
+
+  .find-words {
+    display: none;
+  }
+}
+
 /* A phone: the header takes two rows (the menu, the wordmark, and find on the
-   first; the appearance switch and the theme on the second), and find
-   collapses to its icon. */
+   first; the appearance switch and the theme on the second). */
 @media (max-width: 560px) {
   :root {
     --site-header-height: calc(2 * var(--control-height) + var(--space-4) + 2 * var(--space-5));
@@ -1204,22 +1113,18 @@ a {
   }
 
   .find-button {
-    flex: none;
     margin-left: auto;
-  }
-
-  .find-words,
-  .find-button .keychord {
-    display: none;
   }
 
   .theme-switcher {
     flex: 1 0 100%;
+    min-width: 0;
     margin-left: 0;
   }
 
   .theme-select {
     flex: 1 1 auto;
+    min-width: 0;
     max-width: 200px;
   }
 

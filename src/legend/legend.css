@@ -132,7 +132,9 @@
 
 /* A cap that is its own button is opaque and covers the button whole, so
    a wash on the button would never show: hover and press answer on the cap
-   itself, as the filter's escape key does, over the cap's own ground. */
+   itself, as the filter's escape key does, over the cap's own ground. A
+   press keeps the inner hairline its hover drew under the pressed shadow,
+   as the shared press recipe does, so it never reads as hover. */
 .keylegend-verbs .keylegend-cap:is(:hover, :active) {
   background: none;
   box-shadow: none;
@@ -149,7 +151,9 @@
 
 .keylegend-verbs .keylegend-cap:active:enabled .keychord {
   background: linear-gradient(var(--pressed-wash), var(--pressed-wash)) var(--surface);
-  box-shadow: var(--shadow-pressed);
+  box-shadow:
+    var(--shadow-pressed),
+    inset 0 0 0 var(--line) var(--border-strong);
 }
 
 .keylegend-pair-label {

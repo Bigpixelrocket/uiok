@@ -82,4 +82,16 @@ describe('Pager', () => {
 
     expect(screen.getByRole('option', { name: '1 of 1,200' })).toBeDefined();
   });
+
+  it('matches a toolbar’s 24px fields in the small size, and a row’s 20px ones unless given', () => {
+    const { unmount } = render(<Pager onPage={() => undefined} page={0} pages={3} />);
+
+    expect(screen.getByRole('navigation').className).toBe('pager');
+    expect(screen.getByRole('combobox').classList).toContain('field-xs');
+    unmount();
+
+    render(<Pager onPage={() => undefined} page={0} pages={3} size="small" />);
+    expect(screen.getByRole('navigation').classList).toContain('pager-small');
+    expect(screen.getByRole('combobox').classList).toContain('field-sm');
+  });
 });

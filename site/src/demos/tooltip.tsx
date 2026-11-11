@@ -43,7 +43,9 @@ export function TooltipDemo() {
         Rest the pointer on
         <span
           className="demo-described"
-          {...describedTooltip('/Users/me/projects/site/src/components/Header.tsx')}
+          {...describedTooltip('/Users/me/projects/site/src/components/Header.tsx', {
+            value: true
+          })}
         >
           Header.tsx
         </span>

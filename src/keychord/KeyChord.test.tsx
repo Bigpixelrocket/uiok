@@ -56,4 +56,19 @@ describe('KeyChord', () => {
 
     expect(caps(screen.getByLabelText('Shift Befehl Leertaste'))).toEqual(['', '', 'leer']);
   });
+
+  it('writes its tone and a recording state for the cap to read, and nothing without them', () => {
+    render(
+      <>
+        <KeyChord chord={{ key: 'a' }} tone="accent" recording />
+        <KeyChord chord={{ key: 'b' }} />
+      </>
+    );
+
+    const toned = screen.getByLabelText('A');
+    expect(toned.dataset.tone).toBe('accent');
+    expect(toned.dataset.state).toBe('recording');
+    expect(screen.getByLabelText('B').hasAttribute('data-tone')).toBe(false);
+    expect(screen.getByLabelText('B').hasAttribute('data-state')).toBe(false);
+  });
 });

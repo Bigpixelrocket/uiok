@@ -68,7 +68,7 @@ function markdownHtml(text: string, from: string): string {
       }
     }
   });
-  return framedCodeBlocks(marked.parse(text, { async: false }));
+  return scrollingTables(framedCodeBlocks(marked.parse(text, { async: false })));
 }
 
 /**
@@ -81,6 +81,18 @@ function framedCodeBlocks(html: string): string {
   return html
     .replaceAll('<pre><code', '<div class="code-frame"><pre class="scroll-fade-x"><code')
     .replaceAll('</code></pre>', '</code></pre></div>');
+}
+
+/**
+ * Each table inside a scroller of its own under the library's edge fade, so a
+ * table wider than a phone scrolls sideways with a faded edge that says so,
+ * instead of crushing its columns (site.css gives a description column a
+ * floor). The cells draw the table's border, so the scroller needs no frame.
+ */
+function scrollingTables(html: string): string {
+  return html
+    .replaceAll('<table>', '<div class="table-scroll scroll-fade-x"><table>')
+    .replaceAll('</table>', '</table></div>');
 }
 
 /** The doc's title: its first heading without the package path in parentheses. */

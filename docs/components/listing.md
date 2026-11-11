@@ -81,7 +81,7 @@ A listing with rows lays its strip and every row on one grid (CSS subgrid), so a
 
 Give the name its floor, `minmax(min(var(--pane-name-floor), 100%), 1fr)`, so it keeps a readable width (14 characters) at a narrow pane while the other columns keep theirs; the list then scrolls sideways rather than cutting every name to one letter. The default grid and `WellColumn` use this track. A `.pane-list` fades its foot and a side it scrolls to over 12px while more lies past that edge; its column strip never fades.
 
-Where the listing scrolls sideways inside a box that is not a `.pane-list` (a page that scrolls as a whole), add `pane-pin-end` to the `Listing`'s `className`: its last column, the actions, stays at the scroller's end while the columns before it scroll under, with a hairline on its leading edge while any do. Its cells paint the row's state fill over `--pane-pin-ground`, the list's ground inside a `.pane-list` and the surface elsewhere; set it on a host that stands on another ground.
+Where the listing scrolls sideways inside a box that is not a `.pane-list` (a page that scrolls as a whole), add `pane-pin-end` to the `Listing`'s `className`: its last column, the actions, stays at the scroller's end while the columns before it scroll under, with a hairline on its leading edge and a `--space-6` fade over the words sliding under it while any do. Each pinned cell fills its row's height, so the hairline runs unbroken, and the strip's cell over them is a square band. The cells reach the scroller's edge whether the listing sits in a scroller or scrolls sideways itself (a scroll-state container query on the listing). Inside a `.pane-list` the list fades its foot and its start, never its end, where the column stands. A listing that scrolls itself draws no start fade: a mask on it would also clip a menu or picker opened from a row. Its cells paint the row's state fill over `--pane-pin-ground`, the list's ground inside a `.pane-list` and the surface elsewhere; set it on a host that stands on another ground.
 
 A listing whose rows draw no icon starts its first label past the icon column, over the names; a section's heading (`Strip` `heading`) keeps the strip's edge. The rule weighs what the label's default placement does, so an app's own scoped rule for the label wins.
 
@@ -109,12 +109,14 @@ Rows take no keys themselves; the app's key handler (`usePaneKeys`) moves the cu
 | Keyboard cursor                              | `RowCursorContext` (`.cursor`)                               | `--cursor-row` fill, a 2px `--cursor-bar` on the leading edge                 |
 | Cursor of a pane that does not hold the keys | `.cursor` in a `.pane` beside a `.pane.active`               | `--fill`, no bar; its actions in `--text-on-surface`, neither lit nor red     |
 | Selected                                     | `className="selected"` on `Row`                              | `--selected-bg` fill, `--on-selected` words, `--on-selected-dim` quiet words  |
-| Selected under the cursor                    | `.selected` and `.cursor`                                    | `--selected-cursor-bg`, a bar in `--on-selected`                              |
+| Selected under the cursor                    | `.selected` and `.cursor`                                    | `--selected-cursor-bg`, a bar in `--on-selected`; words as on a selected row  |
 | Marked (a checkbox column)                   | `className="marked"` on `Row`                                | `--marked-bg` tint, a 2px `--marked-bar` on the leading edge                  |
 | Marked under the cursor                      | `.marked` and `.cursor`                                      | `--marked-cursor-bg`, the `--cursor-bar` and a hairline ring in it            |
 | Pointer hover                                | `.pointer` on the `.pane-list`, for rows that act on a click | `--row-hover` on rows other than the cursor, the selection, and marked rows   |
 | Keyboard focus                               | `Row` `focusable`                                            | the accent ring inside the row's edges                                        |
 | Add row                                      | `className="pane-add"` on `Row`                              | dim words after an accent glyph; accent words on hover, focus, and the cursor |
+
+A selection outranks the cursor, a mark, and the pointer for colour: on a selected row every word, action, and state mark (the quiet and busy rings and the busy spinner included) takes `--on-selected` or `--on-selected-dim`, and the other states show by their fill and bar only. An app rule that recolours a word for the cursor, a mark, or hover should leave `.selected` out the same way, with `:where(:not(.selected))` on the row so the rule keeps its weight.
 
 Leave `.pointer` off a list where the pointer moves the cursor: the cursor is the hover there. A row drawn as a `button` (a tree) wears the row's look, not the button's.
 

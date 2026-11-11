@@ -84,4 +84,13 @@ describe('the line chart', () => {
     fireEvent.pointerMove(screen.getByTestId('line-plot'), { clientX: 0 });
     expect(screen.getByRole('status').textContent).toBe('Zeit t0reads = 1 qwrites = ---');
   });
+
+  it('marks a value with no neighbour with a dot at rest, and none on a line', () => {
+    const { container } = render(chart());
+    const dots = [...container.querySelectorAll('circle.line-dot')];
+
+    // Only "writes" at 1000 stands alone (its neighbour is a gap).
+    expect(dots).toHaveLength(1);
+    expect(dots[0]?.getAttribute('r')).toBe('3');
+  });
 });

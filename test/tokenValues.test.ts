@@ -19,8 +19,8 @@
  * - `border-radius` and its longhands: a radius token, `0`, `inherit`, or a
  *   `calc()` over a radius token (a nested corner);
  * - `z-index`: a layer token, `auto`, or `inherit`;
- * - durations and easings in `transition` and `animation`: a motion token,
- *   `0s`, `linear`, or `steps()`;
+ * - durations, delays, and easings in `transition` and `animation` and
+ *   their longhands: a motion token, `0s`, `linear`, or `steps()`;
  * - `gap`, `padding`, and `margin` (and their longhands, logical ones such
  *   as `padding-inline-start` included): a token, `0`, a 1px line or nudge,
  *   `auto`, `inherit`, a length in `ch` (listing columns are measured in
@@ -36,16 +36,22 @@
  * - `opacity`: `0`, `1`, `inherit`, or a token;
  * - `box-shadow`: no blur radius outside a shadow token (an elevation is a
  *   `--shadow-*` token; a crisp ring or edge is drawn with no blur);
- * - any property: no `color-mix(` outside a custom property definition (a
- *   tint is a theme token: a wash, a line, a state ground).
+ * - `filter` and `backdrop-filter`: a token (`--frost`) or `none`; a press
+ *   or a hover is a token fill, never a brightness filter;
+ * - any property: no `color-mix(` (a tint is a theme token: a wash, a line,
+ *   a state ground); a custom property may hold one only when it is listed
+ *   in `MIXED_PROPERTIES`, a hook whose ink the host or the theme passes in;
+ * - `width` and `min-width` in a rule that sets its height with a control
+ *   height token: the same token (a square control) or `auto`, so a
+ *   control's width never invents a size between the steps.
  *
- * Custom properties are not checked: `tokens.css` and the site define the
- * scales there, and a component's own hook reads a token. Nor are widths,
- * insets, or letter-spacing: their values are often geometry of one
- * component (a 22px icon action, a 12px key box) that no scale step names,
- * and a check there would mostly raise false alarms. A literal that stays
- * literal is listed in `EXCEPTIONS` with its reason; every entry must still
- * match a declaration, so none outlives its reason.
+ * Other custom properties are not checked: `tokens.css` and the site define
+ * the scales there, and a component's own hook reads a token. Nor are other
+ * widths, insets, or letter-spacing: their values are often geometry of one
+ * component (a 12px key box) that no scale step names, and a check there
+ * would mostly raise false alarms. A literal that stays literal is listed in
+ * `EXCEPTIONS` with its reason; every entry must still match a declaration,
+ * so none outlives its reason.
  */
 
 import { readdirSync, readFileSync } from 'node:fs';
@@ -67,6 +73,8 @@ const SHEETS: readonly string[] = [
 interface Declaration {
   readonly file: string;
   readonly line: number;
+  /** Which block of its file the declaration sits in, counted from 0. */
+  readonly block: number;
   readonly selector: string;
   readonly property: string;
   readonly value: string;
@@ -94,16 +102,22 @@ const EXCEPTIONS: readonly Exception[] = [
     reason: "A terminal well sets plain text on the terminal engine's 19px cell height."
   },
   {
-    file: 'src/terminal/terminal.css',
-    property: 'font',
-    value: /\/\s*19px /,
-    reason: "The failure text sits where the engine's first line would, on its 19px cell height."
-  },
-  {
     file: 'src/activity/activity.css',
     property: 'animation',
     value: /0\.9s/,
     reason: "The stripes' loop is timed against their 16.97px period: a speed, not a change."
+  },
+  {
+    file: 'site/src/site.css',
+    property: 'min-width',
+    value: /^220px$/,
+    reason: "The docs header's search button keeps room for its hint: a reading layout's width."
+  },
+  {
+    file: 'site/src/site.css',
+    property: 'width',
+    value: /^48px$/,
+    reason: 'A radius sample on the tokens page is a swatch drawn for reading, not a control.'
   },
   {
     file: 'src/palette/palette.css',
@@ -170,6 +184,34 @@ const EXCEPTIONS: readonly Exception[] = [
   }
 ];
 
+/**
+ * The custom properties that may hold a `color-mix()`: hooks that mix an ink
+ * the host or the theme passes in at run time, so no theme token can hold the
+ * result. Each must still be defined with a mix somewhere.
+ */
+const MIXED_PROPERTIES: readonly { file: string; property: string; reason: string }[] = [
+  {
+    file: 'src/activity/activity.css',
+    property: '--stripe-band',
+    reason: "The stripes' band is a share of the ink a host passes as --stripe-ink."
+  },
+  {
+    file: 'src/shell/shell.css',
+    property: '--channel-tag-bg',
+    reason: "A channel tag's pill is a share of the channel hue an app passes as --channel."
+  },
+  {
+    file: 'src/terminal/terminal.css',
+    property: '--terminal-bell-wash',
+    reason: "The bell's wash is a share of the terminal's own foreground, set per session."
+  },
+  {
+    file: 'src/terminal/terminal.css',
+    property: '--terminal-bell-line',
+    reason: "The bell's line is a share of the terminal's own foreground, set per session."
+  }
+];
+
 /** Blanks what matches `pattern`, keeping every offset and line break in place. */
 function blank(source: string, pattern: RegExp): string {
   return source.replace(pattern, (match) => match.replace(/[^\n]/g, ' '));
@@ -179,20 +221,22 @@ function blank(source: string, pattern: RegExp): string {
 function declarations(file: string, source: string): Declaration[] {
   const text = blank(source, /\/\*[\s\S]*?\*\//g);
   const lineAt = (offset: number) => text.slice(0, offset).split('\n').length;
-  const blocks: string[] = [];
+  const blocks: { selector: string; index: number }[] = [];
   const found: Declaration[] = [];
   let start = 0;
+  let opened = 0;
 
   const declaration = (end: number) => {
     const chunk = text.slice(start, end);
     const colon = chunk.indexOf(':');
     if (colon < 0 || blocks.length === 0) return;
     const property = chunk.slice(0, colon).trim();
-    if (!/^[a-z-]+$/.test(property) || property.startsWith('--')) return;
+    if (!/^(?:--[\w-]+|[a-z-]+)$/.test(property)) return;
     found.push({
       file,
       line: lineAt(start + chunk.search(/\S/)),
-      selector: blocks.at(-1) ?? '',
+      block: blocks.at(-1)?.index ?? -1,
+      selector: blocks.at(-1)?.selector ?? '',
       property,
       value: chunk
         .slice(colon + 1)
@@ -204,7 +248,11 @@ function declarations(file: string, source: string): Declaration[] {
   for (let index = 0; index < text.length; index += 1) {
     const character = text[index];
     if (character === '{') {
-      blocks.push(text.slice(start, index).trim().replace(/\s+/g, ' '));
+      blocks.push({
+        selector: text.slice(start, index).trim().replace(/\s+/g, ' '),
+        index: opened
+      });
+      opened += 1;
       start = index + 1;
     } else if (character === ';') {
       declaration(index);
@@ -252,8 +300,14 @@ const everyPart = (value: string, part: RegExp): boolean =>
     .split(' ')
     .every((piece) => piece === 'TOKEN' || part.test(piece));
 
-/** The checks by property: each returns what is wrong with a value, or undefined. */
-const RULES: readonly { property: RegExp; problem: (value: string) => string | undefined }[] = [
+/**
+ * The checks by property: each returns what is wrong with a value, or
+ * undefined. A custom property (`--…`) meets only the rules that name one.
+ */
+const RULES: readonly {
+  property: RegExp;
+  problem: (value: string, declaration?: Declaration) => string | undefined;
+}[] = [
   {
     property: /^font-size$/,
     problem: (value) =>
@@ -301,7 +355,7 @@ const RULES: readonly { property: RegExp; problem: (value: string) => string | u
       everyPart(value, /^(?:auto|inherit)$/) ? undefined : 'a layer that is not a token'
   },
   {
-    property: /^(?:transition|animation)(?:-duration|-timing-function)?$/,
+    property: /^(?:transition|animation)(?:-duration|-delay|-timing-function)?$/,
     problem: (value) => {
       const plain = withoutVars(value);
       if (/(?<![\w.-])(?:0*[1-9]\d*|\d*\.\d+)m?s\b/.test(plain))
@@ -358,21 +412,65 @@ const RULES: readonly { property: RegExp; problem: (value: string) => string | u
         : undefined
   },
   {
-    property: /^[a-z-]+$/,
+    property: /^(?:-webkit-)?(?:backdrop-)?filter$/,
     problem: (value) =>
-      value.includes('color-mix(') ? 'a color-mix() outside a custom property' : undefined
+      everyPart(value, /^none$/) ? undefined : 'a filter that is not a token or none'
+  },
+  {
+    property: /^[a-z][a-z-]*$/,
+    problem: (value) => (value.includes('color-mix(') ? 'a color-mix() in a property' : undefined)
+  },
+  {
+    property: /^--/,
+    problem: (value, declaration) =>
+      value.includes('color-mix(') &&
+      !MIXED_PROPERTIES.some(
+        (entry) => entry.file === declaration?.file && entry.property === declaration.property
+      )
+        ? 'a color-mix() in a custom property that MIXED_PROPERTIES does not list'
+        : undefined
   }
 ];
+
+/** A control height token, the one a square control's width repeats. */
+const CONTROL_HEIGHT = /^var\(--control-height(?:-sm|-xs)?\)$/;
+
+/**
+ * Every width or min-width with a raw length that sits in a rule sizing its
+ * height with a control height token and is not that token (a floor of 0 or
+ * one in `ch` for a text control's label is not a size).
+ */
+function controlWidths(all: readonly Declaration[]): Declaration[] {
+  const byBlock = new Map<string, Declaration[]>();
+  for (const declaration of all) {
+    const key = `${declaration.file}#${declaration.block}`;
+    byBlock.set(key, [...(byBlock.get(key) ?? []), declaration]);
+  }
+  return [...byBlock.values()].flatMap((block) => {
+    const height = block.find(
+      (declaration) => declaration.property === 'height' && CONTROL_HEIGHT.test(declaration.value)
+    );
+    if (height === undefined) return [];
+    return block.filter(
+      (declaration) =>
+        (declaration.property === 'width' || declaration.property === 'min-width') &&
+        declaration.value !== height.value &&
+        LENGTH.test(foldCalc(withoutVars(declaration.value)))
+    );
+  });
+}
 
 /** Every declaration that breaks a rule and no exception covers, and every exception left unused. */
 function audit(): { findings: string[]; unused: string[] } {
   const used = new Set<Exception>();
   const findings: string[] = [];
+  const all: Declaration[] = [];
   for (const file of SHEETS) {
     for (const declaration of declarations(file, readFileSync(join(ROOT, file), 'utf8'))) {
+      all.push(declaration);
       for (const rule of RULES) {
         if (!rule.property.test(declaration.property)) continue;
-        const problem = rule.problem(declaration.value);
+        const problem = rule.problem(declaration.value, declaration);
         if (problem === undefined) continue;
         const exception = EXCEPTIONS.find(
           (entry) =>
@@ -390,11 +488,38 @@ function audit(): { findings: string[]; unused: string[] } {
       }
     }
   }
+  for (const declaration of controlWidths(all)) {
+    const exception = EXCEPTIONS.find(
+      (entry) =>
+        entry.file === declaration.file &&
+        entry.property === declaration.property &&
+        entry.value.test(declaration.value)
+    );
+    if (exception !== undefined) {
+      used.add(exception);
+      continue;
+    }
+    findings.push(
+      `${declaration.file}:${declaration.line} ${declaration.selector} { ${declaration.property}: ${declaration.value} }: a control width that is not its height token`
+    );
+  }
+  const mixed = MIXED_PROPERTIES.filter(
+    (entry) =>
+      !all.some(
+        (declaration) =>
+          declaration.file === entry.file &&
+          declaration.property === entry.property &&
+          declaration.value.includes('color-mix(')
+      )
+  ).map((entry) => `${entry.file} ${entry.property}`);
   return {
     findings,
-    unused: EXCEPTIONS.filter((entry) => !used.has(entry)).map(
-      (entry) => `${entry.file} ${entry.property} ${entry.value}`
-    )
+    unused: [
+      ...EXCEPTIONS.filter((entry) => !used.has(entry)).map(
+        (entry) => `${entry.file} ${entry.property} ${entry.value}`
+      ),
+      ...mixed
+    ]
   };
 }
 
@@ -423,6 +548,10 @@ describe('scale tokens in the stylesheets', () => {
       ['border-radius', '5px'],
       ['z-index', '40'],
       ['transition', 'color 150ms ease'],
+      ['transition-delay', '80ms'],
+      ['animation-delay', '0.2s'],
+      ['filter', 'brightness(0.94)'],
+      ['backdrop-filter', 'blur(8px)'],
       ['animation', 'spin var(--duration-spin) ease-in-out infinite'],
       ['gap', '7px'],
       ['padding', 'calc(var(--space-2) + 3px)'],
@@ -448,6 +577,40 @@ describe('scale tokens in the stylesheets', () => {
     }
   });
 
+  it('lets only a listed hook hold a color-mix()', () => {
+    const rule = RULES.find((candidate) => candidate.property.source === '^--');
+    const at = (file: string, property: string): Declaration => ({
+      file,
+      line: 1,
+      block: 0,
+      selector: '.x',
+      property,
+      value: ''
+    });
+    const mix = 'color-mix(in srgb, var(--accent) 14%, transparent)';
+    expect(rule?.problem(mix, at('src/shell/shell.css', '--channel-tag-bg'))).toBeUndefined();
+    expect(rule?.problem(mix, at('src/shell/shell.css', '--private-tint'))).toBeDefined();
+  });
+
+  it('holds a control width to its height token', () => {
+    const block = (width: string): Declaration[] =>
+      [
+        ['height', 'var(--control-height-xs)'],
+        ['width', width]
+      ].map(([property = '', value = ''], line) => ({
+        file: 'a.css',
+        line,
+        block: 0,
+        selector: '.x',
+        property,
+        value
+      }));
+    expect(controlWidths(block('22px'))).toHaveLength(1);
+    expect(controlWidths(block('var(--control-height-xs)'))).toEqual([]);
+    expect(controlWidths(block('auto'))).toEqual([]);
+    expect(controlWidths(block('0'))).toEqual([]);
+  });
+
   it('passes a token, a crisp ring, and glyph geometry', () => {
     const good = [
       ['border', 'var(--line) solid var(--border)'],
@@ -460,7 +623,10 @@ describe('scale tokens in the stylesheets', () => {
       ['opacity', 'var(--disabled-opacity)'],
       ['box-shadow', 'var(--shadow-pressed), inset 0 0 0 var(--line) var(--border-strong)'],
       ['box-shadow', 'inset 0 1px 0 var(--well-shade)'],
-      ['background', 'var(--accent-wash)']
+      ['background', 'var(--accent-wash)'],
+      ['filter', 'none'],
+      ['backdrop-filter', 'var(--frost)'],
+      ['transition-delay', 'var(--duration-fast)']
     ] as const;
     for (const [property, value] of good) {
       expect(

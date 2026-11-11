@@ -10,6 +10,7 @@ import {
 import { useLabels } from '../labels/UiokProvider.js';
 import {
   linePath,
+  lonePoints,
   nearestMoment,
   timeTickLabels,
   valueDomain,
@@ -187,6 +188,20 @@ export function LineChart({
                   stroke={seriesColour(index)}
                 />
               ))}
+              {series.map((entry, index) =>
+                lonePoints(
+                  entry.points.filter((point) => point.at >= time.min && point.at <= time.max)
+                ).map((point) => (
+                  <circle
+                    className="line-dot"
+                    cx={px(point.at)}
+                    cy={py(point.value ?? 0)}
+                    fill={seriesColour(index)}
+                    key={`lone${index}:${entry.label}:${point.at}`}
+                    r={3}
+                  />
+                ))
+              )}
               {shown !== null && (
                 <line className="line-guide" x1={px(shown)} x2={px(shown)} y1={0} y2={plotHeight} />
               )}

@@ -88,19 +88,21 @@
   user-select: text;
 }
 
-/* A terminal that could not start says so where its first line would be:
-   the engine's 4px in, at its size and pitch, on the terminal's own ground,
-   so the well keeps its look, and in the interface face, so the sentence
-   reads as a message, not as output. 19px is the engine's cell height
-   (TERMINAL_LINE_HEIGHT), kept as a literal: it is the terminal's metric,
-   not a type scale step. */
+/* A terminal that could not start says so as a state, not as a line of
+   output: the library's danger notice (surface.css: the tone bar and the
+   alert glyph in --danger) set where the first line would be, on the
+   terminal's own ground so the well keeps its look. The words take the
+   terminal's text colour, as everything in the well does. The well keeps
+   the engine's 4px inset; the notice's own inset and type are the notice's. */
 .terminal-failure {
   flex: 1;
   margin: 0;
   padding: var(--space-2);
   background: var(--terminal-bg);
+}
+
+.terminal-failure > .notice {
   color: var(--terminal-fg);
-  font: var(--font-size-body)/19px var(--font-ui);
 }
 
 /* The terminal's menu (TerminalMenu), which a secondary click opens at the

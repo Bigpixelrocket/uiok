@@ -2,10 +2,19 @@
 
    The level's pages as tabs under a path bar, the current one underlined
    in the current mark. A strip too narrow for its tabs scrolls sideways and
-   fades each edge that hides tabs (PageTabs sets data-overflow). Hover and
-   pressed come from the base stylesheet's track recipe. */
-.page-tabs {
+   fades each edge that hides tabs (PageTabs sets data-overflow), with a
+   chevron there that pages it. Hover and pressed come from the base
+   stylesheet's track recipe. */
+
+/* The frame holds the strip and its two chevrons. The chevrons sit outside
+   the strip, so its fade, a mask, never fades them. */
+.page-tabs-frame {
+  position: relative;
   flex: none;
+  min-width: 0;
+}
+
+.page-tabs {
   display: flex;
   align-items: stretch;
   gap: var(--space-1);
@@ -17,25 +26,31 @@
      covers it rather than stacking on it. */
   box-shadow: inset 0 calc(-1 * var(--line)) 0 var(--border);
   scrollbar-width: none;
-  /* A scrolled strip comes to rest with a tab's edge on the fade's inner
-     edge, never with a label cut mid-word; the padding is the fade's width,
-     where PageTabs scrolls the current tab, so the two never fight. */
-  scroll-snap-type: x proximity;
+  /* A scrolled strip always comes to rest with a tab's start on the start
+     fade's inner edge (or at either end of its scroll), never with a label
+     cut mid-word in the clear span; every tab is narrower than the strip,
+     so a mandatory snap traps none. Tabs snap by their start only: an end
+     snap would let the strip rest with the last tab whole and the first cut.
+     The padding is the fade's width, and PageTabs scrolls the current tab
+     to a tab start, so a tab it reveals already rests on a snap position. */
+  scroll-snap-type: x mandatory;
   scroll-padding-inline: var(--space-12);
 }
 
 /* The fade is a mask, so it shows whatever lies under the strip; a mask
    reads only alpha, and --text is opaque in every theme. Its 24px matches
-   EDGE_FADE in PageTabs.tsx, which scrolls the current tab clear of it. */
+   EDGE_FADE in PageTabs.tsx, which scrolls the current tab clear of it.
+   The outer half is clear, where the chevron stands on nothing, and the
+   inner half fades the next tab in. */
 .page-tabs[data-overflow] {
   --page-tabs-fade-start: 0px;
   --page-tabs-fade-end: 0px;
   mask-image: linear-gradient(
     to right,
-    transparent,
+    transparent calc(var(--page-tabs-fade-start) / 2),
     var(--text) var(--page-tabs-fade-start),
     var(--text) calc(100% - var(--page-tabs-fade-end)),
-    transparent
+    transparent calc(100% - var(--page-tabs-fade-end) / 2)
   );
 }
 
@@ -45,6 +60,40 @@
 
 .page-tabs[data-overflow~='end'] {
   --page-tabs-fade-end: 24px;
+}
+
+/* The chevron at an end that hides tabs: a quiet glyph in the fade's clear
+   outer half, its click area the fade's full width and the strip's height. */
+.page-tabs-more {
+  position: absolute;
+  inset-block: 0;
+  display: none;
+  align-items: center;
+  width: var(--space-12);
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--text-dim);
+  cursor: pointer;
+}
+
+.page-tabs-more:hover {
+  color: var(--text);
+}
+
+.page-tabs-more.start {
+  inset-inline-start: 0;
+  justify-content: flex-start;
+}
+
+.page-tabs-more.end {
+  inset-inline-end: 0;
+  justify-content: flex-end;
+}
+
+.page-tabs-frame:has(> .page-tabs[data-overflow~='start']) > .page-tabs-more.start,
+.page-tabs-frame:has(> .page-tabs[data-overflow~='end']) > .page-tabs-more.end {
+  display: flex;
 }
 
 .page-tab {
@@ -60,7 +109,7 @@
   font: var(--font-size-small) var(--font-ui);
   white-space: nowrap;
   cursor: pointer;
-  scroll-snap-align: start end;
+  scroll-snap-align: start;
 }
 
 /* The name keeps the width of its bold self, so no tab moves sideways when

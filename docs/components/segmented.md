@@ -38,7 +38,7 @@ One Tab stop, the checked segment. Right and Down choose the next segment, Left 
 
 `.segmented-choice`, `.segmented-choice-option` (`[aria-checked='true']` is raised).
 
-- The trough is `--control-track` ringed in `--control-border`; the chosen segment is raised on the surface with a 1px `--control-border-strong` ring (3:1 on the trough) drawn inside it (so a pixel of trough always separates it from the track's ring), the glass edge, and `--shadow-raised`. Unchosen labels are `--text-on-surface`, which keeps 4.5:1 on the trough.
+- The trough is `--control-track` ringed in `--control-border`; the chosen segment is raised on the surface with a 1px `--control-border-strong` ring (3:1 on the trough) drawn inside it. The track pads by its own ring plus 2px, so 2px of trough shows on every side of the chosen segment, the same as between two segments, the glass edge, and `--shadow-raised`. Unchosen labels are `--text-on-surface`, which keeps 4.5:1 on the trough.
 - Every segment has one weight, chosen or not, so a change of choice never shifts a label.
 - Each segment is a flex box: an icon passed in `render` is drawn 12px (`--icon-sm`) whatever size it was given, centred on the words with the Button's 6px gap. Pass the icon and the words as siblings, with no spaces between them.
 - A segment's side padding is `--segmented-inset` (`var(--space-6)` by default); a narrow host sets the variable instead of restyling the padding.

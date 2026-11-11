@@ -27,85 +27,9 @@ import { Button } from '@bigpixelrocket/uiok/button';
 import { ModalDialog } from '@bigpixelrocket/uiok/dialog';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { RunHeader } from '@bigpixelrocket/uiok/run';
-import {
-  DARK_THEME_IDS,
-  LIGHT_THEME_IDS,
-  THEME_ENTRIES,
-  THEME_PREVIEW_ATTRIBUTE,
-  type ThemeId
-} from '@bigpixelrocket/uiok/themes';
+import { DARK_THEME_IDS, LIGHT_THEME_IDS, type ThemeId } from '@bigpixelrocket/uiok/themes';
 
-/** A theme's display name by id. */
-const themeName = (id: ThemeId): string =>
-  THEME_ENTRIES.find((entry) => entry.id === id)?.name ?? id;
-
-/** A theme's miniature window, painted from its preview scope. */
-function ThemePreview({ id }: { readonly id: ThemeId }): ReactElement {
-  return (
-    <span aria-hidden className="theme-preview" {...{ [THEME_PREVIEW_ATTRIBUTE]: id }}>
-      <span className="theme-preview-header">
-        <span className="theme-preview-lights">
-          <span />
-          <span />
-          <span />
-        </span>
-      </span>
-      <span className="theme-preview-body">
-        <span className="theme-preview-sidebar">
-          <span className="theme-preview-row lit" />
-          <span className="theme-preview-row" />
-          <span className="theme-preview-row" />
-        </span>
-        <span className="theme-preview-panel">
-          <span className="theme-preview-line text" />
-          <span className="theme-preview-line dim" />
-          <span className="theme-preview-chips">
-            <span className="theme-preview-chip primary" />
-            <span className="theme-preview-chip accent" />
-          </span>
-          <span className="theme-preview-swatches">
-            {[1, 2, 3, 4, 5, 6].map((index) => (
-              <span className={`theme-preview-swatch ansi-${index}`} key={index} />
-            ))}
-          </span>
-        </span>
-      </span>
-    </span>
-  );
-}
-
-/** One appearance's themes as a radio group of miniatures. */
-function ThemeChoices({
-  ids,
-  label,
-  chosen,
-  onChoose
-}: {
-  readonly ids: readonly ThemeId[];
-  readonly label: string;
-  readonly chosen: ThemeId;
-  readonly onChoose: (id: ThemeId) => void;
-}): ReactElement {
-  return (
-    <div aria-label={label} className="theme-choices" role="radiogroup">
-      {ids.map((id) => (
-        <button
-          aria-checked={id === chosen}
-          className="theme-choice"
-          key={id}
-          onClick={() => onChoose(id)}
-          role="radio"
-          type="button"
-        >
-          <span className="theme-choice-frame">
-            <ThemePreview id={id} />
-          </span>
-          <span className="theme-choice-name">{themeName(id)}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
+import { ThemeChoices } from '../ThemePicker';
 
 /** The lines of a build's What's new, grouped by area. */
 const NOTES: readonly { readonly area: string; readonly lines: readonly string[] }[] = [
@@ -194,23 +118,25 @@ function UpdateCard({
           <h4 className="overline" id={headingId}>
             What&apos;s new
           </h4>
-          <div
-            aria-label="What's new"
-            className="update-notes-list update-notes-groups scroll-fade"
-            role="group"
-            style={{ '--update-note-rows': 3 } as CSSProperties}
-            tabIndex={0}
-          >
-            {NOTES.map((group) => (
-              <div className="update-notes-group" key={group.area}>
-                <h5 className="update-notes-area">{group.area}</h5>
-                <ul>
-                  {group.lines.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          <div className="update-notes-frame">
+            <div
+              aria-label="What's new"
+              className="update-notes-list update-notes-groups scroll-fade"
+              role="group"
+              style={{ '--update-note-rows': 3 } as CSSProperties}
+              tabIndex={0}
+            >
+              {NOTES.map((group) => (
+                <div className="update-notes-group" key={group.area}>
+                  <h5 className="update-notes-area">{group.area}</h5>
+                  <ul>
+                    {group.lines.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       ) : null}

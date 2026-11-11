@@ -182,9 +182,10 @@ function CommandDialog({
         <label className="dialog-label" htmlFor={commandId}>
           Command
         </label>
+        {/* No width class: the column stretches the field across the body. */}
         <input
           autoFocus
-          className="field demo-input wide"
+          className="field"
           defaultValue="npm run build"
           id={commandId}
           spellCheck={false}

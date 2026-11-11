@@ -127,6 +127,12 @@ const TOKEN_CONTEXTS = new Set([
  */
 const ALLOWED: readonly { file: string; line: RegExp; reason: string }[] = [
   {
+    file: 'src/charts/charts.css',
+    line: /^ {2}fill: (?:white|black);$/,
+    reason:
+      "An area chart's mask: white keeps a fill and black cuts it, luminance values of the mask, not colours a theme paints."
+  },
+  {
     file: 'src/terminal/ghostty/contrast.logic.ts',
     line: /^const (?:BLACK|WHITE): GhosttyColor = \{ r: (?:0|255), g: (?:0|255), b: (?:0|255) \};$/,
     reason:

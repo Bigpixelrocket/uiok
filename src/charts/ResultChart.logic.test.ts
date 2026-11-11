@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   cutLabel,
+  LEGEND_ROW,
   legendLayout,
+  plotTopUnderLegend,
   shownLabels,
   splinePath,
   stackedRanges,
@@ -73,5 +75,16 @@ describe('the chart of a table', () => {
       { text: 'b', x: 68, row: 0 },
       { text: 'c', x: 0, row: 1 }
     ]);
+  });
+
+  it('leaves the same room under a wrapped legend as under one row', () => {
+    const oneRow = plotTopUnderLegend(28, 1);
+    const twoRows = plotTopUnderLegend(28, 2);
+
+    // The last row's ink ends 12px down its row; 12px of air follow it.
+    expect(oneRow).toBe(28 + 12 + 12);
+    expect(twoRows - oneRow).toBe(LEGEND_ROW);
+    expect(twoRows).toBe(28 + LEGEND_ROW + 12 + 12);
+    expect(plotTopUnderLegend(8, 0)).toBe(8);
   });
 });

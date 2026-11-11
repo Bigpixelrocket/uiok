@@ -1,6 +1,6 @@
 /* ---- Select-all bar (SelectAllBar) ----
 
-   Check all, then "With selected:" in italics and the bulk actions, on one
+   Check all, then the quiet label "With selected:" and the bulk actions, on one
    wrapping row. The checkbox is the shared .check look. The bar starts its
    checkbox the line plus --space-3 in, where a DataGrid's lead column
    starts the rows' boxes inside its frame, so a bar under a grid lines up
@@ -28,7 +28,7 @@
   margin: 0;
 }
 
+/* A label, so upright: italic marks a value that stands for no value. */
 .select-all-with {
   color: var(--text-dim);
-  font-style: italic;
 }

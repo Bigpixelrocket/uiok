@@ -58,7 +58,8 @@
 }
 
 /* Hover and press answer as every quiet control does, on the cap itself:
-   the frosted wash and ring, then the pressed wash. The cap's own panel
+   the frosted wash and ring, then the pressed wash and shadow inside the
+   same ring. The cap's own panel
    ground stays under the wash, since the cap is opaque. */
 :where(.listing-root) .filter-escape:hover:enabled:not([aria-disabled='true']) .keychord {
   background: linear-gradient(var(--hover-wash), var(--hover-wash)) var(--surface);
@@ -67,7 +68,9 @@
 
 :where(.listing-root) .filter-escape:active:enabled:not([aria-disabled='true']) .keychord {
   background: linear-gradient(var(--pressed-wash), var(--pressed-wash)) var(--surface);
-  box-shadow: var(--shadow-pressed);
+  box-shadow:
+    var(--shadow-pressed),
+    inset 0 0 0 var(--line) var(--border-strong);
 }
 
 :where(.listing-root) .filter-escape .keychord {

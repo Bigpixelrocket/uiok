@@ -20,8 +20,8 @@
 .current-dot {
   display: inline-block;
   flex: none;
-  width: 6px;
-  height: 6px;
+  width: var(--dot);
+  height: var(--dot);
   margin-left: 1ch;
   border-radius: var(--radius-pill);
   background: var(--text-dim);
@@ -211,7 +211,7 @@ button.crumb-label::after {
   align-items: center;
   justify-content: center;
   position: relative;
-  width: 22px;
+  width: var(--control-height-xs);
   height: var(--control-height-xs);
   margin-right: var(--space-2);
   padding: 0;
@@ -306,7 +306,7 @@ button.crumb-label::after {
   align-items: center;
   justify-content: center;
   position: relative;
-  width: 22px;
+  width: var(--control-height-xs);
   height: var(--control-height-xs);
   padding: 0;
   border: none;
@@ -338,7 +338,7 @@ button.crumb-label::after {
 
 /* The cursor row's actions, and a bar's lead action, are lit: accent words
    that keep 4.5:1 on the row, the bar, and the hover wash. */
-:where(.listing-root) .row.cursor .pane-act,
+:where(.listing-root) .row.cursor:where(:not(.selected)) .pane-act,
 .pane-act.lit,
 .pane-act.lit:hover:enabled {
   color: var(--accent-text);
@@ -350,7 +350,7 @@ button.crumb-label::after {
    cursor row, whose keys run it. */
 :is(.pane-act, .pane-icon-act).danger:hover:enabled,
 :is(.pane-act, .pane-icon-act).danger:focus-visible,
-:where(.listing-root) .row.cursor :is(.pane-act, .pane-icon-act).danger {
+:where(.listing-root) .row.cursor:where(:not(.selected)) :is(.pane-act, .pane-icon-act).danger {
   color: var(--danger-text);
 }
 
@@ -359,7 +359,7 @@ button.crumb-label::after {
    on-surface words that keep 4.5:1 on its neutral fill. The pointer still
    lights one it is over. */
 :where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane))
-  .row.cursor
+  .row.cursor:where(:not(.selected))
   :is(.pane-act, .pane-icon-act):not(:hover, :focus-visible) {
   color: var(--text-on-surface);
 }
@@ -405,17 +405,13 @@ button.crumb-label::after {
     animation-timeline: scroll(self block), scroll(self inline);
   }
 
-  /* A list whose listing pins its actions at the end fades only its foot:
-     the pinned column stands where the inline fade would fall, and its
-     hairline already says columns run on under it. */
+  /* A list whose listing pins its actions at the end fades its foot and
+     its start, never its end: the pinned column stands where the end fade
+     would fall, and its own hairline and fade say columns run on under it. */
   :where(.listing-root) .pane-list:has(.pane-pin-end) {
-    mask-image: linear-gradient(
-      to bottom,
-      var(--ground) calc(100% - var(--scroll-fade-end)),
-      transparent
-    );
-    animation: uiok-scroll-fade-block linear both;
-    animation-timeline: scroll(self block);
+    mask-image:
+      linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
+      linear-gradient(to right, transparent, var(--ground) var(--scroll-fade-inline-start));
   }
 }
 
@@ -699,13 +695,24 @@ button.crumb-label::after {
   font-weight: var(--font-weight-strong);
 }
 
-/* Quiet row words (the icon, the cells, an idle or busy state's word)
-   switch to the on-surface tone over a state fill, the cursor's (either
-   pane's), a mark's, or the row hover wash: the quiet tone misses 4.5:1 on
-   those fills in several themes, and --text-on-surface is floored on each.
-   A selection paints its own words (below). */
-:where(.listing-root) .row:is(.cursor, .marked) :is(.row-icon, .row-meta),
-:where(.listing-root) .row:is(.cursor, .marked) .pane-state:is(.pane-tone-muted, .pane-tone-busy),
+/* Quiet row words (the icon, the cells, an idle or busy state's word, a
+   row action at rest) switch to the on-surface tone over a state fill, the
+   cursor's (either pane's), a mark's, or the row hover wash: the quiet tone
+   misses 4.5:1 on those fills in several themes, and --text-on-surface is
+   floored on each. The cursor row lights its actions instead (above); a lit
+   action, a red one, and one under the pointer keep their own tones.
+
+   A selection paints its own words (below), and outranks the cursor, a
+   mark, and the pointer: no rule here may recolour a word on a selected
+   row, whatever it weighs. The selection is left out with a :where(), so
+   each rule keeps the weight an app's own rule is measured against. */
+:where(.listing-root) .row:is(.cursor, .marked):where(:not(.selected)) :is(.row-icon, .row-meta),
+:where(.listing-root)
+  .row:is(.cursor, .marked):where(:not(.selected))
+  .pane-state:is(.pane-tone-muted, .pane-tone-busy),
+:where(.listing-root)
+  .row.marked:where(:not(.cursor, .selected))
+  :is(.pane-act, .pane-icon-act):where(:not(.lit, :hover, .danger:focus-visible)),
 :where(.listing-root .pane-list.pointer)
   .row:hover:not(.selected)
   :is(.row-icon, .row-meta, .pane-state:is(.pane-tone-muted, .pane-tone-busy)) {
@@ -723,8 +730,8 @@ button.crumb-label::after {
   color: var(--accent);
 }
 
-:where(.listing-root) .row.pane-add:hover > .row-name,
-:where(.listing-root) .row.pane-add:is(:focus-visible, .cursor) > .row-name {
+:where(.listing-root) .row.pane-add:where(:not(.selected)):hover > .row-name,
+:where(.listing-root) .row.pane-add:where(:not(.selected)):is(:focus-visible, .cursor) > .row-name {
   color: var(--accent-text);
 }
 
@@ -983,8 +990,8 @@ button.crumb-label::after {
 :where(.listing-root) .pane-state-dot {
   flex: none;
   box-sizing: border-box;
-  width: 6px;
-  height: 6px;
+  width: var(--dot);
+  height: var(--dot);
   border-radius: var(--radius-pill);
   background: transparent;
   box-shadow: inset 0 0 0 var(--line) var(--idle-mark);
@@ -997,14 +1004,14 @@ button.crumb-label::after {
 
 /* In a listing that shows a busy spinner, each mark stands in a slot as
    wide as the spinner (--icon-sm), so the words read from one edge: the
-   6px mark is --space-3 wide, and its margins take up the rest (a turned
-   diamond is about as wide). A listing with no spinner keeps the room. */
+   mark is --dot wide, and its margins take up the rest (a turned diamond
+   is about as wide). A listing with no spinner keeps the room. */
 :where(.listing-root) .pane-listing:has(.pane-state-busy) .pane-state-dot {
-  margin-inline: calc((var(--icon-sm) - var(--space-3)) / 2);
+  margin-inline: calc((var(--icon-sm) - var(--dot)) / 2);
 }
 
-/* A 5px square turned on its corner spans the 6px dot's height and a
-   little more, so the diamond weighs what the dot does. */
+/* A 5px square turned on its corner spans the dot's height (--dot, 6px)
+   and a little more, so the diamond weighs what the dot does. */
 :where(.listing-root) .pane-tone-warning > .pane-state-dot {
   width: 5px;
   height: 5px;
@@ -1096,24 +1103,71 @@ button.crumb-label::after {
   --pane-pin-ground: var(--surface);
 }
 
+/* Each pinned cell fills its row's height, so its ground and its hairline
+   run unbroken from the strip to the foot, and holds its controls at its
+   end, centred in the row. */
 :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
   position: sticky;
   right: 0;
   z-index: var(--z-raised);
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
   margin-right: calc(-1 * var(--pane-row-inset));
   padding-right: var(--pane-row-inset);
+  /* Room for the fade it casts over the columns before it (below). */
+  overflow: visible;
   background:
     linear-gradient(var(--row-fill, transparent), var(--row-fill, transparent)),
     var(--pane-pin-ground);
 }
 
+/* The strip's pinned cell is a square band of the strip, not a sort
+   control's rounded box. */
 :where(.listing-root .pane-listing.pane-pin-end) > .pane-columns > :last-child {
+  border-radius: 0;
   background: var(--strip);
 }
 
+/* A listing that scrolls sideways itself, rather than inside a list, pins
+   its cells at its own edge: a sticky box stops at its scroller's padding,
+   which here is the row inset. */
+:where(.listing-root) .pane-listing.pane-pin-end {
+  container-type: scroll-state;
+}
+
+@container scroll-state(scrollable: inline) {
+  :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
+    right: calc(-1 * var(--pane-row-inset));
+  }
+}
+
+/* While columns run on under the pinned cells, a hairline on their leading
+   edge says so, and the words sliding under them fade over --space-6
+   before it, as a list's edge fades: the fade is the cell's own ground,
+   masked from clear to solid. Both show only while something lies under
+   the cells, so a listing that fits, or one scrolled to its end, keeps its
+   last column whole. */
 @supports (animation-timeline: scroll()) {
   :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
     animation: uiok-pane-pin-edge linear both;
+    animation-timeline: scroll(nearest inline);
+  }
+
+  :where(.listing-root .pane-listing.pane-pin-end)
+    > :is(.row, .pane-columns)
+    > :last-child::before {
+    content: '';
+    position: absolute;
+    /* Over a strip cell's own ::before, the rule in its gutter. */
+    inset: 0 100% 0 auto;
+    width: var(--space-6);
+    background: inherit;
+    opacity: 0;
+    pointer-events: none;
+    mask-image: linear-gradient(to right, transparent, var(--ground));
+    animation: uiok-pane-pin-fade linear both;
     animation-timeline: scroll(nearest inline);
   }
 }
@@ -1126,6 +1180,17 @@ button.crumb-label::after {
 
   100% {
     box-shadow: inset 0 0 0 var(--border-strong);
+  }
+}
+
+@keyframes uiok-pane-pin-fade {
+  0%,
+  95% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
   }
 }
 
@@ -1258,8 +1323,33 @@ button.crumb-label::after {
   color: var(--on-selected);
 }
 
+/* A lit or red action under the pointer or the focus keeps the selection's
+   words too: their own rules weigh more than the one above, and their tones
+   are not floored on the accent. */
+:where(.listing-root)
+  .row.selected
+  :is(.pane-act, .pane-icon-act):is(.lit, .danger, :hover, :focus-visible) {
+  color: var(--on-selected);
+}
+
 :where(.listing-root) .row.selected :is(.row-meta, .pane-path-head, .pane-path-tail) {
   color: var(--on-selected-dim);
+}
+
+/* On the accent fill the ringed marks (a quiet state's thin ring, a busy
+   state's heavy one) and the busy spinner draw in the selection's words'
+   tone, as the word beside them does: in their own tones they would be the
+   accent, or a grey, on the accent. */
+:where(.listing-root) .row.selected .pane-state-dot {
+  box-shadow: inset 0 0 0 var(--line) var(--on-selected);
+}
+
+:where(.listing-root) .row.selected .pane-tone-busy > .pane-state-dot {
+  box-shadow: inset 0 0 0 var(--line-strong) var(--on-selected);
+}
+
+:where(.listing-root) .row.selected .pane-state > svg.pane-state-busy {
+  color: var(--on-selected);
 }
 
 /* On the accent fill a filled mark wears a hairline in the selection's

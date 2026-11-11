@@ -1601,6 +1601,9 @@ export class GhosttyTerminalSurface {
       textInk: this.textInk,
       ...(this.theme.selectionBackground !== undefined
         ? { selectionBackground: this.theme.selectionBackground }
+        : {}),
+      ...(this.theme.selectionForeground !== undefined
+        ? { selectionForeground: this.theme.selectionForeground }
         : {})
     });
     this.positionInput();

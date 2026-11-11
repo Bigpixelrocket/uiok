@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, type LucideIcon } from 'lucide-react';
 import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type ReactElement } from 'react';
 
 import { ICON_MD } from '../icon/index.js';
@@ -51,15 +51,33 @@ function tabOf(strip: HTMLElement, id: string): HTMLElement | null {
 /**
  * Scrolls `strip` sideways, and only `strip`, so `tab` sits clear of the
  * edge fade, or as near as the scroll allows; a tab already clear stays
- * put. Smooth unless `instant` or the reader prefers reduced motion.
+ * put. The strip snaps to tab starts (`tabs.css`), so the scroll lands on
+ * one: a tab behind the start edge comes to rest at the fade's inner edge,
+ * and one past the end edge brings in the first tab start that clears it,
+ * which the snap then keeps. Smooth unless `instant` or the reader prefers
+ * reduced motion.
  */
 function revealTab(strip: HTMLElement, tab: HTMLElement, instant: boolean): void {
   const bounds = strip.getBoundingClientRect();
   const box = tab.getBoundingClientRect();
   const before = box.left - (bounds.left + EDGE_FADE);
   const after = box.right - (bounds.right - EDGE_FADE);
-  // A tab wider than the clear span shows its start.
-  const wanted = before < 0 ? before : after > 0 ? Math.min(after, before) : 0;
+  let wanted = 0;
+
+  if (before < 0) wanted = before;
+  else if (after > 0) {
+    // The first tab start that, at the fade's inner edge, clears this tab;
+    // a tab wider than the clear span shows its own start.
+    wanted = before;
+    for (const other of strip.querySelectorAll<HTMLElement>('[data-page-tab]')) {
+      const start = other.getBoundingClientRect().left - (bounds.left + EDGE_FADE);
+
+      if (start >= after) {
+        wanted = Math.min(start, before);
+        break;
+      }
+    }
+  }
   // Within the scroll there is: an end tab needs no move into the padding.
   const by = Math.max(
     -strip.scrollLeft,
@@ -71,6 +89,18 @@ function revealTab(strip: HTMLElement, tab: HTMLElement, instant: boolean): void
     instant || (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
 
   strip.scrollBy({ left: by, behavior: still ? 'instant' : 'smooth' });
+}
+
+/**
+ * Scrolls `strip` by about its clear span toward `side`, so the tabs hidden
+ * there come in; the strip's mandatory snap then rests it with a tab's edge
+ * on the fade. Smooth unless the reader prefers reduced motion.
+ */
+function pageStrip(strip: HTMLElement, side: 'start' | 'end'): void {
+  const span = Math.max(EDGE_FADE, strip.clientWidth - 2 * EDGE_FADE);
+  const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+
+  strip.scrollBy({ left: side === 'start' ? -span : span, behavior: still ? 'instant' : 'smooth' });
 }
 
 /** Props for {@link PageTabs}, over the type of its tab ids. */
@@ -100,9 +130,12 @@ export interface PageTabsProps<Id extends string> {
  * take under the first.
  *
  * A strip too narrow for its tabs scrolls sideways: it fades each edge that
- * hides tabs (`data-overflow`), and keeps the current tab in view when it
- * first draws and whenever `current` or the tabs change, scrolling only
- * the strip, never the page.
+ * hides tabs (`data-overflow`) and shows a small chevron there, which a
+ * click pages the strip toward; the chevron is left out of the tab order
+ * and the accessibility tree, where the arrow keys already reach every
+ * tab. The strip comes to rest with a tab's edge on the fade, and keeps
+ * the current tab in view when it first draws and whenever `current` or
+ * the tabs change, scrolling only the strip, never the page.
  */
 export function PageTabs<Id extends string>({
   label,
@@ -164,32 +197,56 @@ export function PageTabs<Id extends string>({
     if (strip.current !== null) tabOf(strip.current, next.id)?.focus();
   };
 
+  const chevron = (side: 'start' | 'end'): ReactElement => {
+    const Icon = side === 'start' ? ChevronLeft : ChevronRight;
+
+    return (
+      // The pointer's shortcut to tabs past an edge; the arrow keys reach
+      // them all, so the chevron is neither a tab stop nor announced.
+      <button
+        aria-hidden
+        className={`page-tabs-more ${side}`}
+        onClick={() => {
+          if (strip.current !== null) pageStrip(strip.current, side);
+        }}
+        tabIndex={-1}
+        type="button"
+      >
+        <Icon aria-hidden size={ICON_MD} />
+      </button>
+    );
+  };
+
   return (
-    <div
-      aria-label={label}
-      className={pills ? 'page-tabs pills' : 'page-tabs'}
-      onKeyDown={onKeyDown}
-      ref={strip}
-      role="tablist"
-    >
-      {tabs.map(({ id, label: name, icon: Icon }) => (
-        <button
-          aria-label={look === 'icons' ? name : undefined}
-          aria-selected={id === current}
-          className="page-tab"
-          data-page-tab={id}
-          key={id}
-          onClick={() => onSelect(id)}
-          role="tab"
-          tabIndex={id === focusable ? 0 : -1}
-          type="button"
-          {...(look === 'icons' ? tooltip(name) : {})}
-        >
-          {look !== 'text' && <Icon aria-hidden size={ICON_MD} />}
-          {/* data-label sizes the name for its bold weight, so no tab moves when the current one changes. */}
-          {look !== 'icons' && <span data-label={name}>{name}</span>}
-        </button>
-      ))}
+    <div className={pills ? 'page-tabs-frame pills' : 'page-tabs-frame'}>
+      <div
+        aria-label={label}
+        className={pills ? 'page-tabs pills' : 'page-tabs'}
+        onKeyDown={onKeyDown}
+        ref={strip}
+        role="tablist"
+      >
+        {tabs.map(({ id, label: name, icon: Icon }) => (
+          <button
+            aria-label={look === 'icons' ? name : undefined}
+            aria-selected={id === current}
+            className="page-tab"
+            data-page-tab={id}
+            key={id}
+            onClick={() => onSelect(id)}
+            role="tab"
+            tabIndex={id === focusable ? 0 : -1}
+            type="button"
+            {...(look === 'icons' ? tooltip(name) : {})}
+          >
+            {look !== 'text' && <Icon aria-hidden size={ICON_MD} />}
+            {/* data-label sizes the name for its bold weight, so no tab moves when the current one changes. */}
+            {look !== 'icons' && <span data-label={name}>{name}</span>}
+          </button>
+        ))}
+      </div>
+      {chevron('start')}
+      {chevron('end')}
     </div>
   );
 }

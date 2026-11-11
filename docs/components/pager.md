@@ -15,15 +15,16 @@ const shown = pageSlice(rows, page, 50);
 
 ## Props (`PagerProps`)
 
-| Prop       | Type                          | Meaning                                                                 |
-| ---------- | ----------------------------- | ----------------------------------------------------------------------- |
-| `kind`     | `string`                      | What the pages are of, passed to the `pager` labels; "items" by default |
-| `page`     | `number`                      | The page shown, from 0                                                  |
-| `pages`    | `number`                      | Pages in all, or so far                                                 |
-| `onPage`   | `(page: number) => void`      | The page (from 0) a step or the menu asks for                           |
-| `endKnown` | `boolean`                     | Whether `pages` is final; false hides End (a list counted only so far)  |
-| `forward`  | `boolean`                     | Whether a later page can be reached; false hides Next and End           |
-| `look`     | `'icons' \| 'text' \| 'both'` | How steps draw (`LinkLook`); icons, named on hover, by default          |
+| Prop       | Type                          | Meaning                                                                                                                                                                                |
+| ---------- | ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `kind`     | `string`                      | What the pages are of, passed to the `pager` labels; "items" by default                                                                                                                |
+| `page`     | `number`                      | The page shown, from 0                                                                                                                                                                 |
+| `pages`    | `number`                      | Pages in all, or so far                                                                                                                                                                |
+| `onPage`   | `(page: number) => void`      | The page (from 0) a step or the menu asks for                                                                                                                                          |
+| `endKnown` | `boolean`                     | Whether `pages` is final; false hides End (a list counted only so far)                                                                                                                 |
+| `forward`  | `boolean`                     | Whether a later page can be reached; false hides Next and End                                                                                                                          |
+| `look`     | `'icons' \| 'text' \| 'both'` | How steps draw (`LinkLook`); icons, named on hover, by default                                                                                                                         |
+| `size`     | `'inline' \| 'small'`         | Its height, matching its row: `inline` (20px steps and `.field-xs` menu, for a status line or row) by default, `small` (24px steps and `.field-sm` menu, for a toolbar of 24px fields) |
 
 A step that cannot act from the page shown (Begin and Previous on the first page, Next and End on the last or past a stop, End before the end is known) stays in its place, disabled and faded like every disabled control, so the menu and the other steps never move under the pointer.
 
@@ -37,7 +38,7 @@ Its steps and menu are ordinary Tab stops. The keys that page a list (Page Up, P
 
 ## Styling
 
-`.pager`, `.pager-step` (`.worded`; a step that cannot act is `:disabled`), `.pager-page` (also the shared `.field.field-xs`, which draws the menu's edge, chevrons, and focus). Hover and pressed come from the base stylesheet's quiet-control recipe.
+`.pager` (`.pager-small`; `--pager-height` sets the steps' height), `.pager-step` (`.worded`; a step that cannot act is `:disabled`; steps stand 4px apart and each has a 24px hit target), `.pager-page` (also the shared `.field.field-xs`, or `.field-sm` in the small size, which draws the menu's edge, chevrons, and focus). Hover and pressed come from the base stylesheet's quiet-control recipe.
 
 ## Labels read
 

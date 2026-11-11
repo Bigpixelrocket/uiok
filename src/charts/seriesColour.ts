@@ -4,7 +4,7 @@
  */
 
 /** How many series colours the theme defines (`--chart-1` to `--chart-8`). */
-const SERIES_COLOURS = 8;
+export const SERIES_COLOURS = 8;
 
 /**
  * The chart token the series at `index` (from zero) is drawn in, as a

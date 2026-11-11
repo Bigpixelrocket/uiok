@@ -3,12 +3,14 @@
  * arrow jumps to an edge, Page Up and Down move a screen, Space marks a
  * row, a header click sorts (Shift adds a column), a header edge resizes,
  * and a header drags to reorder. Under it, a short grid with every cell
- * kind (a lead checkbox, linked ids, missing and edited values, an inline
- * editor on double-click), and a grid with no rows.
+ * kind (a lead checkbox, linked ids, missing and edited values, a marked
+ * column, an inline field on double-click and an editor with Save and
+ * Cancel), and a grid with no rows.
  */
 
 import { useMemo, useState } from 'react';
 
+import { Button } from '@bigpixelrocket/uiok/button';
 import {
   DataGrid,
   type DataGridCell,
@@ -149,15 +151,29 @@ const KIND_COLUMNS: readonly DataGridColumn[] = [
   { id: 'id', label: 'order', align: 'right' },
   { id: 'customer', label: 'customer' },
   { id: 'city', label: 'city', tip: 'NULL where the order has none' },
-  { id: 'status', label: 'status', tip: 'Double-click to edit' }
+  { id: 'status', label: 'status', tip: 'Double-click to edit' },
+  { id: 'product', label: 'product', tip: 'Double-click to edit, then Save or Cancel' }
 ];
+/** The columns a double-click edits: status in a bare field, product with Save and Cancel. */
+const STATUS = 3;
+const PRODUCT = 4;
+/** The city column, marked to show a marked column's light. */
+const MARKED_COLUMNS: ReadonlySet<number> = new Set([2]);
 const KIND_ROWS = ORDERS.slice(0, 8);
 
-/** A short grid with a lead checkbox, linked ids, NULL cities, edited statuses, and the inline editor. */
+/**
+ * A short grid with a lead checkbox, linked ids, NULL cities in a marked
+ * column, edited statuses, and both inline editors: a bare field, and a
+ * field with Save and Cancel.
+ */
 function CellKinds() {
   const [checked, setChecked] = useState<ReadonlySet<number>>(() => new Set([1, 2]));
-  const [edits, setEdits] = useState<ReadonlyMap<number, string>>(() => new Map([[3, 'held']]));
-  const [editing, setEditing] = useState<{ row: number; draft: string } | null>(null);
+  const [edits, setEdits] = useState<ReadonlyMap<string, string>>(
+    () => new Map([[`3:${STATUS}`, 'held']])
+  );
+  const [editing, setEditing] = useState<{ row: number; column: number; draft: string } | null>(
+    null
+  );
   const [opened, setOpened] = useState('nothing');
 
   const cell = (row: number, column: number): DataGridCell | null => {
@@ -170,16 +186,31 @@ function CellKinds() {
     if (column === 2) {
       return row % 3 === 1 ? { text: 'NULL', className: 'cell-null' } : { text: order.city };
     }
-    const edited = edits.get(row);
+    const was = column === STATUS ? order.status : order.product;
+    const edited = edits.get(`${row}:${column}`);
     return edited === undefined
-      ? { text: order.status }
-      : { text: edited, className: 'cell-edited', tip: `Was ${order.status}; not saved yet` };
+      ? { text: was }
+      : { text: edited, className: 'cell-edited', tip: `Was ${was}; not saved yet` };
   };
   const commit = (): void => {
     if (editing === null) return;
-    setEdits((current) => new Map(current).set(editing.row, editing.draft));
+    setEdits((current) => new Map(current).set(`${editing.row}:${editing.column}`, editing.draft));
     setEditing(null);
   };
+  const field = (name: string, commitOnBlur: boolean) =>
+    editing === null ? null : (
+      <input
+        aria-label={name}
+        autoFocus
+        onBlur={commitOnBlur ? commit : undefined}
+        onChange={(event) => setEditing({ ...editing, draft: event.target.value })}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') commit();
+          if (event.key === 'Escape') setEditing(null);
+        }}
+        value={editing.draft}
+      />
+    );
 
   return (
     <>
@@ -187,33 +218,33 @@ function CellKinds() {
         cell={cell}
         columns={KIND_COLUMNS}
         copyText={(row, column) => cell(row, column)?.text ?? null}
-        editable={(_, column) => column === 3}
+        editable={(_, column) => column === STATUS || column === PRODUCT}
         editor={
           editing === null
             ? null
             : {
                 row: editing.row,
-                column: 3,
-                node: (
-                  <input
-                    aria-label="Status"
-                    autoFocus
-                    onBlur={commit}
-                    onChange={(event) =>
-                      setEditing({ row: editing.row, draft: event.target.value })
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') commit();
-                      if (event.key === 'Escape') setEditing(null);
-                    }}
-                    value={editing.draft}
-                  />
-                )
+                column: editing.column,
+                node:
+                  editing.column === STATUS ? (
+                    field('Status', true)
+                  ) : (
+                    <>
+                      {field('Product', false)}
+                      <Button onClick={commit} size="small" variant="primary">
+                        Save
+                      </Button>
+                      <Button onClick={() => setEditing(null)} size="small">
+                        Cancel
+                      </Button>
+                    </>
+                  )
               }
         }
         label="Orders with every cell kind"
         leadWidth={32}
-        onEdit={(row) => setEditing({ row, draft: cell(row, 3)?.text ?? '' })}
+        markedColumns={MARKED_COLUMNS}
+        onEdit={(row, column) => setEditing({ row, column, draft: cell(row, column)?.text ?? '' })}
         onMarkRow={(row) =>
           setChecked((current) => {
             const next = new Set(current);

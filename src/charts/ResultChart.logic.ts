@@ -200,6 +200,25 @@ export function legendLayout(
   });
 }
 
+/** The pitch of a legend's rows, in pixels. */
+export const LEGEND_ROW = 16;
+
+/** How tall a legend row's ink stands: its 10px swatch, 1px down, and the text beside it. */
+const LEGEND_ROW_INK = 12;
+
+/** The room under a legend's last row, the same 12px (`--space-6`) whatever the row count. */
+const LEGEND_GAP = 12;
+
+/**
+ * Where the plot starts under a legend whose first row is at `legendTop`
+ * and that draws `rows` rows: its last row's ink plus the same 12px gap
+ * whether the legend fits one row or wraps, so a wrapped legend never
+ * crowds the plot's top grid line and tick. With no rows, the legend's top.
+ */
+export function plotTopUnderLegend(legendTop: number, rows: number): number {
+  return rows <= 0 ? legendTop : legendTop + (rows - 1) * LEGEND_ROW + LEGEND_ROW_INK + LEGEND_GAP;
+}
+
 /** A tick's label as an axis draws it: its left edge, from the plot's start, and its text. */
 export interface PlacedTick {
   readonly x: number;

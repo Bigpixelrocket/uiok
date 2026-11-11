@@ -5,9 +5,16 @@
    disabled, so the menu never moves. Hover and pressed come from the base
    stylesheet's quiet-control recipe; the menu is the shared field look. */
 .pager {
+  /* The steps' height: an inline pager's (a status line or a row) unless the
+     toolbar size (Pager size="small") matches it to the 24px fields there. */
+  --pager-height: var(--control-height-xs);
   display: flex;
   align-items: center;
-  gap: var(--space-1);
+  gap: var(--space-2);
+}
+
+.pager.pager-small {
+  --pager-height: var(--control-height-sm);
 }
 
 .pager-step {
@@ -16,8 +23,8 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  width: var(--control-height-xs);
-  height: var(--control-height-xs);
+  width: var(--pager-height);
+  height: var(--pager-height);
   padding: 0;
   border: none;
   border-radius: var(--radius-sm);
@@ -37,12 +44,13 @@
   white-space: nowrap;
 }
 
-/* A step's hit area grows to --hit-target in the block axis only: steps sit
-   2px apart, so growing sideways would overlap the neighbour's. */
+/* A step's hit area grows to --hit-target each way it falls short. Steps
+   sit 4px apart, so a 20px step's 2px a side meets its neighbour's and
+   never overlaps it. */
 button.pager-step::after {
   position: absolute;
   inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
-  inset-inline: 0;
+  inset-inline: min(0px, calc((100% - var(--hit-target)) / 2));
   content: '';
 }
 
@@ -52,7 +60,8 @@ button.pager-step:focus-visible {
   outline-offset: var(--focus-offset-flush);
 }
 
-/* The page menu: the shared field (.field.field-xs) draws its height,
+/* The page menu: the shared field (.field-xs, or .field-sm in the toolbar
+   size) draws its height,
    edge, chevron, text, and focus; the pager only keeps it from shrinking. */
 .pager-page {
   flex: none;

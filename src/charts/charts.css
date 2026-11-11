@@ -361,11 +361,34 @@
   stroke-linejoin: round;
 }
 
-/* Unstacked areas overlap, so each fill is faint enough that a mix of two
-   or three still reads as its own hues; the 2px line carries the colour. */
+/* A slice's number on a pie whose colours repeat: a hairline leader from
+   the rim and the number in the text colour, matching its legend entry. */
+.result-chart-slice-tag line {
+  stroke: var(--border-strong);
+}
+
+.result-chart-slice-tag text {
+  fill: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* An area's fill is a faint tint under the grid; the 2px line carries the
+   colour. Unstacked areas overlap, so each tint is masked out wherever a
+   series in front has a fill of its own (ResultChart.tsx): an overlap
+   shows the front series' tint alone, never a mix the legend lacks. */
 .result-chart-area {
   fill-opacity: var(--chart-area-opacity);
   stroke: none;
+}
+
+/* The mask's two values: luminance, not colours a theme paints. White
+   keeps a fill, black cuts it. */
+.result-chart-mask-keep {
+  fill: white;
+}
+
+.result-chart-mask-cut {
+  fill: black;
 }
 
 .result-chart-mark {

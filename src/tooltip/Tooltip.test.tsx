@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TooltipLayer } from './Tooltip.js';
-import { cutTooltip, tooltip, TOOLTIP_DELAY_MS } from './Tooltip.logic.js';
+import { cutTooltip, describedTooltip, tooltip, TOOLTIP_DELAY_MS } from './Tooltip.logic.js';
 
 const rest = (): void => {
   act(() => {
@@ -197,5 +197,42 @@ describe('TooltipLayer with a chord given as data, and a tooltip only for cut te
     fireEvent.mouseOver(name);
     rest();
     expect(shown()).toBe('report.txt');
+  });
+
+  it('sets a value in monospace: one marked so, and cut text whose element is monospace', () => {
+    render(
+      <>
+        <span data-testid="path" {...describedTooltip('/work/src/a.ts', { value: true })}>
+          a.ts
+        </span>
+        <span
+          data-testid="mono"
+          style={{ fontFamily: 'Menlo, monospace' }}
+          {...cutTooltip('report.txt')}
+        >
+          report.txt
+        </span>
+        <span data-testid="words" {...cutTooltip('Some words')}>
+          Some words
+        </span>
+        <TooltipLayer />
+      </>
+    );
+    for (const id of ['mono', 'words']) {
+      Object.defineProperty(screen.getByTestId(id), 'scrollWidth', {
+        configurable: true,
+        value: 90
+      });
+    }
+    const valueClass = (id: string): boolean => {
+      fireEvent.mouseOver(document.body);
+      fireEvent.mouseOver(screen.getByTestId(id));
+      rest();
+      return screen.getByRole('tooltip').classList.contains('tooltip-value');
+    };
+
+    expect(valueClass('path')).toBe(true);
+    expect(valueClass('mono')).toBe(true);
+    expect(valueClass('words')).toBe(false);
   });
 });

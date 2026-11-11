@@ -90,11 +90,23 @@ function Key({
   );
 }
 
+/**
+ * A key cap's tone: `accent` for a chord changed from its default (an accent
+ * frame on an accent wash), `lit` for the chord Return runs (the solid accent
+ * face a dialog legend's primary cap wears), `quiet` for a chord that cannot
+ * change (its glyphs a tone down).
+ */
+export type KeyChordTone = 'accent' | 'lit' | 'quiet';
+
 /** Props for {@link KeyChord}: the chord, and what of it is already shown elsewhere. */
 export interface KeyChordProps {
   readonly chord: Chord;
   /** Modifiers already shown elsewhere (a legend's anchor), left out of this drawing. */
   readonly omit?: ReadonlyArray<LayerModifier>;
+  /** How the key cap reads (`data-tone`); a plain cap without it. Only a cap shows it. */
+  readonly tone?: KeyChordTone;
+  /** True while the chord is being recorded (`data-state="recording"`): the cap wears an accent outline. */
+  readonly recording?: boolean;
 }
 
 /**
@@ -103,14 +115,24 @@ export interface KeyChordProps {
  * when the drawing omits a modifier a strip shows once. A chord with an
  * empty key draws its modifiers alone.
  */
-export function KeyChord({ chord, omit = [] }: KeyChordProps): ReactElement {
+export function KeyChord({
+  chord,
+  omit = [],
+  tone,
+  recording = false
+}: KeyChordProps): ReactElement {
   const { keys } = useLabels();
   const parts = chordParts(chord).filter((part) =>
     typeof part === 'object' ? part.key !== '' : !(omit as readonly string[]).includes(part)
   );
 
   return (
-    <kbd aria-label={chordSpoken(chord, keys)} className="keychord">
+    <kbd
+      aria-label={chordSpoken(chord, keys)}
+      className="keychord"
+      data-state={recording ? 'recording' : undefined}
+      data-tone={tone}
+    >
       {parts.map((part, index) => (
         <Key key={index} labels={keys} part={part} />
       ))}

@@ -273,4 +273,42 @@ describe('DateTimePicker', () => {
     expect(declaredValues(hour, 'grid-column')).toEqual([]);
     expect(declaredValues(micro, 'grid-column')).toEqual(['1 / -1']);
   });
+
+  it('sizes a fraction field to its digits, so it never widens the time row and the panel', () => {
+    const { unmount } = render(
+      <DateTimePicker
+        fraction={3}
+        kind="datetime"
+        label="Pick"
+        onChange={() => undefined}
+        value=""
+      />
+    );
+
+    open('Pick');
+    expect(screen.getByRole('textbox', { name: 'Millisecond' }).getAttribute('size')).toBe('3');
+    unmount();
+
+    render(
+      <DateTimePicker fraction={1} kind="time" label="Pick" onChange={() => undefined} value="" />
+    );
+    open('Pick');
+    expect(screen.getByRole('textbox', { name: 'Millisecond' }).getAttribute('size')).toBe('2');
+  });
+
+  it('matches its button to the field beside it: small unless `size` is regular', () => {
+    const { unmount } = render(
+      <DateTimePicker kind="date" label="Pick" onChange={() => undefined} value="" />
+    );
+
+    expect(screen.getByRole('button', { name: 'Pick' }).classList).toContain('icon-button-small');
+    unmount();
+
+    render(
+      <DateTimePicker kind="date" label="Pick" onChange={() => undefined} size="regular" value="" />
+    );
+    expect(screen.getByRole('button', { name: 'Pick' }).classList).not.toContain(
+      'icon-button-small'
+    );
+  });
 });

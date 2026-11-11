@@ -43,6 +43,12 @@ const LINK_WAIT_MS = 300;
 const EDITOR_MARGIN = 8;
 /** The narrowest an editor's layer is held to, however narrow the grid. */
 const EDITOR_MIN_WIDTH = 160;
+/**
+ * The least the columns overflow the well before it fades its inline edges:
+ * the fade's own width (`--scroll-fade-size` on `.scroll-fade-x`, 12px), so
+ * a sliver of overflow never fades a whole column's edge to hide it.
+ */
+const FADE_MIN_OVERFLOW = 12;
 
 /** A column of the grid. */
 export interface DataGridColumn {
@@ -245,6 +251,8 @@ export function DataGrid({
   /** Which way it last scrolled, which the rows drawn lean toward. */
   const direction = useRef<ScrollDirection>(0);
   const [viewportHeight, setViewportHeight] = useState(FALLBACK_VIEWPORT);
+  /** Whether the columns overflow the well by at least the fade's width. */
+  const [fades, setFades] = useState(false);
   /** The rows the last commit drew, and the facts the scroll listener judges them by. */
   const committed = useRef<{
     readonly from: number;
@@ -334,6 +342,26 @@ export function DataGrid({
     observer.observe(element);
     return () => observer.disconnect();
   }, []);
+
+  // The well fades its inline edges only while the columns overflow it by
+  // the fade's width or more, measured as it or the columns resize.
+  useLayoutEffect(() => {
+    const element = viewport.current;
+
+    if (element === null) return;
+
+    const measure = (): void =>
+      setFades(element.scrollWidth - element.clientWidth >= FADE_MIN_OVERFLOW);
+
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+
+    const observer = new ResizeObserver(measure);
+
+    observer.observe(element);
+    if (header.current !== null) observer.observe(header.current);
+    return () => observer.disconnect();
+  }, [template]);
 
   useLayoutEffect(() => {
     committed.current = { from, to, viewportHeight, rowCount };
@@ -712,7 +740,8 @@ export function DataGrid({
   }
 
   // The frame draws the border and corners; the well inside it scrolls, so
-  // the fade on columns past the frame (`.scroll-fade-x`) never erases them.
+  // the fade on columns past the frame (`.scroll-fade-x`, while they overflow
+  // by the fade's width) never erases them.
   return (
     <div
       className={pointer ? 'data-grid pointer' : 'data-grid'}
@@ -726,7 +755,7 @@ export function DataGrid({
         aria-label={label}
         aria-multiselectable={onMarkRow === undefined ? undefined : true}
         aria-rowcount={rowCount + 1}
-        className="data-grid-scroll scroll-fade-x"
+        className={fades ? 'data-grid-scroll scroll-fade-x' : 'data-grid-scroll'}
         onKeyDown={onKeyDown}
         ref={viewport}
         role="grid"

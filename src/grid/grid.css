@@ -354,14 +354,38 @@
   cursor: auto;
 }
 
+/* A layer that holds more than a bare field (a field with Save and Cancel)
+   stands on a panel of its own, so the cell's text and the column lines
+   never show through a quiet button or between the buttons. The panel's
+   padding and edge sit outside the layer's measured box (content-box, and a
+   margin as wide pulling it back), so its field still lies on the cell. */
+.data-grid-editor:has(> :not(input, select, textarea)) {
+  box-sizing: content-box;
+  margin: calc(-1 * (var(--space-1) + var(--line)));
+  padding: var(--space-1);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow:
+    inset 0 var(--line) 0 var(--glass-edge),
+    var(--shadow-popover);
+}
+
+/* A wrapper the caller puts round its field and buttons fills the layer,
+   so its field can take what the buttons leave. */
+.data-grid-editor > :has(:is(input, select, textarea)) {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 /* The caller's field takes the cell's place: as wide as the cell (the layer
    is, unless buttons beside it ask for more), as tall as the row plus the
    frame, its text in the cell's face on the cell's baseline, a field edge
-   in the accent. Its own width never widens the layer. */
-.data-grid-editor > :is(input, select, textarea) {
+   in the accent, whether it is the layer's own child or inside a wrapper.
+   A direct child's own width never widens the layer. */
+.data-grid-editor :is(input:not([type='checkbox'], [type='radio']), select, textarea) {
   flex: 1 1 0;
   box-sizing: border-box;
-  width: 0;
   min-width: 0;
   height: calc(var(--row-height-dense) + 2 * var(--line));
   margin: 0;
@@ -373,14 +397,19 @@
   font: var(--font-size-small)/var(--row-height-dense) var(--font-mono);
 }
 
-.data-grid-editor > textarea {
+.data-grid-editor > :is(input, select, textarea) {
+  width: 0;
+}
+
+.data-grid-editor textarea {
   height: auto;
   min-height: calc(var(--row-height-dense) + 2 * var(--line));
   resize: none;
 }
 
 /* Focus keeps the field's edge on its border: no ring over the row above. */
-.data-grid-editor > :is(input, select, textarea):focus-visible {
+.data-grid-editor
+  :is(input:not([type='checkbox'], [type='radio']), select, textarea):focus-visible {
   outline: var(--line) solid var(--accent);
   outline-offset: var(--focus-offset-flush);
 }

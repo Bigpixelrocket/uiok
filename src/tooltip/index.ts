@@ -11,6 +11,9 @@ export {
   tooltipChord,
   type TooltipAnchorBox,
   type TooltipAttributes,
+  type TooltipBeside,
   type TooltipExtent,
-  type TooltipPosition
+  type TooltipOptions,
+  type TooltipPosition,
+  type TooltipSide
 } from './Tooltip.logic.js';

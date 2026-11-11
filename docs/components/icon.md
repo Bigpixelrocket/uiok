@@ -1,12 +1,13 @@
 # Icon sizes and the spinner (`@bigpixelrocket/uiok/icon`)
 
-The three sizes an icon may take, as numbers for lucide's `size` prop. They mirror the `--icon-sm`, `--icon-md`, and `--icon-lg` tokens, which size an icon drawn from CSS ([tokens](../tokens.md)).
+The four sizes an icon may take, as numbers for lucide's `size` prop. They mirror the `--icon-sm`, `--icon-md`, `--icon-lg`, and `--icon-xl` tokens, which size an icon drawn from CSS ([tokens](../tokens.md)).
 
-| Constant  | Value | Use                                                   |
-| --------- | ----- | ----------------------------------------------------- |
-| `ICON_SM` | 12    | Beside 11 and 12 px text, and in 20px inline controls |
-| `ICON_MD` | 14    | Beside 13px text in rows, tabs, and buttons           |
-| `ICON_LG` | 16    | A dialog's title icon, an empty state's action        |
+| Constant  | Value | Use                                                                     |
+| --------- | ----- | ----------------------------------------------------------------------- |
+| `ICON_SM` | 12    | Beside 11 and 12 px text, and in 20px inline controls                   |
+| `ICON_MD` | 14    | Beside 13px text in rows, tabs, and buttons                             |
+| `ICON_LG` | 16    | A dialog's title icon, an empty state's action, a row's product mark    |
+| `ICON_XL` | 28    | The glyph over an empty state or a failure (with `absoluteStrokeWidth`) |
 
 ## Example
 
@@ -23,7 +24,7 @@ Pick the size by what the icon sits beside, so the same role is the same size ev
 
 ## Stroke weight
 
-Every icon has one stroke weight, lucide's default (2 on its 24-unit grid), so no icon looks bolder or thinner than the ones beside it. Pass no `strokeWidth`: a 12px icon at 2.5 or 3 reads as filled in, a tab icon at 1.8 as faint. A glyph drawn larger than `ICON_LG` (an empty state's or a viewer's hero glyph) passes `absoluteStrokeWidth`, which keeps the line at 2px on screen instead of scaling it up with the glyph. `test/iconStroke.test.ts` fails on a `strokeWidth` or a numeric `size` (`size={14}` instead of `ICON_MD`) in the library or the docs site.
+Every icon has one stroke weight, lucide's default (2 on its 24-unit grid), so no icon looks bolder or thinner than the ones beside it. Pass no `strokeWidth`: a 12px icon at 2.5 or 3 reads as filled in, a tab icon at 1.8 as faint. A glyph drawn larger than `ICON_LG` (`ICON_XL` over an empty state, or a viewer's hero glyph, which an app lists as its own exception) passes `absoluteStrokeWidth`, which keeps the line at 2px on screen instead of scaling it up with the glyph. `test/iconStroke.test.ts` fails on a `strokeWidth` or a numeric `size` (`size={14}` instead of `ICON_MD`) in the library, the docs site, or the docs' code examples.
 
 ## Spinner
 

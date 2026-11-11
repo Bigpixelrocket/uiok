@@ -1,5 +1,5 @@
 /**
- * Icons: the three sizes for lucide's `size` prop, and the one spinner.
+ * Icons: the four sizes for lucide's `size` prop, and the one spinner.
  */
 
 export * from './sizes.js';

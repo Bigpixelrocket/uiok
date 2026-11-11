@@ -10,7 +10,8 @@
    with the glass edge every floating surface has: in a dark theme, where a
    black shadow barely shows, the lit top edge lifts it. A chord is set in
    the key caps' monospace, so it reads as the same notation as a legend's
-   caps. */
+   caps. A tooltip may open beside its control (a tool rail) instead of
+   below it; the layer places it, so nothing here changes. */
 .tooltip {
   position: fixed;
   top: 0;
@@ -52,6 +53,13 @@
   font: var(--font-weight-strong) var(--font-size-caption)/var(--line-height-prose) var(--font-mono);
   letter-spacing: var(--tracking-caps);
   white-space: nowrap;
+}
+
+/* A value (a path, a cut name, a status line) keeps the monospace face it
+   has everywhere else, at regular weight, so the tooltip that completes it
+   reads as the same text. */
+.tooltip-value .tooltip-label {
+  font: var(--font-weight-regular) var(--font-size-small)/var(--line-height-prose) var(--font-mono);
 }
 
 /* The chord drawn as keys: the same 12px glyphs and 10px letters as a

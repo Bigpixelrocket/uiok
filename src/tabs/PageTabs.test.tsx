@@ -293,4 +293,52 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     // Scrolled to the end, Members starts at -26: 50px short of the clear span.
     expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ left: -50, behavior: 'smooth' });
   });
+
+  it('shows a chevron at each edge that hides tabs, which pages the strip toward it', () => {
+    applyStylesheets(readStylesheet('src/tabs/tabs.css'));
+    const { container } = render(<WideStrip initial="overview" />);
+    const strip = screen.getByRole('tablist');
+    const more = (side: 'start' | 'end'): HTMLElement =>
+      container.querySelector(`.page-tabs-more.${side}`) as HTMLElement;
+    const shown = (side: 'start' | 'end'): string | undefined =>
+      declaredValues(more(side), 'display').at(-1);
+
+    expect([shown('start'), shown('end')]).toEqual(['none', 'flex']);
+    // Kept from the tab order and the accessibility tree; the arrows reach every tab.
+    expect(more('end').tabIndex).toBe(-1);
+    expect(more('end').getAttribute('aria-hidden')).toBe('true');
+    expect(screen.queryAllByRole('button')).toEqual([]);
+
+    // Pages by the clear span: 300px less a 24px fade at each edge.
+    fireEvent.click(more('end'));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 252, behavior: 'smooth' });
+
+    layout.scrollLeft = 112;
+    fireEvent.scroll(strip);
+    expect([shown('start'), shown('end')]).toEqual(['flex', 'none']);
+    fireEvent.click(more('start'));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -252, behavior: 'smooth' });
+  });
+
+  it('brings in a tab past the end edge by a tab start, where the strip’s snap keeps it', () => {
+    layout.scrollWidth = 600;
+    render(<WideStrip initial="overview" />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Alerts' }));
+
+    // Alerts ends 50px past the clear span; Members' start, 62px on, is the
+    // first tab start that clears it, so the strip rests there, not at 50.
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 62, behavior: 'smooth' });
+  });
+
+  it('always comes to rest on a snap position, so no tab rests cut in the clear span', () => {
+    applyStylesheets(readStylesheet('src/tabs/tabs.css'));
+    render(<WideStrip initial="overview" />);
+
+    expect(declaredValues(screen.getByRole('tablist'), 'scroll-snap-type')).toEqual([
+      'x mandatory'
+    ]);
+    expect(declaredValues(screen.getAllByRole('tab')[0] as Element, 'scroll-snap-align')).toEqual([
+      'start'
+    ]);
+  });
 });

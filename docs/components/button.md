@@ -6,13 +6,14 @@
 
 ```tsx
 import { Button, IconButton } from '@bigpixelrocket/uiok/button';
+import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 <Button variant="primary" onClick={save}>Save</Button>
 <Button size="small" variant="tonal">Install</Button>
 <Button variant="danger" onClick={remove}>Delete</Button>
 <IconButton aria-label="Refresh" {...tooltip('Refresh', { key: 'r', meta: true })}>
-  <RefreshCw size={14} />
+  <RefreshCw size={ICON_MD} />
 </IconButton>
 ```
 

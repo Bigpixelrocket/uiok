@@ -134,3 +134,37 @@ describe('the result chart’s read-out', () => {
     expect(container.querySelectorAll('.result-chart-grid')).toHaveLength(0);
   });
 });
+
+describe('the result chart’s pictures', () => {
+  it('keeps an unstacked area from tinting through the areas in front', () => {
+    const unstacked = chart('area');
+    const fills = [...unstacked.querySelectorAll('.result-chart-area')];
+
+    // "sales" (behind) is cut where "costs" (in front) fills; "costs" is whole.
+    expect(fills.map((fill) => fill.getAttribute('mask') !== null)).toEqual([true, false]);
+    expect(unstacked.querySelectorAll('mask .result-chart-mask-cut')).toHaveLength(1);
+  });
+
+  it('numbers a pie past eight slices on the slices and in the legend', () => {
+    const names = Array.from({ length: 9 }, (_, at) => `k${at}`);
+    const { container } = render(
+      <ResultChart
+        categories={names}
+        height={300}
+        series={[{ name: 'n', values: names.map(() => 1) }]}
+        stacked={false}
+        title=""
+        type="pie"
+        width={500}
+        xLabel=""
+        xValues={names.map(() => null)}
+        yLabel=""
+      />
+    );
+
+    expect(
+      [...container.querySelectorAll('.result-chart-slice-tag text')].map((tag) => tag.textContent)
+    ).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9']);
+    expect(container.querySelector('.result-chart-legend text')?.textContent).toBe('1 k0');
+  });
+});

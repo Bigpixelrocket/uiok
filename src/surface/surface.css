@@ -9,7 +9,9 @@
      .notice-warning, .notice-success; none is neutral. .notice-card floats
      it on a raised panel (a notice over the page, not in its flow).
    - .card: a lifted panel that groups one subject's lines, framed in
-     --border-strong like every framed surface (panes, menus, the grid). */
+     --border-strong like every framed surface (panes, menus, the grid),
+     at the 12px surface inset at both ends, whatever its children's
+     margins. */
 
 .notice {
   /* The tone's mark (bar and glyph), 3:1 on every ground by its token. */
@@ -91,4 +93,17 @@
   border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--card-bg);
+}
+
+/* The card's inset is its spacing at both ends: its first child starts at
+   the 12px edge and its last ends there, whatever margins a heading or a
+   paragraph brings. Space between children stays the content's own (a
+   paragraph's margin, a grid's gap), so a card laid out as a grid is not
+   spaced twice. */
+.card > :first-child {
+  margin-block-start: 0;
+}
+
+.card > :last-child {
+  margin-block-end: 0;
 }

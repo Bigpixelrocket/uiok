@@ -147,7 +147,7 @@ describe("an app's own tokens", () => {
   // value for one theme by its id.
   const options = {
     banner: 'App tokens.',
-    extraFixed: { '--app-knob': 'var(--switch-knob)' },
+    extraFixed: { '--app-knob': 'var(--surface)' },
     extraTokens: (theme: Theme, tokens: Readonly<Record<string, string>>) => ({
       '--app-tint': theme.id === 'nord' ? '#123456' : `${tokens['--accent']}24`
     }),
@@ -160,7 +160,7 @@ describe("an app's own tokens", () => {
     expect(sheet.startsWith('/* App tokens. */\n\n:root {\n  color-scheme: light dark;\n')).toBe(
       true
     );
-    expect(sheet).toContain(`  --app-knob: var(--switch-knob);\n  --bg: `);
+    expect(sheet).toContain(`  --app-knob: var(--surface);\n  --bg: `);
     expect(sheet).toContain(`  --app-tint: ${latte}24;\n}`);
     expect(sheet).toContain("[data-variant='compact'] {\n  --app-gap: 2px;\n}");
     expect(sheet).toContain(
@@ -314,23 +314,16 @@ describe('overrides', () => {
   });
 
   it('take the kind of value each token holds', () => {
-    const typed: ThemeOverrides = {
-      '--primary': '#123456',
-      '--tonal-hover-brightness': '1.05'
-    };
+    const typed: ThemeOverrides = { '--primary': '#123456' };
     // @ts-expect-error A colour token takes a hex colour, not a compound value.
     const compoundColour: ThemeOverrides = { '--primary': 'rgb(0 0 0 / 50%)' };
-    // @ts-expect-error A factor takes a number, not a colour.
-    const colourFactor: ThemeOverrides = { '--tonal-hover-brightness': '#ffffff' };
     // @ts-expect-error A compound token follows its rule in every theme.
     const compound: ThemeOverrides = { '--row-lift': 'transparent' };
     // @ts-expect-error The text is drawn from the palette, which the quieter text and the terminal read too.
     const paletteDrawn: ThemeOverrides = { '--text': '#ffffff' };
     // @ts-expect-error The primary hue is drawn from the palette, which the primary and tonal text read too.
     const primaryHue: ThemeOverrides = { '--primary-hue': '#ffffff' };
-    expect([typed, compoundColour, colourFactor, compound, paletteDrawn, primaryHue]).toHaveLength(
-      6
-    );
+    expect([typed, compoundColour, compound, paletteDrawn, primaryHue]).toHaveLength(5);
   });
 
   it('hold the danger colour at 4.5:1 on a panel where a palette red would fall short', () => {
@@ -471,6 +464,11 @@ const ON = {
   'the warning fill': ['var(--warning)'],
   'the success fill': ['var(--success)'],
   'the terminal': ['var(--terminal-bg)'],
+  'the terminal selection': ['var(--terminal-bg)', 'var(--terminal-selection)'],
+  'a recessed surface': ['var(--bg)', 'var(--surface-recessed)'],
+  'the accent wash over a panel': ['var(--bg-panel)', 'var(--accent-wash)'],
+  'the pressed accent wash over a panel': ['var(--bg-panel)', 'var(--accent-wash-pressed)'],
+  'the pressed accent wash over the ground': ['var(--bg)', 'var(--accent-wash-pressed)'],
   'the off track': ['var(--control-border)']
 } as const satisfies Readonly<Record<string, readonly string[]>>;
 
@@ -566,7 +564,12 @@ const PAIRINGS = [
     'the track over the header',
     'a match over a listing',
     'a match over the cursor row',
-    'selected text over a panel'
+    'selected text over a panel',
+    'a hovered ground',
+    'a hovered header',
+    'a recessed surface',
+    'the pressed accent wash over a panel',
+    'the pressed accent wash over the ground'
   ]),
   ...pairs('var(--current-text)', 4.5, [
     'the current item over a panel',
@@ -578,6 +581,7 @@ const PAIRINGS = [
     'panel',
     'header',
     'listing',
+    'a recessed surface',
     'a hovered panel',
     'a hovered ground',
     'a hovered header'
@@ -661,6 +665,8 @@ const PAIRINGS = [
   ...pairs('var(--on-warning)', 4.5, ['the warning fill']),
   ...pairs('var(--on-success)', 4.5, ['the success fill']),
   ...pairs('var(--terminal-fg)', 4.5, ['the terminal']),
+  // Selected terminal text takes one ink, whatever its cell's colour.
+  ...pairs('var(--terminal-selection-text)', 4.5, ['the terminal selection']),
 
   // Marks, outlines, and lines.
   // The 16 terminal colours are the published palette: the renderer floors
@@ -720,6 +726,20 @@ const PAIRINGS = [
     'the current item over the header'
   ]),
   ...pairs('var(--cursor-bar)', 3, ['the cursor row']),
+  // Marks on a selected row (a state dot's ring, an idle ring, the busy
+  // spinner, a checkbox's edge) take the on-selected colour, which keeps
+  // 3:1 on the selection and the cursor on it.
+  ...pairs('var(--on-selected)', 3, ['the selection', 'the cursor on the selection']),
+  // A chip on an accent wash (the palette's level) is edged in the current
+  // ring, at rest and on hover.
+  ...pairs('var(--current-ring)', 3, [
+    'the accent wash over a panel',
+    'the strong accent wash over a panel',
+    'the pressed accent wash over a panel',
+    'the pressed accent wash over the ground'
+  ]),
+  // A terminal that cannot start leads its sentence with a danger glyph.
+  ...pairs('var(--danger)', 3, ['the terminal']),
   ...pairs('var(--marked-bar)', 3, MARKED_GROUNDS),
   ...pairs('var(--primary-mark)', 3, ['listing', 'the cursor row', 'panel', 'ground']),
   ...pairs('var(--text-faint)', 3, ['ground', 'panel', 'header']),
@@ -823,39 +843,69 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('%s', (_id, the
     }
   });
 
-  it('shows a press on an outlined control, and a step past hover on a fill', () => {
-    if (theme.appearance === 'dark') {
-      // Black cannot darken a near-black ground, so a dark theme's press lifts it.
-      // Its face stands apart from its hovered face too, unless a tint one
-      // point stronger would take the text under 4.5:1 (Solarized Dark).
-      const lifted = /^rgb\((\d+) (\d+) (\d+) \/ (\d+)%\)$/.exec(tokens['--pressed-wash'] ?? '');
-      const share = Number(lifted?.[4] ?? 0);
-      const noRoom =
-        lifted !== null &&
-        [ground, surface, header].some((on) => {
-          const stronger = over(
-            `color-mix(in srgb, var(--text) ${share + 1}%, transparent)`,
-            on,
-            tokens
-          );
-          return contrast(over('var(--text)', stronger, tokens), stronger) < 4.5;
-        });
-      for (const on of [ground, surface, header]) {
-        const pressed = over('var(--pressed-wash)', on, tokens);
-        expect(contrast(pressed, on)).toBeGreaterThanOrEqual(1.12);
-        if (!noRoom) {
-          expect(contrast(pressed, over('var(--hover-wash)', on, tokens))).toBeGreaterThanOrEqual(
-            1.05
-          );
-        }
+  it('presses an outlined control one clear step from rest and from hover', () => {
+    // The face of a quiet control at rest (the ground under it), hovered
+    // (the frosted wash), and pressed (--pressed-wash): 1.12:1 from rest,
+    // and 1.12:1 from hover, unless a wash one point stronger would take the
+    // text under 4.5:1 (Solarized Light, Tokyo Night Day, Solarized Dark), where the
+    // recipe's inner line and inset shadow carry the rest of the press.
+    const wash = /^rgb\((\d+) (\d+) (\d+) \/ (\d+)%\)$/.exec(tokens['--pressed-wash'] ?? '');
+    expect(wash).not.toBeNull();
+    const [, r, g, b, share] = (wash ?? []).map(Number);
+    const stronger = `rgb(${r} ${g} ${b} / ${(share ?? 0) + 1}%)`;
+    const grounds = [ground, surface, header, solid('--strip')];
+    const noRoom = grounds.some((on) => {
+      const face = over(stronger, on, tokens);
+      return contrast(over('var(--text)', face, tokens), face) < 4.5;
+    });
+    for (const on of grounds.slice(0, 3)) {
+      const hovered = over('var(--hover-wash)', on, tokens);
+      const pressed = over('var(--pressed-wash)', on, tokens);
+      expect(contrast(pressed, on), 'pressed from rest').toBeGreaterThan(1.03);
+      if (!noRoom) {
+        expect(contrast(pressed, on), 'pressed from rest').toBeGreaterThanOrEqual(1.12);
+        expect(contrast(pressed, hovered), 'pressed from hover').toBeGreaterThanOrEqual(1.12);
       }
     }
+  });
+
+  it('presses a control lit by the accent wash one clear step from its hover', () => {
+    // Where the text leaves no face that far, it takes the outlined press,
+    // held by the test above. An opaque face is drawn over the panel.
+    if (tokens['--accent-wash-pressed'] === tokens['--pressed-wash']) return;
+    const opaque = /^#[0-9a-f]{6}$/.test(tokens['--accent-wash-pressed'] ?? '');
+    for (const on of opaque ? [surface] : [ground, surface]) {
+      const hovered = over('var(--accent-wash-strong)', on, tokens);
+      const pressed = over('var(--accent-wash-pressed)', on, tokens);
+      expect(contrast(pressed, hovered)).toBeGreaterThanOrEqual(1.12);
+    }
+  });
+
+  it('steps each filled button tier away from rest on hover and again when pressed', () => {
+    const danger = (wash: string) => over(`var(${wash})`, surface, tokens);
+    for (const [tier, rest, hover, pressed] of [
+      ['primary', solid('--primary'), solid('--primary-hover'), solid('--primary-pressed')],
+      ['tonal', solid('--tonal'), solid('--tonal-hover'), solid('--tonal-pressed')],
+      ['danger', surface, danger('--danger-wash'), danger('--danger-wash-strong')]
+    ] as const) {
+      // The danger's hover is the fixed 8% wash, which the frosted ring joins.
+      expect(contrast(hover, rest), `${tier} hover from rest`).toBeGreaterThanOrEqual(1.05);
+      expect(contrast(pressed, hover), `${tier} pressed from hover`).toBeGreaterThanOrEqual(1.08);
+      // The tonal and danger steps deepen away from the panel, so a press
+      // never reads as a lift; the primary steps away from its own text.
+      if (tier !== 'primary') {
+        expect(contrast(pressed, surface), `${tier} pressed`).toBeGreaterThan(
+          contrast(hover, surface)
+        );
+      }
+    }
+    // The primary and tonal fills hold their full step.
     for (const [rest, hover, pressed] of [
       ['--primary', '--primary-hover', '--primary-pressed'],
       ['--tonal', '--tonal-hover', '--tonal-pressed']
     ] as const) {
-      expect(solid(pressed), pressed).not.toBe(solid(hover));
-      expect(solid(pressed), pressed).not.toBe(solid(rest));
+      expect(contrast(solid(hover), solid(rest)), hover).toBeGreaterThanOrEqual(1.1);
+      expect(contrast(solid(pressed), solid(hover)), pressed).toBeGreaterThanOrEqual(1.1);
     }
   });
 

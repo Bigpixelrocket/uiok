@@ -14,8 +14,13 @@
    a listing's sticky column header (--z-raised) and an overlay inside the
    pane (--z-local-overlay). Like every floating surface it wears the lit
    top edge, which separates it in a dark theme where a shadow cannot. Its
-   rows are in the listing's face, whatever face the app's root sets. */
+   rows are in the listing's face, whatever face the app's root sets, at
+   --menu-font-size: the body size, or the small size on a compact menu
+   (.folder-menu-compact), so a host sizes a menu by class, never by
+   restating the face or the size. */
 .folder-menu {
+  --menu-font-size: var(--font-size-body);
+
   position: absolute;
   top: calc(100% + var(--space-2));
   left: 0;
@@ -33,9 +38,15 @@
     var(--shadow-popover);
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: var(--font-size-body);
+  font-size: var(--menu-font-size);
   font-weight: var(--font-weight-regular);
   line-height: var(--line-height-body);
+}
+
+/* A compact menu: the small size, for a menu of short commands opened from
+   a tool (a column chooser, a row's actions, a legend's overflow). */
+.folder-menu-compact {
+  --menu-font-size: var(--font-size-small);
 }
 
 /* A menu's query row is a filter field: the icon stands over the rows'
@@ -96,10 +107,13 @@
 
 /* The base sheet's block fade (.scroll-fade), on every menu list: its
    keyframes and lengths, so an edge with nothing past it stays sharp, and
-   its padding-box mask, so the list's scrollbar stays solid. */
+   its padding-box mask, so the list's scrollbar stays solid. The fade is
+   one row deep, not the base sheet's 12px: a row's glyphs sit in its middle
+   12px, so a 12px fade would dim only a row's empty edge, where a whole
+   row fading through its words says "more" at a glance. */
 @supports (animation-timeline: scroll()) {
   .folder-menu-options {
-    --scroll-fade-size: var(--space-6);
+    --scroll-fade-size: var(--row-height);
 
     mask-image:
       linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
@@ -166,19 +180,15 @@
 
 /* A group's name with a hairline running out from it on the same line, so a
    group costs one row and still reads as a break. It is exactly one row
-   tall, so a list's height in rows holds whatever headings it has. The name is the
-   library's small uppercase heading (.overline in the base sheet): caption
-   size, strong weight, caps tracking, dim text. */
+   tall, so a list's height in rows holds whatever headings it has. The name
+   wears the library's small uppercase heading, which the base sheet writes
+   once for .overline and this class together; here is only its layout. */
 .entry-menu-heading {
   display: flex;
   align-items: center;
   gap: var(--space-4);
   height: var(--row-height);
   padding: var(--space-1) var(--space-3) 0 var(--space-4);
-  color: var(--text-dim);
-  font: var(--font-weight-strong) var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
 }
 
 .entry-menu-heading::after {

@@ -3,7 +3,14 @@ import { createPortal } from 'react-dom';
 
 import type { Chord } from '../keyboard/Keyboard.logic.js';
 import { KeyChord } from '../keychord/KeyChord.js';
-import { cutsItsText, placeTooltip, TOOLTIP_DELAY_MS, tooltipChord } from './Tooltip.logic.js';
+import {
+  cutsItsText,
+  isMonospaceFamily,
+  placeTooltip,
+  TOOLTIP_DELAY_MS,
+  tooltipChord,
+  type TooltipBeside
+} from './Tooltip.logic.js';
 
 /** The tooltip on show: the control it belongs to and what it says. */
 interface ShownTooltip {
@@ -14,13 +21,32 @@ interface ShownTooltip {
   readonly chord: Chord | null;
   /** Where the pointer rested, for a control wide enough to place the tooltip by it. */
   readonly pointerX: number;
+  /** The text is a value (a path, a name), set in monospace. */
+  readonly value: boolean;
+  /** The side it opens on, or null for below (or above). */
+  readonly beside: TooltipBeside | null;
 }
+
+// The physical side a `data-tooltip-side` names, by the element's own direction.
+const besideOf = (anchor: Element): TooltipBeside | null => {
+  const side = anchor.getAttribute('data-tooltip-side');
+
+  if (side !== 'start' && side !== 'end') {
+    return null;
+  }
+
+  const rtl = getComputedStyle(anchor).direction === 'rtl';
+
+  return (side === 'end') !== rtl ? 'right' : 'left';
+};
 
 const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
   const label = anchor.getAttribute('data-tooltip');
 
   // A tooltip of the element's own text says nothing while that text is whole.
-  if (!label || (anchor.hasAttribute('data-tooltip-cut') && !cutsItsText(anchor))) {
+  const cut = anchor.hasAttribute('data-tooltip-cut');
+
+  if (!label || (cut && !cutsItsText(anchor))) {
     return null;
   }
 
@@ -29,7 +55,12 @@ const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
     label,
     shortcut: anchor.getAttribute('data-tooltip-shortcut'),
     chord: tooltipChord(anchor.getAttribute('data-tooltip-chord')),
-    pointerX
+    pointerX,
+    // A cut text completes its own element, so it keeps that element's face.
+    value:
+      anchor.hasAttribute('data-tooltip-value') ||
+      (cut && isMonospaceFamily(getComputedStyle(anchor).fontFamily)),
+    beside: besideOf(anchor)
   };
 };
 
@@ -50,7 +81,9 @@ const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
  *
  * A chord given as data is drawn with the key glyphs every legend uses, set
  * without a frame; a chord given as text is printed as given. A tooltip
- * from `cutTooltip` opens only while its element cuts its own text.
+ * from `cutTooltip` opens only while its element cuts its own text, in its
+ * element's face: monospace for a name or a status line. A tooltip marked as
+ * a value is set in monospace; one given a side opens beside its element.
  *
  * The pointer alone opens it. A control keeps its own accessible name, and a
  * tooltip that says more than its element is also the element's description
@@ -138,7 +171,8 @@ export function TooltipLayer(): ReactElement | null {
       shown.anchor.getBoundingClientRect(),
       { width: tip.offsetWidth, height: tip.offsetHeight },
       { width: window.innerWidth, height: window.innerHeight },
-      shown.pointerX
+      shown.pointerX,
+      shown.beside
     );
 
     tip.style.left = `${left}px`;
@@ -150,7 +184,7 @@ export function TooltipLayer(): ReactElement | null {
   }
 
   return createPortal(
-    <div className="tooltip" ref={tipRef} role="tooltip">
+    <div className={shown.value ? 'tooltip tooltip-value' : 'tooltip'} ref={tipRef} role="tooltip">
       <span className="tooltip-label">{shown.label}</span>
       {shown.chord !== null ? (
         <span className="tooltip-shortcut tooltip-chord">

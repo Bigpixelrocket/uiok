@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   cutTooltip,
   describedTooltip,
+  isMonospaceFamily,
   placeTooltip,
   tooltip,
   tooltipChord
@@ -61,6 +62,27 @@ describe('describedTooltip', () => {
     });
     expect(describedTooltip(null)).toEqual({});
   });
+
+  it('marks a value and a side only when asked', () => {
+    expect(describedTooltip('/work/src', { value: true, side: 'end' })).toEqual({
+      'data-tooltip': '/work/src',
+      'data-tooltip-value': '',
+      'data-tooltip-side': 'end',
+      'aria-description': '/work/src'
+    });
+    expect(tooltip('Save Page', null, { side: 'end' })).toEqual({
+      'data-tooltip': 'Save Page',
+      'data-tooltip-side': 'end'
+    });
+  });
+});
+
+describe('isMonospaceFamily', () => {
+  it('knows a stack by its generic family', () => {
+    expect(isMonospaceFamily('"SF Mono", ui-monospace, Menlo, monospace')).toBe(true);
+    expect(isMonospaceFamily("system-ui, -apple-system, 'Segoe UI', sans-serif")).toBe(false);
+    expect(isMonospaceFamily('')).toBe(false);
+  });
 });
 
 describe('placeTooltip', () => {
@@ -90,6 +112,35 @@ describe('placeTooltip', () => {
     expect(placeTooltip(strip, tip, viewport, 420).left).toBe(370);
     expect(placeTooltip(strip, tip, viewport, 205).left).toBe(200);
     expect(placeTooltip(strip, tip, viewport, 598).left).toBe(500);
+  });
+
+  it('opens beside a control when asked, centred on its height', () => {
+    const rail = { left: 0, top: 100, width: 28, height: 28 };
+
+    expect(placeTooltip(rail, tip, viewport, 0, 'right')).toEqual({ left: 34, top: 102 });
+  });
+
+  it('opens on the other side, or below, when the asked side has no room', () => {
+    const edge = { left: 772, top: 100, width: 28, height: 28 };
+
+    expect(placeTooltip(edge, tip, viewport, 0, 'right')).toEqual({ left: 666, top: 102 });
+    expect(
+      placeTooltip({ left: 0, top: 100, width: 28, height: 28 }, tip, viewport, 0, 'left')
+    ).toEqual({
+      left: 34,
+      top: 102
+    });
+
+    const narrow = { width: 150, height: 600 };
+    expect(
+      placeTooltip({ left: 50, top: 100, width: 28, height: 28 }, tip, narrow, 0, 'right').top
+    ).toBe(134);
+  });
+
+  it('keeps a side tooltip inside the window top to bottom', () => {
+    expect(
+      placeTooltip({ left: 0, top: 0, width: 28, height: 8 }, tip, viewport, 0, 'right').top
+    ).toBe(6);
   });
 
   it('slides sideways to stay inside the window', () => {

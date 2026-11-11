@@ -45,16 +45,26 @@ const COMPONENT_DOCS = Object.fromEntries(
 );
 
 /**
- * Short names for areas whose doc title is a sentence rather than a
- * component's name, so the sidebar lists every area as one short entry; the
- * page keeps its full title.
+ * The sidebar's name for an area whose doc title is not already one plain,
+ * short entry: a sentence, or a component's export name (`DataGrid`). Every
+ * entry reads as words ("Data grid"), so the list follows one naming rule;
+ * the page keeps its full title.
  */
 const AREA_NAMES: Readonly<Record<string, string>> = {
+  activity: 'Activity bar',
+  clock: 'Clock',
+  datetime: 'Date-time picker',
   filter: 'Filter',
+  grid: 'Data grid',
   icon: 'Icons',
+  keychord: 'Key chord',
+  namecut: 'Name cut',
+  segmented: 'Segmented choice',
+  selectall: 'Select-all bar',
   shell: 'Shell',
   store: 'Store',
-  surface: 'Surfaces'
+  surface: 'Surfaces',
+  tabs: 'Page tabs'
 };
 
 /** Areas a guide already covers, so they get no second page. */

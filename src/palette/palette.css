@@ -156,9 +156,11 @@
 }
 
 /* The level the list shows, a chip before the query that steps back out
-   when pressed: an accent wash with an accent line, deeper under the
-   pointer; the base sheet's pressed recipe and control transition draw the
-   rest. It takes no keyboard focus (the
+   when pressed: an accent wash, deeper under the pointer, edged in the
+   current item's opaque ring (3:1 on the surface and on both washes in
+   every theme, where the translucent accent line fell to 1.7:1), as a
+   control's edge must be; the base sheet's pressed recipe and control
+   transition draw the rest. It takes no keyboard focus (the
    field keeps it; ← steps back), so it draws no ring of its own. */
 .palette-level {
   display: inline-flex;
@@ -168,7 +170,7 @@
   height: var(--control-height-xs);
   margin-right: var(--space-4);
   padding: 0 var(--space-3);
-  border: var(--line) solid var(--accent-line);
+  border: var(--line) solid var(--current-ring);
   border-radius: var(--radius-sm);
   color: var(--text);
   font: inherit;
@@ -184,6 +186,13 @@
 
 .palette-level:hover:enabled:not(:active) {
   background: var(--accent-wash-strong);
+}
+
+/* Held, the chip keeps the base sheet's sunk face and hairline but its
+   fill is the accent's pressed face, one clear step (1.12:1) past its own
+   accent hover, which the neutral pressed wash is not. */
+.palette-level:active:enabled {
+  background: var(--accent-wash-pressed);
 }
 
 /* Should a host hand it the focus anyway, it says so with the ring. */

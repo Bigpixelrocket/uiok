@@ -70,3 +70,64 @@ export function legibleForeground(
   }
   return mixed(foreground, target, high);
 }
+
+/** A colour over whatever lies under it, at `alpha` (0 to 1). */
+export interface TranslucentColor {
+  readonly color: GhosttyColor;
+  readonly alpha: number;
+}
+
+/**
+ * Reads the CSS colour forms the selection fill takes: `#rrggbb`, and
+ * `rgb()`/`rgba()` in comma or space syntax with an optional alpha as a
+ * number or a percentage. Null for anything else.
+ */
+export function parseTranslucentColor(value: string): TranslucentColor | null {
+  const text = value.trim().toLowerCase();
+  const hex = /^#([0-9a-f]{6})$/.exec(text)?.[1];
+  if (hex !== undefined) {
+    return {
+      color: {
+        r: Number.parseInt(hex.slice(0, 2), 16),
+        g: Number.parseInt(hex.slice(2, 4), 16),
+        b: Number.parseInt(hex.slice(4, 6), 16)
+      },
+      alpha: 1
+    };
+  }
+  const functional = /^rgba?\(([^)]*)\)$/.exec(text)?.[1];
+  if (functional === undefined) return null;
+  const parts = functional.split(/[\s,/]+/).filter((part) => part.length > 0);
+  if (parts.length !== 3 && parts.length !== 4) return null;
+  const [r, g, b] = parts.slice(0, 3).map((part) => Number.parseFloat(part));
+  const alphaText = parts[3] ?? '1';
+  const alpha = alphaText.endsWith('%')
+    ? Number.parseFloat(alphaText) / 100
+    : Number.parseFloat(alphaText);
+  if (![r, g, b, alpha].every((number) => Number.isFinite(number))) return null;
+  const clamp = (number: number) => Math.round(Math.max(0, Math.min(255, number)));
+  return {
+    color: { r: clamp(r!), g: clamp(g!), b: clamp(b!) },
+    alpha: Math.max(0, Math.min(1, alpha))
+  };
+}
+
+/**
+ * The colour a selected cell's text is drawn in. Selected text takes the
+ * theme's selection ink (`selectionText`) where it has one, else its own
+ * foreground, floored at the minimum contrast against what the reader sees
+ * behind it: the selection fill laid over the cell's own background. So a
+ * dim or coloured word stays readable while selected, as unselected text
+ * does on its own background.
+ */
+export function selectedForeground(
+  foreground: GhosttyColor,
+  background: GhosttyColor,
+  selection: TranslucentColor | null,
+  selectionText?: GhosttyColor
+): GhosttyColor {
+  const under =
+    selection === null ? background : mixed(background, selection.color, selection.alpha);
+
+  return legibleForeground(selectionText ?? foreground, under);
+}

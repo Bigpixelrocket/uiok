@@ -14,8 +14,7 @@
   --font-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
   /* Type sizes, one per role:
-     - key-word: a word inside a key cap ("esc"), a grid sort arrow;
-     - key: a letter inside a key cap;
+     - key: a letter or a word inside a key cap;
      - caption: column and group labels, counts, pill tabs, chart labels,
        uppercase headings;
      - small: compact control labels, status lines, help text, dialog
@@ -24,7 +23,6 @@
      - heading: a run headline, an empty state's title, a card title;
      - figure: a run header's big figure;
      - display: a startup or splash title. */
-  --font-size-key-word: 9px;
   --font-size-key: 10px;
   --font-size-caption: 11px;
   --font-size-small: 12px;
@@ -94,12 +92,18 @@
      rule below), so a transition written with them needs no query of its
      own; a loop still stops itself with animation: none. signal: a
      change that carries meaning by colour alone (a refusal's red without its
-     shake); reduced motion keeps it, since nothing moves. */
+     shake); reduced motion keeps it, since nothing moves. loop: one sweep
+     of a slow loop that shows work without a figure (a loading shimmer).
+     notice: one beat of a flash that must be seen before it ends (a key
+     that just changed). Every "this is running" pulse breathes once per
+     spin. */
   --duration-fast: 120ms;
   --duration-base: 200ms;
   --duration-slow: 280ms;
   --duration-signal: 280ms;
   --duration-spin: 1s;
+  --duration-loop: 1.4s;
+  --duration-notice: 2.4s;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in-out: ease-in-out;
 
@@ -148,12 +152,20 @@
 
   /* Icon sizes (lucide's size prop, and icons sized in CSS): sm beside 11
      and 12 px text and in 20px inline controls; md beside 13px text in rows,
-     tabs, and buttons; lg for a dialog's title icon and empty-state actions.
-     icon-column is the leading icon column of a row or menu option. */
+     tabs, and buttons; lg for a dialog's title icon, empty-state actions,
+     and a row's product mark; xl for the glyph over an empty state or a
+     failure. icon-column is the leading icon column of a row or menu
+     option. */
   --icon-sm: 12px;
   --icon-md: 14px;
   --icon-lg: 16px;
+  --icon-xl: 28px;
   --icon-column: var(--space-10);
+
+  /* A status or presence dot beside a name (a state mark, a running
+     marker): one diameter everywhere. A group's colour swatch, which must
+     read as a colour rather than a state, is larger: --space-4. */
+  --dot: 6px;
 
   /* Layers. Overlay layering is decided here once, not with per-component
      numbers. Inside a pane (its own stacking context):
@@ -171,7 +183,6 @@
        inline editor, a menu in a dialog);
      - z-tooltip: the hover tooltip, above a dialog whose controls it names. */
   --z-below: -1;
-  --z-base: 0;
   --z-raised: 1;
   --z-local-overlay: 2;
   --z-menu: 3;

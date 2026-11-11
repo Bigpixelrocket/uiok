@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
@@ -7,6 +8,12 @@ import { DataGrid } from './DataGrid.js';
 /** Gives every element the viewport's height, which jsdom never lays out. */
 const viewportHeight = (height: number): void => {
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(height);
+};
+
+/** Makes the grid's columns overflow its well by `by` pixels, which jsdom never lays out. */
+const overflowBy = (by: number): void => {
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(400);
+  vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(400 + by);
 };
 
 /** Scrolls the grid as the wheel would, firing its scroll event. */
@@ -330,6 +337,7 @@ describe('the data grid’s cursor, sort, and edit', () => {
 
   it('frames a scrolling well, and keeps its header one height and its right edge single', () => {
     applyStylesheets(readStylesheet('src/grid/grid.css'));
+    overflowBy(40);
     render(
       <DataGrid
         cell={(row, column) => ({ text: `${row}-${column}` })}
@@ -364,5 +372,64 @@ describe('the data grid’s cursor, sort, and edit', () => {
 
     expect(declaredValues(cells.at(-1) as Element, 'border-right-style').at(-1)).toBe('none');
     expect(declaredValues(cells[0] as Element, 'border-right-style')).toEqual([]);
+  });
+
+  it('fades its inline edges only while the columns overflow the well by the fade’s width', () => {
+    const grid = (): void => {
+      render(
+        <DataGrid
+          cell={(row, column) => ({ text: `${row}-${column}` })}
+          columns={[{ label: 'name' }, { label: 'note' }]}
+          copyText={() => null}
+          label="Files"
+          rowCount={1}
+        />
+      );
+    };
+
+    // A sliver of overflow scrolls without a fade, so no column's edge dims.
+    overflowBy(5);
+    grid();
+    expect(screen.getByRole('grid').classList.contains('scroll-fade-x')).toBe(false);
+    cleanup();
+
+    overflowBy(12);
+    grid();
+    expect(screen.getByRole('grid').classList.contains('scroll-fade-x')).toBe(true);
+  });
+
+  it('stands an editor that holds buttons on a panel, and a bare field on the cell alone', () => {
+    applyStylesheets(readStylesheet('src/grid/grid.css'));
+    const grid = (node: ReactElement): HTMLElement => {
+      render(
+        <DataGrid
+          cell={(row, column) => ({ text: `${row}-${column}` })}
+          columns={[{ label: 'name' }]}
+          copyText={() => null}
+          editor={{ row: 0, column: 0, node }}
+          label="Files"
+          rowCount={1}
+        />
+      );
+      return screen.getByRole('textbox', { name: 'Edit' });
+    };
+
+    const bare = grid(<input aria-label="Edit" />);
+
+    expect(declaredValues(bare.parentElement as Element, 'background')).toEqual([]);
+    cleanup();
+
+    // The field sits in the caller's wrapper beside Save and Cancel.
+    const wrapped = grid(
+      <span>
+        <input aria-label="Edit" />
+        <button type="button">Save</button>
+        <button type="button">Cancel</button>
+      </span>
+    );
+    const layer = wrapped.closest('.data-grid-editor') as Element;
+
+    expect(declaredValues(layer, 'background')).toEqual(['var(--surface)']);
+    expect(declaredValues(wrapped, 'border').at(-1)).toBe('var(--line) solid var(--accent)');
   });
 });

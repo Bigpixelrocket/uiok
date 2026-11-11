@@ -8,9 +8,9 @@
 import { Folder } from 'lucide-react';
 import { useLayoutEffect, useState, type ReactNode } from 'react';
 
-import { ICON_LG, ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
+import { ICON_LG, ICON_MD, ICON_SM, ICON_XL } from '@bigpixelrocket/uiok/icon';
 
-const TYPE = ['key-word', 'key', 'caption', 'small', 'body', 'heading', 'figure', 'display'];
+const TYPE = ['key', 'caption', 'small', 'body', 'heading', 'figure', 'display'];
 const SPACE = ['1', '2', '3', '4', '5', '6', '8', '10', '12', '16'];
 const RADIUS = ['xs', 'sm', 'md', 'lg', 'pill'];
 const HEIGHT = [
@@ -25,7 +25,8 @@ const HEIGHT = [
 const ICONS = [
   { name: 'ICON_SM', size: ICON_SM },
   { name: 'ICON_MD', size: ICON_MD },
-  { name: 'ICON_LG', size: ICON_LG }
+  { name: 'ICON_LG', size: ICON_LG },
+  { name: 'ICON_XL', size: ICON_XL }
 ];
 
 /** Every token the demo reads a value for. */
@@ -126,7 +127,12 @@ export function TokensDemo() {
         <ul className="scale-list">
           {ICONS.map(({ name, size }) => (
             <TokenRow key={name} name={name} value={`${size}px`}>
-              <Folder aria-hidden="true" className="scale-icon" size={size} />
+              <Folder
+                absoluteStrokeWidth={size > ICON_LG}
+                aria-hidden="true"
+                className="scale-icon"
+                size={size}
+              />
             </TokenRow>
           ))}
         </ul>

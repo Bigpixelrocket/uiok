@@ -13,7 +13,12 @@ import {
   type GhosttyColor,
   type GhosttySnapshot
 } from './core.js';
-import { legibleForeground } from './contrast.logic.js';
+import {
+  legibleForeground,
+  parseTranslucentColor,
+  selectedForeground,
+  type TranslucentColor
+} from './contrast.logic.js';
 import { DEFAULT_SELECTION_BACKGROUND } from './fallbackColors.js';
 import {
   ghosttySpriteCodepoint,
@@ -71,10 +76,40 @@ function cellInk(cell: GhosttyCell): GhosttyColor {
   return ink;
 }
 
+// Selected cells' inks, by selection fill, selection ink, background, and
+// foreground, so each combination is floored once and keeps one object (and
+// so one CSS text). Dropped wholesale if a run of themes ever fills it.
+const SELECTED_INK_LIMIT = 4096;
+const selectedInks = new Map<string, GhosttyColor>();
+
+const colorKey = (color: GhosttyColor | undefined): string =>
+  color === undefined ? '' : `${color.r},${color.g},${color.b}`;
+
+/**
+ * The colour a selected cell's text is drawn in (`selectedForeground`): the
+ * selection ink, or the cell's own foreground, at the minimum contrast on
+ * the selection fill over the cell's background.
+ */
+function selectedCellInk(
+  cell: GhosttyCell,
+  selectionBackground: string,
+  selection: TranslucentColor | null,
+  selectionText: GhosttyColor | undefined
+): GhosttyColor {
+  const key = `${selectionBackground}|${colorKey(selectionText)}|${colorKey(cell.background)}|${colorKey(cell.foreground)}`;
+  let ink = selectedInks.get(key);
+  if (ink === undefined) {
+    ink = selectedForeground(cell.foreground, cell.background, selection, selectionText);
+    if (selectedInks.size >= SELECTED_INK_LIMIT) selectedInks.clear();
+    selectedInks.set(key, ink);
+  }
+  return ink;
+}
+
 function sameTextStyle(left: GhosttyCell, right: GhosttyCell): boolean {
-  // Selection deliberately does not participate: it only tints the background
-  // overlay, and splitting a text run at a selection boundary visibly shifts
-  // glyph spacing whenever the face's true advance differs from the cell width.
+  // Selection does not participate: it tints the background overlay, and a
+  // run splits at a selection boundary only where the selected text takes
+  // another ink (the run's ink is compared beside this).
   return (
     ghosttyColorsEqual(left.foreground, right.foreground) &&
     left.bold === right.bold &&
@@ -417,6 +452,12 @@ export function renderGhosttySnapshot(options: {
   readonly previousCursorY?: number | null;
   readonly focused?: boolean;
   readonly selectionBackground?: string;
+  /**
+   * The one ink of selected text (the theme's selection foreground); each
+   * selected cell's own foreground when omitted. Either way it is floored
+   * against the selection over the cell's background.
+   */
+  readonly selectionForeground?: GhosttyColor;
   readonly hoveredLinkRange?: GhosttyCellRange | null;
   /** The device pixels per CSS pixel the context's transform scales by; 1 when omitted. */
   readonly pixelRatio?: number;
@@ -441,6 +482,13 @@ export function renderGhosttySnapshot(options: {
   } = options;
   const focused = options.focused ?? true;
   const selectionBackground = options.selectionBackground ?? DEFAULT_SELECTION_BACKGROUND;
+  const selectionFill = parseTranslucentColor(selectionBackground);
+  const selectionForeground = options.selectionForeground;
+  // A cell's text colour: on the selection, the selection's ink against it.
+  const inkOf = (cell: GhosttyCell): GhosttyColor =>
+    cell.selected
+      ? selectedCellInk(cell, selectionBackground, selectionFill, selectionForeground)
+      : cellInk(cell);
   const hoveredLinkRange = options.hoveredLinkRange ?? null;
   const pixelRatio = options.pixelRatio ?? 1;
   // A clip of several rectangles turns Chromium's GPU canvas to multisampling
@@ -579,7 +627,7 @@ export function renderGhosttySnapshot(options: {
         runStart = runEnd;
         continue;
       }
-      const firstInk = cellInk(first);
+      const firstInk = inkOf(first);
       // A run splits where the floor draws its text in another colour, so
       // each cell's text keeps the contrast of its own background.
       const runEnd = ghosttyTextRunEnd(
@@ -588,7 +636,7 @@ export function renderGhosttySnapshot(options: {
         (cell) =>
           ghosttySpriteCodepoint(cell.text) < 0 &&
           sameTextStyle(cell, first) &&
-          ghosttyColorsEqual(cellInk(cell), firstInk)
+          ghosttyColorsEqual(inkOf(cell), firstInk)
       );
       const text =
         runEnd === runStart + 1
@@ -702,7 +750,7 @@ export function renderGhosttySnapshot(options: {
       if (!cell || (!cell.underline && !cell.strikethrough && !cell.overline && !hoveredLink)) {
         continue;
       }
-      context.fillStyle = cssColor(cellInk(cell));
+      context.fillStyle = cssColor(inkOf(cell));
       // Decorations span the cell's device edges so a decorated run is unbroken.
       const left = columnEdge(column) / pixelRatio;
       const width = (columnEdge(column + 1) - columnEdge(column)) / pixelRatio;

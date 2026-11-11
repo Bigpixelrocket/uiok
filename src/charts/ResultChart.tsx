@@ -1,5 +1,6 @@
 import {
   memo,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
@@ -12,11 +13,13 @@ import {
 import { useLabels } from '../labels/UiokProvider.js';
 import { VisuallyHidden } from '../VisuallyHidden.js';
 import { createValueStore, type ValueStore } from '../store/ValueStore.js';
-import { pieArcs } from './Pie.logic.js';
+import { pieArcs, pieTagRoom, pieTags } from './Pie.logic.js';
 import {
   STACKABLE_CHART_TYPES,
   cutLabel,
+  LEGEND_ROW,
   legendLayout,
+  plotTopUnderLegend,
   pointRuns,
   shownLabels,
   spacedTicks,
@@ -27,7 +30,7 @@ import {
   type ResultChartType
 } from './ResultChart.logic.js';
 import { domainOf, scaled, tickLabels, ticksOf, type Domain } from './Scatter.logic.js';
-import { seriesColour as colour } from './seriesColour.js';
+import { SERIES_COLOURS, seriesColour as colour } from './seriesColour.js';
 
 /** A value as an axis and the read-out write it: six significant digits, no exponent for everyday sizes. */
 const valueText = (value: number): string => String(Number(value.toPrecision(6)));
@@ -35,8 +38,7 @@ const valueText = (value: number): string => String(Number(value.toPrecision(6))
 /** The room between the drawing's edge and the plot on a side with no axis. */
 const EDGE = 16;
 
-/** The height of a legend row, and the most rows a legend draws. */
-const LEGEND_ROW = 16;
+/** The most rows a legend draws. */
 const LEGEND_ROWS = 4;
 
 /**
@@ -176,6 +178,8 @@ function ResultChartDrawing({
   svgRef
 }: ResultChartProps): ReactElement {
   const labels = useLabels().charts;
+  // The masks that keep unstacked area fills from mixing are named from it.
+  const maskPrefix = `result-chart-${useId().replace(/[^\w-]/g, '')}`;
   const [hover] = useState(() => createValueStore<Hovered | null>(null));
   const figure = useRef<HTMLElement>(null);
   const legend = useRef<SVGGElement>(null);
@@ -202,7 +206,12 @@ function ResultChartDrawing({
   const left =
     type === 'pie' ? EDGE : type === 'bar' ? 110 : Math.max(64, Math.ceil(tickWidth * 6.5) + 30);
   // The legend starts at the plot's left edge and wraps inside its width.
-  const legendTexts = legendNames.map((name) => cutLabel(name, 24));
+  // A pie whose colours repeat numbers its legend as it numbers its slices.
+  const legendTexts = legendNames.map((name, at) =>
+    type === 'pie' && categories.length > SERIES_COLOURS
+      ? `${at + 1} ${cutLabel(name, 24)}`
+      : cutLabel(name, 24)
+  );
   const legendPlaces = legendLayout(legendTexts, width - left - EDGE, legendWidths);
   const legendKey = legendTexts.join('\n');
 
@@ -223,7 +232,7 @@ function ResultChartDrawing({
   const legendRows = legendPlaces.reduce((rows, place) => Math.max(rows, place.row + 1), 0);
   const legendTop = title === '' ? 8 : 28;
   const margin = {
-    top: legendTop + Math.min(LEGEND_ROWS, legendRows) * LEGEND_ROW,
+    top: plotTopUnderLegend(legendTop, Math.min(LEGEND_ROWS, legendRows)),
     right: EDGE,
     bottom: type === 'pie' ? EDGE : 44,
     left
@@ -248,6 +257,10 @@ function ResultChartDrawing({
   };
 
   const plot: ReactElement[] = [];
+  // Area fills go under the grid and the outlines (each series' runs, by
+  // series), with the masks that cut them.
+  const areaRuns: string[][] = [];
+  const areaFills: ReactElement[] = [];
 
   if (empty) {
     plot.push(
@@ -264,7 +277,10 @@ function ResultChartDrawing({
     );
   } else if (type === 'pie') {
     const first = series[0];
-    const r = Math.max(10, Math.min(plotWidth, plotHeight) / 2 - 4);
+    // Past the eight series colours, colours repeat, so each slice carries
+    // its number on a leader outside the rim, as its legend entry does.
+    const numbered = categories.length > SERIES_COLOURS;
+    const r = Math.max(10, Math.min(plotWidth, plotHeight) / 2 - 4 - (numbered ? pieTagRoom : 0));
     const slices = categories.map((label, at) => ({
       label,
       value: Math.max(0, first?.values[at] ?? 0)
@@ -274,8 +290,29 @@ function ResultChartDrawing({
     // category it came from; the legend and the read-out go by category.
     const kept = slices.flatMap((slice, at) => (slice.value > 0 ? [at] : []));
 
+    const tags = numbered ? pieTags(arcs, r) : [];
+
     plot.push(
       <g key="pie" transform={`translate(${plotWidth / 2} ${plotHeight / 2})`}>
+        {tags.map((tag, at) => {
+          const category = kept[at] ?? at;
+          // A tag above or below the pie stands clear of its leader's end.
+          const dy = tag.anchor === 'middle' ? (tag.y < 0 ? -6 : 6) : 0;
+
+          return (
+            <g className="result-chart-slice-tag" key={`tag-${category}`}>
+              <line x1={tag.fromX} x2={tag.x} y1={tag.fromY} y2={tag.y} />
+              <text
+                dominantBaseline="middle"
+                textAnchor={tag.anchor}
+                x={tag.x + (tag.anchor === 'start' ? 2 : tag.anchor === 'end' ? -2 : 0)}
+                y={tag.y + dy}
+              >
+                {category + 1}
+              </text>
+            </g>
+          );
+        })}
         {arcs.map((arc, at) => {
           const category = kept[at] ?? at;
 
@@ -352,14 +389,8 @@ function ResultChartDrawing({
             ...run.map(({ at }) => base[at] ?? [0, 0]).reverse()
           ];
 
-          plot.push(
-            <path
-              className="result-chart-area"
-              d={`${outline.map(([x, y], at) => `${at === 0 ? 'M' : 'L'}${x} ${y}`).join(' ')} Z`}
-              fill={colour(seriesIndex)}
-              key={`area-${seriesIndex}-${runIndex}`}
-            />
-          );
+          (areaRuns[seriesIndex] ??= [])[runIndex] =
+            `${outline.map(([x, y], at) => `${at === 0 ? 'M' : 'L'}${x} ${y}`).join(' ')} Z`;
         });
       }
       if (type !== 'scatter') {
@@ -403,6 +434,51 @@ function ResultChartDrawing({
       });
     });
   }
+
+  // Each area's tint shows only where no series drawn after it (in front)
+  // has its own fill, so two tints never add up to a hue the legend lacks:
+  // a mask keeps the plot and cuts every fill in front. Stacked bands do
+  // not overlap and take none, so their shared edges stay seamless.
+  areaRuns.forEach((runs, seriesIndex) => {
+    const front = stack ? [] : areaRuns.slice(seriesIndex + 1).flat();
+    const mask = `${maskPrefix}-area-${seriesIndex}`;
+
+    if (front.length > 0) {
+      areaFills.push(
+        <mask
+          height={plotHeight + 2}
+          id={mask}
+          key={mask}
+          maskUnits="userSpaceOnUse"
+          width={plotWidth + 2}
+          x={-1}
+          y={-1}
+        >
+          <rect
+            className="result-chart-mask-keep"
+            height={plotHeight + 2}
+            width={plotWidth + 2}
+            x={-1}
+            y={-1}
+          />
+          {front.map((d, at) => (
+            <path className="result-chart-mask-cut" d={d} key={at} />
+          ))}
+        </mask>
+      );
+    }
+    runs.forEach((d, runIndex) => {
+      areaFills.push(
+        <path
+          className="result-chart-area"
+          d={d}
+          fill={colour(seriesIndex)}
+          key={`area-${seriesIndex}-${runIndex}`}
+          mask={front.length > 0 ? `url(#${mask})` : undefined}
+        />
+      );
+    });
+  });
 
   /** The mark the pointer came onto, read from its `data-` attributes; anything else keeps the last. */
   const onPointerOver = (event: PointerEvent<SVGSVGElement>): void => {
@@ -505,6 +581,7 @@ function ResultChartDrawing({
           )}
         </g>
         <g transform={`translate(${margin.left} ${margin.top})`}>
+          {areaFills}
           {type !== 'pie' && (
             <g className="result-chart-axis">
               {valueTicks.map((tick) =>

@@ -6,16 +6,15 @@ Colour tokens are in [themes](themes.md).
 
 ## Type
 
-| Token                  | Value | Role                                                                                 |
-| ---------------------- | ----- | ------------------------------------------------------------------------------------ |
-| `--font-size-key-word` | 9px   | A word inside a key cap ("esc"), a grid sort arrow                                   |
-| `--font-size-key`      | 10px  | A letter inside a key cap                                                            |
-| `--font-size-caption`  | 11px  | Column and group labels, counts, pill tabs, chart labels, uppercase headings         |
-| `--font-size-small`    | 12px  | Compact control labels, status lines, help text, dialog titles, grid cells, tooltips |
-| `--font-size-body`     | 13px  | Listing rows, regular Button labels, body text, the terminal                         |
-| `--font-size-heading`  | 14px  | A run headline, an empty state's title, a card title                                 |
-| `--font-size-figure`   | 18px  | A run header's big figure                                                            |
-| `--font-size-display`  | 20px  | A startup or splash title                                                            |
+| Token                 | Value | Role                                                                                 |
+| --------------------- | ----- | ------------------------------------------------------------------------------------ |
+| `--font-size-key`     | 10px  | A letter or a word inside a key cap                                                  |
+| `--font-size-caption` | 11px  | Column and group labels, counts, pill tabs, chart labels, uppercase headings         |
+| `--font-size-small`   | 12px  | Compact control labels, status lines, help text, dialog titles, grid cells, tooltips |
+| `--font-size-body`    | 13px  | Listing rows, regular Button labels, body text, the terminal                         |
+| `--font-size-heading` | 14px  | A run headline, an empty state's title, a card title                                 |
+| `--font-size-figure`  | 18px  | A run header's big figure                                                            |
+| `--font-size-display` | 20px  | A startup or splash title                                                            |
 
 | Token                   | Value | Role                                       |
 | ----------------------- | ----- | ------------------------------------------ |
@@ -31,6 +30,8 @@ Colour tokens are in [themes](themes.md).
 | `--font-weight-medium`  | 500    | Labels that head data: column labels, strip links, tooltips |
 | `--font-weight-strong`  | 600    | Control labels, titles, the current item                    |
 | `--tracking-caps`       | 0.04em | Letter-spacing of a small uppercase heading                 |
+
+Italic has one meaning: a value that stands for no value, or that is not literal. A grid's or a form's NULL, a "none" where a key or a setting has nothing, a name a rename leaves unchanged, a value marked as in use. It is set with `font-style: italic` on that value's own class, in the value's quiet colour (`--text-dim`), never on a label, an action, a heading, an alias, a session or connection name, or a comment, which stay upright in their own colour. The library's one use is the grid's NULL cell (`.cell-null`).
 
 Faces: `--font-mono` for what a user could type or copy (names, paths, values, commands, field contents, key caps, listing rows, title-strip titles, the terminal); `--font-ui` for sentences and for labels that head data (column labels, group headings, button and form labels).
 
@@ -55,17 +56,17 @@ A 1px line or optical nudge stays a literal. Listing columns space in `ch` (`--p
 
 ## Relationships
 
-| Between                          | Space                                                                                            |
-| -------------------------------- | ------------------------------------------------------------------------------------------------ |
-| Icon and its label               | 6px (`--space-3`); 4px (`--space-2`) in a 20px inline control                                    |
-| Control and control              | 8px (`--space-4`); 2px (`--space-1`) inside one cluster                                          |
-| Label or help text and its field | 4px (`--space-2`)                                                                                |
-| Form row and row                 | 8px (`--space-4`)                                                                                |
-| Section and section              | 16px (`--space-8`)                                                                               |
-| Surface edge and content         | 12px (`--space-6`); 4px for a menu; 16px for a page block                                        |
-| Icon size and text size          | `--icon-sm` beside 11 and 12 px text; `--icon-md` beside 13px text; `--icon-lg` for a title icon |
-| Controls that share a row        | One height token; a field beside a Button takes the Button's height                              |
-| Corner and height                | Up to 22px high `--radius-sm`; from 24px `--radius-md`; overlays `--radius-lg`                   |
+| Between                          | Space                                                                                                                                                                                                                        |
+| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Icon and its label               | 6px (`--space-3`); 4px (`--space-2`) in a 20px inline control                                                                                                                                                                |
+| Control and control              | 8px (`--space-4`); 2px (`--space-1`) inside one cluster                                                                                                                                                                      |
+| Label or help text and its field | 4px (`--space-2`)                                                                                                                                                                                                            |
+| Form row and row                 | 8px (`--space-4`)                                                                                                                                                                                                            |
+| Section and section              | 16px (`--space-8`)                                                                                                                                                                                                           |
+| Surface edge and content         | 12px (`--space-6`) on every side of a framed surface (card, notice card, dialog, well, a framed band of several lines); a band one line high may keep `var(--space-3) var(--space-6)`; 4px for a menu; 16px for a page block |
+| Icon size and text size          | `--icon-sm` beside 11 and 12 px text; `--icon-md` beside 13px text; `--icon-lg` for a title icon                                                                                                                             |
+| Controls that share a row        | One height token; a field beside a Button takes the Button's height                                                                                                                                                          |
+| Corner and height                | Up to 22px high `--radius-sm`; from 24px `--radius-md`; overlays `--radius-lg`                                                                                                                                               |
 
 ## Corners and lines
 
@@ -79,6 +80,8 @@ A 1px line or optical nudge stays a literal. Listing columns space in `ch` (`--p
 | `--line`        | 1px   | Every hairline, divider, and outline                                              |
 | `--line-strong` | 2px   | State marks: a current tab's underline, a key cap's foot, drop marks, status bars |
 
+Frames and dividers: a whole frame round a surface (a card, a well, a framed band, a pane) is `var(--line) solid var(--border-strong)`; a divider between parts inside it (a row rule, a column rule, a section's hairline) is `var(--border)`. A rule that draws a full `border` with a `border-radius` is a frame, so it reads `--border-strong`. A well that holds several lines (a path list in a confirmation, a shown SQL statement, a list of advice) is framed at `--radius-md`, whatever its height, so every well matches the cards and panes around it; `--radius-sm` stays for one-line parts and key caps.
+
 A corner nested inside another keeps it concentric: `calc(var(--radius-md) - var(--space-1))` for a segment 2px inside its track, `calc(var(--radius-lg) - 1px)` for a dialog's title strip inside its border. A side that meets an edge is `0`.
 
 ## Motion
@@ -90,6 +93,8 @@ A corner nested inside another keeps it concentric: `calc(var(--radius-md) - var
 | `--duration-slow`   | 280ms                          | Glides; a refusal's shake and red together; a bell                                             |
 | `--duration-signal` | 280ms                          | A change shown by colour alone (a refusal's red under reduced motion); reduced motion keeps it |
 | `--duration-spin`   | 1s                             | One turn of a spinner, a pulse, a cursor blink                                                 |
+| `--duration-loop`   | 1.4s                           | One sweep of a slow loop that shows work without a figure: a loading shimmer                   |
+| `--duration-notice` | 2.4s                           | One beat of a flash that must be seen before it ends: a key that just changed                  |
 | `--ease-out`        | cubic-bezier(0.2, 0.8, 0.2, 1) | Entering and gliding                                                                           |
 | `--ease-in-out`     | ease-in-out                    | Shakes and pulses                                                                              |
 
@@ -97,7 +102,7 @@ Progress and spinners run `linear`; a blink steps with `steps()`. Rows, menu opt
 
 `--transition-control` is the feedback transition every control writes on its rest state: background, border, shadow, text colour, and filter, each at `--duration-fast`. The base sheet sets it on every quiet control its hover and press recipes cover (`docs/components/surface.md`), and the Button and the form controls read the same steps.
 
-Reduced motion: under `prefers-reduced-motion: reduce`, `tokens.css` sets the three one-shot durations to 0ms (`--duration-signal` keeps its length: it moves nothing, and a colour that carries meaning must stay visible), so a transition or one-shot animation written with them needs no query of its own. A loop (a spinner, stripes, a pulse, a blink) stops itself with `animation: none` in its own query. The base sheet's `uiok-spin` and `uiok-pulse` keyframes serve every spinner and pulse.
+Reduced motion: under `prefers-reduced-motion: reduce`, `tokens.css` sets the three one-shot durations to 0ms (`--duration-signal` keeps its length: it moves nothing, and a colour that carries meaning must stay visible), so a transition or one-shot animation written with them needs no query of its own. A loop (a spinner, stripes, a pulse, a blink) stops itself with `animation: none` in its own query. The base sheet's `uiok-spin` and `uiok-pulse` keyframes serve every spinner and pulse. Every "this is running" signal breathes at one rate, `uiok-pulse var(--duration-spin)`, whether it marks a listing row or a tab. A delay (`transition-delay`, `animation-delay`) is a motion token too.
 
 ## Heights
 
@@ -131,30 +136,42 @@ The ring follows the control's `border-radius`, so a control with corners shows 
 
 ## Icons
 
-| Token           | Value | Use                                                              |
-| --------------- | ----- | ---------------------------------------------------------------- |
-| `--icon-sm`     | 12px  | Beside 11 and 12 px text; inside a 20px inline control           |
-| `--icon-md`     | 14px  | Beside 13px text in rows, tabs, and buttons                      |
-| `--icon-lg`     | 16px  | A dialog's title icon, a run header's glyph, empty-state actions |
-| `--icon-column` | 20px  | The leading icon column of a row or menu option                  |
+| Token           | Value | Use                                                                                    |
+| --------------- | ----- | -------------------------------------------------------------------------------------- |
+| `--icon-sm`     | 12px  | Beside 11 and 12 px text; inside a 20px inline control                                 |
+| `--icon-md`     | 14px  | Beside 13px text in rows, tabs, and buttons                                            |
+| `--icon-lg`     | 16px  | A dialog's title icon, a run header's glyph, empty-state actions, a row's product mark |
+| `--icon-xl`     | 28px  | The glyph over an empty state or a failure                                             |
+| `--icon-column` | 20px  | The leading icon column of a row or menu option                                        |
+
+`ICON_SM`, `ICON_MD`, `ICON_LG`, and `ICON_XL` (`@bigpixelrocket/uiok/icon`) are the same sizes for lucide's `size` prop. A media viewer's 64px placeholder glyph is the one size above `--icon-xl`, an app's documented exception.
 
 Every icon keeps lucide's default stroke (2 on its 24-unit grid); a glyph larger than `--icon-lg` passes `absoluteStrokeWidth` ([icon](components/icon.md)). An icon takes its label's colour; a row's leading icon takes `--text-dim`.
 
+## Marks
+
+| Token       | Value | Use                                                                     |
+| ----------- | ----- | ----------------------------------------------------------------------- |
+| `--dot`     | 6px   | A status or presence dot beside a name: a state mark, a running marker  |
+| `--space-4` | 8px   | A group's colour swatch, which reads as a colour rather than as a state |
+
+A dot has one diameter everywhere; a mark that is not a state (a swatch) takes the next size, never one between.
+
 ## Layers
 
-Inside a pane (its own stacking context): `--z-below` (-1, a backdrop under its own box's content), `--z-base` (0), `--z-raised` (1, a sticky strip, a part lifted over its siblings), `--z-local-overlay` (2, an overlay inside a pane), `--z-menu` (3, a menu anchored in a pane), `--z-drag` (4, an item in the hand). On the page: `--z-panel` (10, floating panels), `--z-overlay` (15, a page-level surface such as a drop target or a full-screen page), `--z-dialog` (20), `--z-dialog-popover` (25, a popover opened from inside a dialog, such as the grid's inline editor), `--z-tooltip` (30).
+Inside a pane (its own stacking context): `--z-below` (-1, a backdrop under its own box's content), `--z-raised` (1, a sticky strip, a part lifted over its siblings), `--z-local-overlay` (2, an overlay inside a pane), `--z-menu` (3, a menu anchored in a pane), `--z-drag` (4, an item in the hand). On the page: `--z-panel` (10, floating panels), `--z-overlay` (15, a page-level surface such as a drop target or a full-screen page), `--z-dialog` (20), `--z-dialog-popover` (25, a popover opened from inside a dialog, such as the grid's inline editor), `--z-tooltip` (30).
 
 ## Exceptions
 
-`test/tokenValues.test.ts` checks, in every hand-written stylesheet: type sizes, weights, and line heights; corners; layers; durations and easings; gaps, paddings, and margins (logical longhands included); border and outline widths (`--line`, `--line-strong`, a focus token, `0`, or `none`); heights (a token, a percentage, or glyph geometry under 12px); opacity (`0`, `1`, or a token); shadows (a blur only inside a `--shadow-*` token; a ring or edge is crisp); and `color-mix(` (only inside a custom property definition: a tint is a theme token). These stay literal, each with a comment where it is written, and the test lists them:
+`test/tokenValues.test.ts` checks, in every hand-written stylesheet: type sizes, weights, and line heights; corners; layers; durations and easings; gaps, paddings, and margins (logical longhands included); border and outline widths (`--line`, `--line-strong`, a focus token, `0`, or `none`); heights (a token, a percentage, or glyph geometry under 12px); opacity (`0`, `1`, or a token); shadows (a blur only inside a `--shadow-*` token; a ring or edge is crisp); filters (`filter` and `backdrop-filter`: a token or `none`; a press is a token fill, never a brightness filter); `color-mix(` (a tint is a theme token; only a hook listed in the test's `MIXED_PROPERTIES`, whose ink the host or the theme passes in, may hold one); delays with durations; and a control's `width` and `min-width` (in a rule whose height is a control height token, a raw length fails: a square control repeats its height token). These stay literal, each with a comment where it is written, and the test lists them:
 
 - Key caps: the 12px key box and its line height, 16 and 18 px cap heights. They are glyph geometry, never a pointer target by themselves.
 - The slider's 12px knob on its 4px trough, glyph geometry.
 - Plot heights in charts (an empty plot's 120px, a scatter plot's 380px drawing and 180px floor) and the Settings dialog's fixed 620px frame: layout sizes, not controls.
 - The shared pulse's 0.35 low point: a keyframe of the motion, not a state's opacity.
 - The docs site's demo frames and brand mark heights.
-- The terminal's 13px on 19px cells (`.pane-well`, `.terminal-failure`): the engine's metric.
+- The terminal's 13px on 19px cells (`.pane-well`): the engine's metric.
 - The activity stripes' 0.9s loop, timed against the stripe period.
 - The palette's fixed 104px drop from the window top: a placement.
 - The docs site's prose sizes (`--site-font-*` in `site/src/site.css`), its wordmark, its page margins, and its loose list line height. A reading page is not the compact interface.
-- `em` sizes for inline code in running text; `ch` spacing in listings; widths and component geometry no scale names (a 22px icon action, a 6px dot).
+- `em` sizes for inline code in running text; `ch` spacing in listings; widths and component geometry no scale names (a key box, a swatch on the docs site).

@@ -28,6 +28,12 @@ export interface PagerProps {
   readonly forward?: boolean;
   /** How the steps draw: icons (the default), words, or both. */
   readonly look?: LinkLook;
+  /**
+   * The pager's height, to match the row it sits in: `inline` (20px steps
+   * and menu) in a status line or row, the default; `small` (24px) in a
+   * toolbar of 24px fields and selects.
+   */
+  readonly size?: 'inline' | 'small';
 }
 
 /** Each step's icon. */
@@ -59,7 +65,8 @@ export function Pager({
   onPage,
   endKnown = true,
   forward = true,
-  look = 'icons'
+  look = 'icons',
+  size = 'inline'
 }: PagerProps): ReactElement | null {
   const labels = useLabels().pager;
 
@@ -87,12 +94,15 @@ export function Pager({
   };
 
   return (
-    <nav aria-label={labels.pages(kind)} className="pager">
+    <nav
+      aria-label={labels.pages(kind)}
+      className={size === 'small' ? 'pager pager-small' : 'pager'}
+    >
       {step('begin', 0, !first)}
       {step('previous', page - 1, !first)}
       <select
         aria-label={labels.page(kind)}
-        className="field field-xs pager-page"
+        className={size === 'small' ? 'field field-sm pager-page' : 'field field-xs pager-page'}
         onChange={(event) => onPage(Number(event.currentTarget.value) - 1)}
         value={page + 1}
       >

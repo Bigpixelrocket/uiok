@@ -2,10 +2,12 @@
    pages and every app of the family draws the same way. A Settings dialog
    (its frame, the sidebar of pages, a page's subsections, the theme picker,
    a file's problems, the update card and its notes), the update pill's
-   entrance, the release channel tag, the sign-in prompts, and the block a
-   part of the window shows when it fails to load. None is a component: the
-   app writes the markup with these classes (docs/components/shell.md). The
-   header, the brand lockup, and the startup screens stay the app's. */
+   entrance and failed state, the release channel tag, the About window's
+   layout, the sign-in prompts, and the block a part of the window shows
+   when it fails to load. None is a component: the app writes the markup
+   with these classes (docs/components/shell.md). The header, the brand
+   wordmark, the app's icon, window drag regions, and the startup screens
+   stay the app's. */
 
 /* ---- Settings dialog ---- */
 
@@ -51,7 +53,8 @@
    in view in the text colour with the rail lit beside it. A name too long
    for the sidebar wraps onto a second compact line rather than losing its
    end, between words, and inside a word only when the word alone cannot
-   fit (never with a hyphen the browser guessed). Hover and press are the quiet control's; the chosen row takes
+   fit (never with a hyphen the browser guessed). Hover and press are the
+   quiet control's shared recipe (styles.css); the chosen row takes
    neither. The focus ring is the base sheet's, drawn inside the row. */
 .settings-sidebar-page,
 .settings-sidebar-subsection {
@@ -76,20 +79,16 @@
   transition: var(--transition-control);
 }
 
+/* A page's row hangs its parts from the first line, so a name that wraps
+   keeps its glyph and chip beside its first line and the glyph column
+   stays straight. The block padding centres that one line in the bar. */
+.settings-sidebar-page {
+  align-items: flex-start;
+  padding-block: calc((var(--bar-height) - var(--line-height-compact)) / 2);
+}
+
 .settings-sidebar-page > span {
   min-width: 0;
-}
-
-.settings-sidebar-page:hover,
-.settings-sidebar-subsection:hover {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
-}
-
-.settings-sidebar-page:active,
-.settings-sidebar-subsection:active {
-  background: var(--pressed-wash);
-  box-shadow: var(--shadow-pressed);
 }
 
 .settings-sidebar-page:focus-visible,
@@ -106,6 +105,7 @@
    page; the primary colour stays for the dialog's main action. */
 .settings-sidebar-page svg {
   flex: none;
+  margin-block: calc((var(--line-height-compact) - var(--icon-md)) / 2);
   color: var(--text-dim);
 }
 
@@ -122,6 +122,7 @@
   align-items: center;
   gap: var(--space-2);
   height: calc(var(--line-height-compact) + 2 * var(--line));
+  margin-block: calc(-1 * var(--line));
   margin-inline-start: auto;
   padding: 0 var(--space-3);
   overflow: visible;
@@ -141,6 +142,7 @@
 }
 
 .settings-sidebar-page .settings-sidebar-chip svg {
+  margin-block: 0;
   color: inherit;
 }
 
@@ -326,9 +328,12 @@
    it, as wide as the value column allows. The chosen one wears the accent
    ring round its miniature and its name in the text colour and weight; the
    keyboard's focus adds the focus ring outside the frame, so a focused
-   choice that is not chosen never reads as chosen; a press sinks the frame
-   as every pressed control does. A choice scrolled into view keeps room
-   for its rings. */
+   choice that is not chosen never reads as chosen. Under the pointer the
+   frame doubles to a 2px ring in --text-dim and the name lifts to --text;
+   held, the ring goes to full --text and the miniature sinks a pixel
+   under the pressed shadow, so rest, hover, and press are three distinct
+   pictures on any ground. A choice scrolled into view keeps room for its
+   rings. */
 .theme-choices {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
@@ -373,7 +378,7 @@
 }
 
 .theme-choice:hover .theme-choice-frame {
-  box-shadow: inset 0 0 0 var(--line) var(--text-dim);
+  box-shadow: inset 0 0 0 var(--line-strong) var(--text-dim);
 }
 
 .theme-choice[aria-checked='true'] .theme-choice-frame {
@@ -383,8 +388,12 @@
 .theme-choice:active .theme-choice-frame {
   background: var(--pressed-wash);
   box-shadow:
-    inset 0 0 0 var(--line) var(--text-dim),
+    inset 0 0 0 var(--line-strong) var(--text),
     var(--shadow-pressed);
+}
+
+.theme-choice:active .theme-choice-frame > * {
+  transform: translateY(1px);
 }
 
 .theme-choice[aria-checked='true']:active .theme-choice-frame {
@@ -758,6 +767,35 @@
   outline-offset: var(--focus-offset-inset);
 }
 
+/* A list that fades (.scroll-fade) masks its own box, which would erase a
+   ring drawn on it, so a host wraps it in .update-notes-frame and the
+   frame draws the ring, out of the fade's reach. The frame stands out by
+   the list's small inset on every side, so the ring clears the bullets and
+   the last line's descenders while the text column keeps the card's
+   width. */
+.update-notes-frame {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-3));
+  border-radius: var(--radius-sm);
+}
+
+.update-notes-frame > .update-notes-list {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+}
+
+.update-notes-frame > .update-notes-list:focus-visible {
+  outline: none;
+}
+
+.update-notes-frame:has(> .update-notes-list:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset-inset);
+}
+
 .update-notes-list li {
   position: relative;
   padding-inline-start: var(--space-6);
@@ -799,11 +837,16 @@
 /* The update pill in a header: uiok's Button, tonal while a build is
    offered, primary once it is ready, neutral after a failed download. It
    never reports progress. It slides in once, keeps its words on one line,
-   and after a failed download wears its glyph in the warning mark (never
-   its words, which a light theme's amber could not hold at 4.5:1). */
+   and after a failed download wears a warning outline (the button's own
+   border, so hover and press keep it) and its glyph in the warning mark,
+   never its words, which a light theme's amber could not hold at 4.5:1. */
 .shell-update-pill {
   white-space: nowrap;
   animation: update-pill-in var(--duration-slow) var(--ease-out);
+}
+
+.shell-update-pill[data-state='download-failed'] {
+  border-color: var(--warning);
 }
 
 .shell-update-pill[data-state='download-failed'] svg {
@@ -848,6 +891,41 @@
   white-space: nowrap;
 }
 
+/* ---- About window ---- */
+
+/* An About window: one panel centred in the window, the app's icon (sized
+   by the app), its lockup, and the version under it in the code face, the
+   one line a reader may select and copy. The app adds its window's drag
+   regions. */
+.about-window {
+  display: grid;
+  box-sizing: border-box;
+  min-height: 100vh;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-4);
+  padding: var(--space-12);
+  font-family: var(--font-ui);
+  text-align: center;
+}
+
+.about-lockup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text);
+}
+
+.about-version {
+  margin: 0;
+  color: var(--text-dim);
+  font: var(--font-weight-regular) var(--font-size-caption) / var(--line-height-compact)
+    var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  cursor: text;
+  user-select: text;
+}
+
 /* ---- Sign-in prompts ---- */
 
 /* What a connection asks while it signs in: a secret in uiok's field
@@ -872,9 +950,9 @@
   display: flex;
   gap: var(--space-5);
   margin: var(--space-5) 0 0;
-  padding: var(--space-3) var(--space-4);
-  border: var(--line) solid var(--border);
-  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-6);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-small);
 }
 
