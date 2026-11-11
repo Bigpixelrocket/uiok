@@ -237,6 +237,26 @@ describe('DateTimePicker', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
   });
 
+  it('lifts a fading scroller’s mask while its panel is open, so the mask never cuts the panel', () => {
+    applyStylesheets(readStylesheet('src/datetime/datetime.css'));
+    render(
+      <div className="listing-root">
+        <div className="pane-list" data-testid="list">
+          <div className="scroll-fade-x" data-testid="well">
+            <DateTimePicker kind="date" label="Pick" onChange={() => undefined} value="" />
+          </div>
+        </div>
+      </div>
+    );
+    const list = screen.getByTestId('list');
+    const well = screen.getByTestId('well');
+
+    expect(declaredValues(list, 'mask-image')).toEqual([]);
+    open('Pick');
+    expect(declaredValues(list, 'mask-image')).toEqual(['none']);
+    expect(declaredValues(well, 'mask-image')).toEqual(['none']);
+  });
+
   it('keeps the time fields on one row and gives a long fraction a row of its own', () => {
     applyStylesheets(readStylesheet('src/datetime/datetime.css'));
     render(

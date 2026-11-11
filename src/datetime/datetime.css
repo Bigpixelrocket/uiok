@@ -34,6 +34,17 @@
   font: var(--font-size-small)/var(--line-height-prose) var(--font-ui);
 }
 
+/* A scroller's fade (.scroll-fade and its kin, a listing's pane list) is a
+   mask, and a mask cuts every descendant to the scroller's box, a fixed one
+   included, so it would cut the panel at the scroller's edge. While a panel
+   is open inside one, the scroller drops its fade; the edges turn sharp for
+   that moment and the panel escapes whole. */
+:is(.scroll-fade, .scroll-fade-end, .scroll-fade-x, .listing-root .pane-list):has(
+  .date-picker-panel
+) {
+  mask-image: none;
+}
+
 .date-picker-head {
   display: flex;
   align-items: center;
