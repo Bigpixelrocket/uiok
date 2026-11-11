@@ -103,14 +103,27 @@
 /* The trail fills its row, root first; the slashes between crumbs only
    separate them. The first crumb's words start on the row inset, the line
    the column strip's first label and the rows' icons start on, so the
-   pane's three bands share one left edge. */
+   pane's three bands share one left edge.
+   In a bar too narrow for the trail and its facts, the trail gives way
+   first, down to room for two cut crumbs; only then does a fact cut its
+   words. Its shrink factor is a million times the tools', so the tools
+   give less than a layout unit while it gives way, and a fact shows no
+   ellipsis early. Past that floor its crumbs are clipped at the trail's
+   own box, so they never run under the tools. */
 :where(.listing-root) .pane-crumbs {
-  flex: 1;
+  flex: 1 1000000 auto;
   display: flex;
   align-items: center;
-  min-width: 0;
+  box-sizing: border-box;
+  min-width: min(100%, calc(var(--pane-row-inset) + 10ch));
   height: 100%;
   padding: 0 var(--space-1) 0 calc(var(--pane-row-inset) - var(--space-2));
+}
+
+/* A crumb's menu opens inside its crumb, so the trail clips nothing while
+   one is open: the menu stays whole past the trail's box. */
+:where(.listing-root) .pane-crumbs:not(:has([aria-expanded='true'])) {
+  overflow-x: clip;
 }
 
 /* A crumb's menu anchors under it. A crumb that shrinks keeps room for one
@@ -277,16 +290,32 @@ button.crumb-label > .crumb-text {
 }
 
 /* A page's state at the path bar's end: its dot and words; a failure reads
-   red, a change waiting for the user amber. */
+   red, a change waiting for the user amber. Words laid straight into the
+   fact cannot cut, so such a fact keeps its whole width. Words in a
+   `.path-fact-text` box cut with an ellipsis once the trail has given all
+   it can, down to three characters; that box carries `cutTooltip`, so the
+   whole fact opens as a tooltip only while it is cut. */
 :where(.listing-root) .path-facts {
   display: inline-flex;
   flex: 0 1 auto;
   align-items: center;
   gap: var(--space-3);
-  min-width: 0;
   color: var(--text-dim);
   font-size: var(--font-size-small);
   white-space: nowrap;
+}
+
+/* A flex item offers its whole unbroken text as its smallest width, so the
+   floor is the fact's own: its dot, the gap, and three characters, or its
+   whole width when that is less. */
+:where(.listing-root) .path-facts:has(> .path-fact-text) {
+  min-width: calc-size(max-content, min(size, var(--dot) + var(--space-3) + 3ch));
+}
+
+:where(.listing-root) .path-fact-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 :where(.listing-root) .path-facts.danger {
@@ -1067,7 +1096,10 @@ button.crumb-label > .crumb-text {
   align-items: center;
   gap: 0 var(--space-4);
   min-height: var(--row-height);
-  margin: 0;
+  /* The block margins only: inside a table listing the message reaches
+     back over the listing's inset as a row does, so its rule runs edge to
+     edge and its words start where the rows' names do. */
+  margin-block: 0;
   /* The words start over the rows' names, past the icon column. */
   padding: var(--space-1) var(--pane-row-inset) var(--space-1)
     calc(var(--pane-row-inset) + var(--icon-column));
@@ -1323,7 +1355,7 @@ button.crumb-label > .crumb-text {
    end, centred in the row. */
 :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
   position: sticky;
-  inset-inline-end: 0;
+  inset-inline-end: calc(-1 * var(--pane-row-inset));
   z-index: var(--z-raised);
   align-self: stretch;
   display: flex;
@@ -1346,16 +1378,20 @@ button.crumb-label > .crumb-text {
   background: var(--strip);
 }
 
-/* A listing that scrolls sideways itself, rather than inside a list, pins
-   its cells at its own edge: a sticky box stops at its scroller's padding,
-   which here is the row inset. */
-:where(.listing-root) .pane-listing.pane-pin-end {
-  container-type: scroll-state;
+/* A sticky box stops at its scroller's padding. A listing that is its own
+   scroller pads its end by the row inset, so its pinned cells would stop
+   that far inside their rows' end, scrolled or not, and a marked cursor
+   row's ring would show its end twice. The cells reach back over that
+   padding (`inset-inline-end` above), so they always end with their row.
+   A list around the listing has no padding: while it scrolls sideways, the
+   cells stop at its edge, as their own padding asks. */
+:where(.listing-root) .pane-list:has(.pane-pin-end) {
+  container: uiok-pane-pin-list / scroll-state;
 }
 
-@container scroll-state(scrollable: inline) {
+@container uiok-pane-pin-list scroll-state(scrollable: inline) {
   :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
-    inset-inline-end: calc(-1 * var(--pane-row-inset));
+    inset-inline-end: 0;
   }
 }
 

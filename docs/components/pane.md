@@ -92,7 +92,20 @@ DOM helpers: `paneRows`, `paneRow`, `verbControl(root, verb, 'verb' | 'page-verb
 
 ## Styling
 
-`.pane` (`.active` wears the accent on its frame), `.pane-path-row`, `.pane-crumbs`, `.crumb` (`.root`, `.home`, `.here`, `.brief`), `.crumb-label` (a crumb's words in `.crumb-text`), `.crumb-separator`, `.path-tools`, `.path-facts` (`.danger`, `.warning`), `.path-star`, `.pane-act` (`.lit`, `.danger`), `.pane-icon-act` (`.worded`, `.danger`), `.pane-list`, `.pane-status`, `.pane-summary`, `.pane-status-tools`.
+`.pane` (`.active` wears the accent on its frame), `.pane-path-row`, `.pane-crumbs`, `.crumb` (`.root`, `.home`, `.here`, `.brief`), `.crumb-label` (a crumb's words in `.crumb-text`), `.crumb-separator`, `.path-tools`, `.path-facts` (`.danger`, `.warning`; its words in `.path-fact-text` to let them cut), `.path-star`, `.pane-act` (`.lit`, `.danger`; its verb in `.pane-act-word`), `.pane-icon-act` (`.worded`, `.danger`), `.pane-list`, `.pane-status`, `.pane-summary`, `.pane-status-tools`.
+
+In a path bar too narrow for everything, the trail gives way first, down to room for two cut crumbs, and is clipped at its own box past that (not while a crumb's menu is open, `aria-expanded="true"`), so it never runs under the tools. Then a fact cuts its words, if they sit in `.path-fact-text`; give that box `cutTooltip(words)` so the whole fact opens as a tooltip only while it is cut. Words laid straight into `.path-facts` cannot cut, so such a fact keeps its whole width:
+
+```tsx
+<span className="path-facts danger">
+  <StateMark tone="danger" word="" />
+  <span className="path-fact-text" {...cutTooltip(fact)}>
+    {fact}
+  </span>
+</span>
+```
+
+`QuietAction` draws its verb in `.pane-act-word`. A host that shows its actions as icons alone hides that box the way the base sheet's `.visually-hidden` does (out of flow and clipped, never `font-size: 0` or `display: none`), so the button keeps its tooltip and `aria-label` and only the drawn word goes.
 
 The pane's three bands share one inset: the first crumb's words, the strip's first label, the rows' icons, and the status line's words start on `--pane-row-inset`, and the path bar's last action, the rows' actions, and the status line's last icon end on it.
 

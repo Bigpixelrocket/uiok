@@ -85,7 +85,7 @@ export interface QuietActionProps {
  * a verb in the dim tone, lit in the accent on the cursor row (and as a
  * path bar's lead action, `lit`). In a row it leaves the Tab order
  * (`useInRow`), and a press never reaches the row's own `onOpen`. Drawn by
- * `.pane-act` in the listing look.
+ * `.pane-act` in the listing look; its verb is drawn in `.pane-act-word`.
  */
 export function QuietAction({
   icon: Icon,
@@ -128,7 +128,9 @@ export function QuietAction({
         : { 'data-tooltip-shortcut': shortcut })}
     >
       <Icon aria-hidden size={ICON_SM} />
-      {word}
+      {/* The verb in a box of its own, so a host that draws its actions as
+          icons alone can hide it accessibly (`.pane-act-word`). */}
+      <span className="pane-act-word">{word}</span>
     </button>
   );
 }

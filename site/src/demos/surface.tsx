@@ -1,15 +1,24 @@
 /**
  * Notices in each tone, in the flow and floated; a card; the overline
- * heading; a list that fades where it scrolls on, and two framed scrollers
- * whose frames stay solid while their contents fade.
+ * heading; a list that fades where it scrolls on, two framed scrollers
+ * whose frames stay solid while their contents fade, and a row that fades
+ * at its inline ends; then a host's own buttons joining the quiet control
+ * and track item recipes, at rest, hovered, and pressed.
+ *
+ * A cell that shows a pointer state carries `data-force` (with
+ * `data-force-sel` naming the button inside it): the screenshot harness
+ * forces that pseudo-class through the DevTools protocol. In a browser the
+ * attributes do nothing and the cell shows the button at rest.
  */
 
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 
-import { CircleAlert, CircleCheck, Info, TriangleAlert } from 'lucide-react';
+import { CircleAlert, CircleCheck, Info, Pin, TriangleAlert } from 'lucide-react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { ICON_MD } from '@bigpixelrocket/uiok/icon';
+import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
+
+import { DemoState, DemoStates } from '../DemoStates';
 
 const LINES = Array.from({ length: 30 }, (_, index) => `line ${index + 1}`);
 
@@ -32,6 +41,33 @@ const STICKY: CSSProperties = {
   background: 'var(--surface-header)',
   color: 'var(--text-dim)'
 };
+
+/** Words long enough to scroll sideways in the sideways fade's row. */
+const PATH = '/Users/me/projects/site/src/components/settings/sections/appearance/ThemePreview.tsx';
+
+/** The pointer states a recipe cell shows, with the pseudo-classes each forces. */
+const STATES = [
+  { name: 'Rest', force: null },
+  { name: 'Hover', force: 'hover' },
+  { name: 'Pressed', force: 'hover active' }
+] as const;
+
+/** A state cell whose button is forced into a pseudo-class for captures. */
+function Forced({
+  force,
+  children
+}: {
+  readonly force: string | null;
+  readonly children: ReactNode;
+}) {
+  if (force === null) return children;
+  // No box of its own, so a forced cell sits on the same line as a cell at rest.
+  return (
+    <span data-force={force} data-force-sel="button" style={{ display: 'contents' }}>
+      {children}
+    </span>
+  );
+}
 
 /** The notices and cards page's demo. */
 export function SurfaceDemo() {
@@ -96,6 +132,33 @@ export function SurfaceDemo() {
           </ul>
         </div>
       </div>
+
+      <h3 className="demo-subhead">Scroll fade sideways</h3>
+      <div className="demo-scroll-x scroll-fade-x">
+        <code>{PATH}</code>
+      </div>
+
+      <DemoStates title="Joining a recipe">
+        {STATES.map(({ name, force }) => (
+          <DemoState key={`quiet-${name}`} label={`quiet-control, ${name.toLowerCase()}`}>
+            <Forced force={force}>
+              <button className="demo-host-button quiet-control" type="button">
+                <Pin size={ICON_SM} />
+                Pin
+              </button>
+            </Forced>
+          </DemoState>
+        ))}
+        {STATES.map(({ name, force }) => (
+          <DemoState key={`track-${name}`} label={`quiet-track-item, ${name.toLowerCase()}`}>
+            <Forced force={force}>
+              <button className="demo-host-button quiet-track-item" type="button">
+                Logs
+              </button>
+            </Forced>
+          </DemoState>
+        ))}
+      </DemoStates>
     </div>
   );
 }

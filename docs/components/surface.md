@@ -29,6 +29,17 @@ A notice that reports a failure the user should act on takes `role="alert"`; one
 
 A failure told in two lines, what failed and why, colours them one way everywhere, as `RunHeader`'s failed state does: the headline takes `--danger-text` and the reason under it stays in the body's colour (`--text-dim`, in the code face when it is a raw line the system returned, such as an error code and a host). The update card's error tone follows it. A notice colours neither line: its bar and glyph carry the tone.
 
+Each tone has one glyph, drawn first in a notice, a problem line, or a status card, in the tone's colour (`ICON_MD` in a notice):
+
+| Tone    | Glyph           | Where                                                                                                         |
+| ------- | --------------- | ------------------------------------------------------------------------------------------------------------- |
+| Danger  | `CircleAlert`   | A failure the user should act on: `notice-danger`, a settings file's problem, a terminal that could not start |
+| Warning | `TriangleAlert` | A state that works but needs a second look: `notice-warning`                                                  |
+| Success | `CircleCheck`   | A finished step: `notice-success`, and a `RunHeader` that is done                                             |
+| Note    | `Info`          | A neutral `notice`: a fact the user may want, nothing wrong                                                   |
+
+`CircleX` marks one thing only: a run that failed, as `RunHeader`'s failed state draws it (and a host's list of runs that follows `RunHeader`'s run states). A notice or a card that reports a failure takes `CircleAlert`, never `CircleX`.
+
 ## Card
 
 `card`: a lifted panel (`--card-bg`, a `--border-strong` frame like every framed surface, `--radius-md`, 12px inset) grouping one subject's lines. Its first child starts at the inset and its last ends there, whatever margins a heading or a paragraph brings; the space between children stays the content's own. A `notice-card` takes the same 12px inset on every side.

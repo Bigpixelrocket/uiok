@@ -1,7 +1,8 @@
 /**
  * One choice of several, with the arrow keys moving the choice, at each
  * control height beside a button of the same height; segments with an icon
- * beside their words; and a choice that cannot be taken now.
+ * beside their words; a choice that cannot be taken now; and the same look
+ * on a host's plain buttons with `aria-pressed`.
  */
 
 import { Columns3, LayoutGrid, List } from 'lucide-react';
@@ -18,6 +19,7 @@ const VIEW_WORDS: Readonly<Record<(typeof VIEWS)[number], string>> = {
 };
 const VIEW_ICONS = { list: List, grid: LayoutGrid, columns: Columns3 } as const;
 const SIZES = ['s', 'm', 'l', 'xl'] as const;
+const COLUMNS = ['1', '2', '3', '4'] as const;
 
 /** A row that sets the segmented choice's height, as a form of regular controls does. */
 const REGULAR = { '--segmented-height': 'var(--control-height)' } as CSSProperties;
@@ -29,6 +31,8 @@ export function SegmentedDemo() {
   const regularLabel = useId();
   const sizeLabel = useId();
   const iconLabel = useId();
+  const plainLabel = useId();
+  const [columns, setColumns] = useState<(typeof COLUMNS)[number]>('2');
   const [view, setView] = useState<(typeof VIEWS)[number]>('list');
   const [size, setSize] = useState<(typeof SIZES)[number]>('m');
   return (
@@ -95,6 +99,24 @@ export function SegmentedDemo() {
       <code className="demo-readout">
         view: {view} · size: {size}
       </code>
+      <div className="demo-row">
+        <span className="demo-label" id={plainLabel}>
+          Plain buttons
+        </span>
+        <div aria-labelledby={plainLabel} className="segmented-choice" role="group">
+          {COLUMNS.map((count) => (
+            <button
+              aria-pressed={count === columns}
+              className="segmented-choice-option"
+              key={count}
+              onClick={() => setColumns(count)}
+              type="button"
+            >
+              {count}
+            </button>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

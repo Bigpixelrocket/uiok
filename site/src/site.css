@@ -459,8 +459,11 @@ a {
   min-width: 0;
 }
 
+/* The caption sits on its cell's bottom line, so the captions of one row
+   share a line when the states in it differ in height. */
 .demo-state-label {
   max-width: 100%;
+  margin-top: auto;
   color: var(--text-dim);
   font: var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
 }
@@ -525,13 +528,40 @@ a {
   flex: none;
 }
 
+/* A demo's scroller; a list used as one drops its block margin, so it
+   starts under its heading as a framed one does. */
 .demo-scroll {
   max-height: 320px;
+  margin: 0;
   overflow: auto;
 }
 
 .demo-scroll.short {
   max-height: 260px;
+}
+
+/* A row that scrolls sideways under the sideways scroll fade. */
+.demo-scroll-x {
+  width: 100%;
+  max-width: 360px;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* A host's own button, as an app draws one: its rest face only, at zero
+   weight, so the recipe class it joins (quiet-control, quiet-track-item)
+   paints its hover and press over it, as the recipes expect of a host. */
+:where(.demo-host-button) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--control-height-sm);
+  padding: 0 var(--space-6);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-dim);
+  font: var(--font-size-small) var(--font-ui);
 }
 
 .demo-described {

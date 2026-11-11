@@ -356,6 +356,12 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* The count of entries a legend leaves out: a quiet figure after the last
+   one listed, with no swatch. */
+.result-chart-legend .result-chart-legend-more {
+  fill: var(--text-dim);
+}
+
 .result-chart-line {
   stroke-width: 2;
   stroke-linejoin: round;

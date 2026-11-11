@@ -1,11 +1,13 @@
 /**
- * The three icon sizes, each beside the text size it belongs with, and the
- * Spinner at each size. Every icon keeps lucide's default stroke.
+ * The four icon sizes: the three that sit beside text, each with the text
+ * size it belongs with, and the glyph alone over an empty state or a
+ * failure; then the Spinner at each text size. Every icon keeps lucide's
+ * default stroke, which the largest holds at 2px on screen.
  */
 
 import { FolderOpen } from 'lucide-react';
 
-import { ICON_LG, ICON_MD, ICON_SM, Spinner } from '@bigpixelrocket/uiok/icon';
+import { ICON_LG, ICON_MD, ICON_SM, ICON_XL, Spinner } from '@bigpixelrocket/uiok/icon';
 
 import { DemoState, DemoStates } from '../DemoStates';
 
@@ -35,6 +37,9 @@ export function IconDemo() {
             </span>
           </DemoState>
         ))}
+        <DemoState label={`ICON_XL, ${ICON_XL}px, over a failure`}>
+          <FolderOpen absoluteStrokeWidth aria-hidden="true" size={ICON_XL} />
+        </DemoState>
       </DemoStates>
       <DemoStates minCell="160px" title="Spinner">
         {SIZES.map(({ name, size, text }) => (

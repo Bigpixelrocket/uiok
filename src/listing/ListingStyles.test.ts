@@ -389,6 +389,51 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
+  it('ends the pinned cells with their rows, past a self-scrolling listing’s padding', () => {
+    // A sticky box stops at its scroller's padding; a listing that scrolls
+    // itself pads its end by the row inset, so the cells reach back over it
+    // (a marked cursor row's ring would otherwise show its end twice). Only
+    // a list around the listing that scrolls sideways holds them at 0.
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-list">
+      <div class="pane-listing pane-pin-end" role="table">
+        <div class="row marked cursor"><span class="row-name">a</span><span class="row-meta pane-action-cell"></span></div>
+      </div></div></section>`;
+    const cell = getComputedStyle(document.querySelector('.row-meta') as Element);
+
+    expect(cell.getPropertyValue('inset-inline-end').trim()).toBe(
+      'calc(-1 * var(--pane-row-inset))'
+    );
+    expect(sheet).toMatch(
+      /@container uiok-pane-pin-list scroll-state\(scrollable: inline\) \{\n\s*:where\(\.listing-root \.pane-listing\.pane-pin-end\) > :is\(\.row, \.pane-columns\) > :last-child \{\n\s*inset-inline-end: 0;/
+    );
+    expect(declaredValues(document.querySelector('.pane-list') as Element, 'container')).toEqual([
+      'uiok-pane-pin-list / scroll-state'
+    ]);
+    document.body.innerHTML = '';
+  });
+
+  it('gives way in a narrow path bar with the trail first, clipped at its box, then a fact’s words', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-path-row">
+      <div class="pane-crumbs"><span class="crumb here"><span class="crumb-label">a</span></span></div>
+      <div class="path-tools"><span class="path-facts"><span class="path-fact-text">Stopped</span></span></div>
+    </div></section>`;
+    const crumbs = getComputedStyle(document.querySelector('.pane-crumbs') as Element);
+    const text = getComputedStyle(document.querySelector('.path-fact-text') as Element);
+
+    expect(crumbs.flexShrink).toBe('1000000');
+    expect(crumbs.minWidth).toBe('min(100%, calc(var(--pane-row-inset) + 10ch))');
+    expect(crumbs.overflowX).toBe('clip');
+    expect([text.overflow, text.textOverflow]).toEqual(['hidden', 'ellipsis']);
+    // A crumb's open menu sits inside the trail; the trail clips nothing then.
+    document.querySelector('.crumb-label')?.setAttribute('aria-expanded', 'true');
+    expect(getComputedStyle(document.querySelector('.pane-crumbs') as Element).overflowX).not.toBe(
+      'clip'
+    );
+    document.body.innerHTML = '';
+  });
+
   it("starts a no-icon listing's first label past the icon column, below an app's own placement", () => {
     // The rule weighs what the label's default does, so any scoped app rule
     // that places the label wins, and a section's heading keeps the edge.

@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 
 import {
   cutLabel,
+  fittedLegend,
   LEGEND_ROW,
   legendLayout,
+  pieLegendRows,
   plotTopUnderLegend,
   shownLabels,
   splinePath,
@@ -75,6 +77,34 @@ describe('the chart of a table', () => {
       { text: 'b', x: 68, row: 0 },
       { text: 'c', x: 0, row: 1 }
     ]);
+  });
+
+  it('lists every entry and counts none when the legend fits its rows', () => {
+    expect(fittedLegend(['a', 'b'], 200, 1, [20, 20])).toEqual({
+      places: [
+        { text: 'a', x: 0, row: 0 },
+        { text: 'b', x: 48, row: 0 }
+      ],
+      more: null
+    });
+  });
+
+  it('counts the entries a legend leaves out after the last one listed, in the room it reserves', () => {
+    // Three 40px entries fill a 200px row (68px each); the count steps the third back.
+    const { places, more } = fittedLegend(['a', 'b', 'c', 'd'], 200, 1, [40, 40, 40, 40]);
+
+    expect(places.map((place) => place.text)).toEqual(['a', 'b']);
+    expect(more).toEqual({ text: '+2', x: 136, row: 0 });
+  });
+
+  it('counts entries past those named, though every named one fits', () => {
+    expect(fittedLegend(['a'], 200, 1, [20], 25).more).toEqual({ text: '+24', x: 48, row: 0 });
+  });
+
+  it('keeps a pie legend within a third of a short drawing, and at most its cap', () => {
+    expect(pieLegendRows(260, 28, 4)).toBe(3);
+    expect(pieLegendRows(400, 8, 4)).toBe(4);
+    expect(pieLegendRows(60, 28, 4)).toBe(1);
   });
 
   it('leaves the same room under a wrapped legend as under one row', () => {

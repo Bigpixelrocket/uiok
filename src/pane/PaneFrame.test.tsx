@@ -1,7 +1,9 @@
 import { render } from '@testing-library/react';
+import { Play } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 
 import { PanePathBar, PaneStatus } from './PaneFrame.js';
+import { QuietAction } from './PaneActions.js';
 
 describe('PaneStatus', () => {
   it('carries a summary in words whole as its tooltip, opened while a pane cuts it', () => {
@@ -51,5 +53,17 @@ describe('PanePathBar', () => {
     expect(button?.getAttribute('data-tooltip')).toBe('Back to servers');
     expect(button?.hasAttribute('data-tooltip-cut')).toBe(false);
     expect(button?.querySelector('.crumb-text')?.hasAttribute('data-tooltip')).toBe(false);
+  });
+});
+
+describe('QuietAction', () => {
+  it('draws its verb in a box of its own, which a host can hide in an icons-only look', () => {
+    const { container } = render(
+      <QuietAction icon={Play} label="Start web" onClick={() => undefined} word="Start" />
+    );
+    const button = container.querySelector('button.pane-act');
+
+    expect(button?.querySelector('.pane-act-word')?.textContent).toBe('Start');
+    expect(button?.getAttribute('aria-label')).toBe('Start web');
   });
 });

@@ -144,6 +144,8 @@ The Updates page (`updates-page`, in a `settings-page fills`) holds the check ca
 
 A download that stopped short draws no empty track in the card's `RunHeader`, and the reason it prints (what the system returned) is in the code face at the small size.
 
+The `error` tone colours the card's title, so it is for a card whose title is the failure itself ("The update could not be installed"), with the reason in `update-card-sub`. A host whose title stays neutral, such as the installed version over a check that could not reach the feed, keeps a neutral tone (`idle`) and tells the failure as a failed download is told: a failed `RunHeader` in the card's run block (`with-run`), its headline the failure, its detail the reason the system returned, and the time as a fact. That way the one line in `--danger-text` is always the one that says what went wrong.
+
 ### The update pill
 
 `shell-update-pill` on a header's `Button` (tonal while a build is offered, primary once it is ready to install, neutral after a failed download, `data-state` naming the state): it slides in once (not under reduced motion) and keeps its words on one line. With `data-state="download-failed"` its border (kept under hover and press) and its glyph wear `--warning`; its words stay in the button's colour. It never shows progress.

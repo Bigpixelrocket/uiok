@@ -181,12 +181,12 @@ export function legendLayout(
   texts: readonly string[],
   width: number,
   widths: readonly number[] = []
-): { readonly text: string; readonly x: number; readonly row: number }[] {
+): LegendPlace[] {
   let x = 0;
   let row = 0;
 
   return texts.map((text, at) => {
-    const span = 14 + (widths[at] ?? Array.from(text).length * 6.5) + 14;
+    const span = legendSpan(text, widths[at]);
 
     if (x > 0 && x + span - 14 > width) {
       x = 0;
@@ -200,6 +200,55 @@ export function legendLayout(
   });
 }
 
+/** How far a legend entry reaches along its row: swatch and gap, text, and the gap after it. */
+const legendSpan = (text: string, measured: number | undefined): number =>
+  14 + (measured ?? textWidth(text)) + 14;
+
+/** A caption text's width estimated from its length, about 6.5 pixels a character. */
+const textWidth = (text: string): number => Array.from(text).length * 6.5;
+
+/** A legend entry's place: its text, its left edge, and its row from zero. */
+export interface LegendPlace {
+  readonly text: string;
+  readonly x: number;
+  readonly row: number;
+}
+
+/**
+ * A legend of `total` entries (`texts` names the first of them) held to
+ * `rows` rows: the entries it lists (a run from the first, placed as
+ * `legendLayout` places them) and, when some are left out, `more`, a count
+ * of them written `+N` after the last entry listed,
+ * with no swatch. The count's width is reserved: where it would not fit
+ * on the last row, entries step back until it does, so it never takes a
+ * row of its own past the limit.
+ */
+export function fittedLegend(
+  texts: readonly string[],
+  width: number,
+  rows: number,
+  widths: readonly number[] = [],
+  total = texts.length
+): { readonly places: LegendPlace[]; readonly more: LegendPlace | null } {
+  const places = legendLayout(texts, width, widths);
+  let listed = places.filter((place) => place.row < rows).length;
+
+  if (listed === total) return { places, more: null };
+  for (; listed > 0; listed -= 1) {
+    const last = places[listed - 1];
+    const text = `+${total - listed}`;
+    let x = last === undefined ? 0 : last.x + legendSpan(last.text, widths[listed - 1]);
+    let row = last?.row ?? 0;
+
+    if (x > 0 && x + textWidth(text) > width) {
+      x = 0;
+      row += 1;
+    }
+    if (row < rows) return { places: places.slice(0, listed), more: { text, x, row } };
+  }
+  return { places: [], more: { text: `+${total}`, x: 0, row: 0 } };
+}
+
 /** The pitch of a legend's rows, in pixels. */
 export const LEGEND_ROW = 16;
 
@@ -208,6 +257,18 @@ const LEGEND_ROW_INK = 12;
 
 /** The room under a legend's last row, the same 12px (`--space-6`) whatever the row count. */
 const LEGEND_GAP = 12;
+
+/**
+ * How many rows a pie's legend may take in a drawing `height` pixels tall
+ * whose legend starts at `legendTop`: at most `most`, and no more than keep
+ * the title, the legend, and the room under it within a third of the
+ * height, so a short drawing leaves its pie room for its tags. Always one.
+ */
+export function pieLegendRows(height: number, legendTop: number, most: number): number {
+  const fit = Math.floor((height / 3 - legendTop - LEGEND_ROW_INK - LEGEND_GAP) / LEGEND_ROW) + 1;
+
+  return Math.max(1, Math.min(most, fit));
+}
 
 /**
  * Where the plot starts under a legend whose first row is at `legendTop`

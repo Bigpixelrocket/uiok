@@ -1,13 +1,23 @@
 /**
  * Tooltips with and without a chord (drawn with the legends' key glyphs),
- * one long enough to wrap, and one that describes more than the name.
+ * one long enough to wrap, one that describes more than the name, and a
+ * tool rail whose tooltips open beside each tool instead of below it.
  */
 
-import { Copy, FolderOpen, Info, Plus, Search } from 'lucide-react';
+import { Copy, FolderOpen, Info, Plus, Search, Settings } from 'lucide-react';
 
 import { IconButton } from '@bigpixelrocket/uiok/button';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { describedTooltip, tooltip } from '@bigpixelrocket/uiok/tooltip';
+
+import { DemoState, DemoStates } from '../DemoStates';
+
+/** A vertical rail of tools, as a sidebar draws one. */
+const RAIL = {
+  display: 'inline-flex',
+  flexDirection: 'column',
+  gap: 'var(--space-2)'
+} as const;
 
 /** The tooltip page's demo. */
 export function TooltipDemo() {
@@ -51,6 +61,21 @@ export function TooltipDemo() {
         </span>
         to read its whole path.
       </p>
+      <DemoStates minCell="320px" title="Beside a tool rail">
+        <DemoState label="Each tooltip opens at the end side, clear of the next tool">
+          <div aria-label="Tools" aria-orientation="vertical" role="toolbar" style={RAIL}>
+            <IconButton aria-label="Projects" {...tooltip('Projects', undefined, { side: 'end' })}>
+              <FolderOpen size={ICON_MD} />
+            </IconButton>
+            <IconButton aria-label="Search" {...tooltip('Search', undefined, { side: 'end' })}>
+              <Search size={ICON_MD} />
+            </IconButton>
+            <IconButton aria-label="Settings" {...tooltip('Settings', undefined, { side: 'end' })}>
+              <Settings size={ICON_MD} />
+            </IconButton>
+          </div>
+        </DemoState>
+      </DemoStates>
     </div>
   );
 }

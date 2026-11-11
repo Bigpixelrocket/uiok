@@ -91,6 +91,8 @@ const PARCELS = (() => {
 })();
 
 const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+/** Thirty days of a month, more slices than a pie's legend can list in a short drawing. */
+const MONTH_DAYS = Array.from({ length: 30 }, (_, index) => `Day ${index + 1}`);
 /** Each day's number in its month, the scatter type's number axis. */
 const DAY_NUMBERS = DAYS.map((_, index) => 2 + index);
 const SALES = [
@@ -214,6 +216,22 @@ export function ChartsDemo() {
             series={LONE_POINT}
             timeText={(at) => clock.format(at)}
             to={TO}
+          />
+        </DemoState>
+        <DemoState label="Thirty slices, the legend counting those it leaves out">
+          <ResultChart
+            categories={MONTH_DAYS}
+            height={260}
+            series={[
+              { name: 'orders', values: MONTH_DAYS.map((_, index) => 3 + ((index * 7) % 13)) }
+            ]}
+            stacked={false}
+            title="Orders by day"
+            type="pie"
+            width={460}
+            xLabel="day"
+            xValues={[]}
+            yLabel="orders"
           />
         </DemoState>
       </DemoStates>

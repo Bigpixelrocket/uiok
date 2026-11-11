@@ -13,13 +13,22 @@ import {
 import { useLabels } from '../labels/UiokProvider.js';
 import { VisuallyHidden } from '../VisuallyHidden.js';
 import { createValueStore, type ValueStore } from '../store/ValueStore.js';
-import { pieArcs, pieFills, pieTagRoom, pieTags, sliceFill, type SliceFill } from './Pie.logic.js';
+import {
+  DISTINCT_SLICE_FILLS,
+  pieArcs,
+  pieFills,
+  pieTagRoom,
+  pieTags,
+  sliceFill,
+  type SliceFill
+} from './Pie.logic.js';
 import { SliceHatches, slicePaint, sliceSwatch } from './PieFill.js';
 import {
   STACKABLE_CHART_TYPES,
   cutLabel,
+  fittedLegend,
   LEGEND_ROW,
-  legendLayout,
+  pieLegendRows,
   plotTopUnderLegend,
   pointRuns,
   shownLabels,
@@ -195,9 +204,11 @@ function ResultChartDrawing({
   // engine cannot measure) the layout estimates it from its length.
   const [legendWidths, setLegendWidths] = useState<readonly number[]>([]);
   const stack = stacked && STACKABLE_CHART_TYPES.has(type);
+  // The legend names at most as many entries as a pie has fills to tell
+  // apart; the rest are counted at its end.
   const legendNames = (type === 'pie' ? categories : series.map((entry) => entry.name)).slice(
     0,
-    24
+    DISTINCT_SLICE_FILLS
   );
   const values = valueDomain(series, stack);
   // A chart with no value to draw keeps its plot's place and says so there.
@@ -221,12 +232,27 @@ function ResultChartDrawing({
       ? `${at + 1} ${cutLabel(name, 24)}`
       : cutLabel(name, 24)
   );
-  const legendPlaces = legendLayout(legendTexts, width - left - EDGE, legendWidths);
+  const legendTop = title === '' ? 8 : 28;
+  // A pie's legend keeps to a third of the drawing, so a short one leaves
+  // the pie room for its tags.
+  const legendRowCap = type === 'pie' ? pieLegendRows(height, legendTop, LEGEND_ROWS) : LEGEND_ROWS;
+  // Entries the legend leaves out, by either cut, are counted after the
+  // last one listed ("+N", a figure in the dim tone with no swatch).
+  const { places: legendPlaces, more: legendMore } = fittedLegend(
+    legendTexts,
+    width - left - EDGE,
+    legendRowCap,
+    legendWidths,
+    type === 'pie' ? categories.length : series.length
+  );
   const legendKey = legendTexts.join('\n');
 
   // Measure the names as drawn, so the gap after each is even whatever its glyphs.
   useLayoutEffect(() => {
-    const texts = [...(legend.current?.querySelectorAll('text') ?? [])];
+    const texts = [
+      ...(legend.current?.querySelectorAll<SVGTextElement>('text:not(.result-chart-legend-more)') ??
+        [])
+    ];
     const measured = texts.map((text) =>
       typeof text.getComputedTextLength === 'function' ? Math.ceil(text.getComputedTextLength()) : 0
     );
@@ -238,10 +264,12 @@ function ResultChartDrawing({
         : measured
     );
   }, [legendKey]);
-  const legendRows = legendPlaces.reduce((rows, place) => Math.max(rows, place.row + 1), 0);
-  const legendTop = title === '' ? 8 : 28;
+  const legendRows = [...legendPlaces, ...(legendMore === null ? [] : [legendMore])].reduce(
+    (rows, place) => Math.max(rows, place.row + 1),
+    0
+  );
   const margin = {
-    top: plotTopUnderLegend(legendTop, Math.min(LEGEND_ROWS, legendRows)),
+    top: plotTopUnderLegend(legendTop, legendRows),
     right: EDGE,
     bottom: type === 'pie' ? EDGE : 44,
     left
@@ -301,11 +329,14 @@ function ResultChartDrawing({
     // category it came from; the legend and the read-out go by category.
     const kept = slices.flatMap((slice, at) => (slice.value > 0 ? [at] : []));
 
+    // A tag points to a legend entry, so only the slices the legend lists
+    // carry one; the rest are in its "+N".
+    const tagged = kept.flatMap((category, at) => (category < legendPlaces.length ? [at] : []));
     const tags = numbered
       ? pieTags(
-          arcs,
+          tagged.flatMap((at) => (arcs[at] === undefined ? [] : [arcs[at]])),
           r,
-          kept.map((category) => String(category + 1))
+          tagged.map((at) => String((kept[at] ?? at) + 1))
         )
       : [];
     // Past the eight colours, slices are hatched, then crosshatched, so no
@@ -316,9 +347,9 @@ function ResultChartDrawing({
 
     plot.push(
       <g key="pie" transform={`translate(${plotWidth / 2} ${plotHeight / 2})`}>
-        {tags.map((tag, at) =>
+        {tags.map((tag) =>
           tag === null ? null : (
-            <g className="result-chart-slice-tag" key={`tag-${kept[at] ?? at}`}>
+            <g className="result-chart-slice-tag" key={`tag-${tag.text}`}>
               <line x1={tag.fromX} x2={tag.x} y1={tag.fromY} y2={tag.y} />
               <text dominantBaseline="middle" textAnchor={tag.anchor} x={tag.textX} y={tag.textY}>
                 {tag.text}
@@ -581,22 +612,29 @@ function ResultChartDrawing({
           ref={legend}
           transform={`translate(${margin.left} ${legendTop})`}
         >
-          {legendPlaces.map((place, at) =>
-            place.row < LEGEND_ROWS ? (
-              <g key={at} transform={`translate(${place.x} ${place.row * LEGEND_ROW})`}>
-                <rect
-                  className="result-chart-legend-swatch"
-                  fill={type === 'pie' ? slicePaint(maskPrefix, sliceFill(at)) : colour(at)}
-                  height={10}
-                  rx={2}
-                  width={10}
-                  y={1}
-                />
-                <text x={14} y={10}>
-                  {place.text}
-                </text>
-              </g>
-            ) : null
+          {legendPlaces.map((place, at) => (
+            <g key={at} transform={`translate(${place.x} ${place.row * LEGEND_ROW})`}>
+              <rect
+                className="result-chart-legend-swatch"
+                fill={type === 'pie' ? slicePaint(maskPrefix, sliceFill(at)) : colour(at)}
+                height={10}
+                rx={2}
+                width={10}
+                y={1}
+              />
+              <text x={14} y={10}>
+                {place.text}
+              </text>
+            </g>
+          ))}
+          {legendMore !== null && (
+            <text
+              className="result-chart-legend-more"
+              transform={`translate(${legendMore.x} ${legendMore.row * LEGEND_ROW})`}
+              y={10}
+            >
+              {legendMore.text}
+            </text>
           )}
         </g>
         <g transform={`translate(${margin.left} ${margin.top})`}>

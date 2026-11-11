@@ -86,6 +86,14 @@ Every control reads tokens only, in every theme. The demo shows each control in 
 - **No class:** a text input, textarea, or select without `field` still takes a zero-weight floor from the base sheet (a `--control-border` outline on `--ground`); a checkbox or radio with no class at all takes the `check` look. A checkbox or radio with a class of its own, and a slider without `range`, keep the platform's drawing in the accent (and its own disabled grey, which the base rule does not fade again). Give every control its class.
 - **In running text:** a `field-choice` centres on the line (`vertical-align: middle`), so it does not move as its box changes state.
 
+## Meter
+
+The base sheet themes `<meter>` (a password's strength, a quota) with no class: a 4px pill trough on `--control-track` inside the `--control-border` hairline, as the slider's, filled in the tone of its value. The element's own `low`, `high`, and `optimum` choose the tone: `--success` in the optimum range, `--warning` one range away from it, `--danger` at the least good. A meter without them reads every value as optimum, so always set all three, with `optimum` in the range that is good. Name it with a label or `aria-label`; the value is not written beside it unless the host writes it.
+
+```tsx
+<meter aria-label="Strength" high={0.75} low={0.4} max={1} optimum={1} value={0.6} />
+```
+
 ## `Check` (`CheckProps`)
 
 A native checkbox in the `check` look whose `checked` may be `'mixed'`. The mixed state is the DOM's `indeterminate` property, which no attribute sets, so `Check` sets it after each render and adds `aria-checked="mixed"`. Every other prop is the input's.

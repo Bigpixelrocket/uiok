@@ -14,6 +14,7 @@ import {
   type ThemeId
 } from '@bigpixelrocket/uiok';
 import { SegmentedChoice } from '@bigpixelrocket/uiok/segmented';
+import { cutTooltip } from '@bigpixelrocket/uiok/tooltip';
 
 import { useTheme, type AppearanceChoice } from '../theme';
 import { ThemeChoices } from '../ThemePicker';
@@ -164,7 +165,9 @@ export function ThemingDemo() {
                       style={isColour(value) ? { background: `var(${name})` } : undefined}
                     />
                     <code className="token-name">{name}</code>
-                    <code className="token-value">{value}</code>
+                    <code className="token-value" {...cutTooltip(value)}>
+                      {value}
+                    </code>
                   </li>
                 );
               })}

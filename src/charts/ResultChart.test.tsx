@@ -167,4 +167,43 @@ describe('the result chart’s pictures', () => {
     ).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9']);
     expect(container.querySelector('.result-chart-legend text')?.textContent).toBe('1 k0');
   });
+
+  it('tags only the pie slices its legend lists, and counts the rest after it', () => {
+    const tagsAndLegend = (names: string[], width: number, height: number) => {
+      const { container } = render(
+        <ResultChart
+          categories={names}
+          height={height}
+          series={[{ name: 'n', values: names.map((_, at) => 3 + ((at * 7) % 13)) }]}
+          stacked={false}
+          title="Orders"
+          type="pie"
+          width={width}
+          xLabel=""
+          xValues={names.map(() => null)}
+          yLabel=""
+        />
+      );
+      const tags = [...container.querySelectorAll('.result-chart-slice-tag text')].map((tag) =>
+        Number(tag.textContent)
+      );
+      const listed = container.querySelectorAll('.result-chart-legend-swatch').length;
+      const more = container.querySelector('.result-chart-legend-more')?.textContent;
+
+      return { tags, listed, more };
+    };
+
+    for (const [names, width, height] of [
+      [Array.from({ length: 30 }, (_, at) => `Day ${at + 1}`), 460, 260],
+      [Array.from({ length: 25 }, (_, at) => `Product with a long name ${at + 1}`), 720, 400],
+      [Array.from({ length: 25 }, (_, at) => String(at + 1)), 720, 400]
+    ] as const) {
+      const { tags, listed, more } = tagsAndLegend([...names], width, height);
+
+      expect(listed).toBeLessThan(names.length);
+      expect(more).toBe(`+${names.length - listed}`);
+      expect(tags.length).toBeGreaterThan(0);
+      expect(Math.max(...tags)).toBeLessThanOrEqual(listed);
+    }
+  });
 });
