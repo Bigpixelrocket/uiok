@@ -548,6 +548,11 @@ a {
   white-space: nowrap;
 }
 
+/* The path it holds is set in the code face, not the browser's own. */
+.demo-scroll-x > code {
+  font: var(--font-size-body) var(--font-mono);
+}
+
 /* A host's own button, as an app draws one: its rest face only, at zero
    weight, so the recipe class it joins (quiet-control, quiet-track-item)
    paints its hover and press over it, as the recipes expect of a host. */
