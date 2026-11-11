@@ -262,7 +262,7 @@ export function ListingDemo() {
       </div>
       <code className="demo-readout">opened: {opened ?? 'nothing yet'}</code>
       <div className="demo-row">
-        <div className="pane demo-pane" style={{ flex: 1 }}>
+        <div className="pane demo-pane shares-row">
           {/* Rows that act on a click: the pointer's hover wash, then an add row. */}
           <div aria-label="Servers" className="pane-list pointer">
             <Listing columns={[]} grid="var(--icon-column) minmax(0, 1fr)" title="Servers">
@@ -285,7 +285,7 @@ export function ListingDemo() {
             </Listing>
           </div>
         </div>
-        <div className="pane demo-pane" style={{ flex: 1 }}>
+        <div className="pane demo-pane shares-row">
           {/* Names that are buttons: the keyboard's way to each page, read as the name. */}
           <div aria-label="Projects" className="pane-list">
             <Listing columns={[]} grid="var(--icon-column) minmax(0, 1fr)" title="Projects">
@@ -308,7 +308,7 @@ export function ListingDemo() {
             </Listing>
           </div>
         </div>
-        <div className="pane demo-pane" style={{ flex: 1 }}>
+        <div className="pane demo-pane shares-row">
           <div aria-label="Trash" className="pane-list">
             <Listing
               columns={[{ label: 'Size', align: 'right' }]}

@@ -218,6 +218,8 @@ export function ChartsDemo() {
           />
         </div>
       </section>
+      {/* The pies are drawn at 400px so a two-column row of cells (407px each in
+          the site's column) holds each one whole; a narrower cell scrolls it. */}
       <DemoStates minCell="320px" title="Edge cases">
         <DemoState label="Twelve slices">
           <div className="result-chart-frame">
@@ -228,7 +230,7 @@ export function ChartsDemo() {
               stacked={false}
               title="Hours by kind"
               type="pie"
-              width={460}
+              width={400}
               xLabel="kind"
               xValues={[]}
               yLabel="hours"
@@ -280,7 +282,7 @@ export function ChartsDemo() {
               stacked={false}
               title="Orders by day"
               type="pie"
-              width={460}
+              width={400}
               xLabel="day"
               xValues={[]}
               yLabel="orders"

@@ -540,6 +540,12 @@ a {
   flex: none;
 }
 
+/* Panes that share a row take equal parts of it, and each drops to a line of
+   its own before its heading or names would be cut (a phone-width window). */
+.demo-pane.shares-row {
+  flex: 1 1 160px;
+}
+
 /* A demo's scroller; a list used as one drops its block margin, so it
    starts under its heading as a framed one does. */
 .demo-scroll {
