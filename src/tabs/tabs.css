@@ -81,6 +81,26 @@
   color: var(--text);
 }
 
+/* The glyph answers the pointer in a small box of its own, as a quiet
+   control does: a wash under hover, the pressed wash while held. The box
+   pads the glyph and pulls back by the same step, so the glyph stays where
+   it rests and the wash never reaches the fading tab beside it. */
+.page-tabs-more > svg {
+  box-sizing: content-box;
+  margin: calc(-1 * var(--space-1));
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+
+.page-tabs-more:hover > svg {
+  background: var(--hover-wash);
+}
+
+.page-tabs-more:active > svg {
+  background: var(--pressed-wash);
+  box-shadow: var(--shadow-pressed);
+}
+
 .page-tabs-more.start {
   inset-inline-start: 0;
   justify-content: flex-start;
