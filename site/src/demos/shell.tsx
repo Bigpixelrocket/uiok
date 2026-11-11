@@ -2,9 +2,13 @@
  * The shell's shared surfaces: a Settings dialog with its sidebar of pages
  * (Appearance with the theme picker, Updates with the status card and its
  * notes, Files with a file's problems), the theme picker and the update
- * card in each tone on the page itself, the update pill's states, the
- * channel tag, the About window, the sign-in prompts (a password asked again
- * after a refusal, a new host key), and the load failure block.
+ * card in each tone on the page itself (a note under the ready card's head,
+ * a failed download in a neutral card), the band a settings file's new
+ * mistake shows under the header, the update pill's states, the channel tag
+ * in the accent and in a host's own hue, the About window, the sign-in
+ * prompts (a password asked again after a refusal, a new host key), the exit
+ * confirmation, and the load failure block. The Files page of the Settings
+ * dialog holds a change a file could not take, over the page.
  */
 
 import {
@@ -17,18 +21,21 @@ import {
   KeyRound,
   LoaderCircle,
   Palette as PaletteIcon,
+  Power,
   RefreshCw,
   Settings as SettingsIcon,
   ShieldQuestion,
-  TriangleAlert
+  TriangleAlert,
+  X
 } from 'lucide-react';
-import { useId, useState, type CSSProperties, type ReactElement } from 'react';
+import { Fragment, useId, useState, type CSSProperties, type ReactElement } from 'react';
 
-import { Button } from '@bigpixelrocket/uiok/button';
-import { ModalDialog } from '@bigpixelrocket/uiok/dialog';
+import { Button, IconButton } from '@bigpixelrocket/uiok/button';
+import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
 import { ICON_MD, ICON_XL } from '@bigpixelrocket/uiok/icon';
 import { RunHeader } from '@bigpixelrocket/uiok/run';
 import { DARK_THEME_IDS, LIGHT_THEME_IDS, type ThemeId } from '@bigpixelrocket/uiok/themes';
+import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 import { ThemeChoices } from '../ThemePicker';
 
@@ -62,6 +69,7 @@ function UpdateCard({
   title,
   sub,
   verb,
+  note,
   notes = false,
   run = false
 }: {
@@ -69,12 +77,15 @@ function UpdateCard({
   readonly title: string;
   readonly sub: string;
   readonly verb?: string;
+  /** A quiet line under the head (`update-card-note`). */
+  readonly note?: string;
   readonly notes?: boolean;
-  readonly run?: boolean;
+  /** A download under the head: one running, or one that failed in a neutral card. */
+  readonly run?: boolean | 'failed';
 }): ReactElement {
   // With a download under it, the head's glyph stays still: the RunHeader's
   // ring is the one that turns.
-  const spins = tone === 'busy' && !run;
+  const spins = tone === 'busy' && run === false;
   const Glyph = spins
     ? LoaderCircle
     : tone === 'busy'
@@ -89,7 +100,12 @@ function UpdateCard({
               ? RefreshCw
               : Download;
   const headingId = useId();
-  const classes = ['update-card', 'card', notes ? 'with-notes' : '', run ? 'with-run' : '']
+  const classes = [
+    'update-card',
+    'card',
+    notes ? 'with-notes' : '',
+    run === false ? '' : 'with-run'
+  ]
     .filter(Boolean)
     .join(' ');
   return (
@@ -106,13 +122,24 @@ function UpdateCard({
           </Button>
         ) : null}
       </div>
-      {run ? (
+      {note === undefined ? null : <p className="update-card-note">{note}</p>}
+      {run === true ? (
         <RunHeader
           bar={{ fraction: 0.42, label: 'Download' }}
           facts={['38.2 MB of 91.0 MB', '4.1 MB/s']}
           figure="0:09"
           headline="Downloading 2.5.0"
           state="running"
+        />
+      ) : null}
+      {/* A download that stopped short: no empty track, the reason the
+          system returned in the code face, the time as a fact. */}
+      {run === 'failed' ? (
+        <RunHeader
+          facts={['13:58']}
+          headline="The download of 2.5.0 failed"
+          reason="ECONNRESET: updates.example.com closed the connection"
+          state="failed"
         />
       ) : null}
       {notes ? (
@@ -257,7 +284,8 @@ function FilesPage(): ReactElement {
         </div>
       </section>
       <section className="settings-subsection">
-        <h4 className="overline">settings.toml</h4>
+        {/* A subsection may head itself with settings-subsection-title. */}
+        <h4 className="settings-subsection-title overline">settings.toml</h4>
         <div className="field-grid">
           <span className="field-label settings-file-name">settings.toml</span>
           <div className="field-value">
@@ -356,6 +384,14 @@ function SettingsDialog({ onClose }: { readonly onClose: () => void }): ReactEle
           </div>
         </nav>
         <div className="settings-column">
+          {page === 'files' ? (
+            <div className="settings-save-failure notice notice-danger" role="alert">
+              <CircleAlert aria-hidden size={ICON_MD} />
+              <p className="notice-text">
+                The theme could not be saved: settings.toml is read-only.
+              </p>
+            </div>
+          ) : null}
           <div
             className={
               page === 'updates' ? 'settings-page fills scroll-fade' : 'settings-page scroll-fade'
@@ -445,7 +481,35 @@ function HostKeyPrompt({ onClose }: { readonly onClose: () => void }): ReactElem
   );
 }
 
-type Open = 'settings' | 'password' | 'host-key' | null;
+/** The exit confirmation's message, one sentence a paragraph. */
+const EXIT_SENTENCES: readonly string[] = [
+  'Quitting stops 3 running processes and 1 transfer.',
+  'Their logs are kept, and the transfer resumes at the next launch.'
+];
+
+/** The confirmation shown before an app quits with work running. */
+function ExitConfirmation({ onClose }: { readonly onClose: () => void }): ReactElement {
+  return (
+    <ConfirmDialog
+      cancelLabel="Keep Running"
+      className="exit-confirmation dialog-size-md"
+      confirmLabel="Quit"
+      icon={Power}
+      message={EXIT_SENTENCES.map((sentence, index) => (
+        <Fragment key={sentence}>
+          {index > 0 ? ' ' : null}
+          <span className="exit-confirmation-sentence">{sentence}</span>
+        </Fragment>
+      ))}
+      onCancel={onClose}
+      onConfirm={onClose}
+      title="Quit and stop the running work?"
+      tone="warning"
+    />
+  );
+}
+
+type Open = 'settings' | 'password' | 'host-key' | 'exit' | null;
 
 /** The shell surfaces page's demo. */
 export function ShellDemo(): ReactElement {
@@ -459,10 +523,32 @@ export function ShellDemo(): ReactElement {
         <Button onClick={() => setOpen('settings')}>Open Settings</Button>
         <Button onClick={() => setOpen('password')}>Sign In Again</Button>
         <Button onClick={() => setOpen('host-key')}>New Host Key</Button>
+        <Button onClick={() => setOpen('exit')}>Quit…</Button>
       </div>
       {open === 'settings' ? <SettingsDialog onClose={close} /> : null}
       {open === 'password' ? <PasswordPrompt onClose={close} /> : null}
       {open === 'host-key' ? <HostKeyPrompt onClose={close} /> : null}
+      {open === 'exit' ? <ExitConfirmation onClose={close} /> : null}
+
+      <h3 className="demo-subhead">Settings notice</h3>
+      {/* The band under the header, in the page's flow, about a new mistake
+          in a settings file; it sits in a frame standing in for the window. */}
+      <div className="shell-demo-window">
+        <div className="settings-notice notice notice-card notice-warning" role="status">
+          <TriangleAlert aria-hidden size={ICON_MD} />
+          <p className="notice-text">
+            <span className="settings-notice-place">settings.toml, line 12</span> The theme is not
+            one this version knows.
+            <span className="settings-notice-more"> 1 more problem</span>
+          </p>
+          <div className="notice-actions">
+            <Button size="small">Show</Button>
+            <IconButton aria-label="Close" size="small" {...tooltip('Close')}>
+              <X />
+            </IconButton>
+          </div>
+        </div>
+      </div>
 
       <h3 className="demo-subhead">Theme picker</h3>
       <ThemeChoices chosen={light} ids={LIGHT_THEME_IDS} label="Light theme" onChoose={setLight} />
@@ -487,10 +573,18 @@ export function ShellDemo(): ReactElement {
           verb="Stop"
         />
         <UpdateCard
-          sub="Restart to finish installing 2.5.0; it also installs at the next launch."
+          note="It also installs the next time the app opens."
+          sub="Restart to finish installing 2.5.0."
           title="Ready to install"
           tone="ready"
           verb="Restart and Update"
+        />
+        <UpdateCard
+          run="failed"
+          sub="Version 2.5.0 is available. You have 2.4.1."
+          title="An update is available"
+          tone="idle"
+          verb="Try Again"
         />
         <UpdateCard
           sub="The update server did not answer. Checks will try again within the hour."
@@ -524,6 +618,18 @@ export function ShellDemo(): ReactElement {
       <div className="demo-row">
         <span className="channel-tag">Nightly 412</span>
         <span className="channel-tag">Local</span>
+        {/* A host that colours its channels sets the hue and its words. */}
+        <span
+          className="channel-tag"
+          style={
+            {
+              '--channel': 'var(--success)',
+              '--channel-text': 'var(--success-text)'
+            } as CSSProperties
+          }
+        >
+          Beta 2.5
+        </span>
       </div>
 
       <h3 className="demo-subhead">About window</h3>

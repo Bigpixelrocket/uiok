@@ -3,12 +3,15 @@
  * filtered list of commands, a cursor the arrows move, and Return to run.
  * A command can open a second level of commands, named in a chip before the
  * field (the chip, ←, or Backspace in an empty field steps back), and notes
- * can stand under the list. The shell uses it to find a page; the palette
- * page uses it as its demo.
+ * can stand under the list. After its label a row says a sentence, a path
+ * (giving way at its start), or a command line (in the code face). A tag can
+ * stand at the field's end and a key legend under everything. The shell uses
+ * it to find a page; the palette page uses it as its demo.
  */
 
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 
+import { DialogLegend } from '@bigpixelrocket/uiok/dialog';
 import { KeyChord, type KeyChordProps } from '@bigpixelrocket/uiok/keychord';
 import { matchQuery, menuQueryRefused, moveMenuCursor } from '@bigpixelrocket/uiok/menu';
 import { Palette, PaletteQuery } from '@bigpixelrocket/uiok/palette';
@@ -20,6 +23,10 @@ export interface Command {
   readonly label: string;
   /** A dim sentence after the label. */
   readonly hint?: string;
+  /** A path after the label, in place of a sentence; it gives way at its start. */
+  readonly path?: string;
+  /** A command line after the label, in place of a sentence, in the code face. */
+  readonly line?: string;
   readonly icon?: ReactNode;
   /** Dim text at the row's end, such as the page's route. */
   readonly meta?: string;
@@ -49,6 +56,13 @@ export interface CommandPaletteProps {
   readonly commands: readonly Command[];
   /** Notes under the list at the first level. */
   readonly notes?: readonly PaletteNote[];
+  /** A tag at the field's end, such as what the rows act on. */
+  readonly aside?: ReactNode;
+  /**
+   * A key legend under everything, with these words: its leave verb closes
+   * the palette, its primary runs the cursor row as Return does.
+   */
+  readonly legend?: { readonly leave: string; readonly primary: string };
   /** Called on Escape, a press outside, and after a command runs. */
   readonly onClose: () => void;
 }
@@ -69,6 +83,8 @@ export function CommandPalette({
   placeholder,
   commands: firstLevel,
   notes: firstNotes,
+  aside,
+  legend,
   onClose
 }: CommandPaletteProps) {
   // The command whose level the palette stands in; null at the first level.
@@ -120,6 +136,7 @@ export function CommandPalette({
   return (
     <Palette label={label} onClose={onClose}>
       <PaletteQuery
+        aside={aside}
         activeId={cursor === null ? undefined : `${listId}-${cursor}`}
         bell={bell}
         count={query === '' ? null : `${rows.length} of ${commands.length}`}
@@ -201,6 +218,14 @@ export function CommandPalette({
               {row.command.hint === undefined ? null : (
                 <span className="palette-context palette-sentence">{row.command.hint}</span>
               )}
+              {row.command.path === undefined ? null : (
+                <span className="palette-context">
+                  <bdi>{row.command.path}</bdi>
+                </span>
+              )}
+              {row.command.line === undefined ? null : (
+                <span className="palette-context palette-command">{row.command.line}</span>
+              )}
             </span>
             <span className="palette-trail keycap">
               {row.command.meta === undefined ? null : (
@@ -225,6 +250,22 @@ export function CommandPalette({
             </p>
           ))}
         </div>
+      )}
+      {legend === undefined ? null : (
+        <DialogLegend
+          legend={{
+            leave: { label: legend.leave },
+            primary: {
+              label: legend.primary,
+              disabled: cursor === null || rows[cursor] === undefined,
+              onRun: () => {
+                const row = cursor === null ? undefined : rows[cursor];
+                if (row !== undefined) run(row.command);
+              }
+            }
+          }}
+          onLeave={onClose}
+        />
       )}
     </Palette>
   );

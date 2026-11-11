@@ -2,8 +2,11 @@
  * A command palette: type to filter, ↑ ↓ move, Return runs, Escape clears
  * the query and then closes. Switch Branch… opens a second level, with a
  * note and a failure under its list; the chip, ←, or Backspace in an empty
- * field steps back. The header's Find a page (⌘K) is the same
- * palette over the site's pages.
+ * field steps back. Run Task… lists command lines (`.palette-command`) and
+ * Open Recent… paths that give way at their start. A tag at the field's end
+ * says what the commands act on, and a key legend closes the box. The
+ * header's Find a page (⌘K) is the same palette over the site's pages, with
+ * each page's route in the meta tone.
  */
 
 import {
@@ -69,7 +72,37 @@ export function PaletteDemo() {
       meta: true,
       shift: true
     }),
-    command('run', 'Run Task…', 'Pick a script from package.json', <Play size={size} />),
+    {
+      id: 'run',
+      label: 'Run Task…',
+      hint: 'Pick a script from package.json',
+      icon: <Play size={size} />,
+      level: [
+        ['build', 'vite build && node scripts/verify-dist.mjs'],
+        ['test', 'vitest run --coverage --reporter=dot'],
+        ['lint', 'eslint . --max-warnings 0'],
+        ['format', 'prettier --write .']
+      ].map(([name, line]) => ({
+        ...command(`task-${name}`, name ?? '', '', <Play size={size} />),
+        hint: undefined,
+        line
+      }))
+    },
+    {
+      id: 'recent',
+      label: 'Open Recent…',
+      hint: 'A folder opened before',
+      icon: <FolderOpen size={size} />,
+      level: [
+        '~/projects/site',
+        '~/projects/infrastructure-and-deployment-scripts/environments/production',
+        '~/Documents/notes'
+      ].map((path) => ({
+        ...command(`recent-${path}`, path.split('/').pop() ?? path, '', <FolderOpen size={size} />),
+        hint: undefined,
+        path
+      }))
+    },
     command(
       'restart',
       'Restart Server',
@@ -123,7 +156,9 @@ export function PaletteDemo() {
         <div className="listing-root">
           <CommandPalette
             commands={commands}
+            aside={<span className="palette-meta demo-palette-aside">site</span>}
             label="Commands"
+            legend={{ leave: 'Cancel', primary: 'Run' }}
             onClose={() => setOpen(false)}
             placeholder="Type a command"
           />

@@ -413,61 +413,107 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
-  it('gives way in a narrow path bar with the trail first, clipped at its box, then a fact’s words', () => {
+  it('gives way in a narrow path bar in one order: the trail to its floor, the tools to their least, then the trail', () => {
     applyStylesheets(styles);
-    document.body.innerHTML = `<section class="listing-root"><div class="pane-path-row">
-      <div class="pane-crumbs"><span class="crumb here"><span class="crumb-label">a</span></span></div>
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-path-row" style="--pane-crumb-count: 3">
+      <div class="pane-crumbs"><span class="crumb"><span class="crumb-label">a</span></span>
+        <span class="crumb-separator">/</span>
+        <span class="crumb here"><span class="crumb-label">b</span><span class="current-dot"></span></span></div>
       <div class="path-tools"><span class="path-facts"><span class="path-fact-text">Stopped</span></span></div>
     </div></section>`;
-    const crumbs = getComputedStyle(document.querySelector('.pane-crumbs') as Element);
-    const text = getComputedStyle(document.querySelector('.path-fact-text') as Element);
+    const style = (selector: string) =>
+      getComputedStyle(document.querySelector(selector) as Element);
 
-    expect(crumbs.flexShrink).toBe('1000000');
-    // The floor holds every crumb cut (the count PanePathBar sets), or two
-    // crumbs' worth without a count, and drops to what the row leaves it.
-    expect(crumbs.minWidth).toMatch(/^min\(\s*100%,\s*var\(--pane-crumb-fit, 100%\),/);
-    expect(crumbs.minWidth).toContain('var(--pane-crumb-room)');
-    expect(crumbs.minWidth).toContain('(var(--pane-row-inset) + 10ch)');
-    expect(crumbs.getPropertyValue('--pane-crumb-room')).toContain(
-      'var(--pane-crumb-count)*(2ch + var(--space-4))'
+    // The trail gives way first and past its floor; it scrolls, so nothing
+    // it holds is drawn under the tools.
+    expect(style('.pane-crumbs').flexShrink).toBe('1000000');
+    expect(style('.pane-crumbs').minWidth).toMatch(/^0(px)?$/);
+    expect([style('.pane-crumbs').overflowX, style('.pane-crumbs').overflowY]).toEqual([
+      'auto',
+      'hidden'
+    ]);
+    // The tools take no more than the row less the trail's floor, and no
+    // less than they need at their least, which wins.
+    expect(style('.path-tools').maxWidth).toBe('calc(100% - var(--pane-crumb-room))');
+    expect(style('.path-tools').minWidth).toBe('calc-size(min-content, min(size, 100%))');
+    expect(style('.pane-path-row').getPropertyValue('--pane-crumb-room')).toContain(
+      'var(--pane-crumb-here-room,9ch)'
     );
-    expect(sheet).toMatch(/@property --pane-crumb-count \{\n\s*syntax: '<integer>';/);
-    expect(crumbs.overflowX).toBe('clip');
-    expect([text.overflow, text.textOverflow]).toEqual(['hidden', 'ellipsis']);
-    // A cramped trail keeps its last crumbs and fades its start.
-    document.querySelector('.pane-crumbs')?.setAttribute('data-cramped', '');
-    expect(getComputedStyle(document.querySelector('.pane-crumbs') as Element).justifyContent).toBe(
-      'flex-end'
+    expect(sheet).toMatch(
+      /@property --pane-crumb-count \{\n\s*syntax: '<integer>';\n\s*inherits: true;/
     );
-    expect(getComputedStyle(document.querySelector('.pane-crumbs') as Element).maskImage).toContain(
-      'transparent'
+    // The last crumb keeps a stem of eight characters, and goes below it
+    // only to what its trail holds, less a leading slash.
+    expect(style('.crumb.here').minWidth).toContain(
+      'min(10ch + var(--space-4) + var(--dot) + var(--space-2), 100% - 1ch - var(--space-1))'
     );
+    // A trail pinned at rest gives the tools what it leaves.
+    document.querySelector('.pane-crumbs')?.setAttribute('data-cramped', 'pinned');
+    expect([style('.pane-crumbs').flexGrow, style('.pane-crumbs').width]).toEqual([
+      '0',
+      'var(--pane-crumb-fit)'
+    ]);
+    expect(style('.path-tools').maxWidth).toBe('none');
     // A crumb's open menu sits inside the trail; the trail clips nothing then.
     document.querySelector('.crumb-label')?.setAttribute('aria-expanded', 'true');
-    expect(getComputedStyle(document.querySelector('.pane-crumbs') as Element).overflowX).not.toBe(
-      'clip'
-    );
-    expect(getComputedStyle(document.querySelector('.pane-crumbs') as Element).maskImage).toBe(
-      'none'
-    );
+    expect(style('.pane-crumbs').overflowX).not.toBe('auto');
     document.body.innerHTML = '';
   });
 
-  it('lets a fact written as bare words cut too, its mark set in the line', () => {
+  it('cuts a fact’s words in one clamped line in every form the bar can cut, its mark one gap away', () => {
     applyStylesheets(styles);
-    document.body.innerHTML = `<section class="listing-root"><div class="pane-path-row">
-      <div class="path-tools"><span class="path-facts danger"><span class="pane-state"></span>Stopped</span></div>
-    </div></section>`;
-    const fact = getComputedStyle(document.querySelector('.path-facts') as Element);
-    const mark = getComputedStyle(document.querySelector('.pane-state') as Element);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-path-row"><div class="path-tools">
+      <span class="path-facts" id="pathfact"><span class="pane-state"><span class="pane-state-dot"></span><span class="pane-state-word"></span></span><span class="path-fact-text">Stopped</span></span>
+      <span class="path-facts" id="bare">Stopped</span>
+      <span class="path-facts" id="hostspan"><span class="host-dot"></span>Stopped</span>
+      <span class="path-facts" id="boxes"><a href="#x">localhost:5173</a><span class="chip">8.3</span></span>
+    </div></div></section>`;
+    const style = (selector: string) =>
+      getComputedStyle(document.querySelector(selector) as Element);
 
-    expect([fact.display, fact.overflow, fact.textOverflow]).toEqual([
-      'inline-block',
-      'hidden',
-      'ellipsis'
+    for (const selector of ['#pathfact .path-fact-text', '#bare', '#hostspan']) {
+      expect([
+        style(selector).display,
+        style(selector).overflow,
+        style(selector).wordBreak,
+        style(selector).whiteSpace
+      ]).toEqual(['-webkit-box', 'hidden', 'break-all', 'normal']);
+      expect(style(selector).getPropertyValue('-webkit-line-clamp')).toBe('1');
+    }
+    // The floors: a character and its ellipsis, after a mark and its gap.
+    expect(style('#bare').minWidth).toContain('min(size, 2ch + var(--line))');
+    expect(style('#hostspan').minWidth).toContain(
+      'var(--dot) + var(--space-3) + 2ch + var(--line)'
+    );
+    // A host's own mark keeps its size in the line and stands a gap from the words.
+    expect([
+      style('#hostspan .host-dot').display,
+      style('#hostspan .host-dot').marginInlineEnd
+    ]).toEqual(['inline-block', 'var(--space-3)']);
+    // A mark with no word carries no gap of its own.
+    expect(style('#pathfact .pane-state-word').display).toBe('none');
+    // A fact of a host's own boxes keeps its flex layout and its width.
+    expect([style('#boxes').display, style('#boxes').minWidth]).toEqual(['inline-flex', 'auto']);
+    // A fact that opens the tools stands clear of the trail.
+    expect(style('.path-tools').paddingLeft).toBe('var(--space-3)');
+    document.body.innerHTML = '';
+  });
+
+  it('steps a tight bar’s action words down to their icons, the words out of the drawing', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-path-row" data-tight>
+      <div class="path-tools"><button class="pane-act"><span class="pane-act-word">Start</span></button></div>
+    </div></section>`;
+    const word = getComputedStyle(document.querySelector('.pane-act-word') as Element);
+
+    expect([word.position, word.clipPath, word.overflow]).toEqual([
+      'absolute',
+      'inset(50%)',
+      'hidden'
     ]);
-    expect(fact.minWidth).toContain('calc-size(max-content');
-    expect([mark.verticalAlign, mark.marginInlineEnd]).toEqual(['middle', 'var(--space-3)']);
+    expect(getComputedStyle(document.querySelector('.pane-act') as Element).gap).toMatch(
+      /^0(px)?$/
+    );
     document.body.innerHTML = '';
   });
 

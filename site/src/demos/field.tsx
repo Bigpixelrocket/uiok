@@ -4,8 +4,10 @@
  * invalid, in the warning and accent tones, and disabled; the field box;
  * checks, radios, switches, and the slider off, on, mixed, hovered,
  * pressed, toned, invalid, and disabled; toggles off and on; a meter in its
- * three tones; the three field heights by place; then a working form on
- * one label column.
+ * three tones; the three field heights by place; groups and the rarer
+ * controls (a stacked field group, a fieldset's legend, a list box, a choice
+ * in running text, controls with no class); then a working form on one label
+ * column.
  *
  * A cell that shows a pointer or focus state carries `data-force` (with
  * `data-force-sel` naming the control inside it): the screenshot harness
@@ -587,6 +589,55 @@ export function FieldDemo() {
         </DemoState>
         <DemoState label="In a row, 20px (.field-xs)">
           <input aria-label="Name" className="field field-xs" defaultValue="rename.txt" />
+        </DemoState>
+      </DemoStates>
+
+      <DemoStates minCell="220px" title="Groups and rarer controls">
+        <DemoState label="field-group: label, field, note">
+          <div className="field-group">
+            <label className="field-label" htmlFor="demo-group-user">
+              User
+            </label>
+            <input className="field" defaultValue="deploy" id="demo-group-user" />
+            <p className="field-note">The account the build signs in as.</p>
+          </div>
+        </DemoState>
+        <DemoState label="field-group on a fieldset">
+          <fieldset className="field-group">
+            <legend>Line endings</legend>
+            <Choice>
+              <input className="check" defaultChecked name="demo-endings" type="radio" />
+              LF
+            </Choice>
+            <Choice>
+              <input className="check" name="demo-endings" type="radio" />
+              CRLF
+            </Choice>
+          </fieldset>
+        </DemoState>
+        <DemoState label="List box (multiple): no chevrons">
+          <select aria-label="Engines" className="field" defaultValue={['innodb']} multiple>
+            <option value="innodb">InnoDB</option>
+            <option value="myisam">MyISAM</option>
+            <option value="memory">MEMORY</option>
+            <option value="archive">ARCHIVE</option>
+          </select>
+        </DemoState>
+        <DemoState label="A choice in running text">
+          <p>
+            Keep{' '}
+            <Choice>
+              <input className="check" defaultChecked type="checkbox" />
+              hidden files
+            </Choice>{' '}
+            when copying.
+          </p>
+        </DemoState>
+        <DemoState label="No class: the base sheet's floor">
+          <span className="demo-row">
+            <input aria-label="Unclassed field" defaultValue="no class" />
+            <input aria-label="Unclassed check" defaultChecked type="checkbox" />
+          </span>
         </DemoState>
       </DemoStates>
 

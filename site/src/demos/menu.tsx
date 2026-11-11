@@ -4,10 +4,11 @@
  * then closes. A keystroke that would empty the list is refused with the
  * visual bell. Folders and files sit under their own headings, two folders
  * show the chord that opens them, one folder is disabled (the cursor passes
- * over it), and a note under the list says why.
+ * over it), and a note under the list says why. Beside it, a compact menu
+ * of a row's short commands, as a tool opens one (`.folder-menu-compact`).
  */
 
-import { File, Folder } from 'lucide-react';
+import { Copy, File, Folder, FolderOpen, PenLine, Trash2 } from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
@@ -180,25 +181,108 @@ function FolderMenu({
   );
 }
 
+/** A row's short commands, each with the chord that runs it. */
+const COMMANDS: readonly {
+  readonly name: string;
+  readonly icon: typeof File;
+  readonly chord: { readonly key: string; readonly meta?: boolean; readonly alt?: boolean };
+}[] = [
+  { name: 'Open', icon: FolderOpen, chord: { key: 'o', meta: true } },
+  { name: 'Rename', icon: PenLine, chord: { key: 'Enter' } },
+  { name: 'Duplicate', icon: Copy, chord: { key: 'd', meta: true } },
+  { name: 'Move to Trash', icon: Trash2, chord: { key: 'Backspace', meta: true } }
+];
+
+/**
+ * A compact menu of short commands opened from a tool: the same parts at the
+ * small size (`.folder-menu-compact`), with no query row. ↑ ↓ move, Return
+ * runs, Escape closes.
+ */
+function CommandMenu({
+  onPick,
+  onClose
+}: {
+  readonly onPick: (name: string) => void;
+  readonly onClose: () => void;
+}) {
+  const [cursor, setCursor] = useState(0);
+  const list = useRef<HTMLDivElement>(null);
+  useEffect(() => list.current?.focus(), []);
+  return (
+    <div
+      className="folder-menu folder-menu-compact demo-menu"
+      data-overlay
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          setCursor(
+            (current) =>
+              moveMenuCursor(current, event.key === 'ArrowDown' ? 1 : -1, COMMANDS.length) ?? 0
+          );
+        }
+        if (event.key === 'Enter') onPick(COMMANDS[cursor]?.name ?? '');
+        if (event.key === 'Escape') onClose();
+      }}
+    >
+      <div
+        aria-activedescendant={`demo-command-${cursor}`}
+        aria-label="Row commands"
+        className="folder-menu-options"
+        ref={list}
+        role="listbox"
+        tabIndex={-1}
+      >
+        {COMMANDS.map(({ name, icon: Icon, chord }, index) => (
+          <div
+            aria-selected={index === cursor}
+            className={index === cursor ? 'folder-menu-option cursor' : 'folder-menu-option'}
+            id={`demo-command-${index}`}
+            key={name}
+            onClick={() => onPick(name)}
+            onMouseMove={() => setCursor(index)}
+            role="option"
+          >
+            <span className="row-icon">
+              <Icon size={ICON_MD} />
+            </span>
+            <span className="row-name">{name}</span>
+            <KeyChord chord={chord} />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** The menu page's demo. */
 export function MenuDemo() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<'files' | 'commands' | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
+  const pick = (name: string) => {
+    setPicked(name);
+    setOpen(null);
+  };
   return (
     <div className="demo-stack listing-root menu-demo">
-      <div className="demo-anchor">
-        <Button onClick={() => setOpen((value) => !value)} size="small">
-          {open ? 'Close the menu' : 'Open the menu'}
-        </Button>
-        {open ? (
-          <FolderMenu
-            onClose={() => setOpen(false)}
-            onPick={(name) => {
-              setPicked(name);
-              setOpen(false);
-            }}
-          />
-        ) : null}
+      <div className="demo-row">
+        <div className="demo-anchor">
+          <Button
+            onClick={() => setOpen((value) => (value === 'files' ? null : 'files'))}
+            size="small"
+          >
+            {open === 'files' ? 'Close the menu' : 'Open the menu'}
+          </Button>
+          {open === 'files' ? <FolderMenu onClose={() => setOpen(null)} onPick={pick} /> : null}
+        </div>
+        <div className="demo-anchor end">
+          <Button
+            onClick={() => setOpen((value) => (value === 'commands' ? null : 'commands'))}
+            size="small"
+          >
+            {open === 'commands' ? 'Close the compact menu' : 'Open the compact menu'}
+          </Button>
+          {open === 'commands' ? <CommandMenu onClose={() => setOpen(null)} onPick={pick} /> : null}
+        </div>
       </div>
       <code className="demo-readout">picked: {picked ?? 'nothing yet'}</code>
     </div>

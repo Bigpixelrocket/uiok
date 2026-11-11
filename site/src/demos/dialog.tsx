@@ -1,10 +1,12 @@
 /**
  * Every dialog variant: a rename over the frame (Return renames, Escape
- * cancels), the three confirmation tones, a delete that cannot be undone
- * with a long path list, a long question that wraps, a form that uses the
- * type hooks and a secondary slot, a command editor whose legend holds a
- * destructive secondary verb and wraps to two rows, and a frosted sheet
- * whose body scrolls.
+ * cancels), the three confirmation tones, one with a choice under its
+ * message, a delete that cannot be undone with a long path list, a long
+ * question that wraps, and a command editor whose legend holds a destructive
+ * secondary verb and wraps to two rows. Then one dialog on each width step:
+ * a connection form on the label column (medium), a frosted shortcuts sheet
+ * whose body scrolls (large), a wide table (extra large), and a dialog
+ * pinned at its top whose body grows downward (`pinTop`).
  */
 
 import {
@@ -21,6 +23,11 @@ import { useId, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
+import { DataGrid, type DataGridColumn } from '@bigpixelrocket/uiok/grid';
+import { type Chord } from '@bigpixelrocket/uiok/keyboard';
+import { KeyChord } from '@bigpixelrocket/uiok/keychord';
+
+import { orderAt, type Order } from './data';
 
 type Open =
   | 'rename'
@@ -33,6 +40,8 @@ type Open =
   | 'connect'
   | 'command'
   | 'shortcuts'
+  | 'orders'
+  | 'hosts'
   | null;
 
 /** Paths long enough to wrap, and enough of them to scroll the list. */
@@ -60,7 +69,6 @@ function RenameDialog({
   const [value, setValue] = useState(name);
   return (
     <ModalDialog
-      className="demo-dialog"
       icon={FilePen}
       labelId={labelId}
       legend={{
@@ -75,21 +83,25 @@ function RenameDialog({
       title="Rename"
       titleAside="~/projects/site/docs"
     >
-      <input
-        aria-label="Name"
-        autoFocus
-        className="field demo-input wide"
-        onChange={(event) => setValue(event.target.value)}
-        spellCheck={false}
-        value={value}
-      />
+      <div className="demo-stack">
+        {/* No width class: the column stretches the field across the body. */}
+        <input
+          aria-label="Name"
+          autoFocus
+          className="field"
+          onChange={(event) => setValue(event.target.value)}
+          spellCheck={false}
+          value={value}
+        />
+      </div>
     </ModalDialog>
   );
 }
 
 /**
- * A form over the frame that uses the type hooks: labels and help in the
- * interface font, the host a value in monospace, and a secondary slot.
+ * A connection form on the medium step (`.dialog-size-md`): a sentence with
+ * the host as a value, then its fields on one label column, help in the
+ * interface font, and a secondary slot.
  */
 function ConnectDialog({
   onConnect,
@@ -101,10 +113,12 @@ function ConnectDialog({
   readonly onCancel: () => void;
 }) {
   const labelId = useId();
+  const hostId = useId();
+  const portId = useId();
   const userId = useId();
   return (
     <ModalDialog
-      className="demo-dialog"
+      className="dialog-size-md"
       icon={Server}
       labelId={labelId}
       legend={{
@@ -121,16 +135,25 @@ function ConnectDialog({
           Connect to <span className="dialog-value">db.internal.example.com:3306</span> as the user
           below.
         </p>
-        <label className="dialog-label" htmlFor={userId}>
-          User
-        </label>
-        <input
-          autoFocus
-          className="field demo-input wide"
-          defaultValue="deploy"
-          id={userId}
-          spellCheck={false}
-        />
+        <div className="field-grid">
+          <label className="field-label" htmlFor={hostId}>
+            Host
+          </label>
+          <input
+            className="field"
+            defaultValue="db.internal.example.com"
+            id={hostId}
+            spellCheck={false}
+          />
+          <label className="field-label" htmlFor={portId}>
+            Port
+          </label>
+          <input className="field" defaultValue="3306" id={portId} inputMode="numeric" />
+          <label className="field-label" htmlFor={userId}>
+            User
+          </label>
+          <input autoFocus className="field" defaultValue="deploy" id={userId} spellCheck={false} />
+        </div>
         <p className="dialog-help">
           The password comes from the keychain. Test checks the connection without saving it.
         </p>
@@ -195,13 +218,40 @@ function CommandDialog({
   );
 }
 
-/** A frosted sheet whose long body scrolls between the strip and the legend. */
+/** Shortcuts for the large sheet, each a chord and what it does. */
+const SHORTCUTS: readonly { readonly chord: Chord; readonly does: string }[] = [
+  { chord: { key: 'n', meta: true }, does: 'New window' },
+  { chord: { key: 'n', meta: true, shift: true }, does: 'New folder in the current pane' },
+  { chord: { key: 'o', meta: true }, does: 'Open the item under the cursor' },
+  { chord: { key: 'k', meta: true }, does: 'Command palette' },
+  { chord: { key: 'f', meta: true }, does: 'Filter the current pane' },
+  { chord: { key: 'Backspace', meta: true }, does: 'Move to Trash' },
+  { chord: { key: 'Backspace', meta: true, alt: true }, does: 'Delete immediately' },
+  { chord: { key: 'ArrowUp', meta: true }, does: 'Go to the first row' },
+  { chord: { key: 'ArrowDown', meta: true }, does: 'Go to the last row' },
+  { chord: { key: 'PageUp' }, does: 'Up a screen of rows' },
+  { chord: { key: 'PageDown' }, does: 'Down a screen of rows' },
+  { chord: { key: 'Tab' }, does: 'Switch between the sidebar and the page' },
+  { chord: { key: 'Enter' }, does: "Open, or run the row's first action" },
+  { chord: { key: 'Enter', meta: true }, does: 'Start or stop the selected service' },
+  { chord: { key: 'Enter', meta: true, alt: true }, does: 'Restart the selected service' },
+  { chord: { key: '.' }, does: 'Reveal in Finder' },
+  { chord: { key: ',', meta: true }, does: 'Settings' },
+  { chord: { key: 'w', meta: true }, does: 'Close the window' },
+  { chord: { key: 'q', meta: true }, does: 'Quit' },
+  { chord: { key: '/', meta: true }, does: 'Show these shortcuts' }
+];
+
+/**
+ * A frosted sheet on the large step (`.dialog-size-lg`): a list of chords
+ * and what each does in two columns, whose body scrolls between the strip
+ * and the legend.
+ */
 function ShortcutsDialog({ onDone }: { readonly onDone: () => void }) {
   const labelId = useId();
-  const rows = Array.from({ length: 40 }, (_, index) => `Shortcut ${index + 1}`);
   return (
     <ModalDialog
-      className="demo-dialog"
+      className="dialog-size-lg"
       frosted
       icon={Keyboard}
       labelId={labelId}
@@ -210,9 +260,127 @@ function ShortcutsDialog({ onDone }: { readonly onDone: () => void }) {
       title="Keyboard Shortcuts"
     >
       <div className="dialog-body scroll-fade">
-        {rows.map((row) => (
-          <p key={row}>{row}</p>
+        <ul className="chord-list keycap">
+          {SHORTCUTS.map(({ chord, does }) => (
+            <li key={does}>
+              <KeyChord chord={chord} />
+              <span>{does}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </ModalDialog>
+  );
+}
+
+const ORDER_FIELDS: readonly { readonly key: keyof Order; readonly column: DataGridColumn }[] = [
+  { key: 'id', column: { id: 'id', label: 'order', align: 'right' } },
+  { key: 'customer', column: { id: 'customer', label: 'customer' } },
+  { key: 'city', column: { id: 'city', label: 'city' } },
+  { key: 'product', column: { id: 'product', label: 'product' } },
+  { key: 'id', column: { id: 'ship', label: 'ship to' } },
+  { key: 'quantity', column: { id: 'quantity', label: 'qty', align: 'right' } },
+  { key: 'total', column: { id: 'total', label: 'total', align: 'right' } },
+  { key: 'placed', column: { id: 'placed', label: 'placed' } },
+  { key: 'status', column: { id: 'status', label: 'status' } }
+];
+const RECENT_ORDERS: readonly Order[] = Array.from({ length: 40 }, (_, index) => orderAt(index));
+
+/** A cell of the wide table: the ship-to column writes an address from the order. */
+const orderText = (order: Order, column: number): string => {
+  const field = ORDER_FIELDS[column];
+  if (field === undefined) return '';
+  if (field.column.id === 'ship') {
+    return `${(order.id % 90) + 10} Harbour Road, dock ${(order.id % 7) + 1}, ${order.city}`;
+  }
+  return String(order[field.key]);
+};
+
+/** A wide table on the extra large step (`.dialog-size-xl`). */
+function OrdersDialog({ onDone }: { readonly onDone: () => void }) {
+  const labelId = useId();
+  return (
+    <ModalDialog
+      className="dialog-size-xl"
+      icon={Server}
+      labelId={labelId}
+      legend={{ primary: { label: 'Done', onRun: onDone } }}
+      onCancel={onDone}
+      title="Recent Orders"
+      titleAside="db.internal.example.com / shop"
+    >
+      <DataGrid
+        cell={(row, column) => {
+          const order = RECENT_ORDERS[row];
+          return order === undefined ? null : { text: orderText(order, column) };
+        }}
+        columns={ORDER_FIELDS.map((field) => field.column)}
+        copyText={(row, column) => {
+          const order = RECENT_ORDERS[row];
+          return order === undefined ? null : orderText(order, column);
+        }}
+        label="Recent orders"
+        maxHeight={300}
+        rowCount={RECENT_ORDERS.length}
+      />
+    </ModalDialog>
+  );
+}
+
+/**
+ * A dialog that keeps its top edge where it opened (`pinTop`): each host
+ * added grows the body downward instead of moving the strip.
+ */
+function AddHostsDialog({
+  onAdd,
+  onCancel
+}: {
+  readonly onAdd: (count: number) => void;
+  readonly onCancel: () => void;
+}) {
+  const labelId = useId();
+  const [hosts, setHosts] = useState<readonly string[]>(['build-1.example.com']);
+  return (
+    <ModalDialog
+      icon={Server}
+      labelId={labelId}
+      legend={{
+        leave: { label: 'Cancel' },
+        primary: { label: 'Add Hosts', onRun: () => onAdd(hosts.length) }
+      }}
+      onCancel={onCancel}
+      pinTop
+      title="Add Hosts"
+    >
+      <div className="demo-stack">
+        <p className="dialog-help">
+          The box stays where it opened while hosts are added; a window resize centres it again.
+        </p>
+        {hosts.map((host, index) => (
+          <input
+            aria-label={`Host ${index + 1}`}
+            autoFocus={index === hosts.length - 1}
+            className="field"
+            key={index}
+            onChange={(event) =>
+              setHosts((current) =>
+                current.map((value, at) => (at === index ? event.target.value : value))
+              )
+            }
+            spellCheck={false}
+            value={host}
+          />
         ))}
+        <div className="demo-row">
+          <Button
+            onClick={() =>
+              setHosts((current) => [...current, `build-${current.length + 1}.example.com`])
+            }
+            size="small"
+          >
+            Add Another Host
+          </Button>
+        </div>
       </div>
     </ModalDialog>
   );
@@ -239,9 +407,28 @@ export function DialogDemo() {
         <Button onClick={() => setOpen('delete-all')}>Delete 7 Long Paths…</Button>
         <Button onClick={() => setOpen('grant')}>Grant Access…</Button>
         <Button onClick={() => setOpen('quit')}>Quit…</Button>
-        <Button onClick={() => setOpen('connect')}>Connect…</Button>
         <Button onClick={() => setOpen('command')}>Edit Command…</Button>
+      </div>
+      <h3 className="demo-subhead">Size steps</h3>
+      <div className="demo-row">
+        <span className="demo-label">Small, 360px</span>
+        <span className="demo-readout">Rename, the confirmations, Edit Command (above)</span>
+      </div>
+      <div className="demo-row">
+        <span className="demo-label">Medium, 480px</span>
+        <Button onClick={() => setOpen('connect')}>Connect…</Button>
+      </div>
+      <div className="demo-row">
+        <span className="demo-label">Large, 640px</span>
         <Button onClick={() => setOpen('shortcuts')}>Shortcuts…</Button>
+      </div>
+      <div className="demo-row">
+        <span className="demo-label">Extra large, 880px</span>
+        <Button onClick={() => setOpen('orders')}>Recent Orders…</Button>
+      </div>
+      <div className="demo-row">
+        <span className="demo-label">Pinned top</span>
+        <Button onClick={() => setOpen('hosts')}>Add Hosts…</Button>
       </div>
       <code className="demo-readout">
         file: {name}
@@ -311,7 +498,13 @@ export function DialogDemo() {
           onConfirm={close('signed out')}
           title="Sign Out"
           tone="warning"
-        />
+        >
+          {/* A choice under the message; the caller holds its state. */}
+          <label className="field-choice">
+            <input className="check" type="checkbox" />
+            Also sign out on this computer&apos;s other windows
+          </label>
+        </ConfirmDialog>
       ) : null}
       {open === 'grant' ? (
         <ConfirmDialog
@@ -353,6 +546,13 @@ export function DialogDemo() {
         />
       ) : null}
       {open === 'shortcuts' ? <ShortcutsDialog onDone={close('closed shortcuts')} /> : null}
+      {open === 'orders' ? <OrdersDialog onDone={close('closed the orders')} /> : null}
+      {open === 'hosts' ? (
+        <AddHostsDialog
+          onAdd={(count) => close(`added ${count} hosts`)()}
+          onCancel={close('cancelled')}
+        />
+      ) : null}
     </div>
   );
 }

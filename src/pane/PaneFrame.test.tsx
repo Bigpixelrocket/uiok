@@ -95,14 +95,13 @@ describe('PathFact', () => {
 describe('PanePathBar trail fit', () => {
   afterEach(() => vi.restoreAllMocks());
 
-  /** Lays the row out as `rects` says, by class, before the bar renders. */
-  function layout(rects: Record<string, { left: number; right: number }>): void {
-    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
-      this: Element
-    ) {
-      const key = Object.keys(rects).find((name) => this.classList.contains(name));
-      const { left, right } = key === undefined ? { left: 0, right: 0 } : rects[key]!;
-      return {
+  /** Lays the bar out: each element's box by class, and the trail's scroll size. */
+  function layout(
+    rects: Record<string, { left: number; right: number }>,
+    scroll: { width: number; client: number }
+  ): void {
+    const box = (left: number, right: number) =>
+      ({
         left,
         right,
         width: right - left,
@@ -111,58 +110,163 @@ describe('PanePathBar trail fit', () => {
         height: 0,
         x: left,
         y: 0
-      } as DOMRect;
-    });
-    vi.spyOn(HTMLElement.prototype, 'offsetWidth', 'get').mockImplementation(function (
-      this: HTMLElement
+      }) as DOMRect;
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element
     ) {
       const key = Object.keys(rects).find((name) => this.classList.contains(name));
-      return key === undefined ? 0 : rects[key]!.right - rects[key]!.left;
+      return key === undefined ? box(0, 0) : box(rects[key]!.left, rects[key]!.right);
+    });
+    vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('pane-crumbs') ? scroll.width : 0;
+    });
+    vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (this: Element) {
+      return this.classList.contains('pane-crumbs') ? scroll.client : 0;
     });
   }
 
-  it('sets the crumb count on the trail', () => {
+  it('sets the crumb count and the last crumb’s stem on the row', () => {
+    const { container, rerender } = render(<PanePathBar trail={['a', 'b', 'web']} />);
+    const row = container.querySelector('.pane-path-row') as HTMLElement;
+
+    expect(row.style.getPropertyValue('--pane-crumb-count')).toBe('3');
+    expect(row.style.getPropertyValue('--pane-crumb-here-room')).toBe('3ch');
+    rerender(<PanePathBar trail={['a', 'a-very-long-name']} />);
+    expect(row.style.getPropertyValue('--pane-crumb-here-room')).toBe('9ch');
+  });
+
+  it('rests a trail its row cannot hold on its end, a slash first, pinned to what it shows', () => {
+    // A 100px trail whose crumbs run 300px: its slashes start at 150 and
+    // 210; resting on the second shows every crumb after it whole.
+    layout(
+      {
+        'pane-crumbs': { left: 0, right: 100 },
+        'crumb-separator': { left: 210, right: 222 },
+        here: { left: 222, right: 300 }
+      },
+      { width: 300, client: 100 }
+    );
     const { container } = render(<PanePathBar trail={['a', 'b', 'c']} />);
-
-    expect(
-      (container.querySelector('.pane-crumbs') as HTMLElement).style.getPropertyValue(
-        '--pane-crumb-count'
-      )
-    ).toBe('3');
-  });
-
-  it('gives a trail what the row leaves it once the tools would leave the row', () => {
-    // A 260px row whose tools, at their least, end 40px past it.
-    layout({
-      'pane-path-row': { left: 0, right: 260 },
-      'pane-crumbs': { left: 0, right: 160 },
-      'path-facts': { left: 160, right: 300 }
-    });
-    const { container } = render(
-      <PanePathBar trail={['a', 'b', 'c', 'd', 'e']}>
-        <span className="path-facts">Stopped</span>
-      </PanePathBar>
-    );
     const trail = container.querySelector('.pane-crumbs') as HTMLElement;
 
-    expect(trail.style.getPropertyValue('--pane-crumb-fit')).toBe('120px');
-    expect(trail.hasAttribute('data-cramped')).toBe(true);
+    expect(trail.dataset.cramped).toBe('pinned');
+    expect(trail.style.getPropertyValue('--pane-crumb-fit')).toBe('90px');
   });
 
-  it('leaves a trail its floor while everything fits', () => {
-    layout({
-      'pane-path-row': { left: 0, right: 360 },
-      'pane-crumbs': { left: 0, right: 160 },
-      'path-facts': { left: 160, right: 300 }
-    });
-    const { container } = render(
-      <PanePathBar trail={['a', 'b', 'c']}>
-        <span className="path-facts">Stopped</span>
-      </PanePathBar>
-    );
+  it('leaves a trail unpinned and at its start while it holds its crumbs', () => {
+    layout({ 'pane-crumbs': { left: 0, right: 300 } }, { width: 300, client: 300 });
+    const { container } = render(<PanePathBar trail={['a', 'b', 'c']} />);
     const trail = container.querySelector('.pane-crumbs') as HTMLElement;
 
-    expect(trail.style.getPropertyValue('--pane-crumb-fit')).toBe('');
     expect(trail.hasAttribute('data-cramped')).toBe(false);
+    expect(trail.style.getPropertyValue('--pane-crumb-fit')).toBe('');
+  });
+
+  it('fits again when a tool resizes on its own, with no render of the bar', () => {
+    const observed: Element[] = [];
+    let resized: () => void = () => undefined;
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          resized = callback;
+        }
+        observe(target: Element) {
+          observed.push(target);
+        }
+        disconnect() {
+          observed.length = 0;
+        }
+      }
+    );
+    const { container } = render(
+      <PanePathBar trail={['a', 'b']}>
+        <button className="pane-act" type="button">
+          Start
+        </button>
+      </PanePathBar>
+    );
+    const trail = container.querySelector('.pane-crumbs') as HTMLElement;
+
+    expect(observed).toContain(container.querySelector('.pane-act'));
+    expect(trail.hasAttribute('data-cramped')).toBe(false);
+    // The tool grows; the trail is left too narrow for its crumbs.
+    layout({ 'pane-crumbs': { left: 0, right: 40 } }, { width: 80, client: 40 });
+    resized();
+    expect(trail.hasAttribute('data-cramped')).toBe(true);
+    vi.unstubAllGlobals();
+  });
+
+  it('fits again once the document’s fonts are in', async () => {
+    let loaded: () => void = () => undefined;
+    const ready = new Promise<void>((resolve) => (loaded = resolve));
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { ready } });
+    const { container } = render(<PanePathBar trail={['a', 'b']} />);
+    const trail = container.querySelector('.pane-crumbs') as HTMLElement;
+
+    expect(trail.hasAttribute('data-cramped')).toBe(false);
+    layout({ 'pane-crumbs': { left: 0, right: 40 } }, { width: 80, client: 40 });
+    loaded();
+    await ready;
+    await Promise.resolve();
+    expect(trail.hasAttribute('data-cramped')).toBe(true);
+    Reflect.deleteProperty(document, 'fonts');
+  });
+
+  it('gives a fact of bare words its whole words as a tooltip while cut, and leaves a host’s own', () => {
+    const { container } = render(
+      <PanePathBar trail={['a']}>
+        <span className="path-facts" id="bare">
+          Stopped
+        </span>
+        <span className="path-facts" data-tooltip="A comment" id="own">
+          Commented
+        </span>
+      </PanePathBar>
+    );
+    const bare = container.querySelector('#bare') as HTMLElement;
+    const own = container.querySelector('#own') as HTMLElement;
+
+    expect([bare.dataset.tooltip, bare.hasAttribute('data-tooltip-cut')]).toEqual([
+      'Stopped',
+      true
+    ]);
+    expect([own.dataset.tooltip, own.hasAttribute('data-tooltip-cut')]).toEqual([
+      'A comment',
+      false
+    ]);
+  });
+
+  it('steps the action words down to icons only where the last crumb would fall below its stem', () => {
+    // "web" needs 30px; its box holds 20.
+    layout({ 'crumb-text': { left: 0, right: 20 } }, { width: 100, client: 100 });
+    Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+      configurable: true,
+      value: () => ({ left: 0, right: 30, width: 30 }) as DOMRect
+    });
+    const { container, rerender } = render(
+      <PanePathBar trail={['a', 'web']}>
+        <button className="pane-act" data-word="Start" type="button">
+          Start
+        </button>
+      </PanePathBar>
+    );
+    const row = container.querySelector('.pane-path-row') as HTMLElement;
+    const act = container.querySelector('.pane-act') as HTMLElement;
+
+    expect(row.hasAttribute('data-tight')).toBe(true);
+    expect(act.dataset.tooltip).toBe('Start');
+    // Room again: the words come back, and the tooltip the bar gave goes.
+    layout({ 'crumb-text': { left: 0, right: 30 } }, { width: 100, client: 100 });
+    rerender(
+      <PanePathBar trail={['a', 'web']}>
+        <button className="pane-act" data-word="Start" type="button">
+          Start
+        </button>
+      </PanePathBar>
+    );
+    expect(row.hasAttribute('data-tight')).toBe(false);
+    expect(act.hasAttribute('data-tooltip')).toBe(false);
+    Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
   });
 });

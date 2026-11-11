@@ -5,9 +5,11 @@
  * and a header drags to reorder. Under it, a short grid with every cell
  * kind (a lead checkbox, linked ids, missing and edited values, a marked
  * column, an inline field on double-click and an editor with Save and
- * Cancel), and a grid with no rows.
+ * Cancel), a grid of binary values with a node cell, a row action, and a
+ * one-click edit, and a grid with no rows.
  */
 
+import { File, FileImage, FileText, FileType, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
@@ -17,6 +19,8 @@ import {
   type DataGridColumn,
   type DataGridSortMark
 } from '@bigpixelrocket/uiok/grid';
+import { ICON_SM } from '@bigpixelrocket/uiok/icon';
+import { RowIconAction } from '@bigpixelrocket/uiok/pane';
 
 import { ORDER_COUNT, orderAt, type Order } from './data';
 
@@ -134,6 +138,8 @@ export function GridDemo() {
       </code>
       <h3 className="demo-subhead">Cell kinds and inline edit</h3>
       <CellKinds />
+      <h3 className="demo-subhead">Binary values, a row action, and click to edit</h3>
+      <Attachments />
       <h3 className="demo-subhead">No rows</h3>
       <DataGrid
         cell={() => null}
@@ -275,6 +281,121 @@ function CellKinds() {
         {checked.size} checked · {edits.size} edited · opened {opened}
       </code>
     </>
+  );
+}
+
+/** Attachments: a name, a kind drawn as a node, the bytes, and their size. */
+const ATTACHMENTS: readonly {
+  readonly name: string;
+  readonly kind: string;
+  readonly bytes: string;
+  readonly size: string;
+}[] = [
+  { name: 'invoice-0412.pdf', kind: 'pdf', bytes: '[BLOB - 18 KiB]', size: '18,204' },
+  { name: 'signature.png', kind: 'image', bytes: '[BLOB - 2 KiB]', size: '2,048' },
+  { name: 'notes.txt', kind: 'text', bytes: '[BLOB - 1 KiB]', size: '611' },
+  { name: 'export.csv', kind: 'text', bytes: '[BLOB - 94 KiB]', size: '96,310' }
+];
+
+/** The glyph a kind is drawn with in the kind column. */
+const KIND_GLYPHS: Readonly<Record<string, typeof File>> = {
+  pdf: FileText,
+  image: FileImage,
+  text: FileType
+};
+
+const ATTACHMENT_COLUMNS: readonly DataGridColumn[] = [
+  { id: 'name', label: 'name', tip: 'Click to rename' },
+  { id: 'kind', label: 'kind' },
+  { id: 'bytes', label: 'data', tip: 'Binary, shown by its size' },
+  { id: 'size', label: 'bytes', align: 'right' }
+];
+
+/**
+ * A grid whose data column holds binary values (`cell-binary`), whose kind
+ * column draws a node of its own (`content`), whose names edit on one click
+ * (`editTrigger="click"`), and whose rows end in a delete control
+ * (`rowAction` with `actionWidth`). It sits in a listing scope, as a host's
+ * grid does, so the row action takes the pane's compact look.
+ */
+function Attachments() {
+  const [rows, setRows] = useState(ATTACHMENTS);
+  const [editing, setEditing] = useState<{ row: number; draft: string } | null>(null);
+  const commit = (): void => {
+    if (editing === null) return;
+    const draft = editing.draft.trim();
+    setRows((current) =>
+      current.map((entry, index) =>
+        index === editing.row && draft !== '' ? { ...entry, name: draft } : entry
+      )
+    );
+    setEditing(null);
+  };
+  const cell = (row: number, column: number): DataGridCell | null => {
+    const entry = rows[row];
+    if (entry === undefined) return null;
+    if (column === 0) return { text: entry.name };
+    if (column === 1) {
+      // The text, which sizes the column and is what Copy takes, is a little
+      // longer than the drawing: the kind's glyph and its word.
+      const Glyph = KIND_GLYPHS[entry.kind] ?? File;
+      return {
+        text: `${entry.kind} file`,
+        content: (
+          <span className="demo-cell-kind">
+            <Glyph aria-hidden size={ICON_SM} />
+            {entry.kind}
+          </span>
+        )
+      };
+    }
+    if (column === 2) return { text: entry.bytes, className: 'cell-binary' };
+    return { text: entry.size };
+  };
+  return (
+    <div className="listing-root">
+      <DataGrid
+        actionWidth={32}
+        cell={cell}
+        columns={ATTACHMENT_COLUMNS}
+        copyText={(row, column) => cell(row, column)?.text ?? null}
+        editTrigger="click"
+        editable={(_, column) => column === 0}
+        editor={
+          editing === null
+            ? null
+            : {
+                row: editing.row,
+                column: 0,
+                node: (
+                  <input
+                    aria-label="Name"
+                    autoFocus
+                    onBlur={commit}
+                    onChange={(event) => setEditing({ ...editing, draft: event.target.value })}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') commit();
+                      if (event.key === 'Escape') setEditing(null);
+                    }}
+                    value={editing.draft}
+                  />
+                )
+              }
+        }
+        label="Attachments"
+        onEdit={(row) => setEditing({ row, draft: rows[row]?.name ?? '' })}
+        rowAction={(row) => (
+          <RowIconAction
+            danger
+            icon={Trash2}
+            label={`Delete ${rows[row]?.name ?? ''}`}
+            onClick={() => setRows((current) => current.filter((_, index) => index !== row))}
+            tip="Delete"
+          />
+        )}
+        rowCount={rows.length}
+      />
+    </div>
   );
 }
 

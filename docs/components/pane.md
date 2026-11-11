@@ -53,8 +53,8 @@ function View() {
 
 ## Frame
 
-- `PanePathBar` (`PanePathBarProps`): `trail` (crumbs, broadest first; a string is a label, a `PaneCrumb` `{ label, onOpen, tip? }` is a button), `mark` (a glyph in the root crumb), `heading` (the last label crumb is the page's `h2`), `here` (drawn inside the last crumb, such as a `CurrentDot`), and children at the bar's end (`.path-tools`). The crumbs before the last give way first, and the last one only once they have, down to one character and its ellipsis, so a long name never runs under the pane's frame. Every crumb cuts its words in an inner `.crumb-text` box, where the ellipsis draws. A crumb cut short opens its whole text as a tooltip, and a crumb shown whole opens none. A button crumb with a `tip` shows the tip instead, cut or not.
-- `PathFact` (`PathFactProps`): a page's state at the bar's end, as one of its children: `tone` (`'danger'` red, `'warning'` amber, none for a plain fact), `mark` (drawn before the words, such as `<StateMark tone="danger" word="" />`), and its words as children (a string). The words cut with an ellipsis once the trail has given what it can, and the whole fact opens as a tooltip only while it is cut.
+- `PanePathBar` (`PanePathBarProps`): `trail` (crumbs, broadest first; a string is a label, a `PaneCrumb` `{ label, onOpen, tip? }` is a button), `mark` (a glyph in the root crumb), `heading` (the last label crumb is the page's `h2`), `here` (drawn inside the last crumb, such as a `CurrentDot`), and children at the bar's end (`.path-tools`). A narrow bar gives way in the order below ("How a narrow bar gives way"). Every crumb cuts its words in an inner `.crumb-text` box, where the ellipsis draws. A crumb cut short opens its whole text as a tooltip, and a crumb shown whole opens none. A button crumb with a `tip` shows the tip instead, cut or not.
+- `PathFact` (`PathFactProps`): a page's state at the bar's end, as one of its children: `tone` (`'danger'` red, `'warning'` amber, none for a plain fact), `mark` (drawn before the words, such as `<StateMark tone="danger" word="" />` or an icon), and its words as children (a string). The words cut with an ellipsis once the trail has given its floor, and the whole fact opens as a tooltip only while it is cut.
 - `PaneStatus` (`PaneStatusProps`): the summary as children, and `tools` (compact controls at the line's end), which the summary gives way to. A summary in words that a narrow pane cuts carries itself whole as its tooltip.
 
 ## Compact controls
@@ -96,13 +96,34 @@ DOM helpers: `paneRows`, `paneRow`, `verbControl(root, verb, 'verb' | 'page-verb
 
 ## Styling
 
-`.pane` (`.active` wears the accent on its frame), `.pane-path-row`, `.pane-crumbs` (`--pane-crumb-count`, `data-cramped`), `.crumb` (`.root`, `.home`, `.here`, `.brief`), `.crumb-label` (a crumb's words in `.crumb-text`), `.crumb-separator`, `.path-tools`, `.path-facts` (`.danger`, `.warning`; its words in `.path-fact-text`, as `PathFact` writes it), `.path-star`, `.pane-act` (`.lit`, `.danger`; its verb in `.pane-act-word`), `.pane-icon-act` (`.worded`, `.danger`), `.pane-list`, `.pane-status`, `.pane-summary`, `.pane-status-tools`.
+`.pane` (`.active` wears the accent on its frame), `.pane-path-row` (`--pane-crumb-count`, `--pane-crumb-here-room`, `data-tight`, `data-wraps`), `.pane-crumbs` (`data-cramped`, `--pane-crumb-fit`), `.crumb` (`.root`, `.home`, `.here`, `.brief`), `.crumb-label` (a crumb's words in `.crumb-text`), `.crumb-separator`, `.path-tools`, `.path-facts` (`.danger`, `.warning`; its words in `.path-fact-text`, as `PathFact` writes it), `.path-star`, `.pane-act` (`.lit`, `.danger`; its verb in `.pane-act-word`), `.pane-icon-act` (`.worded`, `.danger`), `.pane-list`, `.pane-status`, `.pane-summary`, `.pane-status-tools`.
 
-In a path bar too narrow for everything, things give way in this order:
+### How a narrow bar gives way
 
-1. The trail, down to a floor that holds every crumb cut to one character and its ellipsis, the slashes between them, a root's mark, and the current dot. `PanePathBar` sets the crumb count on `.pane-crumbs` as `--pane-crumb-count`; a trail drawn without it keeps a floor of two cut crumbs. Past its floor the trail is clipped at its own box (not while a crumb's menu is open, `aria-expanded="true"`), so it never runs under the tools.
-2. A fact, down to its mark and one character and its ellipsis. `PathFact` writes it with its tooltip. Words laid straight into `.path-facts` (alone or after a `StateMark`) cut too, but carry no tooltip, so use `PathFact` (or its markup, the words in `.path-fact-text` with `cutTooltip(words)`).
-3. Only when even that does not fit, a trail deeper than its row can hold: `PanePathBar` measures what the tools would lose, lowers the trail's floor by that much (`--pane-crumb-fit`), and marks the trail `data-cramped`. Its crumbs then end on its end, so the last crumbs, where the pane is, stay, and the broadest run past its start edge, which fades over `--space-6` instead of cutting a glyph. No control leaves the row. A right-to-left bar keeps step 1's floor.
+A path bar holds its trail and its tools (facts and compact controls) on one line. These hold in every bar, at every width, for every fact a host writes:
+
+1. **Nothing is drawn over anything, and no control ends outside its row.** The trail scrolls inside its own box, so a crumb never runs under the tools, and the tools never take less than they need at their least (`min-width: min-content`: every control whole, every fact at its floor).
+2. **No glyph is cut.** Text that does not fit ends in an ellipsis inside its own box, with at least one character before it, and its whole text is reachable: a cut crumb or fact opens it as a tooltip, and a crumb out of view is a scroll away. A trail at rest shows whole crumbs only; its side that hides crumbs fades over its padding and one slash.
+3. **Things give way in one order**, each giving all it can before the next gives any:
+   1. the crumbs before the last, each to one character and its ellipsis;
+   2. the last crumb (where the pane is) to a stem: the shorter of its name and eight characters, and an ellipsis;
+   3. a fact's words, to one character and its ellipsis;
+   4. the crumbs before the last, out of view at the trail's start: the trail rests on its end, a slash first;
+   5. the quiet actions' words, which step down to their icons (`data-tight`; each keeps its name, and its word becomes its tooltip unless it has one);
+   6. the last crumb, to one character and its ellipsis.
+
+   The trail's floor (`--pane-crumb-room`, from the crumb count and the last crumb's stem that `PanePathBar` sets on the row) is what the tools may not take while they can still give; only what they cannot give goes below it. The room a crumb out of view leaves at rest goes to the tools.
+
+4. **Focus is always seen.** A crumb out of view is a scroll away, and one the keyboard focuses scrolls into view with its whole ring, clear of the fade. When the focus leaves the trail, it rests on its end again.
+5. **The bar re-fits whenever a box in it changes size**: after every render, when the row, the trail, a crumb, or a tool resizes (a tool whose word changes on its own, a font that loads late), once the document's fonts are in, and when the focus leaves the trail.
+6. **A fact's mark stands one gap (`--space-3`) from its words in every form**, as a listing row's does, and a fact that opens the tools stands twice that from the trail.
+
+What a fact may hold:
+
+- `PathFact`, or words laid straight into `.path-facts`, alone or after marks (a `StateMark` with `word=""`, a host's own empty span, an icon): the bar cuts the words in one clamped line, and `PanePathBar` gives a fact of bare words its words as a tooltip while they are cut.
+- A host's own boxes (a link, a chip, a control): they keep their width, and the trail gives way for them instead. A box that may cut is one clamped line like PathFact's words: give it `.path-fact-text` and `cutTooltip(words)`. Its floor is then one character, so the tools' least counts it so; a box cut with `min-width: 0` and `overflow: hidden` counts its whole text and cannot give way.
+
+What needs `PanePathBar`: steps 3.4 to 3.6 and point 5 are measured. A bar drawn with the classes alone (a hand-written trail and tools) keeps points 1, 2 (but for where its trail rests), 3.1 to 3.3, and 6 by CSS alone, as long as its tools at their least fit the row. Set `--pane-crumb-count` (and `--pane-crumb-here-room`, the stem's characters with its ellipsis, such as `3ch` or `9ch`) on its `.pane-path-row` for the exact floor; without them the floor holds two cut crumbs. A row a host lets wrap (`flex-wrap: wrap`) sets `data-wraps` (`PanePathBar` does it for its own row), so its tools, on a line of their own, take no cap from the trail. A crumb's menu opens inside its crumb, so while one is open (`aria-expanded="true"`) the trail neither scrolls nor fades. A right-to-left bar scrolls but rests where the browser puts it.
 
 ```tsx
 <PanePathBar heading here={<CurrentDot label="Open" />} trail={[projects, site, 'web']}>

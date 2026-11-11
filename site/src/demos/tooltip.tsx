@@ -1,10 +1,10 @@
 /**
  * Tooltips with and without a chord (drawn with the legends' key glyphs),
- * one long enough to wrap, one that describes more than the name, and a
+ * one with a chord written as text, one long enough to wrap, one that describes more than the name, and a
  * tool rail whose tooltips open beside each tool instead of below it.
  */
 
-import { Copy, FolderOpen, Info, Plus, Search, Settings } from 'lucide-react';
+import { Copy, FolderOpen, Info, Plus, RotateCw, Search, Settings } from 'lucide-react';
 
 import { IconButton } from '@bigpixelrocket/uiok/button';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
@@ -35,6 +35,9 @@ export function TooltipDemo() {
           {...tooltip('Copy Path', { key: 'c', meta: true, alt: true })}
         >
           <Copy size={ICON_MD} />
+        </IconButton>
+        <IconButton aria-label="Reload" {...tooltip('Reload', '⌘R')}>
+          <RotateCw size={ICON_MD} />
         </IconButton>
         <IconButton aria-label="Open" {...tooltip('Open')}>
           <FolderOpen size={ICON_MD} />

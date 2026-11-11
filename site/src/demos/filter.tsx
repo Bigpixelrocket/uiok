@@ -1,7 +1,8 @@
 /**
  * A filter field over a listing, drawn by the library's `.filter-field`; the
  * esc cap and the Escape key both clear it. The mark lights while the field
- * holds the keys or a query.
+ * holds the keys or a query. While a query narrows the list, the count
+ * stands at the field's far end (`.pane-filter-summary`).
  */
 
 import { FileText } from 'lucide-react';
@@ -37,6 +38,11 @@ export function FilterDemo() {
             spellCheck={false}
             value={query}
           />
+          {query === '' ? null : (
+            <span className="pane-filter-summary">
+              {rows.length} of {FILES.length}
+            </span>
+          )}
           {query === '' ? null : (
             <FilterEscape label="Clear filter" onEscape={() => setQuery('')} />
           )}

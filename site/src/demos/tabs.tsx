@@ -1,7 +1,8 @@
 /**
  * A page tab strip and its smaller pill strip; Left and Right move between
  * tabs, and a narrow strip fades the edges that hide tabs. Under them, the
- * name-only and icon-only looks and a strip too narrow for its tabs.
+ * name-only and icon-only looks, a strip with no current tab (a home page
+ * that is no tab), and a strip too narrow for its tabs.
  */
 
 import { Bell, Database, FileText, Gauge, Search, Settings, Shield, Users } from 'lucide-react';
@@ -67,6 +68,12 @@ export function TabsDemo() {
         current={page}
         label="Project pages, icons only"
         look="icons"
+        onSelect={setPage}
+        tabs={PAGES}
+      />
+      <PageTabs
+        current={null}
+        label="Project pages, none current"
         onSelect={setPage}
         tabs={PAGES}
       />

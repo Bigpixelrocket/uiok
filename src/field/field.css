@@ -169,6 +169,13 @@ textarea.field {
   resize: vertical;
 }
 
+/* A list box (multiple, or a size) is as tall as the rows it shows, not one
+   field. At the class's own weight, so a host's height still wins. */
+.field:where(select:is([multiple], [size]:not([size='1']))) {
+  height: auto;
+  padding-block: var(--space-1);
+}
+
 /* A number keeps the keyboard's arrows; the spin buttons go, since their
    platform drawing is the only part of the field the theme cannot reach. */
 input.field[type='number'] {

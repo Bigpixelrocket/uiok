@@ -599,14 +599,6 @@ a {
   font-size: var(--font-size-body);
 }
 
-.demo-dialog {
-  width: min(440px, calc(100vw - 32px));
-}
-
-.demo-dialog .demo-input {
-  width: 100%;
-}
-
 .data-grid-cell.demo-cell-dim {
   color: var(--text-dim);
 }
@@ -934,6 +926,35 @@ a {
   color: var(--primary-mark);
 }
 
+.scale-line {
+  width: 96px;
+  background: var(--text);
+}
+
+/* The focus ring as the base sheet draws it; each row sets its offset. */
+.scale-focus {
+  width: 48px;
+  height: var(--control-height-sm);
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  outline: var(--focus-ring-width) solid var(--accent);
+}
+
+.scale-dot {
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: var(--radius-pill);
+  background: var(--success);
+}
+
+.scale-swatch {
+  width: var(--space-4);
+  height: var(--space-4);
+  border-radius: var(--radius-xs);
+  background: var(--chart-1);
+}
+
 /* ---- Home ---- */
 
 .hero {
@@ -1214,4 +1235,80 @@ a {
   .pane-demo-sidebar {
     flex-basis: 120px;
   }
+}
+
+/* A window's content area standing in for the whole window, so the Shell
+   demo can show the settings notice as the band under a header: the band
+   keeps its own margins, and the window's ground runs on under it. */
+.shell-demo-window {
+  display: flex;
+  flex-direction: column;
+  min-height: 96px;
+  overflow: hidden;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--ground);
+}
+
+/* A host's colour for a name by its kind (PathCell's nameClassName): a
+   document in the accent's text tone. A selection paints its own words, so
+   the rule leaves a selected row alone. */
+:where(.listing-root) .row:where(:not(.selected)) .pane-path-name.demo-kind-doc {
+  color: var(--accent-text);
+}
+
+/* A host's quieter entry (an ignored file), as the listing page describes:
+   the meta tone at rest, the dim tone made for a state fill on the cursor,
+   a marked row, or under the pointer. */
+:where(.listing-root) .row:where(:not(.selected)) > .row-name.demo-quiet-name {
+  color: var(--row-meta-text);
+}
+
+:where(.listing-root) .row:where(:not(.selected)):is(.cursor, .marked) > .row-name.demo-quiet-name {
+  color: var(--text-dim-on-surface);
+}
+
+/* The Text demo's listing is narrow, so its longest names cut short. */
+.demo-marked-pane {
+  width: min(240px, 100%);
+}
+
+/* A scatter chart in a state cell fills the cell: its frame sizes to the
+   width it is given, which a cell would otherwise leave open. */
+.demo-state > .charts-scatter {
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* A menu opened from a tool at the row's end opens toward the start, so it
+   stays inside a narrow window. */
+.demo-anchor.end > .folder-menu {
+  right: 0;
+  left: auto;
+}
+
+/* A result chart in a state cell scrolls inside the cell, never the page. */
+.demo-state > .result-chart-frame {
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* A grid cell the caller draws itself (DataGridCell's content): a kind's
+   glyph and word on one line, in the cell's own colour. */
+.demo-cell-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The palette demo's tag at the field's end keeps clear of the count
+   before it, as a host's own tag does. */
+.demo-palette-aside {
+  margin-inline-start: var(--space-6);
+}
+
+/* The Pane demo's tightest bar: narrow enough that the action's word steps
+   down to its icon. */
+.demo-facts-tight {
+  width: min(240px, 100%);
 }

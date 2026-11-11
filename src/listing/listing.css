@@ -90,8 +90,27 @@
   font-size: var(--font-size-body);
 }
 
-/* The path bar's row: the first inside the frame, on the pane's own surface. */
+/* The path bar's row: the first inside the frame, on the pane's own surface.
+   It holds the trail and the tools (facts and compact controls) on one
+   line, and they give way in one order (docs/components/pane.md, "How a
+   narrow bar gives way"): the crumbs before the last, to one character
+   each; the last crumb, to a stem of eight; a fact's words, to one; the
+   crumbs before the last, out of view at the trail's start; the last
+   crumb, to one character. The trail's floor (`--pane-crumb-room`: every
+   crumb at its least, the slashes, a root's mark, the current dot) is what
+   the tools may not take while they can still give, and only what the
+   tools cannot give at all goes below it. */
 :where(.listing-root) .pane-path-row {
+  --pane-crumb-room: calc(
+    min(1, var(--pane-crumb-count)) *
+      (
+        var(--pane-row-inset) - var(--space-2) + var(--space-1) + (var(--pane-crumb-count) - 1) *
+          (3ch + var(--space-4) + 2 * var(--space-1)) + var(--pane-crumb-here-room, 9ch) +
+          var(--space-4) + var(--pane-crumb-mark-room, 0px)
+      ) +
+      (1 - min(1, var(--pane-crumb-count))) * (var(--pane-row-inset) + 10ch)
+  );
+
   flex: 0 0 var(--pane-path-height);
   display: flex;
   align-items: center;
@@ -100,83 +119,87 @@
   border-bottom: var(--line) solid var(--border);
 }
 
-/* How many crumbs a trail draws after its root (PanePathBar sets it on
-   `.pane-crumbs`), so the trail's floor holds every one of them cut. A
-   trail without it keeps a floor of two cut crumbs. */
+/* How many crumbs a trail draws after its root. PanePathBar sets it on its
+   row; a host that writes its own trail sets it on `.pane-path-row`, so the
+   tools beside the trail read it too. Without it the floor holds two cut
+   crumbs. `--pane-crumb-here-room` is the last crumb's stem, the shorter
+   of its name and eight characters, and its ellipsis (`9ch` without it). */
 @property --pane-crumb-count {
   syntax: '<integer>';
-  inherits: false;
+  inherits: true;
   initial-value: 0;
+}
+
+/* The floor's room for a root's mark (an icon and its crumb's padding) and
+   for the current dot after the last crumb's words. */
+:where(.listing-root) .pane-path-row:has(> .pane-crumbs > .crumb.root) {
+  --pane-crumb-mark-room: calc(var(--icon-md) + var(--space-4));
+}
+
+:where(.listing-root) .pane-path-row:has(> .pane-crumbs > .crumb.here > .current-dot) {
+  --pane-crumb-mark-room: calc(1ch + var(--dot) + var(--space-2));
+}
+
+:where(.listing-root)
+  .pane-path-row:has(> .pane-crumbs > .crumb.root):has(
+    > .pane-crumbs > .crumb.here > .current-dot
+  ) {
+  --pane-crumb-mark-room: calc(var(--icon-md) + var(--space-4) + 1ch + var(--dot) + var(--space-2));
 }
 
 /* The trail fills its row, root first; the slashes between crumbs only
    separate them. The first crumb's words start on the row inset, the line
    the column strip's first label and the rows' icons start on, so the
-   pane's three bands share one left edge.
-   In a bar too narrow for the trail and its facts, the trail gives way
-   first, down to a floor that holds each of its crumbs cut to one
-   character and its ellipsis, the slashes between them, a root's mark, and
-   the current dot; only then does a fact cut its words. Its shrink factor
-   is a million times the tools', so the tools give less than a layout unit
-   while it gives way, and a fact shows no ellipsis early. A trail deeper
-   than its row can hold even so is clipped at its own box, so it never
-   runs under the tools, and its end fades there instead of cutting a
-   glyph (below). */
+   pane's three bands share one left edge. Its shrink factor is a million
+   times the tools', so the tools give less than a layout unit while it
+   gives way, and a fact shows no ellipsis early.
+   A trail its row cannot hold whole scrolls sideways, its scrollbar
+   hidden: what is out of view is a scroll away, a crumb the keyboard
+   focuses scrolls into view clear of the fade, and nothing is drawn past
+   the trail's box, so it never runs under the tools. PanePathBar rests a
+   trail that scrolls on its end, a slash first (`data-cramped`). The side that hides crumbs fades over its padding and that
+   slash, so no glyph shows cut. */
 :where(.listing-root) .pane-crumbs {
-  --pane-crumb-room: calc(
-    var(--pane-row-inset) - var(--space-2) + var(--space-1) + var(--pane-crumb-count) *
-      (2ch + var(--space-4)) + (var(--pane-crumb-count) - 1) * (1ch + 2 * var(--space-1)) +
-      var(--pane-crumb-mark-room, 0px) + var(--pane-crumb-here-room, 0px)
-  );
+  --scroll-fade-size: calc(var(--pane-row-inset) - var(--space-2) + 1ch + 2 * var(--space-1));
 
   flex: 1 1000000 auto;
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  min-width: min(
-    100%,
-    var(--pane-crumb-fit, 100%),
-    max(
-      (1 - min(1, var(--pane-crumb-count))) * (var(--pane-row-inset) + 10ch),
-      var(--pane-crumb-room)
-    )
-  );
+  min-width: 0;
   height: 100%;
   padding: 0 var(--space-1) 0 calc(var(--pane-row-inset) - var(--space-2));
+  scroll-padding-inline: var(--scroll-fade-size);
+  scrollbar-width: none;
 }
 
-/* The floor's room for a root's mark (an icon and its crumb's padding) and
-   for the current dot after the last crumb's words. */
-:where(.listing-root) .pane-crumbs:has(> .crumb.root) {
-  --pane-crumb-mark-room: calc(var(--icon-md) + var(--space-4));
-}
-
-:where(.listing-root) .pane-crumbs:has(> .crumb.here > .current-dot) {
-  --pane-crumb-here-room: calc(1ch + var(--dot) + var(--space-2));
+/* A trail at rest on a slash is pinned to what it shows (PanePathBar's
+   `data-cramped="pinned"` and `--pane-crumb-fit`), so the room a crumb out of view leaves goes to the
+   tools instead of standing empty after the last crumb. */
+:where(.listing-root) .pane-crumbs[data-cramped='pinned'] {
+  flex: none;
+  width: var(--pane-crumb-fit);
 }
 
 /* A crumb's menu opens inside its crumb, so the trail clips nothing while
    one is open: the menu stays whole past the trail's box. */
 :where(.listing-root) .pane-crumbs:not(:has([aria-expanded='true'])) {
-  overflow-x: clip;
+  overflow-x: auto;
+  overflow-y: hidden;
 }
 
-/* A trail deeper than its row can hold even cut (PanePathBar marks it
-   `data-cramped` and gives it what the tools leave) keeps its last crumbs,
-   where the pane is, and gives way at its start: its crumbs end on its
-   end, the broadest run past its start edge, and that edge fades over
-   --space-6 instead of cutting a glyph. The fade is a mask, which would
-   clip an open crumb menu too, so it lifts with the clip. */
-:where(.listing-root) .pane-crumbs[data-cramped] {
-  justify-content: flex-end;
-}
-
-:where(.listing-root) .pane-crumbs[data-cramped]:not(:has([aria-expanded='true'])) {
-  mask-image: linear-gradient(
-    to right,
-    transparent calc(var(--pane-row-inset) - var(--space-2)),
-    var(--ground) calc(var(--pane-row-inset) - var(--space-2) + var(--space-6))
-  );
+@supports (animation-timeline: scroll()) {
+  :where(.listing-root) .pane-crumbs:not(:has([aria-expanded='true'])) {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      var(--ground) var(--scroll-fade-inline-start),
+      var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+      transparent
+    );
+    animation: uiok-scroll-fade-inline linear both;
+    animation-timeline: scroll(self inline);
+  }
 }
 
 /* A crumb's menu anchors under it. A crumb that shrinks keeps room for one
@@ -203,22 +226,54 @@
 }
 
 /* The last crumb gives way last (the trail before it shrinks a thousand
-   times faster), down to one character and its ellipsis, so a name wider
-   than its pane ends in an ellipsis inside the frame instead of running
-   under it. A name shorter than that floor keeps its own width. */
+   times faster), and in two steps: to a stem of eight characters and its
+   ellipsis while a fact still has words to give, and below that only
+   once the crumbs before it are out of view, down to one character, in
+   a trail of one crumb all its box, else its box less a leading slash and
+   less the half of the padding before it that a trail at rest shows.
+   A name shorter than its floor keeps its own width. */
 :where(.listing-root) .crumb.here {
   flex-shrink: 1;
-  min-width: calc-size(max-content, min(size, calc(2ch + var(--space-4))));
+  min-width: calc-size(
+    max-content,
+    min(size, max(2ch + var(--space-4), min(9ch + var(--space-4), 100%)))
+  );
+}
+
+:where(.listing-root) .crumb-separator ~ .crumb.here {
+  min-width: calc-size(
+    max-content,
+    min(size, max(2ch + var(--space-4), min(9ch + var(--space-4), 100% - 1ch - var(--space-1))))
+  );
 }
 
 /* The current dot sits inside the last crumb, after its words, so its
-   floor keeps room for the dot as well as a character and its ellipsis,
-   and the dot keeps the label's own padding after it, so it stands as far
-   from what follows as a crumb's words do. */
+   floors keep room for the dot as well, and the dot keeps the label's own
+   padding after it, so it stands as far from what follows as a crumb's
+   words do. */
 :where(.listing-root) .crumb.here:has(> .current-dot) {
   min-width: calc-size(
     max-content,
-    min(size, calc(3ch + var(--space-4) + var(--dot) + var(--space-2)))
+    min(
+      size,
+      max(
+        3ch + var(--space-4) + var(--dot) + var(--space-2),
+        min(10ch + var(--space-4) + var(--dot) + var(--space-2), 100%)
+      )
+    )
+  );
+}
+
+:where(.listing-root) .crumb-separator ~ .crumb.here:has(> .current-dot) {
+  min-width: calc-size(
+    max-content,
+    min(
+      size,
+      max(
+        3ch + var(--space-4) + var(--dot) + var(--space-2),
+        min(10ch + var(--space-4) + var(--dot) + var(--space-2), 100% - 1ch - var(--space-1))
+      )
+    )
   );
 }
 
@@ -339,14 +394,39 @@ button.crumb-label > .crumb-text {
    item's words or glyph end on the row inset, over the rows' actions: facts
    end there as they are, and a padded control reaches back over the inset
    by its own padding (a quiet action's --space-3 after its words, a star's
-   --space-2 either side of its glyph). */
+   --space-2 either side of its glyph).
+   Beside a trail, the tools take no more than the row less the trail's
+   floor while they can still give (a fact's words), and never less than
+   they need at their least (`min-content`: every control whole, a fact
+   down to its mark and one character and its ellipsis), which wins over
+   that cap: so the trail goes below its floor only for what the tools
+   cannot give, and no control is pushed out of the row. That least is
+   never more than the row: past it, a host's own box that cuts itself
+   (`min-width: 0` and its own ellipsis) gives way inside the tools. A row
+   a host lets wrap (PanePathBar's `data-wraps`) puts no cap on its tools,
+   which then sit on a line of their own. */
 :where(.listing-root) .path-tools {
   display: flex;
   flex: 0 1 auto;
   align-items: center;
   gap: var(--space-4);
-  min-width: 0;
+  box-sizing: border-box;
+  min-width: calc-size(min-content, min(size, 100%));
   padding-right: var(--pane-row-inset);
+}
+
+:where(.listing-root) .pane-path-row:has(> .pane-crumbs):not([data-wraps]) > .path-tools {
+  max-width: calc(100% - var(--pane-crumb-room));
+}
+
+/* A fact that opens the tools stands a mark's gap and the label padding
+   clear of the trail: twice the gap between its own mark and words. */
+:where(.listing-root) .pane-path-row:has(> .pane-crumbs[data-cramped='pinned']) > .path-tools {
+  max-width: none;
+}
+
+:where(.listing-root) .path-tools:has(> .path-facts:first-child) {
+  padding-left: var(--space-3);
 }
 
 :where(.listing-root) .path-tools > .pane-act:last-child {
@@ -357,10 +437,38 @@ button.crumb-label > .crumb-text {
   margin-right: calc(-1 * var(--space-2));
 }
 
-/* A page's state at the path bar's end: its dot and words; a failure reads
-   red, a change waiting for the user amber. Once the trail has given all
-   it can, a fact cuts its words with an ellipsis, down to one character. Words in a `.path-fact-text` box (PathFact) carry
-   `cutTooltip`, so the whole fact opens as a tooltip only while it is cut. */
+/* Where even the last crumb's stem would not fit, a bar's quiet actions
+   say their verbs with their icons alone (PanePathBar's `data-tight`), as
+   a row's actions do where values need the room. The word leaves the
+   drawing as the base sheet's .visually-hidden does, so the button keeps
+   its name. */
+:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act {
+  gap: 0;
+  padding: 0 var(--space-2);
+}
+
+:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act:last-child {
+  margin-right: calc(-1 * var(--space-2));
+}
+
+:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act > .pane-act-word {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* A page's state at the path bar's end: its mark and words; a failure
+   reads red, a change waiting for the user amber. Once the trail has given
+   its floor, a fact cuts its words with an ellipsis, down to one
+   character. The mark stands --space-3 from its words in every form, as a
+   listing row's does. A fact built of other boxes (a link, a chip, a
+   control) is the host's: it keeps its width, and the trail gives way
+   for it instead. */
 :where(.listing-root) .path-facts {
   display: inline-flex;
   flex: 0 1 auto;
@@ -369,10 +477,6 @@ button.crumb-label > .crumb-text {
   color: var(--text-dim);
   font-size: var(--font-size-small);
   white-space: nowrap;
-  /* A flex item offers its whole unbroken text as its smallest width, so
-     the floor is the fact's own: its mark, the gap, and a character and
-     its ellipsis, or its whole width when that is less. */
-  min-width: calc-size(max-content, min(size, var(--dot) + 2 * var(--space-3) + 2ch));
 }
 
 /* The mark keeps its width while the words cut, so they never crowd it. */
@@ -380,25 +484,48 @@ button.crumb-label > .crumb-text {
   flex: none;
 }
 
+/* Words that cut (PathFact's `.path-fact-text`, and a fact of bare words
+   below) are one clamped line that may break between any two characters:
+   it shows what fits and an ellipsis, and the least it asks of its row is
+   one character and that ellipsis, so the tools' `min-content` is what
+   they need at their least. Words in `.path-fact-text` carry `cutTooltip`,
+   so the whole fact opens as a tooltip only while it is cut. */
+:where(.listing-root)
+  :is(.path-fact-text, .path-facts:not(:has(> :not(.pane-state, svg, :empty)))) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-all;
+}
+
 :where(.listing-root) .path-fact-text {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  min-width: calc-size(max-content, min(size, 2ch + var(--line)));
 }
 
-/* Words laid straight into the fact sit in an anonymous flex item, where no
-   ellipsis draws, so a fact of bare words, alone or after a state mark, is
-   a block of one line instead: it cuts its own words, its mark set in the
-   line where the gap stood. A fact built of other boxes (a link, a chip,
-   a host's own mark) keeps its flex layout, which those boxes need. */
-:where(.listing-root) .path-facts:not(:has(> :not(.pane-state))) {
+/* Words laid straight into the fact, alone or after a mark (a StateMark,
+   a host's own empty mark, an icon), sit in an anonymous flex item, where
+   nothing cuts, so such a fact is the clamped line itself, its marks set
+   in the line where the gap stood. Its floor is a mark, the gap, one
+   character and the ellipsis, or those two without a mark, and a
+   hairline, without which the clamp's rounding can drop the character. */
+:where(.listing-root) .path-facts:not(:has(> :not(.pane-state, svg, :empty))) {
+  min-width: calc-size(max-content, min(size, 2ch + var(--line)));
+}
+
+:where(.listing-root) .path-facts:not(:has(> :not(.pane-state, svg, :empty))):has(> *) {
+  min-width: calc-size(max-content, min(size, var(--dot) + var(--space-3) + 2ch + var(--line)));
+}
+
+:where(.listing-root .path-facts:not(:has(> :not(.pane-state, svg, :empty)))) > * {
   display: inline-block;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-inline-end: var(--space-3);
+  vertical-align: middle;
 }
 
-:where(.listing-root) .path-facts:not(:has(> :not(.pane-state))) > .pane-state {
-  margin-inline-end: var(--space-3);
+:where(.listing-root) .path-facts:not(:has(> :not(.pane-state, svg, :empty))) > .pane-state {
+  display: inline-flex;
   vertical-align: middle;
 }
 
@@ -1275,6 +1402,12 @@ button.crumb-label > .crumb-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* A mark with no word (`word=""`, as a path fact's mark) is the mark
+   alone: its empty word box keeps no gap after it. */
+:where(.listing-root) .pane-state-word:empty {
+  display: none;
 }
 
 /* A quiet ring draws in the edge tone a state row sets for its marks

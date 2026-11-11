@@ -1,7 +1,10 @@
 /**
  * The scale tokens drawn at their own size: each type step set in its size,
- * each space as a bar of its length, each corner on a box, each control
- * height as a box that tall, and each icon size. Values are read from the
+ * each space as a bar of its length, each corner on a box, each line as a
+ * rule that thick, each control height as a box that tall, the focus ring at
+ * each of its offsets, each icon size, and the dot and swatch marks. Motion
+ * and layers have no still look; every hover on the site eases at
+ * `--duration-fast`. Values are read from the
  * page, so the demo shows what `src/tokens.css` holds now.
  */
 
@@ -13,6 +16,9 @@ import { ICON_LG, ICON_MD, ICON_SM, ICON_XL } from '@bigpixelrocket/uiok/icon';
 const TYPE = ['key', 'caption', 'small', 'body', 'heading', 'figure', 'display'];
 const SPACE = ['1', '2', '3', '4', '5', '6', '8', '10', '12', '16'];
 const RADIUS = ['xs', 'sm', 'md', 'lg', 'pill'];
+const LINES = ['--line', '--line-strong'];
+const FOCUS = ['--focus-offset', '--focus-offset-flush', '--focus-offset-inset'];
+const MARKS = ['--dot'];
 const HEIGHT = [
   '--control-height-xs',
   '--control-height-sm',
@@ -34,7 +40,11 @@ const NAMES: readonly string[] = [
   ...TYPE.map((step) => `--font-size-${step}`),
   ...SPACE.map((step) => `--space-${step}`),
   ...RADIUS.map((step) => `--radius-${step}`),
-  ...HEIGHT
+  ...LINES,
+  ...HEIGHT,
+  ...FOCUS,
+  ...MARKS,
+  '--space-4'
 ];
 
 /** Each token's computed value on the root, read once the stylesheet applies. */
@@ -112,12 +122,33 @@ export function TokensDemo() {
           })}
         </ul>
       </section>
+      <section aria-label="Lines">
+        <h3 className="demo-subhead">Lines</h3>
+        <ul className="scale-list">
+          {LINES.map((name) => (
+            <TokenRow key={name} name={name} value={values[name]}>
+              <span className="scale-line" style={{ height: `var(${name})` }} />
+            </TokenRow>
+          ))}
+        </ul>
+      </section>
       <section aria-label="Heights">
         <h3 className="demo-subhead">Heights</h3>
         <ul className="scale-list">
           {HEIGHT.map((name) => (
             <TokenRow key={name} name={name} value={values[name]}>
               <span className="scale-height" style={{ height: `var(${name})` }} />
+            </TokenRow>
+          ))}
+        </ul>
+      </section>
+      <section aria-label="Focus">
+        <h3 className="demo-subhead">Focus</h3>
+        <ul className="scale-list">
+          {FOCUS.map((name) => (
+            <TokenRow key={name} name={name} value={values[name]}>
+              {/* The ring drawn as the base sheet draws it, at this offset. */}
+              <span className="scale-focus" style={{ outlineOffset: `var(${name})` }} />
             </TokenRow>
           ))}
         </ul>
@@ -135,6 +166,17 @@ export function TokensDemo() {
               />
             </TokenRow>
           ))}
+        </ul>
+      </section>
+      <section aria-label="Marks">
+        <h3 className="demo-subhead">Marks</h3>
+        <ul className="scale-list">
+          <TokenRow name="--dot" value={values['--dot']}>
+            <span className="scale-dot" />
+          </TokenRow>
+          <TokenRow name="--space-4 (swatch)" value={values['--space-4']}>
+            <span className="scale-swatch" />
+          </TokenRow>
         </ul>
       </section>
     </div>

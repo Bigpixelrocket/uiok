@@ -6,13 +6,17 @@
  * row offers. Click into the demo to give it the keys; they return to the
  * page when the focus leaves it. Under it, path bars with a fact in each
  * tone, at full width and in a 300px pane, where the trail gives way and
- * the fact cuts its words with the whole fact as a tooltip.
+ * the fact cuts its words with the whole fact as a tooltip. Then a trail
+ * deeper than a 300px row can hold, which keeps its last crumbs and fades its
+ * start, a fact whose mark is a host's own glyph, a hand-written trail with a
+ * home crumb and a brief one, and the three looks a row link takes.
  */
 
 import {
   Copy,
   FileText,
   Folder,
+  Globe,
   Play,
   RefreshCw,
   RotateCw,
@@ -49,6 +53,7 @@ import {
   RowLinkLookContext,
   usePaneKeys,
   verbControl,
+  type LinkLook,
   type MainVerbs,
   type Pane,
   type PaneKeyAction
@@ -146,6 +151,8 @@ function PathFacts({
             label="Start web"
             lit
             onClick={() => say('started web')}
+            shortcut="⌘⏎"
+            tip="Start the dev server"
             word="Start"
           />
         </PanePathBar>
@@ -173,6 +180,156 @@ function PathFacts({
           <PathFact mark={<StateMark tone="ready" word="" />}>Synced</PathFact>
         </PanePathBar>
       </section>
+    </div>
+  );
+}
+
+/**
+ * Trails past the plain case: a five-crumb trail at full width and in a
+ * 300px pane (the trail deeper than its row: `data-cramped`, its start
+ * faded), a 240px bar so narrow that its action's word steps down to its
+ * icon (`data-tight`), a fact whose mark is a host's own glyph rather than a
+ * `StateMark`, and a trail written by hand whose first crumb is the home
+ * (`.home`) and whose middle one a short fixed name (`.brief`), both of
+ * which keep their width.
+ */
+function DeepTrails({ say }: { readonly say: (what: string) => void }) {
+  const deep = [
+    { label: 'Projects', onOpen: () => say('went to Projects') },
+    { label: 'site', onOpen: () => say('went to site') },
+    { label: 'packages', onOpen: () => say('went to packages') },
+    { label: 'web-client', onOpen: () => say('went to web-client') },
+    'storybook'
+  ];
+  return (
+    <div className="listing-root demo-facts">
+      {(['pane demo-pane active', 'pane demo-pane demo-facts-narrow'] as const).map((pane) => (
+        <section className={pane} key={pane}>
+          <PanePathBar heading here={<CurrentDot label="Open project" />} trail={deep}>
+            <PathFact mark={<StateMark tone="warning" word="" />} tone="warning">
+              Stopped: 2 changes not applied
+            </PathFact>
+            <QuietAction
+              icon={Play}
+              label="Start storybook"
+              lit
+              onClick={() => say('started storybook')}
+              shortcut="⌘⏎"
+              tip="Start storybook"
+              word="Start"
+            />
+          </PanePathBar>
+        </section>
+      ))}
+      <section className="pane demo-pane demo-facts-tight">
+        {/* So narrow that even the last crumb's stem would cut: the action's
+            word steps down to its icon, and the word becomes its tooltip. */}
+        <PanePathBar
+          here={<CurrentDot label="Open service" />}
+          trail={[{ label: 'Servers', onOpen: () => say('went to Servers') }, 'production-eu']}
+        >
+          <PathFact mark={<StateMark tone="danger" word="" />} tone="danger">
+            Stopped
+          </PathFact>
+          <QuietAction
+            icon={RotateCw}
+            label="Restart production-eu"
+            lit
+            onClick={() => say('restarted production-eu')}
+            word="Restart service"
+          />
+        </PanePathBar>
+      </section>
+      <section className="pane demo-pane demo-facts-narrow">
+        {/* A fact's mark may be any node: here a glyph of the host's own. */}
+        <PanePathBar
+          trail={[{ label: 'Projects', onOpen: () => say('went to Projects') }, 'site', 'web']}
+        >
+          <PathFact mark={<Globe aria-hidden size={ICON_SM} />}>localhost:5173 and 3 more</PathFact>
+          <QuietAction icon={Play} label="Open web" onClick={() => say('opened web')} word="Open" />
+        </PanePathBar>
+      </section>
+      <section className="pane demo-pane">
+        {/* Written by hand, as a host without PanePathBar draws it. */}
+        <div className="pane-path-row">
+          <div className="pane-crumbs">
+            <span className="crumb home">
+              <span className="crumb-label">
+                <span className="crumb-text">~</span>
+              </span>
+            </span>
+            <span aria-hidden className="crumb-separator">
+              /
+            </span>
+            <span className="crumb">
+              <span className="crumb-label">
+                <span className="crumb-text">Developer</span>
+              </span>
+            </span>
+            <span aria-hidden className="crumb-separator">
+              /
+            </span>
+            <span className="crumb brief">
+              <span className="crumb-label">
+                <span className="crumb-text">src</span>
+              </span>
+            </span>
+            <span aria-hidden className="crumb-separator">
+              /
+            </span>
+            <span className="crumb here">
+              <span className="crumb-label">
+                <span className="crumb-text">components</span>
+              </span>
+            </span>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+/** The three looks a row link takes, one row each. */
+const LINK_LOOKS: readonly LinkLook[] = ['icons', 'text', 'both'];
+
+/**
+ * One row per `LinkLook`, each with the same two row links (Restart and
+ * Logs) drawn as `RowLinkLookContext` says: icons alone, words alone, or
+ * both. The track for them is `linksColumn` of the richest look.
+ */
+function LinkLooks({ say }: { readonly say: (what: string) => void }) {
+  return (
+    <div className="listing-root">
+      <div className="pane demo-pane">
+        <div aria-label="Row link looks" className="pane-list">
+          <Listing
+            columns={[{ label: 'Links', hidden: true }]}
+            grid={`var(--icon-column) minmax(10ch, 1fr) ${linksColumn('both', '', ['Restart', 'Logs'])}`}
+            title="Look"
+          >
+            {LINK_LOOKS.map((look) => (
+              <Row key={look} mark={<Server size={ICON_MD} />} name={look} rowKey={look}>
+                <Cell className="pane-action-cell">
+                  <RowLinkLookContext value={look}>
+                    <RowIconAction
+                      icon={RotateCw}
+                      label={`Restart, drawn as ${look}`}
+                      onClick={() => say(`restarted (${look})`)}
+                      word="Restart"
+                    />
+                    <RowIconAction
+                      icon={FileText}
+                      label={`Logs, drawn as ${look}`}
+                      onClick={() => say(`opened the logs (${look})`)}
+                      word="Logs"
+                    />
+                  </RowLinkLookContext>
+                </Cell>
+              </Row>
+            ))}
+          </Listing>
+        </div>
+      </div>
     </div>
   );
 }
@@ -454,6 +611,12 @@ export function PaneDemo() {
       <h3 className="demo-subhead">Path facts</h3>
       <PathFacts say={setSaid} />
       <PathFacts narrow say={setSaid} />
+
+      <h3 className="demo-subhead">Deep trails and crumb kinds</h3>
+      <DeepTrails say={setSaid} />
+
+      <h3 className="demo-subhead">Row link looks</h3>
+      <LinkLooks say={setSaid} />
     </div>
   );
 }

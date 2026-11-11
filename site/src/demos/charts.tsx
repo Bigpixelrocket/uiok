@@ -2,8 +2,9 @@
  * Each chart over sample series: a day of requests (drag across it to pick a
  * range), time per state, price against weight (drag to zoom), and a week of
  * sales drawn as any result chart type; then edge cases (a pie of more slices
- * than series colours, a lone point between two gaps) and each chart with
- * nothing to draw.
+ * than series colours, a lone point between two gaps, a scatter over a
+ * time-of-day axis and a category axis, and one over dates) and each chart
+ * with nothing to draw.
  */
 
 import { useId, useMemo, useState } from 'react';
@@ -101,6 +102,30 @@ const SALES = [
   { name: 'wholesale', values: [12, 18, null, 22, 19, 9, 6] }
 ];
 
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+
+/** Deploys by time of day (from midnight) against the weekday they ran on. */
+const DEPLOYS = (() => {
+  const random = seeded(23);
+  return Array.from({ length: 40 }, (_, id) => {
+    const day = Math.floor(random() * WEEKDAYS.length);
+    const x = Math.round((8 + random() * 10) * 60) * 60_000;
+    const hours = Math.floor(x / HOUR);
+    const minutes = String(Math.round((x % HOUR) / 60_000)).padStart(2, '0');
+    return { id, x, y: day, label: `deploy ${id + 1}: ${WEEKDAYS[day]} ${hours}:${minutes}` };
+  });
+})();
+
+/** Build times over a month of dates. */
+const BUILDS = (() => {
+  const random = seeded(29);
+  return Array.from({ length: 30 }, (_, id) => {
+    const x = Date.UTC(2026, 9, 1 + id);
+    const y = Math.round(40 + random() * 50);
+    return { id, x, y, label: `build of 2026-10-${String(id + 1).padStart(2, '0')}: ${y} s` };
+  });
+})();
+
 /** The charts page's demo. */
 export function ChartsDemo() {
   const [range, setRange] = useState<[number, number] | null>(null);
@@ -195,18 +220,20 @@ export function ChartsDemo() {
       </section>
       <DemoStates minCell="320px" title="Edge cases">
         <DemoState label="Twelve slices">
-          <ResultChart
-            categories={KINDS}
-            height={260}
-            series={[{ name: 'hours', values: KINDS.map((_, index) => 4 + ((index * 7) % 11)) }]}
-            stacked={false}
-            title="Hours by kind"
-            type="pie"
-            width={460}
-            xLabel="kind"
-            xValues={[]}
-            yLabel="hours"
-          />
+          <div className="result-chart-frame">
+            <ResultChart
+              categories={KINDS}
+              height={260}
+              series={[{ name: 'hours', values: KINDS.map((_, index) => 4 + ((index * 7) % 11)) }]}
+              stacked={false}
+              title="Hours by kind"
+              type="pie"
+              width={460}
+              xLabel="kind"
+              xValues={[]}
+              yLabel="hours"
+            />
+          </div>
         </DemoState>
         <DemoState label="A lone point between two gaps">
           <LineChart
@@ -218,21 +245,47 @@ export function ChartsDemo() {
             to={TO}
           />
         </DemoState>
+        <DemoState label="Time-of-day and category axes">
+          <div className="charts-scatter">
+            <ScatterChart
+              label="Deploys by time of day and weekday"
+              onPick={() => undefined}
+              picked={null}
+              points={DEPLOYS}
+              x={{ title: 'time of day (UTC)', kind: 'time', timeOfDay: true }}
+              y={{ title: 'weekday', kind: 'category', categories: WEEKDAYS }}
+            />
+          </div>
+        </DemoState>
+        <DemoState label="A date axis">
+          <div className="charts-scatter">
+            <ScatterChart
+              label="Build time by date"
+              onPick={() => undefined}
+              picked={null}
+              points={BUILDS}
+              x={{ title: 'date', kind: 'time' }}
+              y={{ title: 'build (s)', kind: 'number' }}
+            />
+          </div>
+        </DemoState>
         <DemoState label="Thirty slices, the legend counting those it leaves out">
-          <ResultChart
-            categories={MONTH_DAYS}
-            height={260}
-            series={[
-              { name: 'orders', values: MONTH_DAYS.map((_, index) => 3 + ((index * 7) % 13)) }
-            ]}
-            stacked={false}
-            title="Orders by day"
-            type="pie"
-            width={460}
-            xLabel="day"
-            xValues={[]}
-            yLabel="orders"
-          />
+          <div className="result-chart-frame">
+            <ResultChart
+              categories={MONTH_DAYS}
+              height={260}
+              series={[
+                { name: 'orders', values: MONTH_DAYS.map((_, index) => 3 + ((index * 7) % 13)) }
+              ]}
+              stacked={false}
+              title="Orders by day"
+              type="pie"
+              width={460}
+              xLabel="day"
+              xValues={[]}
+              yLabel="orders"
+            />
+          </div>
         </DemoState>
       </DemoStates>
       <section>

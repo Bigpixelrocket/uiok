@@ -1,6 +1,7 @@
 /**
  * Chords drawn as key caps, each named in words, one chord bare, and one cap
- * in each tone a host can set.
+ * in each tone a host can set, and the parts of a chord: its modifiers alone,
+ * and a chord with a modifier left out of the drawing.
  */
 
 import { useLabels } from '@bigpixelrocket/uiok';
@@ -69,6 +70,23 @@ export function KeyChordDemo() {
             <KeyChord chord={{ key: 'k', meta: true }} recording={recording} tone={tone} />
           </DemoState>
         ))}
+      </DemoStates>
+      {/* A chord with no key draws its modifiers alone (a held layer's
+          anchor); `omit` leaves out a modifier shown elsewhere, and the name
+          still says the whole chord. */}
+      <DemoStates minCell="180px" title="Parts of a chord">
+        <DemoState
+          label={`Modifiers alone: ${chordSpoken({ key: '', meta: true, shift: true }, keys)}`}
+        >
+          <span className="keycap">
+            <KeyChord chord={{ key: '', meta: true, shift: true }} />
+          </span>
+        </DemoState>
+        <DemoState label={`omit meta, named ${chordSpoken({ key: 'k', meta: true }, keys)}`}>
+          <span className="keycap">
+            <KeyChord chord={{ key: 'k', meta: true }} omit={['meta']} />
+          </span>
+        </DemoState>
       </DemoStates>
     </div>
   );

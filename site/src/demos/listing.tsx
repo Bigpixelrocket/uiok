@@ -2,9 +2,12 @@
  * A listing of a project's files: sort by name or size, move the cursor row
  * with the arrows or the pointer, Return opens the cursor row. Two rows are
  * selected, as a multi-select draws them. Every state mark, a busy transition, selected rows,
- * a destructive hover action, and the path cell are in it. Under it, a list
- * whose rows act on a click (the pointer's hover wash, an add row) and a
- * listing with nothing in it. Then, under their own headings: strips with a
+ * a destructive hover action, and the path cell are in it; the path cell
+ * colours a markdown file's name by its kind (`nameClassName`), and an
+ * ignored file's name is quieter, as a host draws hidden files. Under it, a
+ * list whose rows act on a click (the pointer's hover wash, an add row), a
+ * list whose names are buttons (`.pane-row-open`), and a listing with
+ * nothing in it. Then, under their own headings: strips with a
  * strip link and a pane message, a WellColumn, a pane with nothing in it,
  * marked rows in a listing wider than its box with its action column pinned,
  * and rows with no icon that take the focus themselves, one with a value cut
@@ -66,6 +69,7 @@ const next = (direction: SortDirection): SortDirection =>
 const GRID = `var(--icon-column) minmax(14ch, 1fr) ${column(12)} minmax(0, 1.4fr) ${column(9)} ${iconLinksColumn(1, 0)} ${ACTION_COLUMN}`;
 
 const SERVERS = ['local', 'staging', 'production'];
+const PROJECTS = ['site', 'api', 'infrastructure-and-deployment-scripts'];
 
 /** Icon, name, version, and the strip link's column. */
 const STRIP_GRID = `var(--icon-column) minmax(0, 1fr) ${column(10)} ${column(12)}`;
@@ -220,6 +224,7 @@ export function ListingDemo() {
                   key={file.id}
                   mark={<FileText size={ICON_MD} />}
                   name={file.name}
+                  nameClass={state.tone === 'muted' ? 'demo-quiet-name' : undefined}
                   onOpen={() => open(file.id)}
                   rowKey={file.id}
                 >
@@ -227,7 +232,10 @@ export function ListingDemo() {
                     <StateMark busy={state.busy} tone={state.tone} word={state.word} />
                   </Cell>
                   {/* PathCell is the cell: it draws its own `.row-meta`. */}
-                  <PathCell path={file.path} />
+                  <PathCell
+                    nameClassName={file.kind === 'markdown' ? 'demo-kind-doc' : undefined}
+                    path={file.path}
+                  />
                   <Cell align="right">{bytes(file.size)}</Cell>
                   <Cell className="pane-hover-cell">
                     <RowIconAction
@@ -274,6 +282,29 @@ export function ListingDemo() {
                 onOpen={() => setOpened('add a server')}
                 rowKey="add"
               />
+            </Listing>
+          </div>
+        </div>
+        <div className="pane demo-pane" style={{ flex: 1 }}>
+          {/* Names that are buttons: the keyboard's way to each page, read as the name. */}
+          <div aria-label="Projects" className="pane-list">
+            <Listing columns={[]} grid="var(--icon-column) minmax(0, 1fr)" title="Projects">
+              {PROJECTS.map((project) => (
+                <Row
+                  key={project}
+                  mark={<FolderOpen size={ICON_MD} />}
+                  name={
+                    <button
+                      className="pane-row-open"
+                      onClick={() => setOpened(`the ${project} page`)}
+                      type="button"
+                    >
+                      {project}
+                    </button>
+                  }
+                  rowKey={project}
+                />
+              ))}
             </Listing>
           </div>
         </div>

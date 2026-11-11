@@ -52,6 +52,7 @@ export function SelectAllDemo() {
           disabled={checked.size === 0}
           onClick={() => setSaid(`Deleted ${checked.size}`)}
           size="small"
+          variant="danger"
         >
           Delete
         </Button>
