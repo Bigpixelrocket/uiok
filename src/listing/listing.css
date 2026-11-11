@@ -170,6 +170,7 @@ button.crumb-label {
   align-items: center;
   max-width: 100%;
   overflow: visible;
+  isolation: isolate;
 }
 
 button.crumb-label::after {
@@ -177,6 +178,15 @@ button.crumb-label::after {
   inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
   inset-inline: 0;
   content: '';
+}
+
+/* The hit area paints over the words, so the pointer would land on the
+   button and never reach the tooltip on the words' own box, which opens only
+   while they are cut. The box sits above the hit area, inside the stacking
+   context the button keeps to itself; a press still reaches the button. */
+button.crumb-label > .crumb-text {
+  position: relative;
+  z-index: var(--z-raised);
 }
 
 .crumb-text {
