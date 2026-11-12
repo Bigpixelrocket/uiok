@@ -1,6 +1,6 @@
 {
   "name": "@bigpixelrocket/uiok",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A React UI library with a retro look: themeable design tokens and accessible components.",
   "keywords": [
     "react",
@@ -57,9 +57,15 @@
     "prepublishOnly": "npm run check"
   },
   "peerDependencies": {
+    "@types/react": "^19.0.0",
     "lucide-react": "^1.31.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
