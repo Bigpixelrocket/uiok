@@ -126,6 +126,25 @@
   font-weight: var(--font-weight-medium);
 }
 
+/* A label in a dialog's label column (.field-grid) centres its first line
+   on the control beside it. The grid pads a label for a 24px control; a
+   dialog's fields are 28px (.field), or 20px where a row sets .field-xs,
+   so the padding follows the height of the field that leads the row: the
+   label's next sibling, or the first child of its .field-value. Rows of
+   24px controls, checks, and notes keep the grid's own padding. */
+.dialog
+  .field-grid
+  > .field-label:has(
+    + :is(.field, .field-box):not(.field-sm, .field-xs),
+    + .field-value > :is(.field, .field-box):first-child:not(.field-sm, .field-xs)
+  ) {
+  padding-block: calc((var(--control-height) - var(--line-height-compact)) / 2);
+}
+
+.dialog .field-grid > .field-label:has(+ .field-xs, + .field-value > .field-xs:first-child) {
+  padding-block: calc((var(--control-height-xs) - var(--line-height-compact)) / 2);
+}
+
 .dialog :where(code, samp, pre),
 .dialog .dialog-value {
   font-family: var(--font-mono);
