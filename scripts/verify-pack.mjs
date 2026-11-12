@@ -1,5 +1,5 @@
 /**
- * The publish guard, run after `npm run build`: fails when a source map could
+ * The publish guard, run after `pnpm run build`: fails when a source map could
  * ship, when an `exports` target is missing from the tarball, when an area
  * does not resolve as `@bigpixelrocket/uiok/<area>`, when a packed stylesheet imports one
  * that is not packed, or when a runtime asset a packed module names with

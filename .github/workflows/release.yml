@@ -3,9 +3,11 @@
 # `v<version>` tag and GitHub Release, with that version's CHANGELOG.md section
 # as notes. Each step checks before it acts, so a push that changes no version
 # does nothing, and a manual re-run (workflow_dispatch) finishes what a failed
-# run left. Publishing authenticates through npm Trusted Publishing (OIDC),
-# which trusts this workflow by its filename, so the repository holds no npm
-# token, and npm attaches a provenance statement. See docs/releasing.md.
+# run left. pnpm installs and runs the gate; npm itself packs and uploads, so
+# the tarball is what `npm pack` (and scripts/verify-pack.mjs) sees. Publishing
+# authenticates through npm Trusted Publishing (OIDC), which trusts this
+# workflow by its filename, so the repository holds no npm token, and npm
+# attaches a provenance statement. See docs/releasing.md.
 
 name: Release
 
@@ -38,7 +40,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      # Node (and every tool in mise.toml) at the versions in mise.lock.
+      # Node, pnpm, and every other tool in mise.toml at the versions in mise.lock.
       - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4.3.0
         with:
           # The publish job has never restored an Actions cache; keep it that way.
@@ -91,9 +93,9 @@ jobs:
           echo "published=false" >> "$GITHUB_OUTPUT"
 
       - if: steps.npm.outputs.published == 'false'
-        run: npm ci
+        run: pnpm install --frozen-lockfile
       - if: steps.npm.outputs.published == 'false'
-        run: npm run check
+        run: pnpm run check
 
       # The gate just ran, so lifecycle scripts (prepublishOnly) are skipped.
       - if: steps.npm.outputs.published == 'false'

@@ -32,7 +32,6 @@ export function versionProblems(options: {
   startPackage: PackageJson;
   baseVersion: string;
   headPackage: PackageJson;
-  lockfile: { version?: string; packages?: Record<string, { version?: string }> };
   changelog: string;
   changedPaths: string[];
   today: string;
