@@ -23,7 +23,7 @@ const problems = [];
 const built = (existsSync(dist) ? readdirSync(dist, { recursive: true, withFileTypes: true }) : [])
   .filter((entry) => entry.isFile())
   .map((entry) => join(entry.parentPath, entry.name));
-if (built.length === 0) problems.push('dist/ is empty; run npm run build first');
+if (built.length === 0) problems.push('dist/ is empty; run pnpm run build first');
 
 for (const file of built) {
   const path = relative(root, file);
