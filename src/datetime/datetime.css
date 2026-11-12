@@ -85,7 +85,7 @@
   color: inherit;
   font: inherit;
   font-variant-numeric: tabular-nums;
-  cursor: pointer;
+  cursor: default;
 }
 
 /* Days sit 2px apart: a ring outside would cross the next day. */

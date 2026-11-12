@@ -66,7 +66,7 @@ describe('the danger and pressed looks', () => {
 });
 
 describe('a disabled Button or IconButton', () => {
-  it('fades to --disabled-opacity under an arrow, over its own pointer', () => {
+  it('fades to --disabled-opacity under the same arrow an enabled one shows', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     render(
       <>
@@ -85,7 +85,7 @@ describe('a disabled Button or IconButton', () => {
       expect(style.cursor, name).toBe('default');
       expect(style.opacity, name).toBe('var(--disabled-opacity)');
     }
-    expect(getComputedStyle(screen.getByRole('button', { name: 'Close' })).cursor).toBe('pointer');
+    expect(getComputedStyle(screen.getByRole('button', { name: 'Close' })).cursor).toBe('default');
   });
 });
 

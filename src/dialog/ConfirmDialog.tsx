@@ -1,31 +1,14 @@
 import type { LucideIcon } from 'lucide-react';
-import { Fragment, useId, type ReactElement, type ReactNode } from 'react';
+import { useId, type ReactElement, type ReactNode } from 'react';
 
 import type { Chord } from '../keyboard/Keyboard.logic.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import type { DialogLegendModel } from './DialogLegend.logic.js';
+import { DialogFacts, DialogNames, type DialogFact } from './DialogLists.js';
 import { ModalDialog } from './ModalDialog.js';
 
 /** Finder's Delete Immediately chord, which confirms a delete that cannot be undone. */
 const DELETE_IMMEDIATELY: Chord = { key: 'Backspace', meta: true, alt: true };
-
-/**
- * A path with a line-break opportunity after each slash, so a long path
- * wraps between its folders instead of inside a name. The text is
- * unchanged: `<wbr>` adds no characters, so a copied path stays whole.
- */
-const breakAfterSlashes = (path: string): ReactNode =>
-  path.split('/').map((part, index, parts) => (
-    // A path's parts are fixed for one render; their place is their identity.
-    <Fragment key={index}>
-      {part}
-      {index < parts.length - 1 && (
-        <>
-          /<wbr />
-        </>
-      )}
-    </Fragment>
-  ));
 
 /**
  * A confirmation's tone: `danger` for a destructive action, `warning` for a
@@ -36,9 +19,17 @@ export type ConfirmTone = 'danger' | 'warning' | 'primary';
 
 /** Copy and callbacks for {@link ConfirmDialog}. */
 export interface ConfirmDialogProps {
-  /** What the action is, on the title strip. */
+  /**
+   * What will happen, in at most five words, on one line of the title
+   * strip ("Delete 7 Items Now?"); a title too long is cut with an
+   * ellipsis, never wrapped.
+   */
   readonly title: string;
-  /** The consequence, as text or with a name set apart in bold (`<strong>`). */
+  /**
+   * The consequence: one short sentence, one or two lines at most, as text
+   * or with a name set apart in bold (`<strong>`). Context the dialog needs
+   * (where it acts) goes here too, never beside the title.
+   */
   readonly message: ReactNode;
   /** The action's verb, the lit primary at the right edge. */
   readonly confirmLabel: string;
@@ -50,11 +41,6 @@ export interface ConfirmDialogProps {
   /** The action's icon, the one its trigger or menu row wears (a trash can for Move to Trash). */
   readonly icon: LucideIcon;
   /**
-   * Where the action happens, on the title strip's right edge
-   * (`~/Downloads`, or a group's dot and name); none when nothing says it.
-   */
-  readonly context?: ReactNode;
-  /**
    * `danger` for destructive confirmations (the default): a red rule under
    * the title and a red lit confirm. `warning` for a question whose yes is
    * the safe choice but still ends work (cancelling a delete): an amber
@@ -62,7 +48,16 @@ export interface ConfirmDialogProps {
    * changes nothing by itself, which keeps the accent.
    */
   readonly tone?: ConfirmTone;
-  /** Every path the action touches, listed in full so the user confirms exactly those. */
+  /**
+   * The facts the decision rests on, as one-line rows of a label and a
+   * count or a few names (`DialogFacts`), under the message.
+   */
+  readonly facts?: readonly DialogFact[];
+  /**
+   * The names or paths the action touches, one line each, cut in their
+   * middle, the first few and then "+N more" (`DialogNames`), under the
+   * message. A confirmation shows at most one list: `facts` or `paths`.
+   */
   readonly paths?: readonly string[];
   /**
    * A choice the confirmation carries, drawn under the message (keep an
@@ -89,16 +84,17 @@ export interface ConfirmDialogProps {
 
 /**
  * The one confirmation surface, for destructive, privileged, and
- * side-effect-bearing actions: title, consequence, optional path list, an
- * optional choice the caller draws, then the legend's esc Cancel (or the
+ * side-effect-bearing actions, read at a glance: a one-line title that says
+ * what will happen, one short sentence of consequence, at most one compact
+ * list (facts, or the names it acts on, each row one line), an optional
+ * choice the caller draws, then the legend's esc Cancel (or the
  * leave verb named) and the named action at the right edge, on Return, or
  * on ⌥⌘⌫ with Return running nothing for a delete that cannot be undone
  * (`forGood`). The message describes the dialog (`aria-describedby`), so a
  * screen reader reads the consequence, and any name it holds, with the
  * title. The frame carries its type, margins, and box sizing, so it renders
- * the same portalled to the body as inside any page; its title wraps to a
- * second line rather than lose the question's end, and a long path breaks
- * after a slash. Styled by the `.confirm-dialog` rules in
+ * the same portalled to the body as inside any page; its title keeps to one
+ * line, cut with an ellipsis. Styled by the `.confirm-dialog` rules in
  * `@bigpixelrocket/uiok/styles.css`; reads the `dialog` labels.
  */
 export function ConfirmDialog({
@@ -107,8 +103,8 @@ export function ConfirmDialog({
   confirmLabel,
   cancelLabel,
   icon,
-  context,
   tone = 'danger',
+  facts = [],
   paths = [],
   children,
   className,
@@ -135,24 +131,13 @@ export function ConfirmDialog({
       legend={legend}
       onCancel={onCancel}
       title={title}
-      titleAside={context}
       tone={tone === 'primary' ? 'accent' : tone}
     >
       <p className="dialog-message" id={messageId}>
         {message}
       </p>
-      {/* Focusable so keyboard users can scroll a long list before confirming. */}
-      {paths.length > 0 && (
-        <ul
-          aria-label={labels.affectedItems(paths.length)}
-          className="dialog-paths scroll-fade"
-          tabIndex={0}
-        >
-          {paths.map((path) => (
-            <li key={path}>{breakAfterSlashes(path)}</li>
-          ))}
-        </ul>
-      )}
+      {facts.length > 0 && <DialogFacts facts={facts} />}
+      {paths.length > 0 && <DialogNames names={paths} />}
       {children}
     </ModalDialog>
   );

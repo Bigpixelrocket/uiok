@@ -28,29 +28,29 @@ import { DataGrid } from '@bigpixelrocket/uiok/grid';
 
 ## Props (`DataGridProps`)
 
-| Prop                            | Type                                                   | Meaning                                                                                     |
-| ------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `label`                         | `string`                                               | The grid's accessible name                                                                  |
-| `columns`                       | `readonly DataGridColumn[]`                            | `label`, `tip` (header hover), `align: 'right'`, `id` (keeps a width across reorders)       |
-| `rowCount`                      | `number`                                               | Rows in all, read or not                                                                    |
-| `cell`                          | `(row, column) => DataGridCell \| null`                | A cell's look; null while its row is unread                                                 |
-| `copyText`                      | `(row, column) => string \| null`                      | What Copy puts on the clipboard for the cursor cell                                         |
-| `onNeedRows`                    | `(from, to) => void`                                   | Asks for rows `[from, to)` about to draw                                                    |
-| `rowLead`, `leadWidth`          | `(row) => ReactNode`, `number`                         | Controls before a row's cells and their column's width                                      |
-| `rowAction`, `actionWidth`      | `(row) => ReactNode`, `number`                         | A control after a row's cells; `max-content` wide without a width                           |
-| `sort` / `sorts`                | `DataGridSort \| null` / `readonly DataGridSortMark[]` | One sort column, or several numbered in order                                               |
-| `onSort`                        | `(column, { add, remove }) => void`                    | Makes headers sort controls; Shift adds, Option or Control removes                          |
-| `onReorder`                     | `(from, to) => void`                                   | Lets a header drag to another column's place                                                |
-| `onHeaderDoubleClick`           | `(column) => void`                                     | A header double-click (copy its name); its second click never sorts again                   |
-| `markedColumns`, `onMarkColumn` | `ReadonlySet<number>`, `(column) => void`              | Lit columns, and a header click beside its sort control                                     |
-| `rowMarked`, `onMarkRow`        | `(row) => boolean`, `(row) => void`                    | Lit rows, and a click on a row or Space on the cursor row                                   |
-| `pointer`                       | `boolean`                                              | Lights the row under the pointer                                                            |
-| `maxHeight`                     | `number`                                               | Tallest before it scrolls; 420                                                              |
-| `editable`, `onEdit`            | `(row, column) => boolean`, `(row, column) => void`    | Inline edit: which cells take it, and the ask                                               |
-| `editTrigger`                   | `'click' \| 'double-click'`                            | What starts an edit with the pointer; double-click                                          |
-| `editor`                        | `DataGridEditor \| null`                               | `{ row, column, node }`: the caller's editor, drawn over that cell                          |
-| `editorContainer`               | `(grid: HTMLElement) => Element \| null`               | Where the editor's fixed layer is drawn; `document.body` by default                         |
-| `empty`                         | `ReactNode`                                            | What a grid with no rows says, dim and centred in its well; the well stays blank without it |
+| Prop                            | Type                                                   | Meaning                                                                                                              |
+| ------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| `label`                         | `string`                                               | The grid's accessible name                                                                                           |
+| `columns`                       | `readonly DataGridColumn[]`                            | `label`, `tip` (header hover), `align: 'right'`, `id` (keeps a width across reorders)                                |
+| `rowCount`                      | `number`                                               | Rows in all, read or not                                                                                             |
+| `cell`                          | `(row, column) => DataGridCell \| null`                | A cell's look; null while its row is unread                                                                          |
+| `copyText`                      | `(row, column) => string \| null`                      | What Copy puts on the clipboard for the cursor cell                                                                  |
+| `onNeedRows`                    | `(from, to) => void`                                   | Asks for rows `[from, to)` about to draw                                                                             |
+| `rowLead`, `leadWidth`          | `(row) => ReactNode`, `number`                         | Controls before a row's cells and their column's width                                                               |
+| `rowAction`, `actionWidth`      | `(row) => ReactNode`, `number`                         | A control after a row's cells; `max-content` wide without a width                                                    |
+| `sort` / `sorts`                | `DataGridSort \| null` / `readonly DataGridSortMark[]` | One sort column, or several numbered in order                                                                        |
+| `onSort`                        | `(column, { add, remove }) => void`                    | Makes headers sort controls; Shift adds, Option or Control removes                                                   |
+| `onReorder`                     | `(from, to) => void`                                   | Lets a header drag to another column's place                                                                         |
+| `onHeaderDoubleClick`           | `(column) => void`                                     | A header double-click (copy its name); its second click never sorts again                                            |
+| `markedColumns`, `onMarkColumn` | `ReadonlySet<number>`, `(column) => void`              | Lit columns, and a header click beside its sort control                                                              |
+| `rowMarked`, `onMarkRow`        | `(row) => boolean`, `(row) => void`                    | Lit rows, and a click on a row or Space on the cursor row                                                            |
+| `pointer`                       | `boolean`                                              | Lights the row under the pointer                                                                                     |
+| `maxHeight`                     | `number`                                               | Tallest before it scrolls; 420                                                                                       |
+| `editable`, `onEdit`            | `(row, column) => boolean`, `(row, column) => void`    | Inline edit: which cells take it, and the ask                                                                        |
+| `editTrigger`                   | `'click' \| 'double-click'`                            | What starts an edit with the pointer; double-click                                                                   |
+| `editor`                        | `DataGridEditor \| null`                               | `{ row, column, node }`: the caller's editor, drawn over that cell                                                   |
+| `editorContainer`               | `(grid: HTMLElement) => Element \| null`               | Where the editor's fixed layer is drawn; `document.body` by default                                                  |
+| `empty`                         | `ReactNode`                                            | What a grid with no rows says, dim, where the first row would be in the cells' type; the well stays blank without it |
 
 ### Cells (`DataGridCell`)
 

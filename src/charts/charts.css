@@ -279,7 +279,7 @@
   fill-opacity: 0.8;
   stroke: var(--surface);
   stroke-width: 1;
-  cursor: pointer;
+  cursor: default;
 }
 
 .scatter-point:hover {

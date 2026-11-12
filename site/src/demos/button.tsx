@@ -1,7 +1,8 @@
 /**
- * Every button tier (primary, tonal, danger, neutral), enabled then disabled, at the regular size and then the
- * small one; icon buttons at both sizes, enabled and disabled; and buttons
- * with an icon beside their label. Icon buttons are named on hover.
+ * Every button tier (primary, tonal, danger, neutral) at the regular size and
+ * then the small one, with one disabled button (every tier fades the same
+ * way); icon buttons at both sizes, with one disabled; and buttons with an
+ * icon beside their label. Icon buttons are named on hover.
  */
 
 import { Download, Plus, RefreshCw, Settings, Trash2 } from 'lucide-react';
@@ -31,11 +32,7 @@ export function ButtonDemo() {
               {word}
             </Button>
           ))}
-          {TIERS.map(({ variant, word }) => (
-            <Button disabled key={variant} size={size} variant={variant}>
-              {word}
-            </Button>
-          ))}
+          {size === 'regular' && <Button disabled>Disabled</Button>}
         </div>
       ))}
       <div className="demo-row">
@@ -65,7 +62,12 @@ export function ButtonDemo() {
         >
           <Settings />
         </IconButton>
-        <IconButton aria-label="Delete" disabled size="small" {...tooltip('Delete')}>
+        <IconButton
+          aria-label="Delete"
+          onClick={press('Delete')}
+          size="small"
+          {...tooltip('Delete')}
+        >
           <Trash2 />
         </IconButton>
       </div>

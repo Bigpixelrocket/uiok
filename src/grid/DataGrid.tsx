@@ -191,8 +191,9 @@ export interface DataGridProps {
   readonly editorContainer?: (grid: HTMLElement) => Element | null;
   /**
    * What the grid says when it has no rows (a sentence such as "No rows
-   * match the filter", or a sentence and an action), drawn dim and centred in
-   * the empty well under the header. The well stays blank without it.
+   * match the filter", or a sentence and an action), drawn dim where the
+   * first row would be, in the grid's cell type, in the empty well under the
+   * header. The well stays blank without it.
    */
   readonly empty?: ReactNode;
 }

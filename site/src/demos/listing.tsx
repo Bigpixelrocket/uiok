@@ -8,7 +8,8 @@
  * list whose rows act on a click (the pointer's hover wash, an add row), a
  * list whose names are buttons (`.pane-row-open`), and a listing with
  * nothing in it. Then, under their own headings: strips with a
- * strip link and a pane message, a WellColumn, a pane with nothing in it,
+ * strip link and a pane message, a WellColumn and an empty one with its
+ * note, a pane with nothing in it,
  * marked rows in a listing wider than its box with its action column pinned,
  * and rows with no icon that take the focus themselves, one with a value cut
  * short, under a section heading drawn by a lone Strip.
@@ -389,30 +390,40 @@ export function ListingDemo() {
       </div>
 
       <h3 className="demo-subhead">Well</h3>
-      <div className="pane demo-pane demo-well-pane">
-        <WellColumn
-          columns={[
-            { label: 'dev.log' },
-            {
-              label: 'Clear',
-              control: (
-                <button
-                  className="pane-strip-link"
-                  onClick={() => setDid('cleared the output (not really)')}
-                  type="button"
-                >
-                  Clear
-                </button>
-              )
-            }
-          ]}
-          label="Output"
-          title="Output"
-        >
-          <pre className="pane-well" tabIndex={0}>
-            {WELL_TEXT}
-          </pre>
-        </WellColumn>
+      <div className="demo-wells">
+        <div className="pane demo-pane demo-well-pane shares-row">
+          <WellColumn
+            columns={[
+              { label: 'dev.log' },
+              {
+                label: 'Clear',
+                control: (
+                  <button
+                    className="pane-strip-link"
+                    onClick={() => setDid('cleared the output (not really)')}
+                    type="button"
+                  >
+                    Clear
+                  </button>
+                )
+              }
+            ]}
+            label="Output"
+            title="Output"
+          >
+            <pre className="pane-well" tabIndex={0}>
+              {WELL_TEXT}
+            </pre>
+          </WellColumn>
+        </div>
+        <div className="pane demo-pane demo-well-pane shares-row">
+          <WellColumn columns={[{ label: 'worker.log' }]} label="Empty output" title="Output">
+            {/* Nothing printed yet: the well's own note, in the terminal's type. */}
+            <pre className="pane-well">
+              <span className="pane-well-note">Output shows here as processes print.</span>
+            </pre>
+          </WellColumn>
+        </div>
       </div>
 
       <h3 className="demo-subhead">Empty pane</h3>

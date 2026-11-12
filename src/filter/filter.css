@@ -46,7 +46,7 @@
   border: none;
   border-radius: var(--radius-sm);
   background: none;
-  cursor: pointer;
+  cursor: default;
 }
 
 /* The cap is glyph-sized (18px, a key cap's height, not a control height);

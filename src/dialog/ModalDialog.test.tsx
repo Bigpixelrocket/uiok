@@ -36,6 +36,15 @@ describe('ModalDialog', () => {
     expect(screen.getByRole('heading', { name: 'Rename' }).id).toBe('test-title');
   });
 
+  it('gives a string title its own text as a tooltip shown only while the title is cut', () => {
+    renderFrame();
+
+    const title = screen.getByRole('heading', { name: 'Rename' });
+
+    expect(title.dataset.tooltip).toBe('Rename');
+    expect(title.hasAttribute('data-tooltip-cut')).toBe(true);
+  });
+
   it('cancels on Escape and on a backdrop press, but not on a press inside the dialog', () => {
     const { onCancel, dialog } = renderFrame();
 

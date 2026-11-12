@@ -35,7 +35,7 @@
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-dim);
-  cursor: pointer;
+  cursor: default;
 }
 
 /* A step drawn in words, alone or beside its icon. */

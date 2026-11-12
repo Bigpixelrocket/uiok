@@ -210,7 +210,7 @@ select.field:not([multiple], [size]) {
     right var(--field-chevron-end) top calc(50% + 3px);
   background-repeat: no-repeat;
   background-size: 4px 4px;
-  cursor: pointer;
+  cursor: default;
 }
 
 select.field-xs:not([multiple], [size]) {
@@ -250,7 +250,7 @@ select.field option {
   box-shadow: inset 0 1px 0 var(--well-shade);
   background: var(--ground);
   vertical-align: middle;
-  cursor: pointer;
+  cursor: default;
   appearance: none;
   transition:
     background-color var(--duration-fast),
@@ -431,7 +431,7 @@ select.field option {
      check box's outline does (--check-edge). */
   background: var(--check-edge, var(--control-border));
   vertical-align: middle;
-  cursor: pointer;
+  cursor: default;
   appearance: none;
   transition:
     background-color var(--duration-fast),
@@ -498,7 +498,7 @@ select.field option {
   margin: 0;
   background: transparent;
   vertical-align: middle;
-  cursor: pointer;
+  cursor: default;
   appearance: none;
 }
 
@@ -571,14 +571,25 @@ select.field option {
   overflow-wrap: anywhere;
 }
 
-/* What is wrong with the value, in the danger's text tone. Pair it with
-   aria-invalid="true" on the field and aria-describedby naming it. */
+/* What is wrong with the value, as a status line under its field: the
+   danger glyph (surface.css) hung before the first line, the words in
+   --text, so it reads as the application's message, not a red web form
+   error. Pair it with aria-invalid="true" on the field and
+   aria-describedby naming it. */
 .field-problem {
+  position: relative;
   margin: 0;
-  color: var(--danger-text);
+  padding-inline-start: calc(var(--icon-md) + var(--space-3));
+  color: var(--text);
   font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
     var(--font-ui);
   overflow-wrap: anywhere;
+}
+
+.field-problem:not(:has(> svg:first-child))::before {
+  position: absolute;
+  inset-block-start: calc((var(--line-height-compact) - var(--icon-md)) / 2);
+  inset-inline-start: 0;
 }
 
 /* One field with its words: label, control, then note or problem, 4px
@@ -616,7 +627,7 @@ select.field option {
   color: var(--text);
   font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
     var(--font-ui);
-  cursor: pointer;
+  cursor: default;
 }
 
 /* Rows of a form or a settings page on one label column: the label, then

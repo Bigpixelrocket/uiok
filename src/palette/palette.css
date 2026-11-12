@@ -175,7 +175,7 @@
   color: var(--text);
   font: inherit;
   font-weight: var(--font-weight-strong);
-  cursor: pointer;
+  cursor: default;
 }
 
 /* The wash weighs nothing, so the base sheet's pressed rule replaces it

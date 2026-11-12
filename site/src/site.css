@@ -113,7 +113,7 @@ a {
   background: var(--surface);
   color: var(--text-dim);
   font: var(--font-size-small) var(--font-mono);
-  cursor: pointer;
+  cursor: default;
   transition: background-color var(--duration-fast) var(--ease-out);
 }
 
@@ -532,7 +532,7 @@ a {
   color: var(--accent-text);
   font: inherit;
   text-decoration: underline;
-  cursor: pointer;
+  cursor: default;
 }
 
 /* A demo pane sizes to its listing instead of sharing a row of panes. */
@@ -717,6 +717,13 @@ a {
    pane, so its list scrolls sideways. */
 .demo-well-pane > .pane-well-column {
   flex: 1;
+}
+
+/* A well with output beside an empty one, the two the same height. */
+.demo-wells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
 }
 
 .demo-empty-pane {

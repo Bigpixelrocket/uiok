@@ -69,7 +69,7 @@
   border-radius: var(--radius-md);
   background: none;
   color: var(--text);
-  cursor: pointer;
+  cursor: default;
   font: inherit;
   font-size: var(--font-size-small);
   line-height: var(--line-height-compact);
@@ -244,21 +244,21 @@
   line-height: var(--line-height-compact);
 }
 
-/* The alert over every page while a change a settings file could not take
-   stands: uiok's danger notice, set in the page column's margins. */
+/* The status line over every page while a change a settings file could
+   not take stands: uiok's danger notice, a plain line set in the page
+   column's margins. */
 .settings-save-failure {
   flex: none;
   margin: var(--space-6) var(--space-8) 0;
 }
 
 /* A new mistake in a settings file, outside the dialog: uiok's warning
-   notice card as a band under the header that the content below gives room
-   to, so it never covers a control. In the page's flow it takes no resting
-   shadow. */
+   notice band (.notice-card) across the window under the header, edge to
+   edge, which the content below gives room to, so it never covers a
+   control. */
 .settings-notice {
   flex: none;
-  margin: var(--space-3) var(--space-3) 0;
-  box-shadow: none;
+  margin: 0;
 }
 
 .settings-notice-place {
@@ -357,7 +357,7 @@
   border: 0;
   background: none;
   color: var(--text-dim);
-  cursor: pointer;
+  cursor: default;
   font-family: var(--font-ui);
   font-size: var(--font-size-caption);
   line-height: var(--line-height-compact);

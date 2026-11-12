@@ -89,8 +89,8 @@
 }
 
 /* A terminal that could not start says so as a state, not as a line of
-   output: the library's danger notice (surface.css: the tone bar and the
-   alert glyph in --danger) set where the first line would be, on the
+   output: the library's danger notice (surface.css: a plain line led by
+   the alert glyph in --danger) set where the first line would be, on the
    terminal's own ground so the well keeps its look. The words take the
    terminal's text colour, as everything in the well does. The well keeps
    the engine's 4px inset; the notice's own inset and type are the notice's. */

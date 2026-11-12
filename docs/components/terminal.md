@@ -106,7 +106,7 @@ Text is `--font-mono` at 13px on 19px lines, 4px in from the mount's edges; a ho
 - The scrollback thumb reads `--scrollbar-thumb`, and `--scrollbar-thumb-hover` while the pointer or the keyboard is on the rail.
 - An unfocused terminal draws its cursor as a quiet 1px outline in the text colour at half strength, and none at all while nothing is on its screen, so an idle output well shows no stray box.
 - The menu a secondary click opens is the menu look (`.folder-menu` and `.folder-menu-option`, with `.terminal-menu` and `.terminal-menu-item`), drawn through a portal on the document's body at `--z-dialog-popover`, so neither a scrolling pane nor a dialog clips it.
-- A terminal that could not start says so in the interface face on the terminal's own ground.
+- A terminal that could not start says so as a status line (the danger glyph, then the words) in the interface face on the terminal's own ground.
 
 ## Assets
 

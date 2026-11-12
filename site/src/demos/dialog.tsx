@@ -1,8 +1,9 @@
 /**
  * Every dialog variant: a rename over the frame (Return renames, Escape
  * cancels), the three confirmation tones, one with a choice under its
- * message, a delete that cannot be undone with a long path list, a long
- * question that wraps, and a command editor whose legend holds a destructive
+ * message, deletes that cannot be undone with a one-line name list (one
+ * ending in "+N more"), a quit confirmation with a fact list, a long title
+ * cut on its one line, and a command editor whose legend holds a destructive
  * secondary verb and wraps to two rows. Then one dialog on each width step:
  * a connection form on the label column (medium), a frosted shortcuts sheet
  * whose body scrolls (large), a wide table (extra large), and a dialog
@@ -22,7 +23,7 @@ import {
 import { useId, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
+import { ConfirmDialog, ModalDialog, type DialogFact } from '@bigpixelrocket/uiok/dialog';
 import { DataGrid, type DataGridColumn } from '@bigpixelrocket/uiok/grid';
 import { type Chord } from '@bigpixelrocket/uiok/keyboard';
 import { KeyChord } from '@bigpixelrocket/uiok/keychord';
@@ -37,6 +38,7 @@ type Open =
   | 'sign-out'
   | 'grant'
   | 'quit'
+  | 'long-title'
   | 'connect'
   | 'command'
   | 'shortcuts'
@@ -44,7 +46,7 @@ type Open =
   | 'hosts'
   | null;
 
-/** Paths long enough to wrap, and enough of them to scroll the list. */
+/** Paths long enough to be cut in their middle, and more than the name list shows. */
 const LONG_PATHS = [
   '~/projects/infrastructure-and-deployment-scripts/environments/production/terraform/main.tf',
   '~/projects/infrastructure-and-deployment-scripts/environments/production/terraform/variables.tf',
@@ -53,6 +55,20 @@ const LONG_PATHS = [
   '~/projects/site/public/robots.txt',
   '~/projects/site/tests/App.test.tsx',
   '~/projects/site/tests/fixtures/very-long-fixture-name-for-the-snapshot-suite.json'
+];
+
+/**
+ * The quit confirmation's facts: a row per kind of thing the quit ends, its
+ * count, and the first names, each row one line.
+ */
+const QUIT_FACTS: readonly DialogFact[] = [
+  { label: 'Terminals', count: 6, value: 'zsh, npm run dev, vite, psql, htop, tail -f app.log' },
+  {
+    label: 'Projects',
+    count: 9,
+    value: 'shop (web, worker, queue), blog (vite), docs (serve), +2'
+  },
+  { label: 'Schedules', count: 2, value: 'nightly-backup, sitemap' }
 ];
 
 /** A rename dialog over the frame. */
@@ -81,9 +97,12 @@ function RenameDialog({
       }}
       onCancel={onCancel}
       title="Rename"
-      titleAside="~/projects/site/docs"
     >
       <div className="demo-stack">
+        {/* Where the dialog acts is the body's first line, never beside the title. */}
+        <p className="dialog-help">
+          In <span className="dialog-value">~/projects/site/docs</span>
+        </p>
         {/* No width class: the column stretches the field across the body. */}
         <input
           aria-label="Name"
@@ -128,7 +147,6 @@ function ConnectDialog({
       }}
       onCancel={onCancel}
       title="Connect"
-      titleAside="db.internal.example.com"
     >
       <div className="demo-stack">
         <p>
@@ -199,7 +217,6 @@ function CommandDialog({
       }}
       onCancel={onCancel}
       title="Edit Command"
-      titleAside="~/projects/site"
     >
       <div className="demo-stack">
         <label className="dialog-label" htmlFor={commandId}>
@@ -307,8 +324,10 @@ function OrdersDialog({ onDone }: { readonly onDone: () => void }) {
       legend={{ primary: { label: 'Done', onRun: onDone } }}
       onCancel={onDone}
       title="Recent Orders"
-      titleAside="db.internal.example.com / shop"
     >
+      <p className="dialog-help">
+        From <span className="dialog-value">db.internal.example.com / shop</span>
+      </p>
       <DataGrid
         cell={(row, column) => {
           const order = RECENT_ORDERS[row];
@@ -407,6 +426,7 @@ export function DialogDemo() {
         <Button onClick={() => setOpen('delete-all')}>Delete 7 Long Paths…</Button>
         <Button onClick={() => setOpen('grant')}>Grant Access…</Button>
         <Button onClick={() => setOpen('quit')}>Quit…</Button>
+        <Button onClick={() => setOpen('long-title')}>Long Title…</Button>
         <Button onClick={() => setOpen('command')}>Edit Command…</Button>
       </div>
       <h3 className="demo-subhead">Size steps</h3>
@@ -447,7 +467,6 @@ export function DialogDemo() {
       {open === 'trash' ? (
         <ConfirmDialog
           confirmLabel="Move to Trash"
-          context="~/projects/site/docs"
           icon={Trash2}
           message={
             <>
@@ -462,10 +481,9 @@ export function DialogDemo() {
       {open === 'delete' ? (
         <ConfirmDialog
           confirmLabel="Delete"
-          context="~/projects/site"
           forGood
           icon={Trash2}
-          message="Delete these 3 items immediately? This cannot be undone."
+          message="These 3 items are deleted for good. This cannot be undone."
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
           paths={[
@@ -473,20 +491,19 @@ export function DialogDemo() {
             '~/projects/site/public/robots.txt',
             '~/projects/site/tests/App.test.tsx'
           ]}
-          title="Delete Immediately"
+          title="Delete 3 Items Now?"
         />
       ) : null}
       {open === 'delete-all' ? (
         <ConfirmDialog
           confirmLabel="Delete"
-          context="~/projects"
           forGood
           icon={Trash2}
-          message={`Delete these ${LONG_PATHS.length} items immediately? This cannot be undone.`}
+          message={`These ${LONG_PATHS.length} items are deleted for good. This cannot be undone.`}
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
           paths={LONG_PATHS}
-          title="Delete Immediately"
+          title={`Delete ${LONG_PATHS.length} Items Now?`}
         />
       ) : null}
       {open === 'sign-out' ? (
@@ -509,9 +526,12 @@ export function DialogDemo() {
       {open === 'grant' ? (
         <ConfirmDialog
           confirmLabel="Grant"
-          context="~/projects/site"
           icon={KeyRound}
-          message="Let the build read this folder? It can read files here until you sign out."
+          message={
+            <>
+              The build can read files in <strong>~/projects/site</strong> until you sign out.
+            </>
+          }
           onCancel={close('cancelled')}
           onConfirm={close('granted')}
           title="Grant Access"
@@ -523,11 +543,24 @@ export function DialogDemo() {
           cancelLabel="Keep Running"
           confirmLabel="Quit"
           icon={Power}
-          message="Quitting stops every process this window started. Their logs are kept."
+          className="dialog-size-md"
+          facts={QUIT_FACTS}
+          message="Every process below stops and every schedule ends. Their logs are kept."
           onCancel={close('kept running')}
           onConfirm={close('quit')}
-          title="Close the window and stop 5 running processes?"
+          title="Quit and Stop 15 Processes?"
           tone="warning"
+        />
+      ) : null}
+      {open === 'long-title' ? (
+        <ConfirmDialog
+          confirmLabel="Delete"
+          forGood
+          icon={Trash2}
+          message="A title this long is cut on its one line; its whole text is a tooltip."
+          onCancel={close('cancelled')}
+          onConfirm={close('deleted for good')}
+          title="Delete Now from the Production Environment Folder"
         />
       ) : null}
       {open === 'connect' ? (

@@ -1,9 +1,11 @@
 /**
  * Every form control in each of its states, one labelled grid per control:
  * fields, selects, and textareas at rest, hovered, focused, read-only,
- * invalid, in the warning and accent tones, and disabled; the field box;
- * checks, radios, switches, and the slider off, on, mixed, hovered,
- * pressed, toned, invalid, and disabled; toggles off and on; a meter in its
+ * invalid, and in the warning and accent tones; the field box; checks,
+ * radios, switches, and the slider off, on, mixed, hovered, pressed, toned,
+ * and invalid; toggles off and on. Disabled is shown once, on a field and a
+ * switch, every control fading the same way, and on a checkbox off and on,
+ * whose disabled looks differ (an empty box keeps its full outline); a meter in its
  * three tones; the three field heights by place; groups and the rarer
  * controls (a stacked field group, a fieldset's legend, a list box, a choice
  * in running text, controls with no class); then a working form on one label
@@ -141,12 +143,6 @@ export function FieldDemo() {
             <input aria-label="Filter rows" defaultValue="[users" />
           </label>
         </DemoState>
-        <DemoState label="Disabled">
-          <label className="field-box">
-            <Search size={ICON_SM} />
-            <input aria-label="Filter rows" defaultValue="users" disabled />
-          </label>
-        </DemoState>
       </DemoStates>
 
       <DemoStates minCell="180px" title="Select">
@@ -176,11 +172,6 @@ export function FieldDemo() {
             <option value="">Choose one</option>
           </select>
         </DemoState>
-        <DemoState label="Disabled">
-          <select aria-label="Engine" className="field" defaultValue="innodb" disabled>
-            <option value="innodb">InnoDB</option>
-          </select>
-        </DemoState>
       </DemoStates>
 
       <DemoStates minCell="220px" title="Textarea">
@@ -201,9 +192,6 @@ export function FieldDemo() {
         </DemoState>
         <DemoState label="Invalid">
           <textarea aria-invalid aria-label="Statement" className="field" defaultValue="SELEC" />
-        </DemoState>
-        <DemoState label="Disabled">
-          <textarea aria-label="Statement" className="field" defaultValue="SELECT 1;" disabled />
         </DemoState>
       </DemoStates>
 
@@ -302,7 +290,7 @@ export function FieldDemo() {
             Overwrite
           </Choice>
         </DemoState>
-        <DemoState label="Disabled, off">
+        <DemoState label="Disabled, off (keeps its outline)">
           <Choice>
             <input className="check" disabled type="checkbox" />
             Logs
@@ -369,18 +357,6 @@ export function FieldDemo() {
             Custom
           </Choice>
         </DemoState>
-        <DemoState label="Disabled, off">
-          <Choice>
-            <input className="check" disabled name="demo-radio-f" type="radio" />
-            Quick
-          </Choice>
-        </DemoState>
-        <DemoState label="Disabled, on">
-          <Choice>
-            <input className="check" defaultChecked disabled name="demo-radio-g" type="radio" />
-            Custom
-          </Choice>
-        </DemoState>
       </DemoStates>
 
       <DemoStates minCell="150px" title="Switch">
@@ -418,13 +394,7 @@ export function FieldDemo() {
             </Choice>
           </Forced>
         </DemoState>
-        <DemoState label="Disabled, off">
-          <Choice>
-            <input className="switch" disabled role="switch" type="checkbox" />
-            Start at login
-          </Choice>
-        </DemoState>
-        <DemoState label="Disabled, on">
+        <DemoState label="Disabled">
           <Choice>
             <input className="switch" defaultChecked disabled role="switch" type="checkbox" />
             Event scheduler
@@ -484,16 +454,6 @@ export function FieldDemo() {
               type="range"
             />
           </Forced>
-        </DemoState>
-        <DemoState label="Disabled">
-          <input
-            aria-label="Seek"
-            className="range"
-            defaultValue={60}
-            disabled
-            style={range(60)}
-            type="range"
-          />
         </DemoState>
       </DemoStates>
 

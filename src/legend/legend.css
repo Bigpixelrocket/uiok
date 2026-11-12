@@ -105,7 +105,7 @@
   font: inherit;
   font-size: var(--font-size-small);
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
 }
 
 /* Hover (wash and frosted ring) and press come from the base sheet's quiet

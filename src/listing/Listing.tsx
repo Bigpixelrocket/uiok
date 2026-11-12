@@ -392,8 +392,9 @@ export interface ListingProps {
  * `--pane-grid`, shared by the strip and every row, so each label sits over
  * its column; a listing whose row links take words gives it as the grid for
  * a look (`linksColumn`), and its rows take the richest look that keeps it
- * inside its pane. A listing with no rows says so in `empty`: a plain line
- * under the strip instead of a table, its column labels left out, so no
+ * inside its pane. A listing with no rows says so in `empty`: a quiet row
+ * under the strip instead of a table (`.pane-message.empty`, starting where
+ * a row's icon starts, in the rows' type, dim), its column labels left out, so no
  * header stands over a row that is not one.
  */
 export function Listing({
@@ -430,7 +431,7 @@ export function Listing({
           )}
           title={title}
         />
-        <p className="pane-message">{empty}</p>
+        <p className="pane-message empty">{empty}</p>
       </section>
     );
   }

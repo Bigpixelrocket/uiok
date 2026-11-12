@@ -2,8 +2,8 @@
  * Lines that keep a long name's end in view as their box narrows: a name in
  * a sentence, a name that opens its line, a right-to-left name, cut from its
  * own start's other end, a name in a translated line's quotation marks, and
- * a short name that is never cut in its middle. Then a cut name as the
- * context of a dialog's title strip.
+ * a short name that is never cut in its middle. Then a cut name in a
+ * dialog's one-line title.
  */
 
 import { Copy } from 'lucide-react';
@@ -13,7 +13,7 @@ import { Button } from '@bigpixelrocket/uiok/button';
 import { ModalDialog } from '@bigpixelrocket/uiok/dialog';
 import { labelParts, NameCut, nameParts } from '@bigpixelrocket/uiok/namecut';
 
-/** A dialog whose title strip's context is a cut name. */
+/** A dialog whose title names a file, cut so the name keeps its end. */
 function CopyDialog({ onClose }: { readonly onClose: () => void }) {
   const labelId = useId();
   return (
@@ -22,12 +22,13 @@ function CopyDialog({ onClose }: { readonly onClose: () => void }) {
       labelId={labelId}
       legend={{ leave: { label: 'Cancel' }, primary: { label: 'Copy', onRun: onClose } }}
       onCancel={onClose}
-      title="Copy"
-      titleAside={
-        <NameCut parts={nameParts([{ name: 'Better.Call.Saul.S01E01.1080p.BluRay.CtrlHD.mkv' }])} />
+      title={
+        <NameCut
+          parts={nameParts(['Copy ', { name: 'Better.Call.Saul.S01E01.1080p.BluRay.CtrlHD.mkv' }])}
+        />
       }
     >
-      <p>Copy this file to the Seedbox? The context keeps the name&apos;s end in view.</p>
+      <p>Copy this file to the Seedbox? The title keeps the name&apos;s end in view.</p>
     </ModalDialog>
   );
 }

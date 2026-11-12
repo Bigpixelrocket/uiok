@@ -60,7 +60,7 @@
   border: none;
   background: transparent;
   color: var(--text-dim);
-  cursor: pointer;
+  cursor: default;
 }
 
 .page-tabs-more:hover {
@@ -114,7 +114,7 @@
   color: var(--text-dim);
   font: var(--font-size-small) var(--font-ui);
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
   scroll-snap-align: start;
 }
 

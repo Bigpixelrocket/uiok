@@ -86,7 +86,7 @@
   background: none;
   color: inherit;
   font: inherit;
-  cursor: pointer;
+  cursor: default;
 }
 
 .data-grid-sort:hover:enabled {
@@ -161,23 +161,20 @@
   min-height: calc(2 * var(--row-height-dense));
 }
 
-/* What an empty grid says (the `empty` prop): a sentence in the interface
-   face, dim, centred in the well. It keeps to the grid's visible width while
-   a wide header scrolls sideways, and wraps rather than widen the grid. */
+/* What an empty grid says (the `empty` prop): set where the first row
+   would be, in the grid's cell type (the grid's monospace at its row
+   height, inherited) at a cell's inset, dim, so it reads as a quiet first
+   row. It keeps to the grid's visible width while a wide header scrolls
+   sideways, and wraps rather than widen the grid. */
 .data-grid-empty {
   position: sticky;
   left: 0;
   display: flex;
   align-items: center;
-  justify-content: center;
   box-sizing: border-box;
-  min-height: calc(2 * var(--row-height-dense));
-  padding: var(--space-3) var(--space-6);
+  min-height: var(--row-height-dense);
+  padding: 0 var(--space-4);
   color: var(--text-dim);
-  font-family: var(--font-ui);
-  font-size: var(--font-size-small);
-  line-height: var(--line-height-body);
-  text-align: center;
 }
 
 .data-grid-row {
@@ -252,7 +249,7 @@
   text-decoration-color: var(--accent-line);
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
 }
 
 .data-grid-link:hover:enabled {
@@ -326,17 +323,10 @@
   background: none;
 }
 
-/* A header that drags to a new place, and where it lands. */
-.data-grid-heading.draggable {
-  cursor: grab;
-}
-
-.data-grid-heading.draggable:active,
-.data-grid-heading.dragging {
-  cursor: grabbing;
-}
-
-/* The heading in the hand fades and lifts; the accent bar marks where it lands. */
+/* A header that drags to a new place, and where it lands. The pointer
+   stays the arrow while it drags, as a desktop table's column does; the
+   heading in the hand fades and lifts, and the accent bar marks where it
+   lands. */
 .data-grid-heading.dragging {
   background: var(--accent-wash);
   opacity: var(--dragging-opacity);

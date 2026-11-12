@@ -82,8 +82,3 @@
 .name-cut > .visually-hidden {
   user-select: none;
 }
-
-/* In a title strip's context, the line sits at the strip's right edge. */
-.dialog-context > .name-cut {
-  justify-content: flex-end;
-}

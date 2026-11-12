@@ -35,7 +35,7 @@ A line with a cut name is drawn for sight only (`aria-hidden`), and assistive te
 
 ## Styling
 
-`.name-cut`, `.name-cut-line`, `.name-cut-head`, `.name-cut-tail` (right to left for its front ellipsis; the name inside is a left-to-right `bdi`), `.rtl` on both for a right-to-left name, `.name-cut-quote` (its closing quote), `.name-cut-text`, `.name-cut-rest`. Inside a dialog title strip's `.dialog-context`, the line sits at the right edge.
+`.name-cut`, `.name-cut-line`, `.name-cut-head`, `.name-cut-tail` (right to left for its front ellipsis; the name inside is a left-to-right `bdi`), `.rtl` on both for a right-to-left name, `.name-cut-quote` (its closing quote), `.name-cut-text`, `.name-cut-rest`.
 
 ## Labels read
 

@@ -4,7 +4,7 @@ Looks a page puts on its own markup, shipped in `@bigpixelrocket/uiok/styles.css
 
 ## Notice
 
-A message about the page or a value on it: a 2px bar in the tone on its leading edge, an optional glyph in the tone, the message in `--text`, and an optional action at the end.
+A message about something on the page, drawn as a desktop application's status text, never a web page's alert: a plain line on the surface it sits on, a small status glyph in the tone's colour, then the words in `--text`, and an optional small button after the words. It has no tinted fill, no frame, and no side bar.
 
 ```tsx
 <div className="notice notice-danger" role="alert">
@@ -16,27 +16,33 @@ A message about the page or a value on it: a 2px bar in the tone on its leading 
 </div>
 ```
 
-| Class                                               | Meaning                                                                                 |
-| --------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `notice`                                            | The notice in the page's flow; neutral tone (`--text-faint`) unless a tone class is set |
-| `notice-danger`, `notice-warning`, `notice-success` | The tone of the bar and the glyph (`--danger`, `--warning`, `--success`)                |
-| `notice-card`                                       | Floated on a raised panel (border, `--shadow-popover`), for a notice over the page      |
-| `notice-text`                                       | The message; wraps                                                                      |
-| `notice-glyph`                                      | A glyph that is not the first `svg`                                                     |
-| `notice-actions`                                    | Actions at the end, centred on the first line                                           |
+| Class                                               | Meaning                                                                                                 |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| `notice`                                            | The line in the page's flow; a note (`--text-faint` glyph) unless a tone class is set                   |
+| `notice-danger`, `notice-warning`, `notice-success` | The tone of the glyph (`--danger`, `--warning`, `--success`); the words stay in `--text`                |
+| `notice-card`                                       | A band of its own across a window or a page (under a header): the surface's ground, a hairline under it |
+| `notice-text`                                       | The message; wraps                                                                                      |
+| `notice-glyph`                                      | A glyph that is not the first `svg`                                                                     |
+| `notice-actions`                                    | A small button or two right after the words, centred on the first line                                  |
 
 A notice that reports a failure the user should act on takes `role="alert"`; one that reports a state takes `role="status"`.
 
-A failure told in two lines, what failed and why, colours them one way everywhere, as `RunHeader`'s failed state does: the headline takes `--danger-text` and the reason under it stays in the body's colour (`--text-dim`, in the code face when it is a raw line the system returned, such as an error code and a host). The update card's error tone follows it. A notice colours neither line: its bar and glyph carry the tone.
+### Where a message goes
 
-Each tone has one glyph, drawn first in a notice, a problem line, or a status card, in the tone's colour (`ICON_MD` in a notice):
+- **A line where its subject is.** A message about one thing sits beside or under that thing: a field's problem under the field (`field-problem`, which draws its own glyph), a step's failure under the step, a refusal in a listing (`pane-message danger`, which draws its own glyph), a file's problem under the file. This is the default.
+- **The status line** for what concerns the whole pane or window and needs no action: a count, a state, a finished step. A band across the window (`notice-card`) is for a state that stands until the user fixes it elsewhere, such as a settings file with a mistake.
+- **An alert dialog** for a message that must stop the user, or that asks a decision before anything goes on. A message never borrows weight from a box, a tint, or a coloured bar: if a line is not enough, it is a dialog.
 
-| Tone    | Glyph           | Where                                                                                                         |
-| ------- | --------------- | ------------------------------------------------------------------------------------------------------------- |
-| Danger  | `CircleAlert`   | A failure the user should act on: `notice-danger`, a settings file's problem, a terminal that could not start |
-| Warning | `TriangleAlert` | A state that works but needs a second look: `notice-warning`                                                  |
-| Success | `CircleCheck`   | A finished step: `notice-success`, and a `RunHeader` that is done                                             |
-| Note    | `Info`          | A neutral `notice`: a fact the user may want, nothing wrong                                                   |
+A failure told in two lines, what failed and why, colours them one way everywhere, as `RunHeader`'s failed state does: the headline takes `--danger-text` and the reason under it stays in the body's colour (`--text-dim`, in the code face when it is a raw line the system returned, such as an error code and a host). The update card's error tone follows it. A notice colours neither line: its glyph carries the tone.
+
+Each tone has one glyph, drawn first in a notice, a problem line, or a status card, in the tone's colour (`ICON_MD` in a notice and a problem line):
+
+| Tone    | Glyph           | Where                                                                                                                                                 |
+| ------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Danger  | `CircleAlert`   | A failure the user should act on: `notice-danger`, `field-problem`, `pane-message danger`, a settings file's problem, a terminal that could not start |
+| Warning | `TriangleAlert` | A state that works but needs a second look: `notice-warning`                                                                                          |
+| Success | `CircleCheck`   | A finished step: `notice-success`, and a `RunHeader` that is done                                                                                     |
+| Note    | `Info`          | A neutral `notice`: a fact the user may want, nothing wrong                                                                                           |
 
 `CircleX` marks one thing only: a run that failed, as `RunHeader`'s failed state draws it (and a host's list of runs that follows `RunHeader`'s run states). A notice or a card that reports a failure takes `CircleAlert`, never `CircleX`.
 

@@ -1,10 +1,11 @@
 # Dialogs (`@bigpixelrocket/uiok/dialog`)
 
-Every modal dialog shares one frame and one footer: a title strip that says what the dialog does and where, the body, and a key legend that says how to leave and how to commit. The legend reads as part of the keyboard, not as a web form.
+Every modal dialog shares one frame and one footer: a title strip that says what the dialog does in one line, the body, and a key legend that says how to leave and how to commit. The legend reads as part of the keyboard, not as a web form.
 
 - `ModalDialog`: the frame, its focus rules, and the one keydown path for its keys.
 - `DialogLegend`: the key legend footer, with `legendKeyAction` deciding which slot a keystroke runs.
 - `ConfirmDialog`: the one confirmation, built on both.
+- `DialogFacts` and `DialogNames`: the compact lists a confirmation or alert holds, one line per row.
 - `DialogLayer`: where a host's dialogs mount, so they paint above every pane.
 
 ## Example
@@ -28,8 +29,10 @@ function RenameDialog({ name, onRename, onCancel }) {
       }}
       onCancel={onCancel}
       title="Rename"
-      titleAside="~/Documents"
     >
+      <p className="dialog-help">
+        In <span className="dialog-value">~/Documents</span>
+      </p>
       <input autoFocus aria-label="Name" value={value} onChange={(e) => setValue(e.target.value)} />
     </ModalDialog>
   );
@@ -37,11 +40,10 @@ function RenameDialog({ name, onRename, onCancel }) {
 
 <ConfirmDialog
   confirmLabel="Move to Trash"
-  context="~/Downloads"
   icon={Trash2}
   message={
     <>
-      Move <strong>notes.txt</strong> to the Trash?
+      Move <strong>notes.txt</strong> from ~/Downloads to the Trash?
     </>
   }
   onCancel={close}
@@ -52,22 +54,21 @@ function RenameDialog({ name, onRename, onCancel }) {
 
 ## `ModalDialog` (`ModalDialogProps`)
 
-| Prop             | Type                                | Default    | Meaning                                                                                                 |
-| ---------------- | ----------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------- |
-| `title`          | `ReactNode`                         |            | What the dialog does; a string is also its tooltip                                                      |
-| `labelId`        | `string`                            |            | The heading's id, wired to `aria-labelledby`; unique per dialog (`useId`)                               |
-| `describedBy`    | `string`                            |            | The id of the body element that says what the dialog is about (`aria-describedby`)                      |
-| `className`      | `string`                            |            | Extra class on the box, for its width and its body's layout                                             |
-| `icon`           | `LucideIcon`                        |            | The verb's icon at the start of the title strip                                                         |
-| `tone`           | `'accent' \| 'danger' \| 'warning'` | `'accent'` | The strip's rule and icon colour; `danger` also lights the primary red                                  |
-| `titleAside`     | `ReactNode`                         |            | Context at the strip's right edge, cut with an ellipsis (where the dialog acts)                         |
-| `frosted`        | `boolean`                           | `false`    | Frost the window behind; only for a self-contained overlay (a shortcuts list, settings)                 |
-| `pinTop`         | `boolean`                           | `false`    | Keep the top edge where it opened, so a growing body extends downward; a window resize centres it again |
-| `legend`         | `DialogLegendModel`                 |            | The key legend footer, drawn last and bound to its keys                                                 |
-| `onCancel`       | `() => void`                        |            | Escape and the esc slot                                                                                 |
-| `onOutsidePress` | `() => void`                        | `onCancel` | A press on the backdrop                                                                                 |
-| `children`       | `ReactNode`                         |            | The body                                                                                                |
-| `container`      | `Element`                           |            | Where the dialog mounts; left out, the enclosing `DialogLayer`, or in place without one                 |
+| Prop             | Type                                | Default    | Meaning                                                                                                          |
+| ---------------- | ----------------------------------- | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| `title`          | `ReactNode`                         |            | What the dialog does, in at most five words; one line, cut with an ellipsis, a string's text a tooltip while cut |
+| `labelId`        | `string`                            |            | The heading's id, wired to `aria-labelledby`; unique per dialog (`useId`)                                        |
+| `describedBy`    | `string`                            |            | The id of the body element that says what the dialog is about (`aria-describedby`)                               |
+| `className`      | `string`                            |            | Extra class on the box, for its width and its body's layout                                                      |
+| `icon`           | `LucideIcon`                        |            | The verb's icon at the start of the title strip                                                                  |
+| `tone`           | `'accent' \| 'danger' \| 'warning'` | `'accent'` | The strip's rule and icon colour; `danger` also lights the primary red                                           |
+| `frosted`        | `boolean`                           | `false`    | Frost the window behind; only for a self-contained overlay (a shortcuts list, settings)                          |
+| `pinTop`         | `boolean`                           | `false`    | Keep the top edge where it opened, so a growing body extends downward; a window resize centres it again          |
+| `legend`         | `DialogLegendModel`                 |            | The key legend footer, drawn last and bound to its keys                                                          |
+| `onCancel`       | `() => void`                        |            | Escape and the esc slot                                                                                          |
+| `onOutsidePress` | `() => void`                        | `onCancel` | A press on the backdrop                                                                                          |
+| `children`       | `ReactNode`                         |            | The body                                                                                                         |
+| `container`      | `Element`                           |            | Where the dialog mounts; left out, the enclosing `DialogLayer`, or in place without one                          |
 
 `containTab(event, container)` is the frame's Tab containment, exported for a modal surface without the frame (a palette) to call from its keydown handler.
 
@@ -113,9 +114,21 @@ A dialog whose form is narrower than its step by a column's width or more is on 
 - The box is the surface colour with a strong hairline, radius 8, the lit top edge (`--glass-edge`), and the modal layer's lift (`--shadow-modal`, stronger in dark themes), centred over a clear backdrop that covers the whole viewport (`--z-dialog`), so the page stays readable behind it. `frosted` lays the modal scrim (`--scrim`) and the shared frost (`--frost`) over the window instead.
 - The backdrop keeps 16px round the box. Its top inset is the hook `--dialog-inset-top`: a host whose window draws its own title bar sets it to that bar's height plus a margin (for example `calc(48px + 8px)` on its shell root), so no dialog ever covers the bar.
 - The box is never taller than the backdrop's inset area. Past that it scrolls, with the title strip pinned at the top and the legend at the bottom. A fade hangs above the legend while more of the body lies below and under the strip once the body has scrolled past its start, following the box's own scroll, so a box that does not scroll shows neither. A body that should scroll on its own (a long form between fixed parts) takes `.dialog-body` with the shared `.scroll-fade`, and shrinks first.
-- The title strip is at least 34px of `--surface-header` with the lit top edge, ruled at the bottom in the tone: the icon (16px, in the tone too, so each tone is one hue), the title at 12px, and the context pushed to the right edge. The title takes the room; the context keeps at least 12 characters (or 40% of the strip), so where the dialog acts never vanishes. Both are cut with an ellipsis and a string of either is its own tooltip.
+- The title strip is at least 34px of `--surface-header` with the lit top edge, ruled at the bottom in the tone: the icon (16px, in the tone too, so each tone is one hue) and the title at 12px, nothing else. The title is always one line, in every dialog, every size step, and every tone: a title too long for the strip is cut with an ellipsis at its end, and a string title shows its whole text in a tooltip only while it is cut.
 - `aria-modal="true"` is the overlay contract's modal cue (`MODAL_SELECTOR` in `@bigpixelrocket/uiok/keyboard`), which an app shell reads to mute its own chords while a dialog is open.
 - A caller sets a dialog's size and body layout through `className`, never the frame's look.
+
+### The title
+
+A title names the action in at most five words. It is not a sentence: it says what will happen, and the body says what it means.
+
+| Good                          | Not                                                         |
+| ----------------------------- | ----------------------------------------------------------- |
+| `Delete 7 Items Now?`         | `Delete Immediately from the Production Environment Folder` |
+| `Quit and Stop 15 Processes?` | `Close the window and stop 15 running processes?`           |
+| `Rename`                      | `Rename the file in ~/Documents`                            |
+
+Nothing stands beside the title: no path, no count, no item name at the strip's end. Context a dialog needs (where it acts, the item it asks about) goes in the body's first line, a sentence (`dialog-help` or the confirmation's message) with the name as a value (`dialog-value` or `<strong>`).
 
 ### Type
 
@@ -123,12 +136,12 @@ The frame sets its own type, so a dialog reads the same under any page root and 
 
 | Part                                                                   | Face                          |
 | ---------------------------------------------------------------------- | ----------------------------- |
-| The title and the context on the strip                                 | monospace                     |
+| The title on the strip                                                 | monospace                     |
 | The body, paragraphs, the legend's verbs                               | the interface font, 13px      |
 | `.dialog-help`: help, a note, a description under a field              | the interface font, 12px, dim |
 | `.dialog-label`: a label that heads a field or a value                 | the interface font, 12px      |
 | `.dialog-value`, `code`, `samp`, `pre`: a name, path, command, or host | monospace                     |
-| A confirmation's `<strong>` name and its path list                     | monospace                     |
+| A confirmation's `<strong>` name, its names list, its facts' values    | monospace                     |
 
 Field contents take their face from the shared form controls. The hooks weigh one class, so a body's own class can still set its face.
 
@@ -169,28 +182,74 @@ A held key runs its slot once. A key the browser-key guard cancelled still reach
 
 ## `ConfirmDialog` (`ConfirmDialogProps`)
 
-| Prop           | Type                                 | Default    | Meaning                                                                    |
-| -------------- | ------------------------------------ | ---------- | -------------------------------------------------------------------------- |
-| `title`        | `string`                             |            | The action                                                                 |
-| `message`      | `ReactNode`                          |            | The consequence; a name in `<strong>` reads in the text colour             |
-| `confirmLabel` | `string`                             |            | The primary's verb                                                         |
-| `cancelLabel`  | `string`                             | labels     | The leave verb; `dialog.cancel` unless given                               |
-| `icon`         | `LucideIcon`                         |            | The action's icon                                                          |
-| `context`      | `ReactNode`                          |            | Where it acts, on the strip's right edge                                   |
-| `tone`         | `'danger' \| 'warning' \| 'primary'` | `'danger'` | `warning` for a safe yes that still ends work; `primary` for a plain grant |
-| `paths`        | `readonly string[]`                  | `[]`       | Every path it touches, in a focusable scrolling list                       |
-| `children`     | `ReactNode`                          |            | A choice drawn under the message; the caller holds its state               |
-| `className`    | `string`                             |            | Extra class on the box                                                     |
-| `forGood`      | `boolean`                            | `false`    | A delete that cannot be undone                                             |
-| `onConfirm`    | `() => void`                         |            | The primary                                                                |
-| `onCancel`     | `() => void`                         |            | Escape, the leave slot, a press outside                                    |
+| Prop           | Type                                 | Default    | Meaning                                                                          |
+| -------------- | ------------------------------------ | ---------- | -------------------------------------------------------------------------------- |
+| `title`        | `string`                             |            | What will happen, at most five words, one line                                   |
+| `message`      | `ReactNode`                          |            | One short sentence of consequence; a name in `<strong>` reads in the text colour |
+| `confirmLabel` | `string`                             |            | The primary's verb                                                               |
+| `cancelLabel`  | `string`                             | labels     | The leave verb; `dialog.cancel` unless given                                     |
+| `icon`         | `LucideIcon`                         |            | The action's icon                                                                |
+| `tone`         | `'danger' \| 'warning' \| 'primary'` | `'danger'` | `warning` for a safe yes that still ends work; `primary` for a plain grant       |
+| `facts`        | `readonly DialogFact[]`              | `[]`       | One-line rows of a label and a count or a few names (`DialogFacts`)              |
+| `paths`        | `readonly string[]`                  | `[]`       | The names or paths it touches, one line each, then "+N more" (`DialogNames`)     |
+| `children`     | `ReactNode`                          |            | A choice drawn under the message; the caller holds its state                     |
+| `className`    | `string`                             |            | Extra class on the box                                                           |
+| `forGood`      | `boolean`                            | `false`    | A delete that cannot be undone                                                   |
+| `onConfirm`    | `() => void`                         |            | The primary                                                                      |
+| `onCancel`     | `() => void`                         |            | Escape, the leave slot, a press outside                                          |
 
 The message is the dialog's description, so a screen reader reads it with the title. The frame carries the type and box sizing, so it renders the same portalled to the body.
 
-- The title is the question being asked, so it wraps to a second line rather than lose its end, and the strip grows with it; past two lines it ends in an ellipsis and its tooltip holds the whole question.
+- The title is one line, like every dialog's (see [The title](#the-title)).
 - The order is the platform's: the leave verb at the left edge, the action alone at the right, lit. A `danger` action is lit red; a `warning` question rules the strip amber and lights its action in the accent, since its yes is the safe choice.
 - Pick the tone by what the yes destroys. `danger` (the default) is for an action that destroys something saved: a delete, a drop, an overwrite. Throwing away input the user has not saved yet (leave with unsaved changes, discard an edit) destroys nothing saved, so it is `warning`; pass the tone, since the default would paint it red.
-- The path list shows every path whole, in monospace, its text 12px in from the frame as in every framed well. A long path breaks only after a slash, its later lines hang under the first, and the list shows eight lines before it scrolls, framed in `--border-strong` like every framed well, with the shared scroll fade at a cut edge (the fade covers the list's content, never its frame).
+- The key legend, the leave-then-action order, the tones, and the focus rules are the frame's; a confirmation adds no controls of its own beyond the caller's choice.
+
+### Read at a glance
+
+A confirmation or alert appears often, so it is read at a glance, not studied: what it is (the title), what it means (one sentence), and then, only for someone who wants them, the details (one list). Its body is the sentence and at most one list. No paragraphs, no sentence per fact.
+
+1. **The message** is one short consequence sentence, one or two lines in the dialog's width. Context (where it acts) belongs in it.
+2. **Facts** (`facts`, or `DialogFacts` in any dialog body) are a desktop property list: one line per row, a label in the leading column, then a count in a column of its own (aligned, tabular figures) and the first few names. Labels, counts, and values each line up; every part is cut with an ellipsis rather than wrap, a cut label or string value showing its whole text in a tooltip. Write the names short and let the row end in a count of the rest ("shop (web, worker), blog, +2").
+3. **Names** (`paths`, or `DialogNames`) list the items a "these N items" question acts on: one line each, in monospace, a long name or path cut in its middle (`NameCut`), so its start and its file name both show. The list shows at most five lines (`max`); a longer one shows the first four and ends in "+N more" (`dialog.moreItems`), so it never grows into a tall block.
+
+The quit confirmation, written this way:
+
+```tsx
+import { Power } from 'lucide-react';
+
+<ConfirmDialog
+  cancelLabel="Keep Running"
+  className="dialog-size-md"
+  confirmLabel="Quit"
+  facts={[
+    { label: 'Terminals', count: 6, value: 'zsh, npm run dev, vite, psql, +2' },
+    { label: 'Projects', count: 9, value: 'shop (web, worker, queue), blog (vite), +2' },
+    { label: 'Schedules', count: 2, value: 'nightly-backup, sitemap' }
+  ]}
+  icon={Power}
+  message="Every process below stops and every schedule ends. Their logs are kept."
+  onCancel={keepRunning}
+  onConfirm={quit}
+  title="Quit and Stop 15 Processes?"
+  tone="warning"
+/>;
+```
+
+It replaces a title that was a sentence and four paragraphs (one for the terminals, one for the projects, one for the schedules, one for the consequence): the title says what will happen, the sentence what it means, and each kind of thing is one row a glance reads down.
+
+## `DialogFacts` (`DialogFactsProps`) and `DialogNames` (`DialogNamesProps`)
+
+The lists `ConfirmDialog` draws from `facts` and `paths`, for any other dialog body (an alert on `ModalDialog`).
+
+| Component     | Prop    | Type                    | Default | Meaning                                                                 |
+| ------------- | ------- | ----------------------- | ------- | ----------------------------------------------------------------------- |
+| `DialogFacts` | `facts` | `readonly DialogFact[]` |         | The rows, in reading order                                              |
+| `DialogFacts` | `label` | `string`                |         | The list's accessible name, when the message does not say what it lists |
+| `DialogNames` | `names` | `readonly string[]`     |         | The names or paths                                                      |
+| `DialogNames` | `max`   | `number`                | `5`     | The most lines shown, the "+N more" line included                       |
+
+A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode }`; the host formats the count.
 
 ### Deletes that cannot be undone
 
@@ -198,8 +257,8 @@ People confirm a delete out of habit, ⌘⌫ then Return, without reading. With 
 
 ## Styling
 
-`.dialog-backdrop`, `.frosted`, `.dialog-layer`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-context`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.legend-danger`, `.confirm-dialog`, `.dialog-message`, `.dialog-paths`. The frame declares `--dialog-tone` and `--dialog-icon`, reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
+`.dialog-backdrop`, `.frosted`, `.dialog-layer`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.legend-danger`, `.confirm-dialog`, `.dialog-message`, `.dialog-facts`, `.dialog-fact`, `.dialog-fact-count`, `.dialog-fact-value`, `.dialog-names`, `.dialog-names-more`. The frame declares `--dialog-tone` and `--dialog-icon`, reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
 
 ## Labels read
 
-`dialog`: `cancel` (ConfirmDialog's default leave verb, `filterLeaveLabel`), `clear` (`filterLeaveLabel`), `affectedItems(count)` (the path list's name). `keys` through `KeyChord` for the slots' caps. See [labels](../labels.md).
+`dialog`: `cancel` (ConfirmDialog's default leave verb, `filterLeaveLabel`), `clear` (`filterLeaveLabel`), `affectedItems(count)` (the name list's accessible name), `moreItems(count)` (its "+N more" line). `keys` through `KeyChord` for the slots' caps. See [labels](../labels.md).

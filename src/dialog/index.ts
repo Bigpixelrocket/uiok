@@ -1,11 +1,19 @@
 /**
  * Dialogs: the `ModalDialog` frame, its `DialogLegend` key legend footer and
- * the rules for which slot a key runs, the one `ConfirmDialog`, and the
+ * the rules for which slot a key runs, the one `ConfirmDialog`, the compact
+ * lists a confirmation's body holds (`DialogFacts`, `DialogNames`), and the
  * `DialogLayer` a host mounts them into.
  */
 
 export { ConfirmDialog, type ConfirmDialogProps, type ConfirmTone } from './ConfirmDialog.js';
 export { DialogLayer, type DialogLayerProps } from './DialogLayer.js';
+export {
+  DialogFacts,
+  DialogNames,
+  type DialogFact,
+  type DialogFactsProps,
+  type DialogNamesProps
+} from './DialogLists.js';
 export { DialogLegend, type DialogLegendProps } from './DialogLegend.js';
 export {
   filterLeaveLabel,

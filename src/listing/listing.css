@@ -294,7 +294,7 @@
   font: inherit;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
 }
 
 /* A crumb that is a control cuts its words in that inner box, not in
@@ -376,7 +376,7 @@ button.crumb-label > .crumb-text {
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-dim);
-  cursor: pointer;
+  cursor: default;
 }
 
 /* A crumb is mostly no control (PanePathBar), so a label crumb centres its
@@ -555,7 +555,7 @@ button.crumb-label > .crumb-text {
   font: inherit;
   font-size: var(--font-size-small);
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
 }
 
 :where(.listing-root) .row-meta .pane-act {
@@ -577,7 +577,7 @@ button.crumb-label > .crumb-text {
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-dim);
-  cursor: pointer;
+  cursor: default;
 }
 
 /* The compact controls of a bar or a row are drawn 20px high; their hit
@@ -830,7 +830,7 @@ button.crumb-label > .crumb-text {
   color: var(--text-dim);
   font: inherit;
   white-space: pre;
-  cursor: pointer;
+  cursor: default;
 }
 
 /* A label wider than its column ends in an ellipsis on the column's edge,
@@ -1258,7 +1258,7 @@ button.crumb-label > .crumb-text {
   color: var(--accent-text);
   font: var(--font-weight-medium) var(--font-size-caption) var(--font-ui);
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
 }
 
 .pane-strip-link::after {
@@ -1323,8 +1323,20 @@ button.crumb-label > .crumb-text {
     var(--font-ui);
 }
 
+/* A refusal is a status line: the danger glyph (surface.css) before the
+   words, which take --text, as every inline message does. */
 :where(.listing-root) .pane-message.danger {
-  color: var(--danger-text);
+  color: var(--text);
+}
+
+/* A line that says a listing has no rows (`.empty`, Listing's `empty`)
+   reads as a quiet row in the rows' place: it starts where a row's icon
+   starts, in the rows' own typeface and size (the host's, as the rows'
+   are), dim, one row high. */
+:where(.listing-root) .pane-message.empty {
+  padding: 0 var(--pane-row-inset);
+  font: inherit;
+  line-height: var(--line-height-compact);
 }
 
 :where(.listing-root) .pane-message code {
@@ -1333,7 +1345,9 @@ button.crumb-label > .crumb-text {
 
 /* A pane with nothing in it yet: one quiet block centred in it, its glyph,
    its title, a sentence on what the pane is for, and its ways on, a lone
-   button or a row of them (.pane-empty-actions). */
+   button or a row of them (.pane-empty-actions). It is for a whole empty
+   space (a pane, a page); an empty list inside a working pane says so
+   with a quiet row (`.pane-message.empty`). */
 :where(.listing-root) .pane-empty {
   display: flex;
   flex: 1;
@@ -1761,6 +1775,24 @@ button.crumb-label > .crumb-text {
   font: var(--font-size-body)/19px var(--font-mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+}
+
+/* What an empty well says until output takes its place ("Output shows
+   here as processes print."): a line of the well itself, in the terminal's
+   font, size, and line height (inherited from the well) and dim, starting
+   where the well's text starts. A well that holds a terminal pads 8px and
+   the terminal adds its own 4px, so the note there takes that 4px too
+   (`.pane-well-note.beside-terminal`). */
+:where(.listing-root) .pane-well-note {
+  display: block;
+  margin: 0;
+  color: var(--text-dim);
+  font: inherit;
+  white-space: pre-wrap;
+}
+
+:where(.listing-root) .pane-well-note.beside-terminal {
+  padding: var(--space-2) var(--space-2) 0;
 }
 
 /* A well is a Tab stop of its own, where the keys scroll it. */

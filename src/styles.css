@@ -374,7 +374,7 @@ meter::-webkit-meter-even-less-good-value {
   color: var(--text-dim);
   font: var(--font-weight-regular) var(--font-size-small) / 1 var(--font-ui);
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
 }
 
 .toggle-chip-sm {

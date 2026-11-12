@@ -56,17 +56,17 @@ A 1px line or optical nudge stays a literal. Listing columns space in `ch` (`--p
 
 ## Relationships
 
-| Between                          | Space                                                                                                                                                                                                                        |
-| -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Icon and its label               | 6px (`--space-3`); 4px (`--space-2`) in a 20px inline control                                                                                                                                                                |
-| Control and control              | 8px (`--space-4`); 2px (`--space-1`) inside one cluster                                                                                                                                                                      |
-| Label or help text and its field | 4px (`--space-2`)                                                                                                                                                                                                            |
-| Form row and row                 | 8px (`--space-4`)                                                                                                                                                                                                            |
-| Section and section              | 16px (`--space-8`)                                                                                                                                                                                                           |
-| Surface edge and content         | 12px (`--space-6`) on every side of a framed surface (card, notice card, dialog, well, a framed band of several lines); a band one line high may keep `var(--space-3) var(--space-6)`; 4px for a menu; 16px for a page block |
-| Icon size and text size          | `--icon-sm` beside 11 and 12 px text; `--icon-md` beside 13px text; `--icon-lg` for a title icon                                                                                                                             |
-| Controls that share a row        | One height token; a field beside a Button takes the Button's height                                                                                                                                                          |
-| Corner and height                | Up to 22px high `--radius-sm`; from 24px `--radius-md`; overlays `--radius-lg`                                                                                                                                               |
+| Between                          | Space                                                                                                                                                                                                           |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Icon and its label               | 6px (`--space-3`); 4px (`--space-2`) in a 20px inline control                                                                                                                                                   |
+| Control and control              | 8px (`--space-4`); 2px (`--space-1`) inside one cluster                                                                                                                                                         |
+| Label or help text and its field | 4px (`--space-2`)                                                                                                                                                                                               |
+| Form row and row                 | 8px (`--space-4`)                                                                                                                                                                                               |
+| Section and section              | 16px (`--space-8`)                                                                                                                                                                                              |
+| Surface edge and content         | 12px (`--space-6`) on every side of a framed surface (card, dialog, well, a framed band of several lines); a band one line high may keep `var(--space-3) var(--space-6)`; 4px for a menu; 16px for a page block |
+| Icon size and text size          | `--icon-sm` beside 11 and 12 px text; `--icon-md` beside 13px text; `--icon-lg` for a title icon                                                                                                                |
+| Controls that share a row        | One height token; a field beside a Button takes the Button's height                                                                                                                                             |
+| Corner and height                | Up to 22px high `--radius-sm`; from 24px `--radius-md`; overlays `--radius-lg`                                                                                                                                  |
 
 ## Corners and lines
 
@@ -133,6 +133,10 @@ One ring for everything focusable. The base sheet draws it with zero weight (`:w
 | `--focus-offset-inset` | -2px  | Inside: only where a parent clips (a tab in a scrolling strip, a segment in its track, a grid, a well, a day cell) |
 
 The ring follows the control's `border-radius`, so a control with corners shows a rounded ring at the default and flush offsets. A text field draws the same 2px accent edge without growing: `border-color: var(--accent)` plus `outline: var(--line) solid var(--accent)` at `--focus-offset-flush`, and no soft halo. A container focused by script (`tabindex="-1"`) draws no ring. The shared form controls (`.field`, `docs/components/field.md`) draw this field edge for you. The ring's colour is written where it is drawn, not held in a token: a token resolves `var(--accent)` on `:root` and would miss a theme preview scope's own accent.
+
+## Pointer
+
+The pointer is the arrow (`cursor: default`) over every control: a button, a tab, a row, a link, a crumb, a toggle, enabled or disabled, as it is in a desktop application. A disabled control shows the arrow and its fade; never `not-allowed`. The I-beam (`text`) stays where text is typed or selected, the resize cursors (`col-resize`) on column edges and splitters, and the crosshair on a plot where a drag picks a region. A dragged grid heading keeps the arrow. `test/cursor.test.ts` fails on `pointer`, `grab`, `grabbing`, `not-allowed`, or `no-drop` in any stylesheet or inline style of `src/` or `site/src/`; a host mirrors it over its own stylesheets with the same pattern.
 
 ## Icons
 

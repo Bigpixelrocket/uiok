@@ -3,18 +3,20 @@
    Surfaces a page draws around its own content, as classes on the page's
    own markup. No component: their words are the page's.
 
-   - .notice: a message about the page or a value on it. A 2px bar in the
-     tone on its leading edge, an optional tone glyph, the message in
-     --text, and an optional action at the end. Tones: .notice-danger,
-     .notice-warning, .notice-success; none is neutral. .notice-card floats
-     it on a raised panel (a notice over the page, not in its flow).
+   - .notice: an application's status line, never a web page's alert. It
+     sits on the surface it is about (a step, a field, a pane) with no fill,
+     no frame, and no side bar of its own: a small status glyph in the
+     tone's colour, the words in --text, and an optional small button after
+     them. Tones: .notice-danger, .notice-warning, .notice-success; none is
+     a note. .notice-card sets it as a band of its own across a window or a
+     page (under a header), on the surface with a hairline under it.
    - .card: a lifted panel that groups one subject's lines, framed in
      --border-strong like every framed surface (panes, menus, the grid),
      at the 12px surface inset at both ends, whatever its children's
      margins. */
 
 .notice {
-  /* The tone's mark (bar and glyph), 3:1 on every ground by its token. */
+  /* The tone's glyph, 3:1 on every ground by its token. */
   --notice-tone: var(--text-faint);
 
   display: flex;
@@ -23,8 +25,7 @@
   box-sizing: border-box;
   min-width: 0;
   margin: 0;
-  padding: var(--space-1) 0 var(--space-1) var(--space-4);
-  border-inline-start: var(--line-strong) solid var(--notice-tone);
+  padding: 0;
   color: var(--text);
   font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
     var(--font-ui);
@@ -54,36 +55,52 @@
 }
 
 .notice-text {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
 }
 
-/* Actions sit at the end, centred on the message's first line. */
+/* An action follows the words, as a status line's button does, centred
+   on the message's first line. */
 .notice-actions {
   display: flex;
   flex: none;
   align-items: center;
   gap: var(--space-2);
   margin-block: calc((var(--line-height-compact) - var(--control-height-sm)) / 2);
-  margin-inline-start: auto;
+  margin-inline-start: var(--space-2);
 }
 
-/* A framed surface: the surface inset (12px) on every side, like a card
-   and a dialog. */
+/* A band of its own across the window or page it is about (under a
+   header), as a desktop window's info bar is: the surface's ground at the
+   surface inset, a hairline under it, no tint, no side bar, no shadow. */
 .notice-card {
   align-items: center;
-  padding: var(--space-6);
-  border: var(--line) solid var(--border-strong);
-  border-inline-start: var(--line-strong) solid var(--notice-tone);
-  border-radius: var(--radius-md);
-  box-shadow: var(--shadow-popover);
+  padding: var(--space-3) var(--space-6);
+  border-bottom: var(--line) solid var(--border);
   background: var(--surface);
 }
 
 .notice-card .notice-actions {
   margin-block: 0;
+}
+
+/* The danger glyph for a message whose markup draws none: a field's
+   problem (.field-problem) and a listing's refusal (.pane-message.danger)
+   lead with the danger tone's CircleAlert, drawn as a mask in --danger, so
+   they read as the same status line a notice is, words in --text. A host
+   that draws its own glyph first (an svg) gets no second one. */
+:is(.field-problem, :where(.listing-root) .pane-message.danger):not(
+    :has(> svg:first-child)
+  )::before {
+  content: '';
+  flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  background: var(--danger);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' x2='12' y1='8' y2='12'/%3E%3Cline x1='12' x2='12.01' y1='16' y2='16'/%3E%3C/svg%3E")
+    center / contain no-repeat;
 }
 
 .card {
