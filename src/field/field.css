@@ -388,14 +388,6 @@ select.field option {
   --check-mark: var(--ground);
 }
 
-:where(:root[data-window-inactive]) .switch:checked {
-  background: var(--control-border-strong);
-}
-
-:where(:root[data-window-inactive]) .switch:checked::before {
-  background: var(--ground);
-}
-
 /* Disabled, one fade and never two. The base rule leaves a check box out:
    an empty box on its own keeps its full --control-border outline (3:1)
    and flattens its well to the track, so a column of boxes that cannot be
@@ -523,6 +515,16 @@ select.field option {
 .switch:checked::before {
   background: var(--on-accent);
   transform: translateX(10px);
+}
+
+/* In a window that is not in front an on switch goes quiet, as a checked box
+   does. After the on rules above, which weigh the same. */
+:where(:root[data-window-inactive]) .switch:checked {
+  background: var(--control-border-strong);
+}
+
+:where(:root[data-window-inactive]) .switch:checked::before {
+  background: var(--ground);
 }
 
 .switch:hover:not(:disabled) {
