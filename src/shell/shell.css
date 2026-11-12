@@ -745,6 +745,15 @@
 /* What the system returned for a failed download (an error code, a host
    and its port) is a line a user could copy, so it is set in the code face
    at the small size, as every printed system line is. */
+/* The download's state is a status line in a preferences page, not a pane's
+   heading: the progress header under the card says it at the card title's
+   size and weight, so the bar and its caption carry the state. */
+.update-card .run-header-headline {
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-compact);
+}
+
 .update-card .run-header-reason {
   font-family: var(--font-mono);
   font-size: var(--font-size-small);
@@ -856,9 +865,9 @@
 
 .update-notes-area {
   margin: 0;
-  color: var(--text);
+  color: var(--text-dim);
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-strong);
+  font-weight: var(--font-weight-regular);
   line-height: var(--line-height-compact);
 }
 
