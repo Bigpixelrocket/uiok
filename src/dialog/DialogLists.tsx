@@ -1,5 +1,6 @@
 import type { ReactElement, ReactNode } from 'react';
 
+import type { DialogLabels } from '../labels/dialog.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { NameCut } from '../namecut/NameCut.js';
 import { nameParts } from '../namecut/NameCut.logic.js';
@@ -20,9 +21,15 @@ export interface DialogFact {
   /**
    * The value: a few names ("api, web, worker"), or the value itself when
    * there is no count. A string value shows its full text in a tooltip
-   * while it is cut.
+   * while it is cut; a node value passes its own `cutTooltip`.
    */
   readonly value?: ReactNode;
+  /**
+   * How many names the value leaves out. The row ends in "+N more"
+   * (`dialog.moreItems`) after the value, never cut: a long value gives way
+   * with an ellipsis first, so the row always says how many it omits.
+   */
+  readonly more?: number;
 }
 
 /** Props for {@link DialogFacts}. */
@@ -38,11 +45,14 @@ export interface DialogFactsProps {
  * per row, its label in a leading column, then an optional count in a
  * column of its own and the value, so labels, counts, and values each
  * line up. Every part keeps to its one line, cut with an ellipsis, a cut
- * label or string value carrying its full text in a tooltip. A list of
+ * label or string value carrying its full text in a tooltip; a row's
+ * "+N more" (`more`) stays whole after its value. A list of
  * facts, not sentences: the message above says what they mean. Styled by
  * the `.dialog-facts` rules in `@bigpixelrocket/uiok/styles.css`.
  */
 export function DialogFacts({ facts, label }: DialogFactsProps): ReactElement {
+  const labels = useLabels().dialog;
+
   return (
     <dl aria-label={label} className="dialog-facts">
       {facts.map((fact) => (
@@ -54,18 +64,52 @@ export function DialogFacts({ facts, label }: DialogFactsProps): ReactElement {
             {fact.count === undefined ? null : (
               <span className="dialog-fact-count">{fact.count}</span>
             )}
-            {fact.value === undefined || fact.value === null ? null : (
-              <span
-                className="dialog-value dialog-fact-value"
-                {...(typeof fact.value === 'string' ? cutTooltip(fact.value) : {})}
-              >
-                {fact.value}
-              </span>
-            )}
+            <FactValue labels={labels} more={fact.more} value={fact.value} />
           </dd>
         </div>
       ))}
     </dl>
+  );
+}
+
+/**
+ * A fact's value cell: the value cut with an ellipsis (a string one
+ * carrying its full text in a tooltip while cut), then, when the value
+ * leaves names out, "+N more" kept whole after it.
+ */
+function FactValue({
+  labels,
+  more,
+  value
+}: {
+  readonly labels: DialogLabels;
+  readonly more: number | undefined;
+  readonly value: ReactNode;
+}): ReactElement | null {
+  const hasValue = value !== undefined && value !== null;
+  const rest = more !== undefined && more > 0 ? labels.moreItems(more) : null;
+
+  if (!hasValue && rest === null) return null;
+
+  const tooltip = typeof value === 'string' ? cutTooltip(value) : {};
+
+  if (rest === null) {
+    return (
+      <span className="dialog-value dialog-fact-value" {...tooltip}>
+        {value}
+      </span>
+    );
+  }
+
+  return (
+    <span className="dialog-value dialog-fact-value dialog-fact-value-more">
+      {hasValue && (
+        <span className="dialog-fact-names" {...tooltip}>
+          {value}
+        </span>
+      )}
+      <span className="dialog-fact-more">{rest}</span>
+    </span>
   );
 }
 

@@ -133,7 +133,10 @@ describe('DateTimePicker', () => {
     ).toBe('2');
 
     const hour = screen.getByRole('spinbutton', { name: 'Hour' });
-    expect(declaredValues(hour, 'min-width')).toContain('6ch');
+    // Six characters beside the room a number field's stepper takes.
+    expect(declaredValues(hour, 'min-width')).toContain(
+      'calc(6ch + var(--field-stepper-width, 0px))'
+    );
     expect(declaredValues(hour, 'width')).not.toContain(width);
   });
 

@@ -12,6 +12,12 @@ export interface DialogLegendVerb {
   readonly label: string;
   /** True while the verb cannot run; its slot stays drawn, dimmed, and its key runs nothing. */
   readonly disabled?: boolean;
+  /**
+   * What the verb does, when its label does not say it all ("Test checks
+   * the connection without saving it"): the slot's tooltip and accessible
+   * description, so the dialog's body needs no sentence about its verbs.
+   */
+  readonly help?: string;
 }
 
 /**
@@ -209,8 +215,8 @@ const chordText = (chord: Chord): string =>
  * passes a new one on only when this changes.
  */
 export function legendSignature(legend: DialogLegendModel): string {
-  const verb = (slot: DialogLegendVerb | undefined): readonly [string, boolean] | null =>
-    slot === undefined ? null : [slot.label, slot.disabled === true];
+  const verb = (slot: DialogLegendVerb | undefined): readonly [string, boolean, string] | null =>
+    slot === undefined ? null : [slot.label, slot.disabled === true, slot.help ?? ''];
 
   return JSON.stringify([
     verb(legend.leave),

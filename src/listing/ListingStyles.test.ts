@@ -425,10 +425,65 @@ describe('the listing states', () => {
     onTestFinished(() => document.documentElement.removeAttribute('data-window-inactive'));
     const [front, frontCursor] = read();
     expect(front).toEqual({ ...grey, bar: '' });
-    expect(frontCursor).toEqual({ ...grey, bar: 'var(--cursor-bar)' });
+    expect(frontCursor).toEqual({ ...grey, bar: 'transparent' });
     expect(sheet).toMatch(
       /:where\(:root\[data-window-inactive\] \.listing-root\) \.pane\.active::before\s*\{\s*border-color: var\(--border-strong\);/
     );
+    document.body.innerHTML = '';
+  });
+
+  it('quiets every row mark where the keys are not: the cursor, a mark, a checked box, a selection', () => {
+    applyStylesheets(styles);
+    const row = (classes: string): string =>
+      `<div class="row ${classes}"><input class="check" type="checkbox" checked>
+        <span class="row-name">a</span><span class="row-meta">2 MB</span></div>`;
+    const pane = (active: boolean): string =>
+      `<div class="pane${active ? ' active' : ''}"><div class="pane-list">
+        ${row('cursor')}${row('marked')}${row('marked cursor')}${row('selected')}
+      </div></div>`;
+    const read = (scope: Element): Record<string, string>[] =>
+      [...scope.querySelectorAll('.row')].map((element) => {
+        const style = getComputedStyle(element);
+        const check = getComputedStyle(element.querySelector('input') as Element);
+        return {
+          fill: style.getPropertyValue('--row-fill').trim(),
+          bar: style.getPropertyValue('--row-bar').trim(),
+          shadow: style.boxShadow,
+          meta: colour(element.querySelector('.row-meta')),
+          checkOn: check.getPropertyValue('--check-on').trim(),
+          checkMark: check.getPropertyValue('--check-mark').trim(),
+          words: style.getPropertyValue('--row-selected-text').trim()
+        };
+      });
+    const quietCheck = { checkOn: 'var(--control-border-strong)', checkMark: 'var(--fill)' };
+    const quiet = [
+      { fill: 'var(--fill)', bar: 'transparent', words: '' },
+      { fill: 'var(--fill)', bar: 'var(--control-border-strong)', words: '' },
+      { fill: 'var(--fill)', bar: 'var(--control-border-strong)', words: '' },
+      { fill: 'var(--fill)', bar: '', words: 'var(--text)' }
+    ];
+    const expectQuiet = (rows: Record<string, string>[]) =>
+      rows.forEach((found, index) => {
+        expect(found).toMatchObject({ ...quiet[index], ...quietCheck });
+        expect(found.shadow).toMatch(/^(none)?$/);
+      });
+
+    document.body.innerHTML = `<section class="listing-root">${pane(true)}${pane(false)}</section>`;
+    const [held, beside] = [...document.querySelectorAll('.pane')];
+    const heldRows = read(held as Element);
+    expect(heldRows.map(({ fill }) => fill)).toEqual([
+      'var(--cursor-row)',
+      'var(--marked-bg)',
+      'var(--marked-cursor-bg)',
+      'var(--selected-bg)'
+    ]);
+    expect(heldRows[3]?.words).toBe('var(--on-selected)');
+    expect(heldRows.every(({ checkOn }) => checkOn === 'var(--accent)')).toBe(true);
+    expectQuiet(read(beside as Element));
+
+    document.documentElement.setAttribute('data-window-inactive', '');
+    onTestFinished(() => document.documentElement.removeAttribute('data-window-inactive'));
+    expectQuiet(read(held as Element));
     document.body.innerHTML = '';
   });
 

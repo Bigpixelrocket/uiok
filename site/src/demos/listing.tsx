@@ -20,7 +20,6 @@ import { useState } from 'react';
 
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 import {
-  ACTION_COLUMN,
   Cell,
   column,
   iconLinksColumn,
@@ -56,7 +55,7 @@ const next = (direction: SortDirection): SortDirection =>
   direction === 'asc' ? 'desc' : direction === 'desc' ? null : 'asc';
 
 /** The name keeps 14 characters before the other columns give way; a narrower pane scrolls. */
-const GRID = `var(--icon-column) minmax(14ch, 1fr) ${column(12)} minmax(0, 1.4fr) ${column(9)} ${iconLinksColumn(1, 0)} ${ACTION_COLUMN}`;
+const GRID = `var(--icon-column) minmax(14ch, 1fr) ${column(12)} minmax(0, 1.4fr) ${column(9)} ${iconLinksColumn(1, 0)} ${iconLinksColumn(1, 0)}`;
 
 const SERVERS = ['local', 'staging', 'production'];
 const PROJECTS = ['site', 'api', 'infrastructure-and-deployment-scripts'];
@@ -84,10 +83,10 @@ const WELL_TEXT = [
 ].join('\n');
 
 /** Wider than the 360px box it sits in, so the columns before the pinned actions scroll under them. */
-const WIDE_GRID = `var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr) ${column(12)} ${column(16)} ${column(12)} ${column(10)} ${ACTION_COLUMN}`;
+const WIDE_GRID = `var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr) ${column(12)} ${column(16)} ${column(12)} ${column(10)} ${iconLinksColumn(1, 0)}`;
 
 /** A variable's name and value, the value cut short past 24 characters. */
-const VARIABLES_GRID = `var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr) ${column(24)} ${ACTION_COLUMN}`;
+const VARIABLES_GRID = `var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr) ${column(24)} ${iconLinksColumn(1, 0)}`;
 
 const VARIABLES = [
   ['NODE_ENV', 'production'],

@@ -2,6 +2,7 @@ import type { ReactElement } from 'react';
 
 import type { Chord } from '../keyboard/Keyboard.logic.js';
 import { KeyChord } from '../keychord/KeyChord.js';
+import { describedTooltip } from '../tooltip/Tooltip.logic.js';
 import type { DialogLegendModel, DialogLegendVerb } from './DialogLegend.logic.js';
 
 const ESCAPE: Chord = { key: 'Escape' };
@@ -19,7 +20,7 @@ interface LegendSlotProps {
  * One slot: the key cap, then the verb. A real button named by its verb
  * alone (the cap is hidden from assistive technology), outside the Tab
  * order and never taking focus from a press, because its key is the
- * keyboard's way to it.
+ * keyboard's way to it. A verb's `help` is its tooltip and description.
  */
 function LegendSlot({
   chord,
@@ -40,6 +41,7 @@ function LegendSlot({
       onMouseDown={(event) => event.preventDefault()}
       tabIndex={-1}
       type="button"
+      {...describedTooltip(verb.help)}
     >
       <span aria-hidden className="legend-slot-key">
         <KeyChord chord={chord} />

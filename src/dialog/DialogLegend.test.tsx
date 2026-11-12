@@ -28,6 +28,34 @@ describe('DialogLegend', () => {
     expect([onLeave, onBack, onSave].map((run) => run.mock.calls.length)).toEqual([1, 1, 1]);
   });
 
+  it("says what a verb does in its slot's tooltip and description", () => {
+    render(
+      <DialogLegend
+        legend={{
+          leave: { label: 'Cancel' },
+          secondary: [
+            {
+              label: 'Test',
+              chord: { key: 'Enter', alt: true },
+              help: 'Checks the connection without saving it.',
+              onRun: () => {}
+            }
+          ],
+          primary: { label: 'Connect', onRun: () => {} }
+        }}
+        onLeave={() => {}}
+      />
+    );
+
+    const test = screen.getByRole('button', { name: 'Test' });
+
+    expect(test.getAttribute('data-tooltip')).toBe('Checks the connection without saving it.');
+    expect(test.getAttribute('aria-description')).toBe('Checks the connection without saving it.');
+    expect(screen.getByRole('button', { name: 'Connect' }).hasAttribute('data-tooltip')).toBe(
+      false
+    );
+  });
+
   it('keeps the focus where it was when a slot is pressed', () => {
     render(
       <DialogLegend legend={{ primary: { label: 'Save', onRun: vi.fn() } }} onLeave={vi.fn()} />

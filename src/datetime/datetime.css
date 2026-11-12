@@ -138,8 +138,10 @@
    after this sheet. */
 .date-picker-field > .date-picker-input {
   width: 100%;
-  /* Three digits and the field's inset, so the field never cuts its value. */
-  min-width: 6ch;
+  /* Three digits and the field's inset, so the field never cuts its value,
+     and the room a number field's stepper takes at its end (none on a field
+     without one), so the digits keep their room beside it. */
+  min-width: calc(6ch + var(--field-stepper-width, 0px));
   font-variant-numeric: tabular-nums;
   text-align: center;
 }

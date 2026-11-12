@@ -443,12 +443,15 @@ button.crumb-label > .crumb-text {
    a row's actions do where values need the room. The word leaves the
    drawing as the base sheet's .visually-hidden does, so the button keeps
    its name. */
-:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act {
+:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act:not(.wordless) {
   gap: 0;
   padding: 0 var(--space-2);
 }
 
-:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act:last-child {
+:where(.listing-root)
+  .pane-path-row[data-tight]
+  > .path-tools
+  > .pane-act:not(.wordless):last-child {
   margin-right: calc(-1 * var(--space-2));
 }
 
@@ -463,8 +466,10 @@ button.crumb-label > .crumb-text {
   white-space: nowrap;
 }
 
-/* A page's state at the path bar's end: its mark and words; a failure
-   reads red, a change waiting for the user amber. Once the trail has given
+/* A page's state at the path bar's end: its mark and words. A failure or a
+   change waiting for the user says so with its mark in the tone's colour
+   (a square, a diamond) and its words in the text colour, a step up from a
+   plain fact's dim words; the words are never red or amber. Once the trail has given
    its floor, a fact cuts its words with an ellipsis, down to one
    character. The mark stands --space-3 from its words in every form, as a
    listing row's does. A fact built of other boxes (a link, a chip, a
@@ -530,17 +535,14 @@ button.crumb-label > .crumb-text {
   vertical-align: middle;
 }
 
-:where(.listing-root) .path-facts.danger {
-  color: var(--danger-text);
-}
-
-:where(.listing-root) .path-facts.warning {
-  color: var(--warning-text);
+:where(.listing-root) .path-facts:is(.danger, .warning) {
+  color: var(--text);
 }
 
 /* One quiet action per row, and a path bar's compact verbs (QuietAction):
-   an icon and a verb at the path bar's control
-   size, dim until the row is the cursor row or the verb leads its bar. */
+   an icon and a verb at the path bar's control size, dim until the row is
+   the cursor row or the verb leads its bar. In a row or a bar it is a
+   glyph alone by default (`.wordless`, below). */
 .pane-act {
   display: inline-flex;
   flex: none;
@@ -561,6 +563,32 @@ button.crumb-label > .crumb-text {
 
 :where(.listing-root) .row-meta .pane-act {
   margin-right: calc(-1 * var(--space-3));
+}
+
+/* The glyph alone (`.wordless`): a square of the control's height, as a
+   compact icon control is, its word kept for assistive technology as the
+   base sheet's .visually-hidden keeps text, and said in its tooltip. */
+.pane-act.wordless {
+  justify-content: center;
+  width: var(--control-height-xs);
+  padding: 0;
+  gap: 0;
+}
+
+.pane-act.wordless > .pane-act-word {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:where(.listing-root) :is(.row-meta, .path-tools) > .pane-act.wordless:last-child,
+:where(.listing-root) .row-meta .pane-act.wordless {
+  margin-right: calc(-1 * var(--space-1));
 }
 
 /* A compact icon control (RowIconAction): a row's hover icon, or Reveal and
@@ -632,11 +660,14 @@ button.crumb-label > .crumb-text {
   color: var(--danger-text);
 }
 
-/* The cursor row of a pane that does not hold the keys (see the neutral
-   cursor below) runs nothing, so its actions are neither lit nor red: the
-   on-surface words that keep 4.5:1 on its neutral fill. The pointer still
-   lights one it is over. */
-:where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane))
+/* A quiet cursor row (a pane that does not hold the keys, a window behind;
+   see the quiet rows below) runs nothing, so its actions are neither lit
+   nor red: the on-surface words that keep 4.5:1 on its neutral fill. The
+   pointer still lights one it is over. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
   .row.cursor:where(:not(.selected))
   :is(.pane-act, .pane-icon-act):not(:hover, :focus-visible) {
   color: var(--text-on-surface);
@@ -919,11 +950,21 @@ button.crumb-label > .crumb-text {
   background: var(--row-fill);
 }
 
-/* Beside the pane that holds the keys, another pane's cursor row keeps its
-   place in the neutral cursor tone, with no bar, so only one cursor in the
-   window reads as the one the keys move. A lone pane, or a set of panes
-   none of which is active, keeps its cursor as it is. */
-:where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane)) .row.cursor {
+/* The quiet rows. Whatever marks a row (the cursor, a mark, a checked box,
+   a selection) goes quiet where the keys are not: in a pane beside the one
+   that holds them, and in a window that is not in front (the host sets
+   `data-window-inactive` on the root from its window's focus events). A
+   quiet row takes the neutral fill (--fill) and the words a row on it
+   wears: full words for its name, the on-surface tone for its quiet words
+   and actions. A quiet cursor has no bar, so it keeps its place and moves
+   nothing; a quiet mark keeps a bar in the neutral edge tone; a checked box
+   on a quiet row turns grey. A lone pane, or a set of panes none of which
+   is active, in a window in front keeps its rows as they are. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.cursor {
   --row-fill: var(--fill);
   --row-bar: transparent;
   /* A checkbox on the row keeps 3:1 on its fill. */
@@ -964,11 +1005,37 @@ button.crumb-label > .crumb-text {
   box-shadow: inset 0 0 0 var(--line) var(--cursor-bar);
 }
 
-:where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane)) .row.marked.cursor {
-  --row-bar: var(--marked-bar);
+/* A quiet mark, the cursor on it included: the neutral fill and a bar in
+   the edge tone, which keeps 3:1 on that fill. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.marked,
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.marked.cursor {
+  --row-fill: var(--fill);
+  --row-bar: var(--control-border-strong);
   --pane-pin-ring: 0 0 transparent;
 
+  background: var(--row-fill);
   box-shadow: none;
+}
+
+/* A checked box on a quiet row: the box in the edge tone, its mark cut out
+   in the row's neutral fill, as a list's boxes grey in a window behind. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row
+  :is(.check, input[type='checkbox']) {
+  --check-on: var(--control-border-strong);
+  --check-on-pressed: var(--control-border-strong);
+  --check-mark: var(--fill);
 }
 
 /* A row's edge: the bar of its state (`--row-bar`: the cursor's, a mark's,
@@ -1371,12 +1438,13 @@ button.crumb-label > .crumb-text {
    working pane does: the path bar above it (where its ways on stand, an
    Add action), the status line below, and between them, in the first
    row's place, one quiet line in the listing's own type, dim, on the row
-   inset. No centred block, no picture: a glyph the host puts first is not
-   drawn, its title (`strong` or `h2`) is that line, a sentence after it
-   is a hint in the interface font, as a `.pane-message` hint is, and a
-   button or a `.pane-empty-actions` row of them follows as small push
-   buttons at the start edge. An empty list inside a working pane says so
-   with `.pane-message.empty` instead. */
+   inset, and nothing more: no centred block, no picture, no sentence of
+   help, no row of buttons. A glyph the host puts first is not drawn; its
+   title (`strong` or `h2`) is that line; at most one small push button
+   (`Button size="small"`) may follow it at the start edge, where the pane
+   has no bar to hold the way on. What a sentence would explain belongs in
+   the tooltip of the action that does it. An empty list inside a working
+   pane says so with `.pane-message.empty` instead. */
 :where(.listing-root) .pane-empty {
   display: flex;
   flex: 1;
@@ -1404,21 +1472,8 @@ button.crumb-label > .crumb-text {
   line-height: var(--line-height-compact);
 }
 
-:where(.listing-root) .pane-empty p {
-  margin: 0 0 var(--space-2);
-  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
-    var(--font-ui);
-}
-
-:where(.listing-root) .pane-empty > .button,
-:where(.listing-root) .pane-empty-actions {
+:where(.listing-root) .pane-empty > .button {
   margin-block: var(--space-2);
-}
-
-:where(.listing-root) .pane-empty-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
 }
 
 /* A state (StateMark): its mark, or its spinner for a transition, and its
@@ -1504,18 +1559,24 @@ button.crumb-label > .crumb-text {
   color: var(--accent);
 }
 
-/* On another pane's cursor row, the neutral fill, the busy ring and
+/* On a quiet cursor or marked row (the neutral fill), the busy ring and
    spinner take the on-surface words' tone, as the row's actions do: the
    accent misses 3:1 on that fill in several themes. */
-:where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane))
-  .row.cursor:where(:not(.selected))
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row:is(.cursor, .marked):where(:not(.selected))
   .pane-tone-busy
   > .pane-state-dot {
   box-shadow: inset 0 0 0 var(--line-strong) var(--text-on-surface);
 }
 
-:where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane))
-  .row.cursor:where(:not(.selected))
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row:is(.cursor, .marked):where(:not(.selected))
   .pane-state
   > svg.pane-state-busy {
   color: var(--text-on-surface);
@@ -1844,6 +1905,11 @@ button.crumb-label > .crumb-text {
    weight. */
 :where(.listing-root) .row.selected {
   --row-fill: var(--selected-bg);
+  /* The selection's words, for a host's own parts of a row (a coloured
+     name, a link's target) to take: the on-selection tones while the
+     selection holds the keys, the text tones once it greys (below). */
+  --row-selected-text: var(--on-selected);
+  --row-selected-text-dim: var(--on-selected-dim);
 
   background: var(--row-fill);
   color: var(--on-selected);
@@ -1975,15 +2041,16 @@ button.crumb-label > .crumb-text {
    window that is not in front, a selected row takes the neutral fill and
    the words a row on that fill wears: full words for its name, the
    on-surface tone (floored on the fill) for its quiet words and its
-   actions at rest, and its states in their own tones. Under the cursor it keeps
-   the cursor's bar where the pane holds the keys, and none where it does
-   not, as the neutral cursor has none. */
+   actions at rest, and its states in their own tones. Under the cursor it
+   has no bar, as a quiet cursor has none. */
 :where(
     :root[data-window-inactive] .listing-root,
     .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
   )
   .row.selected {
   --row-fill: var(--fill);
+  --row-selected-text: var(--text);
+  --row-selected-text-dim: var(--text-on-surface);
   /* A checkbox on the row keeps 3:1 on its fill. */
   --check-edge: var(--control-border-strong);
 
@@ -1991,14 +2058,11 @@ button.crumb-label > .crumb-text {
   color: var(--text);
 }
 
-:where(:root[data-window-inactive] .listing-root) .row.cursor.selected {
-  --row-fill: var(--fill);
-  --row-bar: var(--cursor-bar);
-
-  background: var(--row-fill);
-}
-
-:where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane)) .row.cursor.selected {
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.cursor.selected {
   --row-fill: var(--fill);
   --row-bar: transparent;
 

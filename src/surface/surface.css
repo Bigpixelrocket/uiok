@@ -59,6 +59,13 @@
   overflow-wrap: anywhere;
 }
 
+/* A message's words are content: a path or a server's reply in them is
+   what a user pastes into a report, so they can be swept and copied. */
+.notice-text {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* An action follows the words, as a status line's button does, centred
    on the message's first line. */
 .notice-actions {
@@ -83,6 +90,16 @@
 
 .notice-card .notice-actions {
   margin-block: 0;
+}
+
+/* A status line is one line: in a narrow window its words are cut with an
+   ellipsis rather than wrapped onto a second line that pushes the panes
+   down. The host gives the words their whole text as a tooltip while cut
+   (cutTooltip on the .notice-text). */
+.notice-card .notice-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* The danger glyph for a message whose markup draws none: a field's

@@ -253,10 +253,13 @@
   margin: 0 var(--space-2) 0 0;
 }
 
-/* A cell whose value opens something (a linked record, a download): the
-   value in its own text colour, never a link's accent, with a quiet
-   constant underline that says a click opens it. Nothing changes under
-   the pointer. Return on the cursor cell opens it too. */
+/* A cell whose value leads out of its row (`onOpen`: a foreign key into
+   another table, a download): the value plain, in its own text colour, as
+   any value is, never a link's accent or underline. On the cursor cell a
+   small dim arrow at the cell's trailing edge says Return or a click
+   follows it. A value that opens a document (a download, which a host
+   marks `cell-binary`) keeps a quiet underline, the one place a link's
+   look still says what it does. Nothing changes under the pointer. */
 .data-grid-link {
   max-width: 100%;
   padding: 0;
@@ -265,12 +268,32 @@
   background: none;
   color: inherit;
   font: inherit;
-  text-decoration: underline;
-  text-decoration-color: var(--text-faint);
-  text-underline-offset: var(--space-1);
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: default;
+}
+
+.data-grid-cell.cursor:has(> .data-grid-link) {
+  position: relative;
+  padding-inline-end: calc(var(--space-4) + 1ch);
+}
+
+.data-grid-cell.cursor:not(.editing) > .data-grid-link::after {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: var(--space-2);
+  color: var(--text-on-surface);
+  content: '→' / '';
+}
+
+.data-grid-cell.cell-binary .data-grid-link {
+  text-decoration: underline;
+  text-decoration-color: var(--text-faint);
+  text-underline-offset: var(--space-1);
+}
+
+.data-grid-cell.cell-binary.cursor > .data-grid-link::after {
+  content: none;
 }
 
 /* The row under the pointer, a marked row, and a marked column. The hover
@@ -355,6 +378,58 @@
 
 .data-grid-heading.drop-after {
   box-shadow: inset calc(-1 * var(--line-strong)) 0 0 var(--accent);
+}
+
+/* A grid where the keys are not (a window that is not in front, which the
+   host marks with `data-window-inactive` on the root, or a pane beside the
+   one that holds the keys) draws its marks quiet, as a listing's quiet rows
+   do: a marked row, a marked column, and the cursor cell take the neutral
+   fill (--fill) with the text on it, the marked bar and the column's
+   underline the neutral edge tone, the cursor cell no ring, and a checked
+   box in a row turns grey, its mark cut out in the fill. */
+:where(
+    :root[data-window-inactive] .data-grid,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane) .data-grid
+  )
+  :is(.data-grid-row.marked, .data-grid-cell.marked, .data-grid-heading.marked) {
+  background: var(--fill);
+}
+
+:where(
+    :root[data-window-inactive] .data-grid,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane) .data-grid
+  )
+  .data-grid-row.marked::before {
+  background: var(--control-border-strong);
+}
+
+:where(
+    :root[data-window-inactive] .data-grid,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane) .data-grid
+  )
+  .data-grid-heading.marked {
+  box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--control-border-strong);
+}
+
+:where(
+    :root[data-window-inactive] .data-grid,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane) .data-grid
+  )
+  .data-grid-row
+  .data-grid-cell.cursor:not(.cell-edited) {
+  background: var(--fill);
+  box-shadow: none;
+}
+
+:where(
+    :root[data-window-inactive] .data-grid,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane) .data-grid
+  )
+  .data-grid-row
+  :is(.check, input[type='checkbox']) {
+  --check-on: var(--control-border-strong);
+  --check-on-pressed: var(--control-border-strong);
+  --check-mark: var(--fill);
 }
 
 /* Inline edit: the editor drawn over its cell in a layer of its own, so the

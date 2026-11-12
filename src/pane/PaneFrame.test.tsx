@@ -3,7 +3,7 @@ import { Play } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PanePathBar, PaneStatus, PathFact } from './PaneFrame.js';
-import { QuietAction } from './PaneActions.js';
+import { InRowContext, QuietAction, RowLinkLookContext } from './PaneActions.js';
 
 describe('PaneStatus', () => {
   it('carries a summary in words whole as its tooltip, opened while a pane cuts it', () => {
@@ -65,6 +65,43 @@ describe('QuietAction', () => {
 
     expect(button?.querySelector('.pane-act-word')?.textContent).toBe('Start');
     expect(button?.getAttribute('aria-label')).toBe('Start web');
+    // Outside a row or a bar it keeps its word in sight.
+    expect(button?.classList.contains('wordless')).toBe(false);
+  });
+
+  it('is a glyph alone in a row and a path bar, its word its tooltip, unless the look asks for words', () => {
+    const action = (
+      <QuietAction
+        icon={Play}
+        label="Start web"
+        onClick={() => undefined}
+        shortcut="⌥↩"
+        word="Start"
+      />
+    );
+    const inRow = render(<InRowContext.Provider value>{action}</InRowContext.Provider>);
+    const rowButton = inRow.container.querySelector('button.pane-act');
+
+    expect(rowButton?.classList.contains('wordless')).toBe(true);
+    expect(rowButton?.querySelector('svg')).not.toBeNull();
+    expect(rowButton?.querySelector('.pane-act-word')?.textContent).toBe('Start');
+    expect(rowButton?.getAttribute('data-tooltip')).toBe('Start');
+    expect(rowButton?.getAttribute('data-tooltip-shortcut')).toBe('⌥↩');
+    inRow.unmount();
+
+    const bar = render(<PanePathBar trail={[]}>{action}</PanePathBar>);
+    expect(bar.container.querySelector('.path-tools > .pane-act.wordless')).not.toBeNull();
+    bar.unmount();
+
+    const worded = render(
+      <RowLinkLookContext.Provider value="text">
+        <InRowContext.Provider value>{action}</InRowContext.Provider>
+      </RowLinkLookContext.Provider>
+    );
+    const wordedButton = worded.container.querySelector('button.pane-act');
+    expect(wordedButton?.classList.contains('wordless')).toBe(false);
+    // Drawn with its word, it carries no tooltip of its own unless given one.
+    expect(wordedButton?.hasAttribute('data-tooltip')).toBe(false);
   });
 });
 

@@ -24,6 +24,7 @@ import { useId, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ConfirmDialog, ModalDialog, type DialogFact } from '@bigpixelrocket/uiok/dialog';
+import { labelHelp } from '@bigpixelrocket/uiok/field';
 import { DataGrid, type DataGridColumn } from '@bigpixelrocket/uiok/grid';
 import { type Chord } from '@bigpixelrocket/uiok/keyboard';
 import { KeyChord } from '@bigpixelrocket/uiok/keychord';
@@ -66,7 +67,9 @@ const QUIT_FACTS: readonly DialogFact[] = [
   {
     label: 'Projects',
     count: 9,
-    value: 'shop (web, worker, queue), blog (vite), docs (serve), +2'
+    value: 'shop (web, worker, queue), blog (vite), docs (serve)',
+    // The rest are counted after the names and stay in view however the names are cut.
+    more: 2
   },
   { label: 'Schedules', count: 2, value: 'nightly-backup, sitemap' }
 ];
@@ -119,8 +122,9 @@ function RenameDialog({
 
 /**
  * A connection form on the medium step (`.dialog-size-md`): a sentence with
- * the host as a value, then its fields on one label column, help in the
- * interface font, and a secondary slot.
+ * the host as a value, then its fields on one label column. Help that
+ * explains a field is its label's tooltip, and what Test does is its
+ * slot's tooltip, so no sentence stands under the form.
  */
 function ConnectDialog({
   onConnect,
@@ -135,6 +139,8 @@ function ConnectDialog({
   const hostId = useId();
   const portId = useId();
   const userId = useId();
+  const hostHelp = labelHelp('A name or an address this computer can reach.');
+  const userHelp = labelHelp('The password comes from the keychain.');
   return (
     <ModalDialog
       className="dialog-size-md"
@@ -142,7 +148,14 @@ function ConnectDialog({
       labelId={labelId}
       legend={{
         leave: { label: 'Cancel' },
-        secondary: [{ label: 'Test', chord: { key: 'Enter', alt: true }, onRun: onTest }],
+        secondary: [
+          {
+            label: 'Test',
+            chord: { key: 'Enter', alt: true },
+            help: 'Checks the connection without saving it.',
+            onRun: onTest
+          }
+        ],
         primary: { label: 'Connect', onRun: onConnect }
       }}
       onCancel={onCancel}
@@ -154,7 +167,7 @@ function ConnectDialog({
           below.
         </p>
         <div className="field-grid">
-          <label className="field-label" htmlFor={hostId}>
+          <label className="field-label" htmlFor={hostId} {...hostHelp.label}>
             Host
           </label>
           <input
@@ -162,19 +175,24 @@ function ConnectDialog({
             defaultValue="db.internal.example.com"
             id={hostId}
             spellCheck={false}
+            {...hostHelp.control}
           />
           <label className="field-label" htmlFor={portId}>
             Port
           </label>
           <input className="field" defaultValue="3306" id={portId} inputMode="numeric" />
-          <label className="field-label" htmlFor={userId}>
+          <label className="field-label" htmlFor={userId} {...userHelp.label}>
             User
           </label>
-          <input autoFocus className="field" defaultValue="deploy" id={userId} spellCheck={false} />
+          <input
+            autoFocus
+            className="field"
+            defaultValue="deploy"
+            id={userId}
+            spellCheck={false}
+            {...userHelp.control}
+          />
         </div>
-        <p className="dialog-help">
-          The password comes from the keychain. Test checks the connection without saving it.
-        </p>
       </div>
     </ModalDialog>
   );
@@ -218,11 +236,12 @@ function CommandDialog({
       onCancel={onCancel}
       title="Edit Command"
     >
-      <div className="demo-stack">
-        <label className="dialog-label" htmlFor={commandId}>
+      {/* A labelled field is a label-column row, as in Connect: the label
+          leads and the field fills the value column. */}
+      <div className="field-grid">
+        <label className="field-label" htmlFor={commandId}>
           Command
         </label>
-        {/* No width class: the column stretches the field across the body. */}
         <input
           autoFocus
           className="field"
@@ -483,7 +502,7 @@ export function DialogDemo() {
           confirmLabel="Delete"
           forGood
           icon={Trash2}
-          message="These 4 items are deleted for good. This cannot be undone."
+          message="These 4 items cannot be recovered."
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
           paths={[
@@ -501,7 +520,7 @@ export function DialogDemo() {
           confirmLabel="Delete"
           forGood
           icon={Trash2}
-          message={`These ${LONG_PATHS.length} items are deleted for good. This cannot be undone.`}
+          message={`These ${LONG_PATHS.length} items cannot be recovered.`}
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
           paths={LONG_PATHS}
@@ -512,7 +531,7 @@ export function DialogDemo() {
         <ConfirmDialog
           confirmLabel="Sign Out"
           icon={LogOut}
-          message="Sign out now? Two uploads still running will stop."
+          message="Two uploads still running will stop."
           onCancel={close('cancelled')}
           onConfirm={close('signed out')}
           title="Sign Out"
@@ -547,7 +566,7 @@ export function DialogDemo() {
           icon={Power}
           className="dialog-size-md"
           facts={QUIT_FACTS}
-          message="Every process below stops and every schedule ends. Their logs are kept."
+          message="Every process and schedule below stops; logs are kept."
           onCancel={close('kept running')}
           onConfirm={close('quit')}
           title="Quit and Stop 15 Processes?"

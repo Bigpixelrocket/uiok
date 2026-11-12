@@ -11,10 +11,11 @@ import { describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
 export type LinkLook = 'icons' | 'text' | 'both';
 
 /**
- * How the `RowIconAction`s under it draw. An app whose rows follow a
- * preference provides it; icons alone without one. A `Listing` whose grid
- * is a function of the look steps it down to a plainer one when its words
- * would make it scroll sideways.
+ * How the `RowIconAction`s under it, and the `QuietAction`s in its rows and
+ * path bars, draw. An app whose rows follow a preference provides it; icons
+ * alone without one, each word kept as the control's tooltip and name. A
+ * `Listing` whose grid is a function of the look steps it down to a plainer
+ * one when its words would make it scroll sideways.
  */
 export const RowLinkLookContext = createContext<LinkLook>('icons');
 
@@ -31,6 +32,13 @@ export const InRowContext = createContext(false);
  * between panes and the page's other controls instead of through every row.
  */
 export const useInRow = (): boolean => useContext(InRowContext);
+
+/**
+ * Set inside a path bar's tools (`PanePathBar`'s children), whose
+ * `QuietAction`s are toolbar items and follow `RowLinkLookContext` as a
+ * row's do. Internal to the pane area; not part of the package's surface.
+ */
+export const InPathBarContext = createContext(false);
 
 /**
  * What the keys run a control for, read by `verbControl` off the rendered
@@ -50,12 +58,16 @@ export interface QuietActionProps {
   readonly word: string;
   /** The accessible name, which names the target ("Remove PostgreSQL 17"). */
   readonly label: string;
-  /** Lit in the accent as its bar's lead action, as the cursor row's is. */
+  /** Its bar's lead action: a weight up, its glyph in the accent. */
   readonly lit?: boolean;
   readonly disabled?: boolean;
-  /** The tooltip, also its accessible description; none without it. */
+  /**
+   * The tooltip, also its accessible description. Drawn as a glyph alone,
+   * the action names itself in a tooltip of its `word` when this is not
+   * given; drawn with its word, it has none without this.
+   */
   readonly tip?: string;
-  /** The chord that runs it, which its tooltip names after `tip` ("⌥↩"). */
+  /** The chord that runs it, which its tooltip names after its words ("⌥↩"). */
   readonly shortcut?: string;
   readonly onClick: () => void;
   readonly ref?: Ref<HTMLButtonElement>;
@@ -81,11 +93,16 @@ export interface QuietActionProps {
 }
 
 /**
- * A row's one quiet action, or a compact control in a path bar: an icon and
- * a verb in the dim tone, lit in the accent on the cursor row (and as a
- * path bar's lead action, `lit`). In a row it leaves the Tab order
- * (`useInRow`), and a press never reaches the row's own `onOpen`. Drawn by
- * `.pane-act` in the listing look; its verb is drawn in `.pane-act-word`.
+ * A row's one quiet action, or a compact control in a path bar: in the dim
+ * tone at rest, in full words on the cursor row (and as a path bar's lead
+ * action, `lit`). In a row or a path bar it draws as `RowLinkLookContext`
+ * says: a glyph alone by default (`icons`), with its word as its tooltip
+ * (and its `shortcut` after it) and kept for assistive technology in
+ * `.pane-act-word`; its glyph and word where the host's look asks for words
+ * (`text` or `both`; the glyph stays, so a tight bar that hides the word
+ * still draws it). Anywhere else it draws its glyph and word. In a row it leaves the Tab order (`useInRow`), and a press
+ * never reaches the row's own `onOpen`. Drawn by `.pane-act` in the listing
+ * look, `.pane-act.wordless` for the glyph alone.
  */
 export function QuietAction({
   icon: Icon,
@@ -104,12 +121,24 @@ export function QuietAction({
   danger = false
 }: QuietActionProps): ReactElement {
   const inRow = useInRow();
+  const inBar = useContext(InPathBarContext);
+  const chosen = useContext(RowLinkLookContext);
+  const look: LinkLook = inRow || inBar ? chosen : 'both';
+  // A glyph alone names itself in a tooltip of its word.
+  const shownTip = tip ?? (look === 'icons' ? word : undefined);
 
   return (
     <button
       aria-disabled={softDisabled || undefined}
       aria-label={label}
-      className={['pane-act', lit ? 'lit' : '', danger ? 'danger' : ''].filter(Boolean).join(' ')}
+      className={[
+        'pane-act',
+        look === 'icons' ? 'wordless' : '',
+        lit ? 'lit' : '',
+        danger ? 'danger' : ''
+      ]
+        .filter(Boolean)
+        .join(' ')}
       data-action={action}
       data-page-verb={pageVerb}
       data-verb={verb}
@@ -122,14 +151,14 @@ export function QuietAction({
       ref={ref}
       tabIndex={inRow ? -1 : undefined}
       type="button"
-      {...(tip === undefined ? {} : describedTooltip(tip))}
-      {...(tip === undefined || shortcut === undefined
+      {...(shownTip === undefined ? {} : describedTooltip(shownTip))}
+      {...(shownTip === undefined || shortcut === undefined
         ? {}
         : { 'data-tooltip-shortcut': shortcut })}
     >
       <Icon aria-hidden size={ICON_SM} />
-      {/* The verb in a box of its own, so a host that draws its actions as
-          icons alone can hide it accessibly (`.pane-act-word`). */}
+      {/* The verb in a box of its own, which the glyph-alone look and a
+          tight bar hide accessibly (`.pane-act-word`). */}
       <span className="pane-act-word">{word}</span>
     </button>
   );

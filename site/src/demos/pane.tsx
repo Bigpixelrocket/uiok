@@ -30,7 +30,6 @@ import { useState } from 'react';
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 import { KeyLegendStrip, type LegendVerb } from '@bigpixelrocket/uiok/legend';
 import {
-  ACTION_COLUMN,
   Cell,
   column,
   CurrentDot,
@@ -293,9 +292,10 @@ function DeepTrails({ say }: { readonly say: (what: string) => void }) {
 const LINK_LOOKS: readonly LinkLook[] = ['icons', 'text', 'both'];
 
 /**
- * One row per `LinkLook`, each with the same two row links (Restart and
- * Logs) drawn as `RowLinkLookContext` says: icons alone, words alone, or
- * both. The track for them is `linksColumn` of the richest look.
+ * One row per `LinkLook`, each with the same row action (`QuietAction`
+ * Stop) and two row links (Restart and Logs) drawn as `RowLinkLookContext`
+ * says: icons alone (the default), or with their words where a user's
+ * setting asks for text. The track for them is `linksColumn` of the richest look.
  */
 function LinkLooks({ say }: { readonly say: (what: string) => void }) {
   return (
@@ -304,13 +304,19 @@ function LinkLooks({ say }: { readonly say: (what: string) => void }) {
         <div aria-label="Row link looks" className="pane-list">
           <Listing
             columns={[{ label: 'Links', hidden: true }]}
-            grid={`var(--icon-column) minmax(10ch, 1fr) ${linksColumn('both', '', ['Restart', 'Logs'])}`}
+            grid={`var(--icon-column) minmax(10ch, 1fr) ${linksColumn('both', '', ['Stop', 'Restart', 'Logs'])}`}
             title="Look"
           >
             {LINK_LOOKS.map((look) => (
               <Row key={look} mark={<Server size={ICON_MD} />} name={look} rowKey={look}>
                 <Cell className="pane-action-cell">
                   <RowLinkLookContext value={look}>
+                    <QuietAction
+                      icon={Square}
+                      label={`Stop, drawn as ${look}`}
+                      onClick={() => say(`stopped (${look})`)}
+                      word="Stop"
+                    />
                     <RowIconAction
                       icon={RotateCw}
                       label={`Restart, drawn as ${look}`}
@@ -525,7 +531,7 @@ export function PaneDemo() {
                   { label: 'Restart', hidden: true },
                   { label: 'Remove', hidden: true }
                 ]}
-                grid={`var(--icon-column) minmax(10ch, 1fr) ${column(10)} ${column(6)} ${column(7)} ${ACTION_COLUMN} ${linksColumn('both', '', ['Restart'])} ${iconLinksColumn(1, 0)}`}
+                grid={`var(--icon-column) minmax(10ch, 1fr) ${column(10)} ${column(6)} ${iconLinksColumn(1, 0)} ${iconLinksColumn(1, 0)} ${iconLinksColumn(1, 0)} ${iconLinksColumn(1, 0)}`}
                 title="Service"
               >
                 {rows.map((service) => (
@@ -561,16 +567,13 @@ export function PaneDemo() {
                       />
                     </Cell>
                     <Cell className="pane-action-cell">
-                      {/* A row link that names its verb, drawn with its word. */}
-                      <RowLinkLookContext value="both">
-                        <RowIconAction
-                          icon={RotateCw}
-                          label={`Restart ${service.name}`}
-                          onClick={() => setSaid(`restarted ${service.name} on ${open}`)}
-                          softDisabled={!service.running}
-                          word="Restart"
-                        />
-                      </RowLinkLookContext>
+                      <RowIconAction
+                        icon={RotateCw}
+                        label={`Restart ${service.name}`}
+                        onClick={() => setSaid(`restarted ${service.name} on ${open}`)}
+                        softDisabled={!service.running}
+                        word="Restart"
+                      />
                     </Cell>
                     <Cell className="pane-hover-cell">
                       <RowIconAction

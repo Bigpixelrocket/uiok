@@ -8,6 +8,7 @@ import {
 } from 'react';
 
 import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
+import { InPathBarContext } from './PaneActions.js';
 
 /** A crumb that is a control: a press goes to the place it names. */
 export interface PaneCrumb {
@@ -347,7 +348,9 @@ export function PanePathBar({
         })}
       </div>
       {children !== undefined && children !== null && children !== false && (
-        <div className="path-tools">{children}</div>
+        <div className="path-tools">
+          <InPathBarContext.Provider value>{children}</InPathBarContext.Provider>
+        </div>
       )}
     </div>
   );
@@ -355,7 +358,12 @@ export function PanePathBar({
 
 /** Props for {@link PathFact}. */
 export interface PathFactProps {
-  /** A failure reads red, a change waiting for the user amber; a plain fact is dim. */
+  /**
+   * A failure (`danger`) or a change waiting for the user (`warning`): its
+   * mark, a `StateMark` of the same tone, carries the colour, and its words
+   * stand a step up from a plain fact's dim ones, in the text colour, never
+   * red or amber. Set as a class (`.path-facts.danger`) a host may read.
+   */
   readonly tone?: 'danger' | 'warning';
   /** Drawn before the words: the fact's `StateMark` (with `word=""`). */
   readonly mark?: ReactNode;

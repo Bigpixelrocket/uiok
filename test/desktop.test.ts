@@ -3,7 +3,8 @@
  * selected while its content can, and nothing animates in.
  *
  * Selection: the body is unselectable and content opts back in (fields,
- * code, `.selectable`, and each component's content class in its own rule),
+ * `.selectable`, and each component's content class in its own rule; a
+ * `code` element is chrome unless it is marked),
  * so a drag never smears a highlight across labels, tabs, and buttons. A
  * listing or grid selects rows, not text, so its rows stay unselectable.
  *
@@ -32,14 +33,19 @@ describe('selection', () => {
     expect(declaredValues(document.body, 'user-select')).toContain('none');
   });
 
-  it('lets fields, code, and content opt back in', () => {
+  it('lets fields and content opt back in', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     const content: readonly (readonly [string, string])[] = [
       ['<input type="text">', 'input'],
       ['<textarea></textarea>', 'textarea'],
       ['<div contenteditable="true"></div>', 'div'],
-      ['<code>ls</code>', 'code'],
+      ['<code class="selectable">ls</code>', 'code'],
       ['<span class="selectable">2.4.1</span>', '.selectable'],
+      ['<p class="notice"><span class="notice-text">Disk full.</span></p>', '.notice-text'],
+      ['<p class="field-problem">Not a port.</p>', '.field-problem'],
+      ['<div class="space-load-failure"><p>ECONNRESET</p></div>', 'p'],
+      ['<p class="update-card-sub">ECONNRESET</p>', 'p'],
+      ['<span class="settings-file-problem-text">line 4</span>', 'span'],
       ['<div class="listing-root"><p class="pane-message">Nothing here.</p></div>', 'p'],
       ['<div class="dialog"><p class="dialog-message">Gone.</p></div>', '.dialog-message'],
       ['<p class="about-version">Version 3.4.0</p>', '.about-version']
@@ -57,6 +63,9 @@ describe('selection', () => {
       ['<input type="checkbox" class="check">', 'input'],
       ['<h4 class="overline">Updates</h4>', 'h4'],
       ['<label class="field-label">Host</label>', 'label'],
+      // A command or token named in chrome is chrome too.
+      ['<label class="field-label">Run <code>ls</code></label>', 'code'],
+      ['<pre>ls -la</pre>', 'pre'],
       // A listing selects rows, not text, as a file manager does.
       [
         '<div class="listing-root"><div class="row"><span class="row-name">a.txt</span></div></div>',

@@ -138,12 +138,16 @@ The frame sets its own type, so a dialog reads the same under any page root and 
 | ---------------------------------------------------------------------- | ----------------------------- |
 | The title on the strip                                                 | monospace                     |
 | The body, paragraphs, the legend's verbs                               | the interface font, 13px      |
-| `.dialog-help`: help, a note, a description under a field              | the interface font, 12px, dim |
-| `.dialog-label`: a label that heads a field or a value                 | the interface font, 12px      |
+| `.dialog-help`: a note in the body (never help under a field)          | the interface font, 12px, dim |
+| `.dialog-label`: a heading over a group of values, a fact's label      | the interface font, 12px      |
 | `.dialog-value`, `code`, `samp`, `pre`: a name, path, command, or host | monospace                     |
 | A confirmation's `<strong>` name, its names list, its facts' values    | monospace                     |
 
 Field contents take their face from the shared form controls. The hooks weigh one class, so a body's own class can still set its face.
+
+### Fields
+
+A dialog's fields sit as a desktop form has them, not as a web form stacks them. A labelled field is a row of the label column (`.field-grid`): the `.field-label` leads and the field fills the value column, as Connect and Edit Command show. A dialog with one field its title already names (Rename) needs no label. `.dialog-label` never sits on its own line over a field; it heads a group of values. Help that explains a field is its label's tooltip (`labelHelp` from `@bigpixelrocket/uiok/field`), and what a legend verb does is its slot's tooltip (`help`), so no sentence of help stands under the form.
 
 ### Focus
 
@@ -161,7 +165,7 @@ The footer is at least 34px under a hairline, with 4px above and below its slots
 | `secondary` | up to two `LegendSecondary` | After the leave verb, in order of use, each on its own `chord`, with its `onRun`  |
 | `primary`   | `LegendPrimary`             | The forward verb, alone at the right edge, lit; on Return unless it has a `chord` |
 
-Every verb has a `label` and may be `disabled`. `LegendSecondary` adds `danger`, for a verb that destroys; the primary takes its colour from the dialog's tone instead. `LegendPrimary` adds `chord` (its key when not Return) and `yieldsReturn`.
+Every verb has a `label` and may be `disabled`; a verb whose label does not say it all gives its `help` ("Checks the connection without saving it."), the slot's tooltip and accessible description. `LegendSecondary` adds `danger`, for a verb that destroys; the primary takes its colour from the dialog's tone instead. `LegendPrimary` adds `chord` (its key when not Return) and `yieldsReturn`.
 
 The rules:
 
@@ -209,8 +213,8 @@ The message is the dialog's description, so a screen reader reads it with the ti
 
 A confirmation or alert appears often, so it is read at a glance, not studied: what it is (the title), what it means (one sentence), and then, only for someone who wants them, the details (one list). Its body is the sentence and at most one list. No paragraphs, no sentence per fact.
 
-1. **The message** is one short consequence sentence, one or two lines in the dialog's width. Context (where it acts) belongs in it.
-2. **Facts** (`facts`, or `DialogFacts` in any dialog body) are a desktop property list: one line per row, a label in the leading column, then a count in a column of its own (aligned, tabular figures) and the first few names. Labels, counts, and values each line up; every part is cut with an ellipsis rather than wrap, a cut label or string value showing its whole text in a tooltip. Write the names short and let the row end in a count of the rest ("shop (web, worker), blog, +2").
+1. **The message** is one short consequence sentence, one or two lines in the dialog's width. Context (where it acts) belongs in it. It does not repeat the title's question and adds no stock second sentence: "These 4 items cannot be recovered.", not "These 4 items are deleted for good. This cannot be undone."
+2. **Facts** (`facts`, or `DialogFacts` in any dialog body) are a desktop property list: one line per row, a label in the leading column, then a count in a column of its own (aligned, tabular figures) and the first few names. Labels, counts, and values each line up; every part is cut with an ellipsis rather than wrap, a cut label or string value showing its whole text in a tooltip. Write the first few names short and pass how many the value leaves out as `more`: the row ends in "+N more" (`dialog.moreItems`), drawn whole after the names, which give way first, so the row always says how many it omits however long the names are.
 3. **Names** (`paths`, or `DialogNames`) list the items a "these N items" question acts on: one line each, in monospace, a long name or path cut in its middle (`NameCut`), so its start and its file name both show. The list shows at most five lines (`max`); a longer one shows the first four and ends in "+N more" (`dialog.moreItems`), so it never grows into a tall block.
 
 The quit confirmation, written this way:
@@ -223,12 +227,12 @@ import { Power } from 'lucide-react';
   className="dialog-size-md"
   confirmLabel="Quit"
   facts={[
-    { label: 'Terminals', count: 6, value: 'zsh, npm run dev, vite, psql, +2' },
-    { label: 'Projects', count: 9, value: 'shop (web, worker, queue), blog (vite), +2' },
+    { label: 'Terminals', count: 6, value: 'zsh, npm run dev, vite, psql', more: 2 },
+    { label: 'Projects', count: 9, value: 'shop (web, worker, queue), blog (vite)', more: 2 },
     { label: 'Schedules', count: 2, value: 'nightly-backup, sitemap' }
   ]}
   icon={Power}
-  message="Every process below stops and every schedule ends. Their logs are kept."
+  message="Every process and schedule below stops; logs are kept."
   onCancel={keepRunning}
   onConfirm={quit}
   title="Quit and Stop 15 Processes?"
@@ -249,7 +253,7 @@ The lists `ConfirmDialog` draws from `facts` and `paths`, for any other dialog b
 | `DialogNames` | `names` | `readonly string[]`     |         | The names or paths                                                      |
 | `DialogNames` | `max`   | `number`                | `5`     | The most lines shown, the "+N more" line included                       |
 
-A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode }`; the host formats the count.
+A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode; more?: number }`; the host formats the count. `more` counts the names the value leaves out and ends the row in "+N more", never cut. A string value carries its whole text in a tooltip while it is cut; a node value passes its own `cutTooltip`.
 
 ### Deletes that cannot be undone
 
@@ -259,7 +263,7 @@ People confirm a delete out of habit, ⌘⌫ then Return, without reading. With 
 
 Nothing animates in: a dialog and a frosted wash are there on the frame they open, with no fade, drop, or scale, as a desktop sheet appears. The message, names, counts, and values in a body can be selected and copied; the title, labels, and legend cannot.
 
-`.dialog-backdrop`, `.frosted`, `.dialog-layer`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.legend-danger`, `.confirm-dialog`, `.dialog-message`, `.dialog-facts`, `.dialog-fact`, `.dialog-fact-count`, `.dialog-fact-value`, `.dialog-names`, `.dialog-names-more`. The frame declares `--dialog-tone` and `--dialog-icon`, reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
+`.dialog-backdrop`, `.frosted`, `.dialog-layer`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.legend-danger`, `.confirm-dialog`, `.dialog-message`, `.dialog-facts`, `.dialog-fact`, `.dialog-fact-count`, `.dialog-fact-value`, `.dialog-fact-value-more`, `.dialog-fact-names`, `.dialog-fact-more`, `.dialog-names`, `.dialog-names-more`. The frame declares `--dialog-tone` and `--dialog-icon`, reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
 
 ## Labels read
 

@@ -23,12 +23,16 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Search, WrapText } from 'lucide-react';
 
 import { Button, IconButton } from '@bigpixelrocket/uiok/button';
-import { Check } from '@bigpixelrocket/uiok/field';
+import { Check, labelHelp } from '@bigpixelrocket/uiok/field';
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 
 import { DemoState, DemoStates } from '../DemoStates';
 
 const ITEMS = ['Logs', 'Caches', 'Backups'];
+
+/** Help that explains a field, worn as its label's tooltip (labelHelp). */
+const HOST_HELP = labelHelp('A name or an address this computer can reach.');
+const USER_HELP = labelHelp('The account the build signs in as.');
 
 /** A state cell whose control is forced into a pseudo-class for captures. */
 function Forced({
@@ -555,12 +559,18 @@ export function FieldDemo() {
       <DemoStates minCell="220px" title="Groups and rarer controls">
         <DemoState label="A field on the label column">
           <div className="field-grid" style={{ '--field-label-width': 'auto' } as CSSProperties}>
-            <label className="field-label" htmlFor="demo-group-user">
+            {/* Help that explains a field is its label's tooltip, read to a
+                screen reader from the field. */}
+            <label className="field-label" htmlFor="demo-group-user" {...USER_HELP.label}>
               User
             </label>
             <div className="field-value">
-              <input className="field field-sm" defaultValue="deploy" id="demo-group-user" />
-              <p className="field-note">The account the build signs in as.</p>
+              <input
+                className="field field-sm"
+                defaultValue="deploy"
+                id="demo-group-user"
+                {...USER_HELP.control}
+              />
             </div>
           </div>
         </DemoState>
@@ -605,12 +615,16 @@ export function FieldDemo() {
 
       <h3 className="demo-subhead">A form on one label column</h3>
       <div className="field-grid">
-        <label className="field-label" htmlFor="demo-host">
+        <label className="field-label" htmlFor="demo-host" {...HOST_HELP.label}>
           Host
         </label>
         <div className="field-value">
-          <input className="field field-sm" defaultValue="db.internal" id="demo-host" />
-          <p className="field-note">A name or an address this computer can reach.</p>
+          <input
+            className="field field-sm"
+            defaultValue="db.internal"
+            id="demo-host"
+            {...HOST_HELP.control}
+          />
         </div>
         <label className="field-label" htmlFor="demo-port">
           Port

@@ -49,8 +49,8 @@
 }
 
 /* A page's row: its glyph and its title, the chosen one on the current
-   item's tint and ring. Its subsections unfold under it on a rail, the one
-   in view in the text colour with the rail lit beside it. A name too long
+   item's tint and ring. Its subsections unfold under it as indented child
+   rows, the one in view on the quiet fill in the text colour. A name too long
    for the sidebar wraps onto a second compact line rather than losing its
    end, between words, and inside a word only when the word alone cannot
    fit (never with a hyphen the browser guessed). Hover is the quiet row
@@ -132,32 +132,25 @@
 }
 
 .settings-sidebar-subsections {
-  margin: var(--space-1) 0 var(--space-2) var(--space-8);
-  padding-inline-start: var(--space-4);
-  border-inline-start: var(--line) solid var(--border-strong);
+  /* Child rows of the page's row: indented so their words start under the
+     page's title, past its glyph. */
+  margin: var(--space-1) 0 var(--space-2);
+  margin-inline-start: calc(var(--icon-md) + var(--space-4));
+  padding: 0;
 }
 
 .settings-sidebar-subsection {
-  position: relative;
   min-height: var(--row-height-dense);
   padding-block: var(--space-1);
   color: var(--text-dim);
 }
 
+/* The section in view is marked as a source list marks a child row it
+   follows: the quiet neutral fill, words in the text colour at the regular
+   weight. The page's row keeps the one current-item tint. */
 .settings-sidebar-subsection[aria-current='location'] {
+  background: var(--fill);
   color: var(--text);
-  font-weight: var(--font-weight-strong);
-}
-
-/* The lit rail sits on the hairline: a 2px mark over the 1px line. */
-.settings-sidebar-subsection[aria-current='location']::before {
-  content: '';
-  position: absolute;
-  inset-block: var(--space-2);
-  inset-inline-start: calc(-1 * (var(--space-4) + var(--line-strong)));
-  width: var(--line-strong);
-  border-radius: var(--radius-xs);
-  background: var(--accent);
 }
 
 /* The page's column: the failed-save alert, which never scrolls, over the
@@ -215,8 +208,14 @@
   margin: 0 0 var(--space-4);
 }
 
-/* A page's rows are uiok's .field-grid, every page on the one label column,
-   at the small size the labels are. */
+/* A page's rows are uiok's .field-grid at the small size the labels are,
+   every page on the one 136px label column, so the controls start at the
+   same place as the window moves between pages (a lone form sizes its
+   column to its labels instead). */
+.settings-page {
+  --field-label-width: 136px;
+}
+
 .settings-page .field-grid {
   font-size: var(--font-size-small);
 }
@@ -291,6 +290,12 @@
   display: flex;
   flex-direction: column;
   gap: 1px;
+}
+
+/* A problem's place and words are what a user copies to find the line. */
+.settings-file-problem-text {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .settings-file-problem.notice:not(.notice-danger) {
@@ -591,29 +596,45 @@
   min-height: 0;
 }
 
-/* The check cadence: its label on the left at a Settings row's size, the
-   select at the row's end, and the note that follows the choice under
-   both. */
+/* The check cadence, a row of the label column every Settings page uses
+   (.field-grid): its label in the leading column, dim at a label's size
+   and weight and centred on the 24px control, the pop-up at its own width
+   where every page's controls start, and the note that follows the choice
+   under the pop-up. A host whose page sets --field-label-width gets the
+   same column here. */
 .update-checks {
   display: grid;
   flex: none;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
+  grid-template-columns: var(--field-label-width, 136px) minmax(0, 1fr);
+  align-items: start;
   gap: var(--space-2) var(--space-6);
 }
 
 .update-checks-label {
-  color: var(--text);
+  /* Beside the pop-up and its note both, so a label that wraps never
+     parts the note from its pop-up. */
+  grid-row: span 2;
+  padding-block: var(--space-2);
+  color: var(--text-dim);
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-compact);
+  overflow-wrap: anywhere;
+}
+
+.update-checks > select {
+  justify-self: start;
+  width: auto;
+  max-width: 100%;
 }
 
 .update-checks .field-note {
-  grid-column: 1 / -1;
+  grid-column: 2;
 }
 
 /* The update's status, one row as a status line says it: the state's glyph
-   in its tone, the state in the body size, the fact after it in the dim
+   in its tone, the state at a Settings row's size and weight (only a
+   strong element in it, the version, is set strong), the fact after it in the dim
    small size (taking the next line when the row cannot hold both), and
    the one verb at the row's end. A download, and What's new, follow as
    rows of their own. */
@@ -679,9 +700,13 @@
    a failure included. */
 .update-card-title {
   color: var(--text);
-  font-size: var(--font-size-body);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-compact);
+}
+
+.update-card-title strong {
   font-weight: var(--font-weight-strong);
-  line-height: var(--line-height-body);
 }
 
 .update-card-sub {
@@ -690,6 +715,13 @@
   font-size: var(--font-size-small);
   line-height: var(--line-height-compact);
   overflow-wrap: anywhere;
+}
+
+/* The fact may be what the system said (a host that closed the
+   connection), which a user copies into a report. */
+.update-card-sub {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* What the system returned for a failed download (an error code, a host
@@ -749,17 +781,17 @@
   outline: none;
 }
 
+/* A read-only text view that takes focus to scroll by the arrow keys,
+   as a desktop text view does: it draws no focus ring, which belongs to
+   controls; its scrollbar shows that it scrolls. */
 .update-notes-list:focus-visible {
-  outline: var(--focus-ring-width) solid var(--accent);
-  outline-offset: var(--focus-offset-inset);
+  outline: none;
 }
 
-/* A list that fades (.scroll-fade) masks its own box, which would erase a
-   ring drawn on it, so a host wraps it in .update-notes-frame and the
-   frame draws the ring, out of the fade's reach. The frame stands out by
-   the list's small inset on every side, so the ring clears the bullets and
-   the last line's descenders while the text column keeps the card's
-   width. */
+/* The frame a host may wrap the list in (.update-notes-frame) stands out
+   by the list's small inset on every side, so the bullets and the last
+   line's descenders clear the scroll fade while the text column keeps the
+   card's width. It draws no ring either. */
 .update-notes-frame {
   display: flex;
   flex: 1 1 auto;
@@ -772,15 +804,6 @@
 .update-notes-frame > .update-notes-list {
   margin: 0;
   padding: var(--space-1) var(--space-3);
-}
-
-.update-notes-frame > .update-notes-list:focus-visible {
-  outline: none;
-}
-
-.update-notes-frame:has(> .update-notes-list:focus-visible) {
-  outline: var(--focus-ring-width) solid var(--accent);
-  outline-offset: var(--focus-offset-inset);
 }
 
 .update-notes-list li {
@@ -920,12 +943,8 @@
   width: 420px;
 }
 
-/* The label column holds the label whole; each label's line is centred
-   on the dialog's 28px field. */
-.sign-in-dialog .field-grid {
-  --field-label-width: fit-content(40%);
-}
-
+/* The label column holds the label whole (the label column's own
+   default); each label's line is centred on the dialog's 28px field. */
 .sign-in-dialog .field-grid > .field-label {
   padding-block: calc((var(--control-height) - var(--line-height-compact)) / 2);
 }
@@ -998,6 +1017,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* The failure's words, an error a user pastes into a report. */
+.space-load-failure :is(strong, p) {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .space-load-failure strong {

@@ -460,9 +460,7 @@ function HostKeyPrompt({ onClose }: { readonly onClose: () => void }): ReactElem
       onCancel={onClose}
       title="Trust build.example.com?"
     >
-      <p>
-        This computer has not connected to build.example.com before. Check the key with its owner.
-      </p>
+      <p>First connection to this host: check the key with its owner.</p>
       <dl className="sign-in-fingerprint">
         <dt>ED25519</dt>
         <dd>
@@ -525,7 +523,14 @@ export function ShellDemo(): ReactElement {
       <div className="shell-demo-window">
         <div className="settings-notice notice notice-card notice-warning" role="status">
           <TriangleAlert aria-hidden size={ICON_MD} />
-          <p className="notice-text">
+          {/* A status line is one line: cut with an ellipsis in a narrow
+              window, its whole text in a tooltip while cut. */}
+          <p
+            className="notice-text"
+            {...cutTooltip(
+              'settings.toml, line 12 The theme is not one this version knows. 1 more problem'
+            )}
+          >
             <span className="settings-notice-place">settings.toml, line 12</span> The theme is not
             one this version knows.
             <span className="settings-notice-more"> 1 more problem</span>

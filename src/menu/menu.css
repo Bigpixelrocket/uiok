@@ -78,6 +78,13 @@
   caret-color: var(--accent);
 }
 
+/* A menu's focus mark is its cursor row: the menu, or the list a script
+   focuses to take the keys, draws no ring, as a desktop menu has none. */
+.folder-menu:focus-visible,
+.folder-menu :is(.folder-menu-options, [role='listbox'], [role='menu']):focus-visible {
+  outline: none;
+}
+
 /* The field's focus is the accent rule under the row, always on. */
 .folder-menu-query input:focus {
   outline: none;

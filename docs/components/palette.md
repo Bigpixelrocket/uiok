@@ -128,7 +128,7 @@ On top of the menu look ([menu](menu.md)):
 - `.palette-text` holds a row's `.row-name` and `.palette-context`, which gives way at its start (a path) or, with `.palette-sentence`, at its end (a sentence, in the interface face), or with `.palette-command` at its end in the monospace face (a command line). Wrap a path's text in `<bdi>`.
 - `.palette-trail` and `.palette-meta`: a row's end; `.palette-meta` is in the meta tone, and on the cursor row it and `.palette-context` take `--text-on-surface`. Put a `KeyChord` in `.palette-trail` for a command's chord; it is drawn as key caps.
 - `.palette-notes` with `.folder-menu-note` lines under the list; `.palette-failure` a status line: the danger glyph in the icon column, then words in the text colour.
-- `.palette-refused`: the refusal where the count stands, in `--warning-text`.
+- `.palette-refused`: the refusal where the count stands, in the count's own `--text-dim`; the bell beat says it was refused, so the words take no tone. The notes under the list (`.folder-menu-note`, `.palette-failure`) can be selected and copied.
 - `.palette-level`: the level chip, an accent wash with an accent line, deeper on hover; while held it takes the base sheet's pressed look, which outranks hover.
 - A dialog's key legend (`.dialog-legend`) placed last in the box runs its hairline to the box's edges.
 

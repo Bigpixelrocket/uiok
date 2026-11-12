@@ -141,7 +141,9 @@ meter::-webkit-meter-even-less-good-value {
    drag never smears a highlight across the window. Content opts back in:
    what a user types, and what a user would copy (a value, a name, a path,
    output). A host marks its own content with .selectable; a component's
-   content class sets user-select: text in its own rule. Both weigh
+   content class sets user-select: text in its own rule. A code, pre, or
+   samp element is not content by its tag: a command named in a label or a
+   token in a menu is chrome, so a copyable value takes .selectable. Both weigh
    nothing, so a host rule wins. Inside selectable content the cursor is the
    I-beam, which the browser draws only over text that can be selected. */
 :where(body) {
@@ -159,9 +161,6 @@ meter::-webkit-meter-even-less-good-value {
   ),
   textarea,
   [contenteditable]:not([contenteditable='false']),
-  code,
-  pre,
-  samp,
   .selectable
 ) {
   user-select: text;

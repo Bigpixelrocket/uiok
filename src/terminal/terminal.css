@@ -145,7 +145,6 @@
   z-index: var(--z-dialog-popover);
   width: auto;
   min-width: 180px;
-  outline: none;
 }
 
 .terminal-menu-icon {

@@ -489,6 +489,25 @@
   user-select: text;
 }
 
+/* A value that leaves names out ends in "+N more": the names give way with
+   an ellipsis and the count stays whole after them, so the row always says
+   how many it omits. The names carry the tooltip, being the box that cuts. */
+.dialog-fact-value-more {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.dialog-fact-names {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dialog-fact-more {
+  flex: none;
+  font-family: var(--font-ui);
+}
+
 /* ---- Name list (DialogNames) ----
 
    The items a confirmation acts on, one line each in monospace, at the

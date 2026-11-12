@@ -18,6 +18,7 @@ import { CircleAlert, CircleCheck, Info, Pin, TriangleAlert } from 'lucide-react
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
+import { cutTooltip } from '@bigpixelrocket/uiok/tooltip';
 
 import { DemoState, DemoStates } from '../DemoStates';
 
@@ -98,7 +99,9 @@ export function SurfaceDemo() {
       </div>
       <div className="notice notice-card notice-warning" role="status">
         <TriangleAlert size={ICON_MD} />
-        <p className="notice-text">settings.json has a mistake on line 12.</p>
+        <p className="notice-text" {...cutTooltip('settings.json has a mistake on line 12.')}>
+          settings.json has a mistake on line 12.
+        </p>
         <div className="notice-actions">
           <Button size="small">Show</Button>
         </div>

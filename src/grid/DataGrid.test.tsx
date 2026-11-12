@@ -433,6 +433,50 @@ describe('the data grid’s cursor, sort, and edit', () => {
     expect(declaredValues(wrapped, 'border').at(-1)).toBe('var(--line) solid var(--accent)');
   });
 
+  it('quiets its marks, cursor cell, and checked boxes where the keys are not', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="data-grid"><div class="data-grid-scroll">
+      <div class="data-grid-header"><div class="data-grid-heading marked">id</div></div>
+      <div class="data-grid-body">
+        <div class="data-grid-row marked">
+          <div class="data-grid-lead"><input class="check" type="checkbox" checked></div>
+          <div class="data-grid-cell cursor">1</div><div class="data-grid-cell marked">a</div>
+        </div>
+      </div></div></div>`;
+    const read = (selector: string, property: string): string =>
+      getComputedStyle(document.querySelector(selector) as Element)
+        .getPropertyValue(property)
+        .trim();
+    const looks = () => ({
+      row: read('.data-grid-row', 'background'),
+      column: read('.data-grid-cell.marked', 'background'),
+      cursor: read('.data-grid-cell.cursor', 'box-shadow'),
+      heading: read('.data-grid-heading', 'box-shadow'),
+      check: read('input', '--check-on'),
+      mark: read('input', '--check-mark')
+    });
+
+    const held = looks();
+    expect(held.row).toBe('var(--marked-bg)');
+    expect(held.check).toBe('var(--accent)');
+    expect(held.cursor).toContain('var(--accent)');
+
+    document.documentElement.setAttribute('data-window-inactive', '');
+    try {
+      expect(looks()).toEqual({
+        row: 'var(--fill)',
+        column: 'none',
+        cursor: 'none',
+        heading: 'inset 0 calc(-1 * var(--line-strong)) 0 var(--control-border-strong)',
+        check: 'var(--control-border-strong)',
+        mark: 'var(--fill)'
+      });
+    } finally {
+      document.documentElement.removeAttribute('data-window-inactive');
+      document.body.innerHTML = '';
+    }
+  });
+
   it('draws no cursor fill, ring, or words on the cell under an open editor', () => {
     applyStylesheets(readStylesheet('src/grid/grid.css'));
     render(

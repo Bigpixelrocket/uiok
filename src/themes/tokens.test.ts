@@ -826,6 +826,29 @@ describe.each(THEMES.map((theme) => [theme.id, theme] as const))('%s', (_id, the
     expect(ratioOn(fg, layers)).toBeGreaterThanOrEqual(floor);
   });
 
+  // A quiet row (a selection, a cursor, a mark, or a checked box where the
+  // keys are not) stands on the neutral fill: its words in the text tones,
+  // its marks in the neutral edge tone, a checked box's mark cut out in the
+  // fill. Each must stay readable, in every theme.
+  // The name, the quiet words, and a quiet mark's bar or checked box.
+  it.each([
+    ['var(--text)', 4.5],
+    ['var(--text-on-surface)', 4.5],
+    ['var(--control-border-strong)', 3]
+  ] as const)('keeps %s at %s:1 on a quiet row', (fg, floor) => {
+    for (const layers of [
+      ['var(--bg)', 'var(--fill)'],
+      ['var(--bg-panel)', 'var(--fill)'],
+      ['var(--bg-panel)', 'var(--file-list-bg)', 'var(--fill)']
+    ]) {
+      expect(ratioOn(fg, layers)).toBeGreaterThanOrEqual(floor);
+    }
+  });
+
+  it("cuts a quiet checked box's mark out at 3:1", () => {
+    expect(ratioOn('var(--fill)', ['var(--control-border-strong)'])).toBeGreaterThanOrEqual(3);
+  });
+
   it('draws the eight chart series apart from each other', () => {
     const series = [1, 2, 3, 4, 5, 6, 7, 8].map((index) => rgbOf(solid(`--chart-${index}`)));
     series.forEach((a, i) =>

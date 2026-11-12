@@ -16,14 +16,14 @@ A message about something on the page, drawn as a desktop application's status t
 </div>
 ```
 
-| Class                                               | Meaning                                                                                                 |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| `notice`                                            | The line in the page's flow; a note (`--text-faint` glyph) unless a tone class is set                   |
-| `notice-danger`, `notice-warning`, `notice-success` | The tone of the glyph (`--danger`, `--warning`, `--success`); the words stay in `--text`                |
-| `notice-card`                                       | The window's status line under a header: the same plain line at the window's inset, a hairline under it |
-| `notice-text`                                       | The message; wraps                                                                                      |
-| `notice-glyph`                                      | A glyph that is not the first `svg`                                                                     |
-| `notice-actions`                                    | A small button or two right after the words, centred on the first line                                  |
+| Class                                               | Meaning                                                                                                                                                                                                               |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `notice`                                            | The line in the page's flow; a note (`--text-faint` glyph) unless a tone class is set                                                                                                                                 |
+| `notice-danger`, `notice-warning`, `notice-success` | The tone of the glyph (`--danger`, `--warning`, `--success`); the words stay in `--text`                                                                                                                              |
+| `notice-card`                                       | The window's status line under a header: the same plain line at the window's inset, a hairline under it; its words stay on one line, cut with an ellipsis, so give the `notice-text` `cutTooltip` with its whole text |
+| `notice-text`                                       | The message; wraps (one line in a `notice-card`); its words can be selected and copied                                                                                                                                |
+| `notice-glyph`                                      | A glyph that is not the first `svg`                                                                                                                                                                                   |
+| `notice-actions`                                    | A small button or two right after the words, centred on the first line                                                                                                                                                |
 
 A notice that reports a failure the user should act on takes `role="alert"`; one that reports a state takes `role="status"`.
 
@@ -54,9 +54,9 @@ A group of lines is never a framed, filled, rounded panel: that is a web card. A
 
 Chrome cannot be selected: the base sheet sets `user-select: none` on the body, so labels, buttons, tabs, headings, menu items, and a row's parts cannot be swept or double-clicked into a selection, and a drag never smears a highlight across the window. Content opts back in, at zero weight so a host rule wins:
 
-- Fields (text inputs, textareas, anything `contenteditable`), and `code`, `pre`, and `samp`.
-- `selectable`, on a host's own content: a value, a name, a path, output, anything a user would copy.
-- Each component's content, in its own rule: a listing's summary, messages, empty space, and well (`pane-summary`, `pane-filter-summary`, `pane-message`, `pane-empty`, `pane-well`); a grid's empty line (`data-grid-empty`); a dialog's message, values, fact counts and values, and names (`dialog-message`, `dialog-value`, `dialog-fact-count`, `dialog-fact-value`, `dialog-names > li`); a run's reason, figure, and facts; a pie's value; the terminal's copy buffer; the About window's version; a host key's fingerprint.
+- Fields (text inputs, textareas, anything `contenteditable`).
+- `selectable`, on a host's own content: a value, a name, a path, output, anything a user would copy. A `code`, `pre`, or `samp` element is not content by its tag: a command named in a label or a token in a menu is chrome, so a value a user copies takes `selectable` (`<code className="selectable">`).
+- Each component's content, in its own rule: a listing's summary, messages, empty space, and well (`pane-summary`, `pane-filter-summary`, `pane-message`, `pane-empty`, `pane-well`); a grid's empty line (`data-grid-empty`); a dialog's message, values, fact counts and values, and names (`dialog-message`, `dialog-value`, `dialog-fact-count`, `dialog-fact-value`, `dialog-names > li`); a message's words (`notice-text`, `field-problem`, a settings file's problem, a load failure's headline and reason, the update status's fact, a palette's note and failure); a run's reason, figure, and facts; a pie's value; the terminal's copy buffer; the About window's version; a host key's fingerprint.
 
 A listing and a grid select rows, not text, as a file manager does: a drag, Shift-click, or double-click on a row never starts a text selection, even inside a `selectable` host, and a grid copies its cursor cell with ⌘C.
 

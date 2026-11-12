@@ -178,32 +178,46 @@ textarea.field {
 }
 
 /* A number field carries a stepper at its end, as a desktop number field
-   does: the up and down chevron pair a pop-up button shows (below), drawn
-   in --text-dim over the platform's spin buttons, which stay the hit area
-   (the top half steps up, the bottom half down) but draw nothing, since
-   their platform drawing is the one part the theme cannot reach. The
-   keyboard's arrows step as before. */
+   does: a cap of its own, divided from the value by a --control-border
+   hairline the field's full height, with an up arrow centred in its top
+   half and a down arrow in its bottom half (in --text-dim), so the end
+   reads as two buttons and not as a pop-up's chevron pair. The platform's
+   spin buttons fill the cap and stay the hit area (the top half steps up,
+   the bottom half down) but draw nothing, since their platform drawing is
+   the one part the theme cannot reach. The keyboard's arrows step as
+   before. Each arrow is two 4px squares, each half filled by a diagonal
+   gradient, as the pop-up's chevrons are. */
 input.field[type='number'] {
-  --field-chevron-end: var(--space-3);
+  /* A 16px cap; its 8px arrows sit 4px in from each side. */
+  --field-stepper-width: var(--space-8);
+  --field-chevron-end: var(--space-2);
 
-  padding-inline-end: var(--space-2);
+  padding-inline-end: 0;
   background-image:
     linear-gradient(135deg, transparent 50%, var(--text-dim) 50%),
     linear-gradient(-135deg, transparent 50%, var(--text-dim) 50%),
     linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
-    linear-gradient(-45deg, transparent 50%, var(--text-dim) 50%);
+    linear-gradient(-45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(var(--control-border), var(--control-border));
   background-position:
-    right calc(var(--field-chevron-end) + 4px) bottom calc(50% + 3px),
-    right var(--field-chevron-end) bottom calc(50% + 3px),
-    right calc(var(--field-chevron-end) + 4px) top calc(50% + 3px),
-    right var(--field-chevron-end) top calc(50% + 3px);
+    right calc(var(--field-chevron-end) + 4px) top 25%,
+    right var(--field-chevron-end) top 25%,
+    right calc(var(--field-chevron-end) + 4px) top 75%,
+    right var(--field-chevron-end) top 75%,
+    right var(--field-stepper-width) top 0;
   background-repeat: no-repeat;
-  background-size: 4px 4px;
+  background-size:
+    4px 4px,
+    4px 4px,
+    4px 4px,
+    4px 4px,
+    var(--line) 100%;
 }
 
 input.field[type='number']::-webkit-inner-spin-button {
-  width: var(--space-6);
-  margin: 0 0 0 var(--space-2);
+  width: var(--field-stepper-width);
+  height: 100%;
+  margin: 0 0 0 var(--space-3);
   opacity: 0;
 }
 
@@ -214,8 +228,9 @@ input.field[type='number']::-webkit-outer-spin-button {
 
 /* A pop-up menu: the platform's arrow is replaced by the up and down
    chevron pair a desktop pop-up button shows, two 8 by 4 triangles in
-   --text-dim with 2px between them, at the end of the field. Each triangle
-   is two 4px squares, each half filled by a diagonal gradient. A list box
+   --text-dim with 2px between them, at the end of the field, with no
+   divider (a number field's stepper has one, above). Each triangle is two
+   4px squares, each half filled by a diagonal gradient. A list box
    (multiple, or a size) shows its rows, so it takes no chevrons. */
 select.field:not([multiple], [size]) {
   --field-chevron-end: var(--space-4);
@@ -355,6 +370,30 @@ select.field option {
     [aria-invalid='true']
   ):not(:checked, [type='checkbox']:indeterminate) {
   border-color: var(--check-on);
+}
+
+/* In a window that is not in front a box that is on greys, as the
+   platform's does: the fill in the neutral edge tone a quiet row's marks
+   take (--control-border-strong), the mark cut out in the ground; a row
+   that draws itself quiet cuts it in its own fill. A switch that is on
+   greys the same way. A toned or invalid box keeps its tone, since it
+   reports a state rather than a selection. */
+:where(:root[data-window-inactive])
+  :is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):not(
+    [data-tone],
+    [aria-invalid='true']
+  ) {
+  --check-on: var(--control-border-strong);
+  --check-on-pressed: var(--control-border-strong);
+  --check-mark: var(--ground);
+}
+
+:where(:root[data-window-inactive]) .switch:checked {
+  background: var(--control-border-strong);
+}
+
+:where(:root[data-window-inactive]) .switch:checked::before {
+  background: var(--ground);
 }
 
 /* Disabled, one fade and never two. The base rule leaves a check box out:
@@ -576,7 +615,10 @@ select.field option {
   overflow-wrap: anywhere;
 }
 
-/* Help under a field: what a value means or what happens next. */
+/* A line under a control that says what the current choice does ("Worn
+   while the system is light."), so it changes with the choice. Help that
+   explains the control itself is its label's tooltip (labelHelp), not a
+   sentence under the field. */
 .field-note {
   margin: 0;
   color: var(--text-dim);
@@ -598,6 +640,12 @@ select.field option {
   font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
     var(--font-ui);
   overflow-wrap: anywhere;
+}
+
+/* A problem's words are a message a user copies into a report. */
+.field-problem {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .field-problem:not(:has(> svg:first-child))::before {
@@ -646,12 +694,16 @@ select.field option {
 }
 
 /* Rows of a form or a settings page on one label column: the label, then
-   its value (a field, choices, a note). Each label's first line is centred
-   on a 24px control; a long label wraps on the compact line instead. A
-   host sets --field-label-width for its own label column. */
+   its value (a field, choices, a note). As a desktop form sizes it, the
+   column is as wide as the longest label and the rest goes to the
+   controls, capped at 40% of the form so one long label cannot starve
+   the fields; a label past the cap wraps on the compact line. Each
+   label's first line is centred on a 24px control. A host sets
+   --field-label-width for a column of its own (a fixed width every page
+   of a Settings window shares). */
 .field-grid {
   display: grid;
-  grid-template-columns: var(--field-label-width, 136px) minmax(0, 1fr);
+  grid-template-columns: var(--field-label-width, fit-content(40%)) minmax(0, 1fr);
   align-items: start;
   gap: var(--space-4) var(--space-6);
   margin: 0;
@@ -666,6 +718,16 @@ select.field option {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
+}
+
+/* A pop-up button is as wide as its longest item, as a desktop pop-up is,
+   not stretched across the value column; it starts at the column's edge
+   and is cut by the column only when its items are wider. A text field
+   keeps the column's width, as a desktop form's does. */
+.field-value > select.field:not([multiple], [size]) {
+  justify-self: start;
+  width: auto;
+  max-width: 100%;
 }
 
 /* One line of a value: a choice, a field, a status, with anything trailing

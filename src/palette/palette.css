@@ -145,21 +145,30 @@
   color: var(--text);
 }
 
+/* A note's or a failure's words are what a user pastes into a report, so
+   they can be swept and copied; the list's rows stay chrome. */
+.palette-notes :is(.folder-menu-note, .palette-failure) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 .palette-notes .palette-failure::before {
   display: inline-block;
   margin-inline-end: var(--space-3);
   vertical-align: text-bottom;
 }
 
-/* A refused keystroke, said where the count stands, in the warning tone for
-   words; a long refused paste gives way to the field rather than pushing
+/* A refused keystroke, said where the count stands and in the count's own
+   dim tone: the bell beat already signals the refusal, so the words need
+   no colour of their own (a message is a mark and plain words); a long
+   refused paste gives way to the field rather than pushing
    past the palette's edge. */
 .palette-refused {
   min-width: 0;
   overflow: hidden;
   margin-left: 1ch;
   text-overflow: ellipsis;
-  color: var(--warning-text);
+  color: var(--text-dim);
   font-family: var(--font-ui);
   font-size: var(--font-size-caption);
   white-space: nowrap;

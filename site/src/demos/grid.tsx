@@ -3,16 +3,15 @@
  * arrow jumps to an edge, Page Up and Down move a screen, Space marks a
  * row, a header click sorts (Shift adds a column), a header edge resizes,
  * and a header drags to reorder. Under it, a short grid with every cell
- * kind (a lead checkbox, linked ids, missing and edited values, a marked
- * column, an inline field on double-click and an editor with Save and
- * Cancel), a grid of binary values with a node cell, a row action, and a
+ * kind (a lead checkbox, a customer value that leads to its record,
+ * missing and edited values, a marked column, an inline field on
+ * double-click that Return commits and Escape cancels), a grid of binary values with a node cell, a row action, and a
  * one-click edit, and a grid with no rows.
  */
 
 import { File, FileImage, FileText, FileType, Trash2 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
-import { Button } from '@bigpixelrocket/uiok/button';
 import {
   DataGrid,
   type DataGridCell,
@@ -145,7 +144,7 @@ export function GridDemo() {
         cell={() => null}
         columns={FIELDS.slice(0, 4).map((field) => field.column)}
         copyText={() => null}
-        empty="No orders yet. New orders appear here as they come in."
+        empty="No orders"
         label="Orders, none yet"
         rowCount={0}
       />
@@ -155,12 +154,12 @@ export function GridDemo() {
 
 const KIND_COLUMNS: readonly DataGridColumn[] = [
   { id: 'id', label: 'order', align: 'right' },
-  { id: 'customer', label: 'customer' },
+  { id: 'customer', label: 'customer', tip: 'Return or a click opens the customer' },
   { id: 'city', label: 'city', tip: 'NULL where the order has none' },
   { id: 'status', label: 'status', tip: 'Double-click to edit' },
-  { id: 'product', label: 'product', tip: 'Double-click to edit, then Save or Cancel' }
+  { id: 'product', label: 'product', tip: 'Double-click to edit' }
 ];
-/** The columns a double-click edits: status in a bare field, product with Save and Cancel. */
+/** The columns a double-click edits, each in a bare field over its cell. */
 const STATUS = 3;
 const PRODUCT = 4;
 /** The city column, marked to show a marked column's light. */
@@ -168,9 +167,9 @@ const MARKED_COLUMNS: ReadonlySet<number> = new Set([2]);
 const KIND_ROWS = ORDERS.slice(0, 8);
 
 /**
- * A short grid with a lead checkbox, linked ids, NULL cities in a marked
- * column, edited statuses, and both inline editors: a bare field, and a
- * field with Save and Cancel.
+ * A short grid with a lead checkbox, customers that lead to their records,
+ * NULL cities in a marked column, edited statuses, and the inline editor:
+ * a bare field over the cell, which Return commits and Escape cancels.
  */
 function CellKinds() {
   const [checked, setChecked] = useState<ReadonlySet<number>>(() => new Set([1, 2]));
@@ -185,10 +184,10 @@ function CellKinds() {
   const cell = (row: number, column: number): DataGridCell | null => {
     const order = KIND_ROWS[row];
     if (order === undefined) return null;
-    if (column === 0) {
-      return { text: String(order.id), onOpen: () => setOpened(`order ${order.id}`) };
+    if (column === 0) return { text: String(order.id) };
+    if (column === 1) {
+      return { text: order.customer, onOpen: () => setOpened(`customer ${order.customer}`) };
     }
-    if (column === 1) return { text: order.customer };
     if (column === 2) {
       return row % 3 === 1 ? { text: 'NULL', className: 'cell-null' } : { text: order.city };
     }
@@ -203,12 +202,12 @@ function CellKinds() {
     setEdits((current) => new Map(current).set(`${editing.row}:${editing.column}`, editing.draft));
     setEditing(null);
   };
-  const field = (name: string, commitOnBlur: boolean) =>
+  const field = (name: string) =>
     editing === null ? null : (
       <input
         aria-label={name}
         autoFocus
-        onBlur={commitOnBlur ? commit : undefined}
+        onBlur={commit}
         onChange={(event) => setEditing({ ...editing, draft: event.target.value })}
         onKeyDown={(event) => {
           if (event.key === 'Enter') commit();
@@ -231,20 +230,7 @@ function CellKinds() {
             : {
                 row: editing.row,
                 column: editing.column,
-                node:
-                  editing.column === STATUS ? (
-                    field('Status', true)
-                  ) : (
-                    <>
-                      {field('Product', false)}
-                      <Button onClick={() => setEditing(null)} size="small">
-                        Cancel
-                      </Button>
-                      <Button onClick={commit} size="small" variant="primary">
-                        Save
-                      </Button>
-                    </>
-                  )
+                node: field(editing.column === STATUS ? 'Status' : 'Product')
               }
         }
         label="Orders with every cell kind"
