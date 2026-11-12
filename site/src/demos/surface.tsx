@@ -117,7 +117,7 @@ export function SurfaceDemo() {
         </section>
         <section className="settings-subsection" style={{ paddingBottom: 0 }}>
           <h4 className="overline">Folder</h4>
-          <code>~/.config/example-app</code>
+          <code className="settings-file-path">~/.config/example-app</code>
         </section>
       </div>
 

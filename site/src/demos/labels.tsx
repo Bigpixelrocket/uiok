@@ -63,8 +63,10 @@ function Sample() {
       <div className="demo-row">
         <Pager look="both" kind="rows" onPage={setPage} page={page} pages={12} />
       </div>
+      {/* The bar says how many are checked in its own words; the sample adds
+          no actions, so the count is the only translated text after Check all. */}
       <SelectAllBar checked={checked} onCheckAll={(on) => setChecked(on ? 8 : 0)} total={8}>
-        <span className="demo-readout">{checked} of 8 checked</span>
+        {null}
       </SelectAllBar>
     </div>
   );

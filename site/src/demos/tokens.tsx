@@ -13,7 +13,7 @@ import { useLayoutEffect, useState, type ReactNode } from 'react';
 
 import { ICON_LG, ICON_MD, ICON_SM, ICON_XL } from '@bigpixelrocket/uiok/icon';
 
-const TYPE = ['key', 'caption', 'small', 'body', 'heading', 'figure', 'display'];
+const TYPE = ['key', 'caption', 'small', 'body', 'heading', 'display'];
 const SPACE = ['1', '2', '3', '4', '5', '6', '8', '10', '12', '16'];
 const RADIUS = ['xs', 'sm', 'md', 'lg', 'pill'];
 const LINES = ['--line', '--line-strong'];
