@@ -1,7 +1,7 @@
 /* ---- Select-all bar (SelectAllBar) ----
 
-   Check all, then the quiet label "With selected:" and the bulk actions, on one
-   wrapping row. The checkbox is the shared .check look. The bar starts its
+   Check all, then the quiet count of checked rows ("3 of 8 selected") and
+   the bulk actions, on one wrapping row. The checkbox is the shared .check look. The bar starts its
    checkbox the line plus --space-3 in, where a DataGrid's lead column
    starts the rows' boxes inside its frame, so a bar under a grid lines up
    with its rows. */
@@ -28,7 +28,9 @@
   margin: 0;
 }
 
-/* A label, so upright: italic marks a value that stands for no value. */
-.select-all-with {
+/* The count reads as a status line's: dim, upright, its digits in fixed
+   widths so the bar does not shift as rows are checked. */
+.select-all-count {
   color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
 }

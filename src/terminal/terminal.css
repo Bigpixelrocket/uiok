@@ -36,8 +36,11 @@
 }
 
 /* The scrollback rail: a thin thumb over the right edge in the theme's
-   scrollbar colours, which hold 3:1 on the ground; it strengthens while the
-   pointer or the keyboard is on the rail. */
+   scrollbar colours, which hold 3:1 on the ground. It behaves as the
+   platform's overlay scroll bar: hidden at rest, shown while the user moves
+   the scrollback and for a moment after (data-scrolling, set by the
+   surface), and while the pointer or the keyboard is on the rail, where it
+   also strengthens. It leaves at once when its moment ends. */
 .terminal-scrollbar {
   position: absolute;
   top: var(--space-2);
@@ -57,7 +60,12 @@
   left: 1px;
   border-radius: var(--radius-pill);
   background: var(--scrollbar-thumb);
-  transition: background-color var(--duration-fast) var(--ease-out);
+  opacity: 0;
+}
+
+.terminal-scrollbar:is([data-scrolling], :hover, :active, :focus-visible)
+  .terminal-scrollbar-thumb {
+  opacity: 1;
 }
 
 .terminal-scrollbar:hover .terminal-scrollbar-thumb,
@@ -66,7 +74,8 @@
 }
 
 /* The rail takes the keys (Page Up, Page Down) when tabbed to: the thumb
-   strengthens and the rail wears the focus ring inside the mount's edge. */
+   shows and strengthens and the rail wears the focus ring inside the
+   mount's edge. */
 .terminal-scrollbar:focus-visible {
   outline: var(--focus-ring-width) solid var(--accent);
   outline-offset: var(--focus-offset-inset);
@@ -85,24 +94,41 @@
   overflow: hidden;
   clip-path: inset(50%);
   white-space: pre;
+  -webkit-user-select: text;
   user-select: text;
 }
 
-/* A terminal that could not start says so as a state, not as a line of
-   output: the library's danger notice (surface.css: a plain line led by
-   the alert glyph in --danger) set where the first line would be, on the
-   terminal's own ground so the well keeps its look. The words take the
-   terminal's text colour, as everything in the well does. The well keeps
-   the engine's 4px inset; the notice's own inset and type are the notice's. */
+/* A terminal that could not start says so as a state, set as terminal
+   text where the first line would be: the terminal's monospace at 13px on
+   19px lines (the engine's TERMINAL_FONT_SIZE and TERMINAL_LINE_HEIGHT), at
+   the engine's 4px inset, on the terminal's own ground. The danger glyph
+   carries the tone and the words keep the terminal's text colour, as a
+   status line does; no notice frame, bar, or interface font. */
 .terminal-failure {
+  display: flex;
   flex: 1;
+  align-items: flex-start;
+  gap: 1ch;
   margin: 0;
   padding: var(--space-2);
   background: var(--terminal-bg);
+  color: var(--terminal-fg);
+  font: var(--font-size-body)/19px var(--font-mono);
 }
 
-.terminal-failure > .notice {
-  color: var(--terminal-fg);
+.terminal-failure-glyph {
+  flex: none;
+  /* One line tall, so the glyph centres on the first line's 19px. */
+  height: 1lh;
+  color: var(--danger);
+}
+
+.terminal-failure-text {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* The terminal's menu (TerminalMenu), which a secondary click opens at the

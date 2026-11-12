@@ -95,6 +95,8 @@ const QUEUED_OUTPUT_DEADLINE_MS = 50;
  * and painted instead of freezing the last frame.
  */
 const SYNCHRONIZED_OUTPUT_RENDER_TIMEOUT_MS = 500;
+/** How long the overlay scroll thumb stays after the scrollback stops moving. */
+const SCROLLBAR_LINGER_MS = 1000;
 const TERMINAL_FONT_LOAD_TEXT = 'iMW0@# .';
 const TERMINAL_FONT_LOAD_VARIANTS = [
   'normal 400',
@@ -276,6 +278,7 @@ export class GhosttyTerminalSurface {
     end: { x: number; y: number };
   } | null = null;
   private selectionScrollTimer: number | null = null;
+  private scrollbarShowTimer: number | null = null;
   private selectionScrollDelta = 0;
   private selectionPointer: { x: number; y: number } | null = null;
   private mouseReportingPointerId: number | null = null;
@@ -750,6 +753,7 @@ export class GhosttyTerminalSurface {
     this.dprMedia = null;
     this.reducedMotionMedia?.removeEventListener('change', this.onReducedMotionChange);
     if (this.selectionScrollTimer !== null) window.clearInterval(this.selectionScrollTimer);
+    if (this.scrollbarShowTimer !== null) window.clearTimeout(this.scrollbarShowTimer);
     if (this.resizeNotifyTimer !== null) {
       window.clearTimeout(this.resizeNotifyTimer);
       this.resizeNotifyTimer = null;
@@ -1201,7 +1205,9 @@ export class GhosttyTerminalSurface {
     const previous = this.hoveredLink;
     const unchanged =
       previous === null ? link === null : link !== null && isSameTerminalLink(previous, link);
-    this.canvas.style.cursor = link ? 'pointer' : '';
+    // The I-beam stays over a link, as everywhere on the canvas: a desktop
+    // terminal shows a link by its underline, never by the hand.
+    this.canvas.style.cursor = '';
     if (unchanged) return;
     this.hoveredLink = link;
     this.forceFullRender = true;
@@ -1441,7 +1447,23 @@ export class GhosttyTerminalSurface {
     this.core.scroll(delta);
     this.forceFullRender = true;
     this.scrollbarDirty = true;
+    this.showScrollbarWhileScrolling();
     this.requestRender();
+  }
+
+  /**
+   * The thumb rests hidden, as the platform's overlay scroll bar does, and
+   * shows while the user moves the scrollback and for a moment after
+   * (`data-scrolling`, which terminal.css reads). Output that arrives on its
+   * own never shows it.
+   */
+  private showScrollbarWhileScrolling(): void {
+    this.scrollbar.dataset['scrolling'] = '';
+    if (this.scrollbarShowTimer !== null) window.clearTimeout(this.scrollbarShowTimer);
+    this.scrollbarShowTimer = window.setTimeout(() => {
+      this.scrollbarShowTimer = null;
+      delete this.scrollbar.dataset['scrolling'];
+    }, SCROLLBAR_LINGER_MS);
   }
 
   private scrollbarToPointer(clientY: number, bounds: DOMRect): void {

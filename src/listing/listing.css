@@ -83,9 +83,10 @@
   border-color: var(--accent);
 }
 
-/* The listing's face: the path bar, the list, and the status line are set
-   in the monospace face, whatever the space around them uses. */
-:where(.listing-root) :is(.pane-path-row, .pane-list, .pane-status) {
+/* The listing's face: the path bar, the list (or an empty pane's line),
+   and the status line are set in the monospace face, whatever the space
+   around them uses. */
+:where(.listing-root) :is(.pane-path-row, .pane-list, .pane-empty, .pane-status) {
   font-family: var(--font-mono);
   font-size: var(--font-size-body);
 }
@@ -600,15 +601,25 @@ button.crumb-label > .crumb-text {
   white-space: nowrap;
 }
 
-/* The cursor row's actions, and a bar's lead action, are lit: accent words
-   that keep 4.5:1 on the row, the bar, and the hover wash. An icon action
-   drawn with its word lights as a worded action does: its glyph alone
-   would pass at 3:1 in the rest tone, its word does not. */
+/* The cursor row's actions, and a bar's lead action, are lit: full words
+   in the text tone, never the accent, so an action reads as a control and
+   not as a link. An icon action drawn with its word lights as a worded
+   action does: its glyph alone would pass at 3:1 in the rest tone, its
+   word does not. A bar's lead action also stands a weight up, and its
+   glyph alone keeps the accent. */
 :where(.listing-root) .row.cursor:where(:not(.selected)) .pane-act,
 :where(.listing-root) .row.cursor:where(:not(.selected)) .pane-icon-act:where(.worded),
 .pane-act.lit,
 .pane-act.lit:hover:enabled {
-  color: var(--accent-text);
+  color: var(--text);
+}
+
+.pane-act.lit {
+  font-weight: var(--font-weight-medium);
+}
+
+.pane-act.lit > svg {
+  color: var(--accent);
 }
 
 /* A destructive action (`danger`: Remove, Drop, Delete) stays quiet at rest,
@@ -1121,8 +1132,8 @@ button.crumb-label > .crumb-text {
 }
 
 /* A row at a listing's foot that adds one (`.pane-add`: "Add service…"):
-   quiet dim words after an accent plus, which turn to accent words under
-   the pointer, with the focus, and on the cursor row. */
+   quiet dim words after an accent plus, which turn to full words under
+   the pointer, with the focus, and on the cursor row, as a control's do. */
 :where(.listing-root) .row.pane-add {
   color: var(--text-dim);
 }
@@ -1133,7 +1144,7 @@ button.crumb-label > .crumb-text {
 
 :where(.listing-root) .row.pane-add:where(:not(.selected)):hover > .row-name,
 :where(.listing-root) .row.pane-add:where(:not(.selected)):is(:focus-visible, .cursor) > .row-name {
-  color: var(--accent-text);
+  color: var(--text);
 }
 
 :where(.listing-root) .row-icon {
@@ -1146,6 +1157,27 @@ button.crumb-label > .crumb-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* A listing selects rows, not text, as a file manager does: a drag, a
+   Shift-click, or a double-click on a row never starts a text selection,
+   in its name and values included, and a row copies through the host's
+   own Copy. This holds inside a region a host opts into selection
+   (`.selectable`) and over a `code` in a cell, so it is said here and not
+   left to the base sheet's default. A field in a row (an inline rename)
+   keeps its own text. */
+:where(.listing-root)
+  :is(
+    .row,
+    .row
+      :not(
+        input:not([type='checkbox'], [type='radio'], [type='range']),
+        textarea,
+        [contenteditable]:not([contenteditable='false'])
+      )
+  ) {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* Metadata cells read like columns of a terminal listing: the gap character
@@ -1184,6 +1216,9 @@ button.crumb-label > .crumb-text {
 :where(.listing-root) .pane-summary {
   flex: 0 1 auto;
   min-width: 0;
+  /* A read-out of the pane's contents, so content a user may copy. */
+  -webkit-user-select: text;
+  user-select: text;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1233,29 +1268,32 @@ button.crumb-label > .crumb-text {
   content: none;
 }
 
-/* A control at a strip's right end: a quiet link (`.pane-strip-link`,
-   Update all, Clear). */
+/* A control at a strip's right end: a quiet strip action
+   (`.pane-strip-link`, Update all, Clear). */
 :where(.listing-root) .pane-columns > .pane-col-control {
   align-items: center;
   justify-content: flex-end;
 }
 
-/* A strip link is accent words drawn 20px high, with a little room either
-   side so its ring and pressed wash clear the words; the words keep the
-   column's right edge. Its hit area grows to --hit-target in the block
-   axis. Its look is its own class's, so it draws the same outside a strip. */
+/* A strip action is a quiet control, never a link (no accent, no
+   underline): dim words drawn 20px high, which take the base sheet's
+   shared quiet hover (the frosted box, full words) and press. Its box
+   pads the words as a crumb's does and reaches back over that padding, so
+   the words keep the column's right edge. Its hit area grows to
+   --hit-target in the block axis. Its look is its own class's, so it draws
+   the same outside a strip. */
 .pane-strip-link {
   position: relative;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
   height: var(--control-height-xs);
-  margin: 0 calc(-1 * var(--space-1));
-  padding: 0 var(--space-1);
+  margin: 0 calc(-1 * var(--space-2));
+  padding: 0 var(--space-2);
   border: none;
   border-radius: var(--radius-sm);
   background: none;
-  color: var(--accent-text);
+  color: var(--text-dim);
   font: var(--font-weight-medium) var(--font-size-caption) var(--font-ui);
   white-space: nowrap;
   cursor: default;
@@ -1268,39 +1306,25 @@ button.crumb-label > .crumb-text {
   content: '';
 }
 
-.pane-strip-link:hover:enabled {
-  text-decoration: underline;
-  text-decoration-color: var(--accent-line);
-  text-underline-offset: var(--space-1);
-}
-
 .pane-strip-link:focus-visible {
   outline-offset: var(--focus-offset-flush);
 }
 
-.pane-strip-link.danger {
-  color: var(--danger-text);
-}
-
-.pane-strip-link.danger:hover:enabled {
-  text-decoration-color: var(--danger-line);
-}
-
-/* Pressed, a strip link sinks in the shared press face and keeps its own
-   words' tone, the accent or the danger, so a press reads as the link
-   going down, not as another control; the hover underline lets go. A
-   strip link that is a toggle and on keeps the on look's own words. */
-.pane-strip-link:active:enabled:not([aria-pressed='true']) {
-  color: var(--accent-text);
-  text-decoration: none;
-}
-
+/* A destructive strip action (Clear history) stays quiet at rest, as a
+   row's destructive action does, and says what it is in the danger tone
+   under the pointer, with the keyboard focus, and while pressed. */
+.pane-strip-link.danger:hover:enabled,
+.pane-strip-link.danger:focus-visible,
 .pane-strip-link.danger:active:enabled:not([aria-pressed='true']) {
   color: var(--danger-text);
 }
 
 /* A line that says something about a listing, or stands in for its rows:
-   a quiet "Nothing here yet", a hint, a refusal (`danger`). */
+   a quiet "Nothing here yet", a hint, a refusal (`danger`). Its words
+   start on the row inset, where a row's icon, the column strip's first
+   label, and the path bar's first crumb start, so the pane keeps one left
+   edge and no line reads as indented. Its words are content: a user may
+   select and copy them. */
 :where(.listing-root) .pane-message {
   display: flex;
   flex-wrap: wrap;
@@ -1309,18 +1333,18 @@ button.crumb-label > .crumb-text {
   min-height: var(--row-height);
   /* The block margins only: inside a table listing the message reaches
      back over the listing's inset as a row does, so its rule runs edge to
-     edge and its words start where the rows' names do. */
+     edge and its words start where the rows' icons do. */
   margin-block: 0;
-  /* The words start over the rows' names, past the icon column. */
-  padding: var(--space-1) var(--pane-row-inset) var(--space-1)
-    calc(var(--pane-row-inset) + var(--icon-column));
+  padding: var(--space-1) var(--pane-row-inset);
   box-sizing: border-box;
   color: var(--row-meta-text);
-  /* A sentence, so the interface font, though the list around it is set in
-     the listing's monospace; a name or a value inside it (`code`) keeps
-     the monospace. */
+  /* A hint or a refusal is a sentence, so the interface font, though the
+     list around it is set in the listing's monospace; a name or a value
+     inside it (`code`) keeps the monospace. */
   font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
     var(--font-ui);
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* A refusal is a status line: the danger glyph (surface.css) before the
@@ -1334,7 +1358,7 @@ button.crumb-label > .crumb-text {
    starts, in the rows' own typeface and size (the host's, as the rows'
    are), dim, one row high. */
 :where(.listing-root) .pane-message.empty {
-  padding: 0 var(--pane-row-inset);
+  padding-block: 0;
   font: inherit;
   line-height: var(--line-height-compact);
 }
@@ -1343,55 +1367,58 @@ button.crumb-label > .crumb-text {
   font-family: var(--font-mono);
 }
 
-/* A pane with nothing in it yet: one quiet block centred in it, its glyph,
-   its title, a sentence on what the pane is for, and its ways on, a lone
-   button or a row of them (.pane-empty-actions). It is for a whole empty
-   space (a pane, a page); an empty list inside a working pane says so
-   with a quiet row (`.pane-message.empty`). */
+/* A pane with nothing in it at all (`.pane-empty`) keeps its frame, as a
+   working pane does: the path bar above it (where its ways on stand, an
+   Add action), the status line below, and between them, in the first
+   row's place, one quiet line in the listing's own type, dim, on the row
+   inset. No centred block, no picture: a glyph the host puts first is not
+   drawn, its title (`strong` or `h2`) is that line, a sentence after it
+   is a hint in the interface font, as a `.pane-message` hint is, and a
+   button or a `.pane-empty-actions` row of them follows as small push
+   buttons at the start edge. An empty list inside a working pane says so
+   with `.pane-message.empty` instead. */
 :where(.listing-root) .pane-empty {
   display: flex;
   flex: 1;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-2);
-  padding: var(--space-16);
-  color: var(--text-dim);
-  font-family: var(--font-ui);
-  text-align: center;
+  align-items: flex-start;
+  min-height: 0;
+  padding: 0 var(--pane-row-inset);
+  overflow: auto;
+  color: var(--row-meta-text);
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 :where(.listing-root) .pane-empty > svg {
-  margin-bottom: var(--space-4);
-  color: var(--text-faint);
+  display: none;
 }
 
 :where(.listing-root) .pane-empty :is(strong, h2) {
+  display: flex;
+  align-items: center;
+  min-height: var(--row-height);
   margin: 0;
-  color: var(--text);
-  font-size: var(--font-size-heading);
-  font-weight: var(--font-weight-strong);
+  color: inherit;
+  font: inherit;
+  line-height: var(--line-height-compact);
 }
 
 :where(.listing-root) .pane-empty p {
-  max-width: 420px;
-  margin: 0;
-  font-size: var(--font-size-small);
-  line-height: var(--line-height-prose);
-  text-wrap: balance;
+  margin: 0 0 var(--space-2);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
 }
 
 :where(.listing-root) .pane-empty > .button,
 :where(.listing-root) .pane-empty-actions {
-  margin-top: var(--space-6);
+  margin-block: var(--space-2);
 }
 
 :where(.listing-root) .pane-empty-actions {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: var(--space-4);
-  max-width: 620px;
+  gap: var(--space-3);
 }
 
 /* A state (StateMark): its mark, or its spinner for a transition, and its
@@ -1469,7 +1496,6 @@ button.crumb-label > .crumb-text {
 
 :where(.listing-root) .pane-tone-busy > .pane-state-dot {
   box-shadow: inset 0 0 0 var(--line-strong) var(--accent);
-  animation: uiok-pulse var(--duration-spin) var(--ease-in-out) infinite;
 }
 
 /* The busy spinner is the shared Spinner (it turns and stands still under
@@ -1503,14 +1529,6 @@ button.crumb-label > .crumb-text {
   :is(.pane-tone-ready, .pane-tone-warning, .pane-tone-danger)
   > .pane-state-dot {
   box-shadow: 0 0 0 var(--line) var(--text-on-surface);
-}
-
-/* Reduced motion: a busy mark stands still, and its accent and word still say
-   the work is running. */
-@media (prefers-reduced-motion: reduce) {
-  :where(.listing-root) .pane-tone-busy > .pane-state-dot {
-    animation: none;
-  }
 }
 
 :where(.listing-root) .row .pane-state.pane-tone-ready {
@@ -1692,13 +1710,6 @@ button.crumb-label > .crumb-text {
   }
 }
 
-/* A row's secondary controls show on its hover, its keyboard focus, and the
-   cursor, whose keys run them. They fade rather than hide, so a pointer
-   finds them where they stand. */
-:where(.listing-root) .row:not(:hover, :focus-within, .cursor) .pane-hover-cell .pane-icon-act {
-  opacity: 0;
-}
-
 /* A path (PathCell): its folders in the row-meta tone, giving way in order:
    the head first, down to its ellipsis, so the last folder and the name
    stay whole; then the last folder, down to its own ellipsis and then
@@ -1775,6 +1786,9 @@ button.crumb-label > .crumb-text {
   font: var(--font-size-body)/19px var(--font-mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  /* Output is content: a user selects and copies it. */
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* What an empty well says until output takes its place ("Output shows
@@ -1811,14 +1825,23 @@ button.crumb-label > .crumb-text {
   font-size: var(--font-size-caption);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* A selected row (`.selected`), where nothing else on the row shows the
    state: the solid accent fill with on-accent words, its quiet words in the
    on-selection dim tone, every tone a cell would wear (a state, a path's
    name, a lit action) on the selection's own. The cursor on a selected row
-   is the selection's cursor fill and a bar in the on-selection tone. A
-   selection keeps its fill in a pane that does not hold the keys. */
+   is the selection's cursor fill and a bar in the on-selection tone.
+
+   Only the selection that holds the keys wears the accent. In a pane that
+   does not hold them, and in a window that is not in front (the host sets
+   `data-window-inactive` on the root from its window's focus events), a
+   selection greys, as a desktop list's does: the neutral fill and the
+   words of a row on it (below). The on-selection words are scoped to the
+   selection that holds the keys with a :where(), so each rule keeps its
+   weight. */
 :where(.listing-root) .row.selected {
   --row-fill: var(--selected-bg);
 
@@ -1834,7 +1857,12 @@ button.crumb-label > .crumb-text {
 }
 
 :where(.listing-root)
-  .row.selected
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
   :is(.row-icon, .row-name, .pane-path-name, .pane-act, .pane-icon-act, .pane-state) {
   color: var(--on-selected);
 }
@@ -1843,12 +1871,24 @@ button.crumb-label > .crumb-text {
    words too: their own rules weigh more than the one above, and their tones
    are not floored on the accent. */
 :where(.listing-root)
-  .row.selected
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
   :is(.pane-act, .pane-icon-act):is(.lit, .danger, :hover, :focus-visible) {
   color: var(--on-selected);
 }
 
-:where(.listing-root) .row.selected :is(.row-meta, .pane-path-head, .pane-path-tail) {
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  :is(.row-meta, .pane-path-head, .pane-path-tail) {
   color: var(--on-selected-dim);
 }
 
@@ -1856,28 +1896,134 @@ button.crumb-label > .crumb-text {
    state's heavy one) and the busy spinner draw in the selection's words'
    tone, as the word beside them does: in their own tones they would be the
    accent, or a grey, on the accent. */
-:where(.listing-root) .row.selected .pane-state-dot {
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .pane-state-dot {
   box-shadow: inset 0 0 0 var(--line) var(--on-selected);
 }
 
-:where(.listing-root) .row.selected .pane-tone-busy > .pane-state-dot {
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .pane-tone-busy
+  > .pane-state-dot {
   box-shadow: inset 0 0 0 var(--line-strong) var(--on-selected);
 }
 
-:where(.listing-root) .row.selected .pane-state > svg.pane-state-busy {
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .pane-state
+  > svg.pane-state-busy {
   color: var(--on-selected);
 }
 
 /* On the accent fill a filled mark wears a hairline in the selection's
    words' tone, so its shape holds whatever its hue. */
 :where(.listing-root)
-  .row.selected
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
   :is(.pane-tone-ready, .pane-tone-warning, .pane-tone-danger)
   > .pane-state-dot {
   box-shadow: 0 0 0 var(--line) var(--on-selected);
 }
 
-:where(.listing-root) .row.selected .name-hit {
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .name-hit {
   background: var(--selection-hit);
   box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--on-selected);
+}
+
+/* A lit action's accent glyph would vanish on the accent fill: on a
+   selection it takes the selection's words. */
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .pane-act.lit
+  > svg {
+  color: inherit;
+}
+
+/* The grey selection: in a pane that does not hold the keys, or in a
+   window that is not in front, a selected row takes the neutral fill and
+   the words a row on that fill wears: full words for its name, the
+   on-surface tone (floored on the fill) for its quiet words and its
+   actions at rest, and its states in their own tones. Under the cursor it keeps
+   the cursor's bar where the pane holds the keys, and none where it does
+   not, as the neutral cursor has none. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.selected {
+  --row-fill: var(--fill);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
+  color: var(--text);
+}
+
+:where(:root[data-window-inactive] .listing-root) .row.cursor.selected {
+  --row-fill: var(--fill);
+  --row-bar: var(--cursor-bar);
+
+  background: var(--row-fill);
+}
+
+:where(.listing-root:has(.pane.active) .pane:not(.active, .active .pane)) .row.cursor.selected {
+  --row-fill: var(--fill);
+  --row-bar: transparent;
+
+  background: var(--row-fill);
+}
+
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.selected
+  :is(
+    .row-icon,
+    .row-meta,
+    .pane-path-head,
+    .pane-path-tail,
+    .pane-state:is(.pane-tone-muted, .pane-tone-busy),
+    :is(.pane-act, .pane-icon-act):not(:hover, :focus-visible)
+  ) {
+  color: var(--text-on-surface);
+}
+
+/* In a window that is not in front the pane that holds the keys lets go
+   of the accent on its frame too, and wears the strong hairline every
+   other pane wears. */
+:where(:root[data-window-inactive] .listing-root) .pane.active::before {
+  border-color: var(--border-strong);
 }

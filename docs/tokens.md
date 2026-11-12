@@ -12,8 +12,7 @@ Colour tokens are in [themes](themes.md).
 | `--font-size-caption` | 11px  | Column and group labels, counts, pill tabs, chart labels, uppercase headings         |
 | `--font-size-small`   | 12px  | Compact control labels, status lines, help text, dialog titles, grid cells, tooltips |
 | `--font-size-body`    | 13px  | Listing rows, regular Button labels, body text, the terminal                         |
-| `--font-size-heading` | 14px  | A run headline, an empty state's title, a card title                                 |
-| `--font-size-figure`  | 18px  | A run header's big figure                                                            |
+| `--font-size-heading` | 14px  | A run headline and its clock, a Settings page title                                  |
 | `--font-size-display` | 20px  | A startup or splash title                                                            |
 
 | Token                   | Value | Role                                       |
@@ -89,20 +88,20 @@ A corner nested inside another keeps it concentric: `calc(var(--radius-md) - var
 | Token               | Value                          | Use                                                                                            |
 | ------------------- | ------------------------------ | ---------------------------------------------------------------------------------------------- |
 | `--duration-fast`   | 120ms                          | Hover, focus, and press feedback; progress fills                                               |
-| `--duration-base`   | 200ms                          | A surface entering or settling                                                                 |
-| `--duration-slow`   | 280ms                          | Glides; a refusal's shake and red together; a bell                                             |
+| `--duration-base`   | 120ms                          | A state change that moves something (a width, a split); the longest a state change takes       |
+| `--duration-slow`   | 280ms                          | A signal only, never a state change: a refusal's shake and red together; a bell                |
 | `--duration-signal` | 280ms                          | A change shown by colour alone (a refusal's red under reduced motion); reduced motion keeps it |
-| `--duration-spin`   | 1s                             | One turn of a spinner, a pulse, a cursor blink                                                 |
+| `--duration-spin`   | 1s                             | One turn of a spinner, a cursor blink                                                          |
 | `--duration-loop`   | 1.4s                           | One sweep of a slow loop that shows work without a figure: a loading shimmer                   |
 | `--duration-notice` | 2.4s                           | One beat of a flash that must be seen before it ends: a key that just changed                  |
-| `--ease-out`        | cubic-bezier(0.2, 0.8, 0.2, 1) | Entering and gliding                                                                           |
-| `--ease-in-out`     | ease-in-out                    | Shakes and pulses                                                                              |
+| `--ease-out`        | cubic-bezier(0.2, 0.8, 0.2, 1) | A signal's colour fading                                                                       |
+| `--ease-in-out`     | ease-in-out                    | Shakes                                                                                         |
 
-Progress and spinners run `linear`; a blink steps with `steps()`. Rows, menu options, and tabs change at once on hover, as native lists do; controls drawn with the frosted hover take `--duration-fast`.
+Nothing animates in (a desktop application draws a dialog, menu, palette, tooltip, or pill at once): no entrance or exit animation, no smooth scrolling as decoration, and every state change at or under `--duration-base`. Only what reports something keeps moving: progress, spinners, a refusal's shake, a bell. Progress and spinners run `linear`; a blink steps with `steps()`. Rows, menu options, and tabs change at once on hover, as native lists do; controls drawn with the frosted hover take `--duration-fast`.
 
 `--transition-control` is the feedback transition every control writes on its rest state: background, border, shadow, text colour, and filter, each at `--duration-fast`. The base sheet sets it on every quiet control its hover and press recipes cover (`docs/components/surface.md`), and the Button and the form controls read the same steps.
 
-Reduced motion: under `prefers-reduced-motion: reduce`, `tokens.css` sets the three one-shot durations to 0ms (`--duration-signal` keeps its length: it moves nothing, and a colour that carries meaning must stay visible), so a transition or one-shot animation written with them needs no query of its own. A loop (a spinner, stripes, a pulse, a blink) stops itself with `animation: none` in its own query. The base sheet's `uiok-spin` and `uiok-pulse` keyframes serve every spinner and pulse. Every "this is running" signal breathes at one rate, `uiok-pulse var(--duration-spin)`, whether it marks a listing row or a tab. A delay (`transition-delay`, `animation-delay`) is a motion token too.
+Reduced motion: under `prefers-reduced-motion: reduce`, `tokens.css` sets the three one-shot durations to 0ms (`--duration-signal` keeps its length: it moves nothing, and a colour that carries meaning must stay visible), so a transition or one-shot animation written with them needs no query of its own. A loop (a spinner, stripes, a blink) stops itself with `animation: none` in its own query. The base sheet's `uiok-spin` keyframes serve every spinner. A state that is running stands still (a heavier ring) or shows the Spinner; nothing pulses. A delay (`transition-delay`, `animation-delay`) is a motion token too.
 
 ## Heights
 
@@ -145,7 +144,7 @@ The pointer is the arrow (`cursor: default`) over every control: a button, a tab
 | `--icon-sm`     | 12px  | Beside 11 and 12 px text; inside a 20px inline control                                 |
 | `--icon-md`     | 14px  | Beside 13px text in rows, tabs, and buttons                                            |
 | `--icon-lg`     | 16px  | A dialog's title icon, a run header's glyph, empty-state actions, a row's product mark |
-| `--icon-xl`     | 28px  | The glyph over an empty state or a failure                                             |
+| `--icon-xl`     | 28px  | A picture-sized mark (an About window, a splash); never over an empty state or failure |
 | `--icon-column` | 20px  | The leading icon column of a row or menu option                                        |
 
 `ICON_SM`, `ICON_MD`, `ICON_LG`, and `ICON_XL` (`@bigpixelrocket/uiok/icon`) are the same sizes for lucide's `size` prop. A media viewer's 64px placeholder glyph is the one size above `--icon-xl`, an app's documented exception.
@@ -172,9 +171,8 @@ Inside a pane (its own stacking context): `--z-below` (-1, a backdrop under its 
 - Key caps: the 12px key box and its line height, 16 and 18 px cap heights. They are glyph geometry, never a pointer target by themselves.
 - The slider's 12px knob on its 4px trough, glyph geometry.
 - Plot heights in charts (an empty plot's 120px, a scatter plot's 380px drawing and 180px floor) and the Settings dialog's fixed 620px frame: layout sizes, not controls.
-- The shared pulse's 0.35 low point: a keyframe of the motion, not a state's opacity.
 - The docs site's demo frames and brand mark heights.
-- The terminal's 13px on 19px cells (`.pane-well`): the engine's metric.
+- The terminal's 13px on 19px cells (`.pane-well`, and a terminal's start failure): the engine's metric.
 - The activity stripes' 0.9s loop, timed against the stripe period.
 - The palette's fixed 104px drop from the window top: a placement.
 - The docs site's prose sizes (`--site-font-*` in `site/src/site.css`), its wordmark, its page margins, and its loose list line height. A reading page is not the compact interface.

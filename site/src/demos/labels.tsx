@@ -39,7 +39,7 @@ const FRENCH: UiokLabelsOverride = {
   },
   selectAll: {
     checkAll: 'Tout cocher',
-    withSelected: 'Avec la sélection :',
+    selected: (checked, total) => `${checked} sur ${total} sélectionnés`,
     label: 'Avec la sélection'
   }
 };

@@ -7,7 +7,7 @@ import type { DialogLegendModel } from './DialogLegend.logic.js';
 import { DialogFacts, DialogNames, type DialogFact } from './DialogLists.js';
 import { ModalDialog } from './ModalDialog.js';
 
-/** Finder's Delete Immediately chord, which confirms a delete that cannot be undone. */
+/** The Delete Now chord (Finder's chord for a delete that skips the Trash), which confirms a delete that cannot be undone. */
 const DELETE_IMMEDIATELY: Chord = { key: 'Backspace', meta: true, alt: true };
 
 /**
@@ -71,7 +71,7 @@ export interface ConfirmDialogProps {
   /**
    * True for a delete that cannot be undone (a volume with no Trash, a
    * server, a database): the confirm verb stays at the right edge, lit, but
-   * moves off Return onto ⌥⌘⌫, Finder's Delete Immediately chord, and
+   * moves off Return onto ⌥⌘⌫, the Delete Now chord, and
    * Return does nothing, so a Return pressed out of habit after ⌘⌫ never
    * deletes anything for good.
    */

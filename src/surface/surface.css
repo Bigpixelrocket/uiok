@@ -1,4 +1,4 @@
-/* ---- Notices and cards (docs/components/surface.md) ----
+/* ---- Notices (docs/components/surface.md) ----
 
    Surfaces a page draws around its own content, as classes on the page's
    own markup. No component: their words are the page's.
@@ -8,12 +8,10 @@
      no frame, and no side bar of its own: a small status glyph in the
      tone's colour, the words in --text, and an optional small button after
      them. Tones: .notice-danger, .notice-warning, .notice-success; none is
-     a note. .notice-card sets it as a band of its own across a window or a
-     page (under a header), on the surface with a hairline under it.
-   - .card: a lifted panel that groups one subject's lines, framed in
-     --border-strong like every framed surface (panes, menus, the grid),
-     at the 12px surface inset at both ends, whatever its children's
-     margins. */
+     a note. .notice-card sets it as the window's status line under a
+     header: the same plain line at the window's inset, a hairline under it.
+   A group of lines is never a framed card: it is a group under a small
+   heading with a hairline between groups, as Settings draws them. */
 
 .notice {
   /* The tone's glyph, 3:1 on every ground by its token. */
@@ -72,14 +70,15 @@
   margin-inline-start: var(--space-2);
 }
 
-/* A band of its own across the window or page it is about (under a
-   header), as a desktop window's info bar is: the surface's ground at the
-   surface inset, a hairline under it, no tint, no side bar, no shadow. */
+/* The window's status line under a header, about a state that stands
+   until the user fixes it elsewhere (a settings file with a mistake): the
+   notice's plain line at the window's inset, with a hairline under it to
+   part it from the panes. No fill, no tint, no side bar, no shadow, and no
+   close cross: it goes when its cause does. */
 .notice-card {
   align-items: center;
-  padding: var(--space-3) var(--space-6);
+  padding: var(--space-2) var(--space-6);
   border-bottom: var(--line) solid var(--border);
-  background: var(--surface);
 }
 
 .notice-card .notice-actions {
@@ -87,13 +86,15 @@
 }
 
 /* The danger glyph for a message whose markup draws none: a field's
-   problem (.field-problem) and a listing's refusal (.pane-message.danger)
-   lead with the danger tone's CircleAlert, drawn as a mask in --danger, so
-   they read as the same status line a notice is, words in --text. A host
+   problem (.field-problem), a listing's refusal (.pane-message.danger),
+   and a palette's failure note (.palette-failure) lead with the danger
+   tone's CircleAlert, drawn as a mask in --danger, so they read as the same status line a notice is, words in --text. A host
    that draws its own glyph first (an svg) gets no second one. */
-:is(.field-problem, :where(.listing-root) .pane-message.danger):not(
-    :has(> svg:first-child)
-  )::before {
+:is(
+    .field-problem,
+    :where(.listing-root) .pane-message.danger,
+    :where(.palette-notes) .palette-failure
+  ):not(:has(> svg:first-child))::before {
   content: '';
   flex: none;
   width: var(--icon-md);
@@ -101,26 +102,4 @@
   background: var(--danger);
   mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' x2='12' y1='8' y2='12'/%3E%3Cline x1='12' x2='12.01' y1='16' y2='16'/%3E%3C/svg%3E")
     center / contain no-repeat;
-}
-
-.card {
-  box-sizing: border-box;
-  min-width: 0;
-  padding: var(--space-6);
-  border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-md);
-  background: var(--card-bg);
-}
-
-/* The card's inset is its spacing at both ends: its first child starts at
-   the 12px edge and its last ends there, whatever margins a heading or a
-   paragraph brings. Space between children stays the content's own (a
-   paragraph's margin, a grid's gap), so a card laid out as a grid is not
-   spaced twice. */
-.card > :first-child {
-  margin-block-start: 0;
-}
-
-.card > :last-child {
-  margin-block-end: 0;
 }

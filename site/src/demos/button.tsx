@@ -2,7 +2,8 @@
  * Every button tier (primary, tonal, danger, neutral) at the regular size and
  * then the small one, with one disabled button (every tier fades the same
  * way); icon buttons at both sizes, with one disabled; and buttons with an
- * icon beside their label. Icon buttons are named on hover.
+ * icon beside their label. Icon buttons are named on hover. Last, a
+ * disclosure: a triangle and a label that shows or hides a section.
  */
 
 import { Download, Plus, RefreshCw, Settings, Trash2 } from 'lucide-react';
@@ -22,6 +23,7 @@ const TIERS: ReadonlyArray<{ readonly variant: ButtonVariant; readonly word: str
 /** The button page's demo. */
 export function ButtonDemo() {
   const [pressed, setPressed] = useState('nothing yet');
+  const [open, setOpen] = useState(false);
   const press = (what: string) => () => setPressed(what);
   return (
     <div className="demo-stack">
@@ -80,7 +82,21 @@ export function ButtonDemo() {
           <RefreshCw />
           Refresh
         </Button>
+        <button
+          aria-controls="demo-extra-options"
+          aria-expanded={open}
+          className="disclosure"
+          onClick={() => setOpen(!open)}
+          type="button"
+        >
+          Extra options
+        </button>
       </div>
+      {open ? (
+        <p className="field-note" id="demo-extra-options">
+          Rows per page, sort order, and the columns shown.
+        </p>
+      ) : null}
       <code className="demo-readout">pressed: {pressed}</code>
     </div>
   );

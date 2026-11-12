@@ -7,13 +7,17 @@
    The frame (.data-grid) draws the border, the corners, and the ground and
    clips to them; the well inside it (.data-grid-scroll) scrolls and fades
    the side that hides columns. The fade is a mask, which would erase a
-   border on the box it masks, so the frame stays whole at every scroll. */
+   border on the box it masks, so the frame stays whole at every scroll.
+   The frame fills the width it is given, as a desktop table view fills its
+   pane: the header band and the rows run on past the last column, which
+   leaves the slack as an empty filler. A grid that is a pane's whole body
+   drops the frame with one scoped rule of the host's (docs/components/grid.md). */
 .data-grid {
   position: relative;
   display: flex;
   flex-direction: column;
-  width: max-content;
-  max-width: 100%;
+  width: 100%;
+  min-width: 0;
   overflow: hidden;
   border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-md);
@@ -175,6 +179,8 @@
   min-height: var(--row-height-dense);
   padding: 0 var(--space-4);
   color: var(--text-dim);
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .data-grid-row {
@@ -199,6 +205,17 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: default;
+}
+
+/* A grid selects cells, not text, as a desktop table does: a drag, a
+   Shift-click, or a double-click on a row never starts a text selection.
+   A value is copied whole from the cursor cell by the page's Copy (⌘C),
+   which DataGrid answers with `copyText`. This holds inside a region a
+   host opts into selection, so it is said here and not left to the base
+   sheet's default. */
+:is(.data-grid-row, .data-grid-row *) {
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .data-grid-cell:last-child {
@@ -236,24 +253,24 @@
   margin: 0 var(--space-2) 0 0;
 }
 
-/* A cell whose value opens something: a linked record, a download. */
+/* A cell whose value opens something (a linked record, a download): the
+   value in its own text colour, never a link's accent, with a quiet
+   constant underline that says a click opens it. Nothing changes under
+   the pointer. Return on the cursor cell opens it too. */
 .data-grid-link {
   max-width: 100%;
   padding: 0;
   overflow: hidden;
   border: none;
   background: none;
-  color: var(--accent-text);
+  color: inherit;
   font: inherit;
   text-decoration: underline;
-  text-decoration-color: var(--accent-line);
+  text-decoration-color: var(--text-faint);
+  text-underline-offset: var(--space-1);
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: default;
-}
-
-.data-grid-link:hover:enabled {
-  text-decoration-color: var(--accent-text);
 }
 
 /* The row under the pointer, a marked row, and a marked column. The hover

@@ -245,6 +245,14 @@ a {
   max-width: var(--site-measure);
 }
 
+/* The docs site is a website: its own reading text selects as a page's
+   does, though the library makes an application's chrome unselectable. The
+   live demos inside it keep the library's rule, as an app would. */
+.home,
+.prose {
+  user-select: text;
+}
+
 .prose {
   overflow-wrap: break-word;
 }

@@ -38,7 +38,6 @@
   background: var(--scrim);
   -webkit-backdrop-filter: var(--frost);
   backdrop-filter: var(--frost);
-  animation: dialog-wash-in var(--duration-base) var(--ease-out);
 }
 
 /* The box owns its type, whatever page root it is drawn under (a caller
@@ -78,7 +77,6 @@
   box-shadow:
     inset 0 1px 0 var(--glass-edge),
     var(--shadow-modal);
-  animation: dialog-settle var(--duration-base) var(--ease-out);
 }
 
 /* The width steps a caller picks from by what the body holds (the 360px
@@ -133,6 +131,14 @@
   font-family: var(--font-mono);
 }
 
+/* What a dialog says and names is content a user may copy (a message, a
+   name, a path, a count, a value); the title, labels, and the legend stay
+   chrome and cannot be selected. */
+.dialog .dialog-value {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* A body that scrolls on its own: the dialog's height limit shrinks it
    first, and its contents scroll between the strip and the legend. Pair it
    with the shared .scroll-fade so a cut edge shows there is more. */
@@ -167,27 +173,8 @@
   outline: none;
 }
 
-/* The wash fades in and the dialog settles from a few pixels above; a cut to
-   a blurred window reads as a glitch. */
-@keyframes dialog-wash-in {
-  from {
-    opacity: 0;
-  }
-}
-
-@keyframes dialog-settle {
-  from {
-    opacity: 0;
-    transform: translateY(-6px) scale(0.985);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .dialog-backdrop.frosted,
-  .dialog {
-    animation: none;
-  }
-}
+/* Nothing animates in: the wash and the box are there on the next frame,
+   as a desktop sheet or panel appears, so neither carries an entrance. */
 
 /* The title strip: crust, ruled in the tone, with the verb's icon and the
    one-line title. It wears the
@@ -424,6 +411,8 @@
   color: var(--text-dim);
   line-height: var(--line-height-prose);
   overflow-wrap: break-word;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* A name the message sets apart (the item a delete asks about) reads in the
@@ -485,6 +474,8 @@
   font-weight: var(--font-weight-strong);
   text-align: end;
   white-space: nowrap;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .dialog-fact-value {
@@ -494,6 +485,8 @@
   color: var(--text-dim);
   text-overflow: ellipsis;
   white-space: nowrap;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 /* ---- Name list (DialogNames) ----
@@ -517,6 +510,8 @@
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .dialog-names-more {

@@ -1,14 +1,14 @@
 /**
  * The shell's shared surfaces: a Settings dialog with its sidebar of pages
- * (Appearance with the theme picker, Updates with the status card and its
+ * (Appearance with the theme picker, Updates with the status row and its
  * notes, Files with a file's problems), the theme picker and the update
- * card in each tone on the page itself (a note under the ready card's head,
- * a failed download in a neutral card), the band a settings file's new
- * mistake shows under the header, the update pill's states, the channel tag
- * in the accent and in a host's own hue, the About window, the sign-in
- * prompts (a password asked again after a refusal, a new host key), the exit
- * confirmation, and the load failure block. The Files page of the Settings
- * dialog holds a change a file could not take, over the page.
+ * status in each tone on the page itself (a failed download under its
+ * row), the status line a settings file's new mistake shows under the
+ * header, the update pill's states, the channel tag in the accent and in a
+ * host's own hue, the About window, the sign-in prompts (a password asked
+ * again after a refusal, a new host key), the exit confirmation, and the
+ * load failure line. The Files page of the Settings dialog holds a change a
+ * file could not take, over the page.
  */
 
 import {
@@ -25,17 +25,16 @@ import {
   RefreshCw,
   Settings as SettingsIcon,
   ShieldQuestion,
-  TriangleAlert,
-  X
+  TriangleAlert
 } from 'lucide-react';
-import { Fragment, useId, useState, type CSSProperties, type ReactElement } from 'react';
+import { useId, useState, type CSSProperties, type ReactElement } from 'react';
 
-import { Button, IconButton } from '@bigpixelrocket/uiok/button';
+import { Button } from '@bigpixelrocket/uiok/button';
 import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
 import { ICON_MD, ICON_XL } from '@bigpixelrocket/uiok/icon';
 import { RunHeader } from '@bigpixelrocket/uiok/run';
 import { DARK_THEME_IDS, LIGHT_THEME_IDS, type ThemeId } from '@bigpixelrocket/uiok/themes';
-import { tooltip } from '@bigpixelrocket/uiok/tooltip';
+import { cutTooltip } from '@bigpixelrocket/uiok/tooltip';
 
 import { ThemeChoices } from '../ThemePicker';
 
@@ -63,13 +62,12 @@ const NOTES: readonly { readonly area: string; readonly lines: readonly string[]
 
 type CardTone = 'idle' | 'busy' | 'ready' | 'ok' | 'warning' | 'error';
 
-/** The status card for one state of the updater. */
+/** The status row for one state of the updater. */
 function UpdateCard({
   tone,
   title,
   sub,
   verb,
-  note,
   notes = false,
   run = false
 }: {
@@ -77,8 +75,6 @@ function UpdateCard({
   readonly title: string;
   readonly sub: string;
   readonly verb?: string;
-  /** A quiet line under the head (`update-card-note`). */
-  readonly note?: string;
   readonly notes?: boolean;
   /** A download under the head: one running, or one that failed in a neutral card. */
   readonly run?: boolean | 'failed';
@@ -100,12 +96,7 @@ function UpdateCard({
               ? RefreshCw
               : Download;
   const headingId = useId();
-  const classes = [
-    'update-card',
-    'card',
-    notes ? 'with-notes' : '',
-    run === false ? '' : 'with-run'
-  ]
+  const classes = ['update-card', notes ? 'with-notes' : '', run === false ? '' : 'with-run']
     .filter(Boolean)
     .join(' ');
   return (
@@ -122,7 +113,6 @@ function UpdateCard({
           </Button>
         ) : null}
       </div>
-      {note === undefined ? null : <p className="update-card-note">{note}</p>}
       {run === true ? (
         <RunHeader
           bar={{ fraction: 0.42, label: 'Download' }}
@@ -173,11 +163,11 @@ function UpdateCard({
   );
 }
 
-/** The check cadence above the status card. */
+/** The check cadence above the status row. */
 function UpdateChecks(): ReactElement {
   const id = useId();
   return (
-    <div className="update-checks card">
+    <div className="update-checks">
       <label className="update-checks-label" htmlFor={id}>
         Check for updates automatically
       </label>
@@ -433,21 +423,23 @@ function PasswordPrompt({ onClose }: { readonly onClose: () => void }): ReactEle
       onCancel={onClose}
       title="Sign in to build.example.com"
     >
-      <div className="field-group">
+      <div className="field-grid">
         <label className="field-label" htmlFor={fieldId}>
           Password for deploy
         </label>
-        <input
-          aria-describedby={problemId}
-          aria-invalid
-          autoFocus
-          className="field sign-in-field"
-          id={fieldId}
-          type="password"
-        />
-        <p className="field-problem" id={problemId}>
-          The server did not accept that password. Try again.
-        </p>
+        <div className="field-value">
+          <input
+            aria-describedby={problemId}
+            aria-invalid
+            autoFocus
+            className="field sign-in-field"
+            id={fieldId}
+            type="password"
+          />
+          <p className="field-problem" id={problemId}>
+            The server did not accept that password. Try again.
+          </p>
+        </div>
       </div>
     </ModalDialog>
   );
@@ -481,29 +473,25 @@ function HostKeyPrompt({ onClose }: { readonly onClose: () => void }): ReactElem
   );
 }
 
-/** The exit confirmation's message, one sentence a paragraph. */
-const EXIT_SENTENCES: readonly string[] = [
-  'Quitting stops 3 running processes and 1 transfer.',
-  'Their logs are kept, and the transfer resumes at the next launch.'
-];
-
-/** The confirmation shown before an app quits with work running. */
+/**
+ * The confirmation shown before an app quits with work running: a title of
+ * a few words, one sentence of consequence, then what is running as facts.
+ */
 function ExitConfirmation({ onClose }: { readonly onClose: () => void }): ReactElement {
   return (
     <ConfirmDialog
       cancelLabel="Keep Running"
       className="exit-confirmation dialog-size-md"
       confirmLabel="Quit"
+      facts={[
+        { label: 'Processes', count: 3, value: 'api, web, worker' },
+        { label: 'Transfers', count: 1, value: 'backup.tar.gz' }
+      ]}
       icon={Power}
-      message={EXIT_SENTENCES.map((sentence, index) => (
-        <Fragment key={sentence}>
-          {index > 0 ? ' ' : null}
-          <span className="exit-confirmation-sentence">{sentence}</span>
-        </Fragment>
-      ))}
+      message="Logs are kept; the transfer resumes at the next launch."
       onCancel={onClose}
       onConfirm={onClose}
-      title="Quit and stop the running work?"
+      title="Quit and Stop 4 Tasks?"
       tone="warning"
     />
   );
@@ -531,8 +519,9 @@ export function ShellDemo(): ReactElement {
       {open === 'exit' ? <ExitConfirmation onClose={close} /> : null}
 
       <h3 className="demo-subhead">Settings notice</h3>
-      {/* The band under the header, in the page's flow, about a new mistake
-          in a settings file; it sits in a frame standing in for the window. */}
+      {/* The status line under the header about a new mistake in a settings
+          file, in a frame standing in for the window. No close cross: it goes
+          when the file is fixed. */}
       <div className="shell-demo-window">
         <div className="settings-notice notice notice-card notice-warning" role="status">
           <TriangleAlert aria-hidden size={ICON_MD} />
@@ -543,9 +532,6 @@ export function ShellDemo(): ReactElement {
           </p>
           <div className="notice-actions">
             <Button size="small">Show</Button>
-            <IconButton aria-label="Close" size="small" {...tooltip('Close')}>
-              <X />
-            </IconButton>
           </div>
         </div>
       </div>
@@ -573,7 +559,6 @@ export function ShellDemo(): ReactElement {
           verb="Stop"
         />
         <UpdateCard
-          note="It also installs the next time the app opens."
           sub="Restart to finish installing 2.5.0."
           title="Ready to install"
           tone="ready"
@@ -634,8 +619,8 @@ export function ShellDemo(): ReactElement {
 
       <h3 className="demo-subhead">About window</h3>
       {/* A window of 420 by 300 in place of the whole viewport the class fills. */}
-      <div className="card" style={{ width: 420, maxWidth: '100%', padding: 0 }}>
-        <div className="about-window" style={{ minHeight: 300 }}>
+      <div className="shell-demo-window" style={{ width: 420, maxWidth: '100%' }}>
+        <div className="about-window" style={{ height: 300 }}>
           <Box absoluteStrokeWidth aria-hidden size={ICON_XL} />
           <div className="about-lockup">
             <strong>Sample App</strong>
@@ -645,11 +630,17 @@ export function ShellDemo(): ReactElement {
       </div>
 
       <h3 className="demo-subhead">Load failure</h3>
-      <div className="card">
+      {/* Where the list's rows would start, in a frame standing in for the pane.
+          The host gives each part that may be cut its whole text in a tooltip. */}
+      <div className="shell-demo-window">
         <div className="space-load-failure" role="alert">
-          <CircleAlert absoluteStrokeWidth aria-hidden size={ICON_XL} />
-          <strong>The list could not be loaded</strong>
-          <p>The settings folder could not be read: permission denied. Check its permissions.</p>
+          <CircleAlert aria-hidden size={ICON_MD} />
+          <strong {...cutTooltip('The list could not be loaded')}>
+            The list could not be loaded
+          </strong>
+          <p {...cutTooltip('The settings folder could not be read: permission denied.')}>
+            The settings folder could not be read: permission denied.
+          </p>
           <Button size="small">Try Again</Button>
         </div>
       </div>

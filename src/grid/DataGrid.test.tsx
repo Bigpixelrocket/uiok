@@ -494,3 +494,22 @@ describe('the data grid’s cursor, sort, and edit', () => {
     expect(heading.hasAttribute('data-tooltip-cut')).toBe(true);
   });
 });
+
+describe('the data grid’s selection', () => {
+  it('selects cells, not text, even inside a region a host opts in; its empty line stays selectable', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="selectable"><div class="data-grid">
+      <div class="data-grid-row"><div class="data-grid-cell"><code>42</code></div>
+        <button class="data-grid-link">10001</button></div>
+      <div class="data-grid-body empty"><div class="data-grid-empty">No rows.</div></div>
+    </div></div>`;
+    const select = (selector: string): string =>
+      getComputedStyle(document.querySelector(selector) as Element).getPropertyValue('user-select');
+
+    for (const selector of ['.data-grid-row', '.data-grid-cell', 'code', '.data-grid-link']) {
+      expect(select(selector), selector).toBe('none');
+    }
+    expect(select('.data-grid-empty')).toBe('text');
+    document.body.innerHTML = '';
+  });
+});

@@ -15,7 +15,9 @@ export const ICON_MD = 14;
 export const ICON_LG = 16;
 
 /**
- * The glyph over an empty state or a failure. Drawn larger than `ICON_LG`, so
- * the icon passes `absoluteStrokeWidth` to keep the 2px stroke.
+ * A picture-sized glyph: an app's mark in an About window or a splash. Never
+ * a glyph over an empty state or a failure, which say so in a line with an
+ * icon of their text's size. Drawn larger than `ICON_LG`, so the icon passes
+ * `absoluteStrokeWidth` to keep the 2px stroke.
  */
 export const ICON_XL = 28;

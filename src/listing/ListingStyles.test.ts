@@ -5,7 +5,7 @@
  * what the rules set.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 
@@ -93,13 +93,12 @@ describe('the listing look', () => {
     document.body.innerHTML = '';
   });
 
-  it('pulses a busy mark, and holds it still under reduced motion', () => {
+  it('holds a busy mark still: its heavy ring says it, with no pulse', () => {
     expect(sheet).toMatch(
-      /:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot\s*\{[^}]*animation:\s*uiok-pulse /
+      /:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot\s*\{[^}]*var\(--line-strong\)/
     );
-    expect(sheet).toMatch(
-      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot\s*\{\s*animation:\s*none;/
-    );
+    expect(sheet).not.toMatch(/uiok-pulse/);
+    expect(sheet).not.toMatch(/\.pane-state-dot\s*\{[^}]*animation/);
   });
 });
 
@@ -174,7 +173,7 @@ describe("the frame's compact controls", () => {
     expect(lit(true)).toEqual([]);
   });
 
-  it('hide a row’s hover icons at rest, showing them on the cursor row', () => {
+  it('keep a row’s secondary icons in view on every row, never appearing on hover', () => {
     applyStylesheets(styles);
     document.body.innerHTML = `<section class="listing-root">
       <div class="row"><span class="row-meta pane-hover-cell"><button class="pane-icon-act"></button></span></div>
@@ -182,8 +181,9 @@ describe("the frame's compact controls", () => {
     </section>`;
     const [rest, cursor] = [...document.querySelectorAll('.pane-icon-act')] as Element[];
 
-    expect(declaredValues(rest as Element, 'opacity')).toEqual(['0']);
+    expect(declaredValues(rest as Element, 'opacity')).toEqual([]);
     expect(declaredValues(cursor as Element, 'opacity')).toEqual([]);
+    expect(getComputedStyle(rest as Element).getPropertyValue('color')).toBe('var(--text-dim)');
     document.body.innerHTML = '';
   });
 });
@@ -216,7 +216,7 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
-  it('lights the row actions only on the cursor row of the pane that holds the keys', () => {
+  it('lights the row actions in full words, never the accent, only on the cursor row of the pane that holds the keys', () => {
     applyStylesheets(styles);
     const pane = (active: boolean): string => `<div class="pane${active ? ' active' : ''}">
       <div class="row cursor"><span class="row-meta">
@@ -226,7 +226,7 @@ describe('the listing states', () => {
     document.body.innerHTML = `<section class="listing-root">${pane(true)}${pane(false)}</section>`;
     const [lit, danger, quiet, quietDanger] = document.querySelectorAll('button');
 
-    expect(colour(lit as Element)).toBe('var(--accent-text)');
+    expect(colour(lit as Element)).toBe('var(--text)');
     expect(colour(danger as Element)).toBe('var(--danger-text)');
     expect(colour(quiet as Element)).toBe('var(--text-on-surface)');
     expect(colour(quietDanger as Element)).toBe('var(--text-on-surface)');
@@ -245,7 +245,7 @@ describe('the listing states', () => {
 
     expect(colour(worded as Element)).toBe('var(--text-on-surface)');
     expect(colour(quiet as Element)).toBe('var(--text-on-surface)');
-    expect(colour(lit as Element)).toBe('var(--accent-text)');
+    expect(colour(lit as Element)).toBe('var(--text)');
     document.body.innerHTML = '';
   });
 
@@ -266,8 +266,8 @@ describe('the listing states', () => {
     const tones = [...document.querySelectorAll('button')].map((button) => colour(button));
 
     expect(tones).toEqual([
-      'var(--accent-text)',
-      'var(--accent-text)',
+      'var(--text)',
+      'var(--text)',
       'var(--text-on-surface)',
       'var(--text-on-surface)',
       'var(--text-dim)',
@@ -324,9 +324,13 @@ describe('the listing states', () => {
     const rows = ['cursor selected', 'marked selected', 'marked cursor selected', 'selected']
       .map((states) => `<div class="row pane-add ${states}">${words}</div>`)
       .join('');
-    const pane = (active: boolean): string =>
-      `<div class="pane${active ? ' active' : ''}"><div class="pane-list pointer">${rows}</div></div>`;
-    document.body.innerHTML = `<section class="listing-root">${pane(true)}${pane(false)}</section>`;
+    // A lone pane, and the pane that holds the keys beside another: both
+    // selections hold the keys (a pane that does not greys its own, below).
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane"><div class="pane-list pointer">${rows}</div></div>
+    </section><section class="listing-root">
+      <div class="pane active"><div class="pane-list pointer">${rows}</div></div><div class="pane"></div>
+    </section>`;
     for (const element of document.body.querySelectorAll('*')) element.classList.add('is-hovered');
 
     const dim = '.row-meta:not(.pane-path, .pane-action-cell), .pane-path-head, .pane-path-tail';
@@ -369,6 +373,88 @@ describe('the listing states', () => {
     // A filled mark keeps its outer hairline.
     expect(shadow('ready')).toBe('0 0 0 var(--line) var(--on-selected)');
     expect(colour(document.getElementById('spinner'))).toBe('var(--on-selected)');
+    document.body.innerHTML = '';
+  });
+
+  it('greys a selection in a pane that does not hold the keys and in a window not in front', () => {
+    applyStylesheets(styles);
+    const words = `<span class="row-icon"></span><span class="row-name">a</span>
+      <span class="row-meta">2 MB</span>
+      <span class="row-meta"><span class="pane-state pane-tone-ready"><span class="pane-state-dot"></span>up</span></span>
+      <span class="row-meta pane-action-cell"><button class="pane-act lit" type="button">Start</button></span>`;
+    const pane = (active: boolean): string =>
+      `<div class="pane${active ? ' active' : ''}"><div class="pane-list">
+        <div class="row selected">${words}</div><div class="row selected cursor">${words}</div>
+      </div></div>`;
+    const read = (): Record<string, string>[] =>
+      [...document.querySelectorAll('.row')].map((row) => ({
+        fill: getComputedStyle(row).getPropertyValue('--row-fill').trim(),
+        bar: getComputedStyle(row).getPropertyValue('--row-bar').trim(),
+        name: colour(row),
+        meta: colour(row.querySelector('.row-meta')),
+        state: colour(row.querySelector('.pane-state')),
+        action: colour(row.querySelector('button'))
+      }));
+    const held = {
+      fill: 'var(--selected-bg)',
+      name: 'var(--on-selected)',
+      meta: 'var(--on-selected-dim)',
+      state: 'var(--on-selected)',
+      action: 'var(--on-selected)'
+    };
+    const grey = {
+      fill: 'var(--fill)',
+      name: 'var(--text)',
+      meta: 'var(--text-on-surface)',
+      state: 'var(--success-text)',
+      action: 'var(--text-on-surface)'
+    };
+
+    document.body.innerHTML = `<section class="listing-root">${pane(true)}${pane(false)}</section>`;
+    const [active, activeCursor, other, otherCursor] = read();
+    expect(active).toEqual({ ...held, bar: '' });
+    expect(activeCursor).toEqual({
+      ...held,
+      fill: 'var(--selected-cursor-bg)',
+      bar: 'var(--on-selected)'
+    });
+    expect(other).toEqual({ ...grey, bar: '' });
+    expect(otherCursor).toEqual({ ...grey, bar: 'transparent' });
+
+    document.documentElement.setAttribute('data-window-inactive', '');
+    onTestFinished(() => document.documentElement.removeAttribute('data-window-inactive'));
+    const [front, frontCursor] = read();
+    expect(front).toEqual({ ...grey, bar: '' });
+    expect(frontCursor).toEqual({ ...grey, bar: 'var(--cursor-bar)' });
+    expect(sheet).toMatch(
+      /:where\(:root\[data-window-inactive\] \.listing-root\) \.pane\.active::before\s*\{\s*border-color: var\(--border-strong\);/
+    );
+    document.body.innerHTML = '';
+  });
+
+  it('selects rows, not text, while its messages, summary, and output stay selectable', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root selectable"><div class="pane">
+      <div class="pane-list"><div class="pane-listing" role="table">
+        <div class="row cursor selected"><span class="row-icon"></span>
+          <span class="row-name">app.ts</span><span class="row-meta">2 KB</span>
+          <span class="row-meta pane-path"><span class="pane-path-name"><code>src</code></span></span>
+          <span class="row-meta"><input class="field-xs" type="text" value="rename"></span>
+        </div>
+        <p class="pane-message empty">Nothing here.</p>
+      </div></div>
+      <pre class="pane-well">output</pre>
+      <div class="pane-status"><span class="pane-summary">1 file</span></div>
+    </div></section>`;
+    const select = (selector: string): string =>
+      getComputedStyle(document.querySelector(selector) as Element).getPropertyValue('user-select');
+
+    for (const selector of ['.row', '.row-name', '.row-meta', '.pane-path-name', 'code']) {
+      expect(select(selector), selector).toBe('none');
+    }
+    for (const selector of ['input', '.pane-message', '.pane-well', '.pane-summary']) {
+      expect(select(selector), selector).toBe('text');
+    }
     document.body.innerHTML = '';
   });
 

@@ -28,7 +28,7 @@ const elapsed = runElapsedMs({ startedMs, finishedMs }, state, now);
 | `state`        | `RunState`             |         | `waiting`, `running`, `paused`, `done`, `failed`, or `stopped`                                       |
 | `headline`     | `string`               |         | One sentence: where the run stands, or its outcome once it settles                                   |
 | `announcement` | `string`               |         | What the status region says instead, for a headline that ticks (time left); the headline stays shown |
-| `figure`       | `string \| null`       | `null`  | One big figure at the right edge (a clock, a percentage)                                             |
+| `figure`       | `string \| null`       | `null`  | One figure at the right edge (a clock, a percentage)                                                 |
 | `reason`       | `string \| null`       | `null`  | Why it failed, under the headline                                                                    |
 | `bar`          | `RunHeaderBar`         |         | `{ fraction, label }`; a `null` fraction draws the activity stripes                                  |
 | `facts`        | `readonly ReactNode[]` | `[]`    | Short facts in a row, dot-separated; the first gives way when room runs out                          |
@@ -36,10 +36,11 @@ const elapsed = runElapsedMs({ startedMs, finishedMs }, state, now);
 ### Look
 
 - States and glyphs: waiting (hourglass, dim), running (a turning circle in the accent, still under reduced motion), paused (dim), done (a check, green), failed (a cross, red), stopped (a slashed circle, dim).
-- The headline is 14px semibold in the text colour; `--danger-text` when failed, with the reason under it. A done headline stays in the text colour; the glyph and the bar carry the green. A headline cut short in a narrow view is its own tooltip.
-- The figure is 18px tabular monospace, semibold while the run goes on. It dims while waiting and once the run settles, to the dim text colour and the regular weight, so the change shows even in themes whose two text colours are close.
+- The headline is 14px semibold in the text colour in every state, a failed one included, with the reason under it: the glyph and the bar carry the state's tone (green when done, the danger mark when failed), as a status line does. A headline cut short in a narrow view is its own tooltip.
+- The figure is 14px tabular monospace (the headline's size: a read-out in a pane header, not display type), semibold while the run goes on. It dims while waiting and once the run settles, to the dim text colour and the regular weight, so the change shows even in themes whose two text colours are close.
 - The bar is `ActivityBar`'s 8px trough (`--control-track`, ringed in `--control-border`). Its fill is the accent while running or waiting, the quiet `--progress-idle` once paused or stopped (`ActivityBar`'s own idle fill, since the header passes `moving` only while running), so a halted run never outweighs a working one, `--danger` when failed, and `--success` when done. Without a fraction it is the activity stripes, moving only while running, standing still in `--progress-idle` otherwise (waiting included), and in `--danger` when failed.
 - Facts sit closer to the bar than the bar sits to the headline; without a bar they line up under the headline, past the glyph.
+- The reason, the figure, and the facts can be selected and copied; the headline and glyph are chrome.
 - The header sets its own type: sentences and facts in the interface font, the figure in monospace, `code` in a fact in monospace.
 
 ### Accessibility

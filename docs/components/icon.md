@@ -2,12 +2,12 @@
 
 The four sizes an icon may take, as numbers for lucide's `size` prop. They mirror the `--icon-sm`, `--icon-md`, `--icon-lg`, and `--icon-xl` tokens, which size an icon drawn from CSS ([tokens](../tokens.md)).
 
-| Constant  | Value | Use                                                                     |
-| --------- | ----- | ----------------------------------------------------------------------- |
-| `ICON_SM` | 12    | Beside 11 and 12 px text, and in 20px inline controls                   |
-| `ICON_MD` | 14    | Beside 13px text in rows, tabs, and buttons                             |
-| `ICON_LG` | 16    | A dialog's title icon, an empty state's action, a row's product mark    |
-| `ICON_XL` | 28    | The glyph over an empty state or a failure (with `absoluteStrokeWidth`) |
+| Constant  | Value | Use                                                                                                                      |
+| --------- | ----- | ------------------------------------------------------------------------------------------------------------------------ |
+| `ICON_SM` | 12    | Beside 11 and 12 px text, and in 20px inline controls                                                                    |
+| `ICON_MD` | 14    | Beside 13px text in rows, tabs, and buttons                                                                              |
+| `ICON_LG` | 16    | A dialog's title icon, an empty state's action, a row's product mark                                                     |
+| `ICON_XL` | 28    | A picture-sized mark in an About window or a splash (with `absoluteStrokeWidth`); never over an empty state or a failure |
 
 ## Example
 

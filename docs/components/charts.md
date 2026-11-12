@@ -108,7 +108,7 @@ Labels must be unique; they key the slices.
 | `picked` | `number \| null`          | Optional. The picked point's id, drawn lit                                                                                         |
 | `onPick` | `(id: number) => void`    | A click on a point, or Return or Space on a focused one                                                                            |
 
-Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for a time of day); numbers from a million up are written short (`2.5M`, `1.7936T`). The frame resizes by its corner (CSS `resize: both`). The picked point is drawn last, ringed 2px in `--text` over a halo of its colour. Mount `TooltipLayer` for the point tooltips.
+Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for a time of day); numbers from a million up are written short (`2.5M`, `1.7936T`). The frame resizes by its corner (CSS `resize: both`), which shows the resize cursor but draws no grip, as a window's corner does. Over the plot the pointer stays the arrow, as it does over a line chart that takes a range drag: the zoom rectangle and the guide line show the gesture. The picked point is drawn last, ringed 2px in `--text` over a halo of its colour. Mount `TooltipLayer` for the point tooltips.
 
 ### `ResultChart` (`ResultChartProps`)
 

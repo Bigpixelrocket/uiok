@@ -15,21 +15,10 @@
  * short, under a section heading drawn by a lone Strip.
  */
 
-import {
-  ArrowDownToLine,
-  FileText,
-  FolderOpen,
-  FolderPlus,
-  GitBranch,
-  Plus,
-  Server,
-  Trash2,
-  X
-} from 'lucide-react';
+import { ArrowDownToLine, FileText, FolderOpen, Plus, Server, Trash2, X } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button } from '@bigpixelrocket/uiok/button';
-import { ICON_MD, ICON_SM, ICON_XL } from '@bigpixelrocket/uiok/icon';
+import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 import {
   ACTION_COLUMN,
   Cell,
@@ -437,23 +426,10 @@ export function ListingDemo() {
             word="Add"
           />
         </PanePathBar>
-        <div className="pane-empty">
-          <FolderOpen aria-hidden size={ICON_XL} />
-          <strong>No projects yet</strong>
-          <p>
-            Add a folder you work in, or clone one from a repository, and it shows here with its
-            scripts and services.
-          </p>
-          <div className="pane-empty-actions">
-            <Button onClick={() => setDid('add a folder')} variant="primary">
-              <FolderPlus size={ICON_MD} />
-              Add a Folder
-            </Button>
-            <Button onClick={() => setDid('clone a repository')}>
-              <GitBranch size={ICON_MD} />
-              Clone a Repository
-            </Button>
-          </div>
+        {/* An empty space keeps its frame: the way on is the bar's Add, and one quiet
+            line in the rows' own type stands in the first row's place. */}
+        <div className="pane-list">
+          <p className="pane-message empty">No projects</p>
         </div>
         <PaneStatus>No projects</PaneStatus>
       </div>

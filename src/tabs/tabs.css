@@ -1,7 +1,9 @@
 /* ---- Page tabs (PageTabs) ----
 
-   The level's pages as tabs under a path bar, the current one underlined
-   in the current mark. A strip too narrow for its tabs scrolls sideways and
+   The level's pages as tabs under a path bar, each a small cornered tab
+   inside the strip, the current one on the current item's tint and ring,
+   as a desktop tab control draws it (no web underline); the second strip
+   wears the same look in smaller type. A strip too narrow for its tabs scrolls sideways and
    draws whole tabs only: PageTabs marks data-clipped any tab that does not
    lie whole between the chevrons, and marks data-overflow each edge that
    hides tabs, where a chevron pages the strip. Hover and pressed come from
@@ -20,11 +22,10 @@
   align-items: stretch;
   gap: var(--space-1);
   height: var(--control-height);
-  padding: 0 var(--space-3);
+  padding: var(--space-1) var(--space-3);
   overflow-x: auto;
   box-sizing: border-box;
-  /* The strip's rule is drawn under the tabs, so the current tab's mark
-     covers it rather than stacking on it. */
+  /* The strip's hairline, under the tabs, which stand clear of it. */
   box-shadow: inset 0 calc(-1 * var(--line)) 0 var(--border);
   scrollbar-width: none;
   /* A scrolled strip always comes to rest with a tab's start at the start
@@ -108,8 +109,7 @@
   gap: var(--space-3);
   padding: 0 var(--space-5);
   border: none;
-  border-bottom: var(--line-strong) solid transparent;
-  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-dim);
   font: var(--font-size-small) var(--font-ui);
@@ -132,23 +132,23 @@
   font-weight: var(--font-weight-strong);
   /* Empty alternative text: the copy never joins the tab's accessible name. */
   content: attr(data-label) / '';
-  user-select: none;
 }
 
 .page-tab[aria-selected='true'] {
-  border-bottom-color: var(--current-mark);
+  background: var(--current-bg);
+  box-shadow: inset 0 0 0 var(--line) var(--current-ring);
   color: var(--current-text);
   font-weight: var(--font-weight-strong);
 }
 
 /* The strip scrolls sideways and clips anything outside it: the ring sits
-   inside the tab, above the current mark, never cut. */
+   inside the tab, never cut. */
 .page-tab:focus-visible {
   outline-offset: var(--focus-offset-inset);
 }
 
-/* The second strip, a tab's own pages: small lozenges on a shorter row, the
-   current one in the current tint and ring. */
+/* The second strip, a tab's own pages: the same tabs on a shorter row, in
+   smaller type. */
 .page-tabs.pills {
   height: var(--bar-height);
   padding: var(--space-1) var(--space-3);
@@ -157,12 +157,5 @@
 
 .page-tabs.pills .page-tab {
   padding: 0 var(--space-4);
-  border-bottom: none;
-  border-radius: var(--radius-sm);
   font-size: var(--font-size-caption);
-}
-
-.page-tabs.pills .page-tab[aria-selected='true'] {
-  background: var(--current-bg);
-  box-shadow: inset 0 0 0 var(--line) var(--current-ring);
 }

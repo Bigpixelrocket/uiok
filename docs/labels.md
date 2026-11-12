@@ -146,11 +146,11 @@ A folded pair's label ("Up/Down") is not a label here: the app owns its pair voc
 
 ### `selectAll`
 
-| Field          | Type     | English default                                                 |
-| -------------- | -------- | --------------------------------------------------------------- |
-| `checkAll`     | `string` | Check all                                                       |
-| `withSelected` | `string` | With selected:                                                  |
-| `label`        | `string` | With selected (the bar's accessible name when it is given none) |
+| Field      | Type                                         | English default                                                 |
+| ---------- | -------------------------------------------- | --------------------------------------------------------------- |
+| `checkAll` | `string`                                     | Check all                                                       |
+| `selected` | `(checked: number, total: number) => string` | "3 of 8 selected" (before the bulk actions)                     |
+| `label`    | `string`                                     | With selected (the bar's accessible name when it is given none) |
 
 ### `terminal`
 

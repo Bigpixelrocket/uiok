@@ -166,7 +166,8 @@ textarea.field {
   min-height: calc(var(--control-height) * 2);
   padding: var(--space-2) var(--space-4);
   line-height: var(--line-height-prose);
-  resize: vertical;
+  /* A text view has no corner grip: its pane or dialog sizes it. */
+  resize: none;
 }
 
 /* A list box (multiple, or a size) is as tall as the rows it shows, not one
@@ -176,13 +177,36 @@ textarea.field {
   padding-block: var(--space-1);
 }
 
-/* A number keeps the keyboard's arrows; the spin buttons go, since their
-   platform drawing is the only part of the field the theme cannot reach. */
+/* A number field carries a stepper at its end, as a desktop number field
+   does: the up and down chevron pair a pop-up button shows (below), drawn
+   in --text-dim over the platform's spin buttons, which stay the hit area
+   (the top half steps up, the bottom half down) but draw nothing, since
+   their platform drawing is the one part the theme cannot reach. The
+   keyboard's arrows step as before. */
 input.field[type='number'] {
-  appearance: textfield;
+  --field-chevron-end: var(--space-3);
+
+  padding-inline-end: var(--space-2);
+  background-image:
+    linear-gradient(135deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(-135deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(-45deg, transparent 50%, var(--text-dim) 50%);
+  background-position:
+    right calc(var(--field-chevron-end) + 4px) bottom calc(50% + 3px),
+    right var(--field-chevron-end) bottom calc(50% + 3px),
+    right calc(var(--field-chevron-end) + 4px) top calc(50% + 3px),
+    right var(--field-chevron-end) top calc(50% + 3px);
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
 }
 
-input.field[type='number']::-webkit-inner-spin-button,
+input.field[type='number']::-webkit-inner-spin-button {
+  width: var(--space-6);
+  margin: 0 0 0 var(--space-2);
+  opacity: 0;
+}
+
 input.field[type='number']::-webkit-outer-spin-button {
   margin: 0;
   appearance: none;
@@ -411,13 +435,15 @@ select.field option {
 
 /* -- Switch -- */
 
-/* The track is as tall as a check box (--icon-md), so a switch and a check
-   share a line. */
-/* A checkbox drawn as a pill track with a knob: the input itself, so it
-   keeps the checkbox's keyboard and screen reader behaviour and fades as a
-   whole under the disabled rule. Off: the knob at the start on the control
-   outline's track; on: at the end on the accent, the same "on" colour a
-   checked box takes. */
+/* A checkbox drawn as a track with a knob, for one case only: a running
+   thing turned on or off at once (a service, a sharing). A setting a form
+   writes is a check box (.check). The input itself, so it keeps the
+   checkbox's keyboard and screen reader behaviour and fades as a whole
+   under the disabled rule. The track is as tall as a check box
+   (--icon-md), so a switch and a check share a line. Off: the knob at the
+   start on the control outline's track; on: at the end on the accent, the
+   same "on" colour a checked box takes. The knob moves at once; only the
+   colours change at the feedback step. */
 .switch {
   position: relative;
   flex: none;
@@ -447,10 +473,7 @@ select.field option {
   border-radius: var(--radius-pill);
   box-shadow: var(--shadow-raised);
   background: var(--surface);
-  transition:
-    width var(--duration-fast) var(--ease-out),
-    transform var(--duration-fast) var(--ease-out),
-    background-color var(--duration-fast);
+  transition: background-color var(--duration-fast);
   content: '';
 }
 
@@ -467,19 +490,10 @@ select.field option {
   box-shadow: var(--hover-lit);
 }
 
-/* A press sinks the track and stretches the knob toward the far end, as a
-   desktop switch does while held, so a held switch reads apart from a
-   hovered one on a dark knob as on a light one. */
+/* A press sinks the track inside the shared hairline, so a held switch
+   reads apart from a hovered one; the knob stays where it is. */
 .switch:active:not(:disabled) {
   box-shadow: var(--press-frost);
-}
-
-.switch:active:not(:disabled)::before {
-  width: 13px;
-}
-
-.switch:checked:active:not(:disabled)::before {
-  transform: translateX(7px);
 }
 
 /* -- Range -- */
@@ -592,8 +606,9 @@ select.field option {
   inset-inline-start: 0;
 }
 
-/* One field with its words: label, control, then note or problem, 4px
-   apart. On a fieldset it is a group of choices under its legend. */
+/* A group of choices under its legend, on a fieldset: the legend, then
+   the choices and any note, 4px apart. A field with its label is a row of
+   the label column (.field-grid), never a label stacked over a field. */
 .field-group {
   display: grid;
   gap: var(--space-2);

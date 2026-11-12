@@ -51,7 +51,7 @@ export interface LegendPrimary extends DialogLegendVerb {
   readonly onRun: () => void;
   /**
    * The primary's key when it is not Return: a delete for good stands on
-   * ⌥⌘⌫, Finder's Delete Immediately chord, and Return then runs nothing,
+   * ⌥⌘⌫, the Delete Now chord, and Return then runs nothing,
    * so a Return pressed out of habit never deletes anything for good.
    */
   readonly chord?: Chord;

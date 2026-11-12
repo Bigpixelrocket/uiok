@@ -101,7 +101,10 @@ The rules weigh one class and need no scope, so a menu reads the same in a listi
 - `.folder-menu-query`: the query row, with `.filter-icon`, an `input`, and `.folder-menu-count`; `bell-0` / `bell-1` ring it.
 - `.folder-menu-options`: the scrolling list, nine whole rows tall at most, with a thin scrollbar; it fades the edge that has more rows on its own (the base sheet's scroll fade, one row deep, so the last whole row fades through its words), so a caller adds nothing. Its `.folder-menu-option` rows sit on the icon column (`--icon-column`), the name, and an end column (a `KeyChord`, drawn as key caps, or a count). `.cursor` marks the cursor row with the cursor fill and a 2px accent bar at its leading edge; a row with `aria-disabled="true"` is faded and never takes the cursor's look.
 - `.entry-menu-heading`: a group's name in the small uppercase heading (the base sheet writes `.overline` and this class as one recipe) with a hairline after it, one row tall, so a list with headings still ends on a whole row.
-- `.folder-menu-note`: a dim sentence in the interface face, its text over the rows' names, for an empty or loading list or a reason.
+- Desktop menu looks, all from attributes the row already carries: `aria-checked="true"` draws a check mark in the row's icon column (in place of its icon) for a setting that is on or the one chosen of a group; `aria-haspopup="menu"` ends the row in a chevron at its trailing edge for a row that opens a submenu (give it no chord); `aria-disabled="true"` fades the row, and the reason it cannot act goes in its tooltip (`title`).
+- `.folder-menu-separator`: a plain hairline between groups that need no name, with a small space above and below (`role="presentation"`).
+- `.folder-menu-note`: one dim line in the interface face, its text over the rows' names, for an empty or loading list. It never wraps: a longer line is cut with an ellipsis, so pass its whole text as `title` too. A menu carries no prose; say why one row cannot be picked in that row's tooltip.
+- Nothing animates: a menu is there on the frame it opens and gone on the frame it closes, and its rows change at once. Only the visual bell moves, because it reports something.
 - The typed query is `--accent-text`, the caret `--accent`; the placeholder is the base sheet's.
 - `.name-hit` ([text](text.md)) tints a matched character.
 

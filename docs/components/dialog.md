@@ -122,11 +122,11 @@ A dialog whose form is narrower than its step by a column's width or more is on 
 
 A title names the action in at most five words. It is not a sentence: it says what will happen, and the body says what it means.
 
-| Good                          | Not                                                         |
-| ----------------------------- | ----------------------------------------------------------- |
-| `Delete 7 Items Now?`         | `Delete Immediately from the Production Environment Folder` |
-| `Quit and Stop 15 Processes?` | `Close the window and stop 15 running processes?`           |
-| `Rename`                      | `Rename the file in ~/Documents`                            |
+| Good                          | Not                                                 |
+| ----------------------------- | --------------------------------------------------- |
+| `Delete 7 Items Now?`         | `Delete Now from the Production Environment Folder` |
+| `Quit and Stop 15 Processes?` | `Close the window and stop 15 running processes?`   |
+| `Rename`                      | `Rename the file in ~/Documents`                    |
 
 Nothing stands beside the title: no path, no count, no item name at the strip's end. Context a dialog needs (where it acts, the item it asks about) goes in the body's first line, a sentence (`dialog-help` or the confirmation's message) with the name as a value (`dialog-value` or `<strong>`).
 
@@ -253,9 +253,11 @@ A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode }
 
 ### Deletes that cannot be undone
 
-People confirm a delete out of habit, ⌘⌫ then Return, without reading. With `forGood` the confirm verb still stands at the right edge, lit red, but its key is ⌥⌘⌫ (Finder's Delete Immediately), Return runs nothing, and a held chord never runs it on a repeat.
+People confirm a delete out of habit, ⌘⌫ then Return, without reading. With `forGood` the confirm verb still stands at the right edge, lit red, but its key is ⌥⌘⌫ (the Delete Now chord, Finder's chord for a delete that skips the Trash), Return runs nothing, and a held chord never runs it on a repeat.
 
 ## Styling
+
+Nothing animates in: a dialog and a frosted wash are there on the frame they open, with no fade, drop, or scale, as a desktop sheet appears. The message, names, counts, and values in a body can be selected and copied; the title, labels, and legend cannot.
 
 `.dialog-backdrop`, `.frosted`, `.dialog-layer`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.legend-danger`, `.confirm-dialog`, `.dialog-message`, `.dialog-facts`, `.dialog-fact`, `.dialog-fact-count`, `.dialog-fact-value`, `.dialog-names`, `.dialog-names-more`. The frame declares `--dialog-tone` and `--dialog-icon`, reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
 

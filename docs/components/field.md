@@ -7,21 +7,23 @@ One look for everything a user types in or toggles: text fields, textareas, sele
 ```tsx
 import { Check } from '@bigpixelrocket/uiok/field';
 
-<div className="field-group">
+<div className="field-grid">
   <label className="field-label" htmlFor="host">
     Host
   </label>
-  <input
-    aria-describedby="host-problem"
-    aria-invalid={problem !== ''}
-    className="field"
-    id="host"
-  />
-  {problem === '' ? null : (
-    <p className="field-problem" id="host-problem">
-      {problem}
-    </p>
-  )}
+  <div className="field-value">
+    <input
+      aria-describedby="host-problem"
+      aria-invalid={problem !== ''}
+      className="field field-sm"
+      id="host"
+    />
+    {problem === '' ? null : (
+      <p className="field-problem" id="host-problem">
+        {problem}
+      </p>
+    )}
+  </div>
 </div>;
 
 <select className="field field-sm">…</select>;
@@ -37,32 +39,37 @@ import { Check } from '@bigpixelrocket/uiok/field';
 </label>;
 
 <label className="field-choice">
-  <input className="switch" role="switch" type="checkbox" />
+  <input className="check" type="checkbox" />
   Start at login
+</label>;
+
+<label className="field-choice">
+  <input className="switch" role="switch" type="checkbox" />
+  Sharing
 </label>;
 ```
 
 ## Classes
 
-| Class           | On                                               | What it draws                                                                                                                                                                                                      |
-| --------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `field`         | `input`, `select`, `textarea`                    | A well in the window ground, outlined in `--control-border`, 28px (`--control-height`): a dialog or a single prompt; its value in the code face at 12px                                                            |
-| `field-sm`      | with `field`                                     | 24px (`--control-height-sm`): a page form, a toolbar, a settings row                                                                                                                                               |
-| `field-xs`      | with `field`                                     | 20px (`--control-height-xs`), 4px corners: an editor inside a row or a path bar                                                                                                                                    |
-| (none)          | `select.field`                                   | The platform arrow is replaced by an up and down chevron pair in `--text-dim`; a list box (`multiple` or `size`) has none                                                                                          |
-| (none)          | `input.field[type=number]`                       | No spin buttons; the arrow keys still step                                                                                                                                                                         |
-| `field-box`     | a `label` or `div` around a glyph and an `input` | The field's frame, heights (`field-sm`, `field-xs` on it), hover, and focus edge round a leading glyph (`ICON_SM`, in `--text-dim`) and a bare input: a filter box. Invalid takes `aria-invalid="true"` on the box |
-| `check`         | `input[type=checkbox]`, `[type=radio]`           | A 14px box (`--icon-md`; a disc for a radio); on, an accent fill with the tick, dash (a checkbox's indeterminate state), or dot in `--on-accent`                                                                   |
-| `switch`        | `input[type=checkbox][role=switch]`              | A 24 by 14 pill: the knob at the start on `--control-border`, at the end on `--accent` when on, the same "on" colour as a checked box                                                                              |
-| `range`         | `input[type=range]`                              | A 4px trough on `--control-track` inside a `--control-border` hairline, filled in the accent up to `--range-fill` (`style={{ '--range-fill': '40%' }}`), and a 12px knob                                           |
-| `field-label`   | `label`, or any element                          | What the field is for: interface face, 12px on 16px, `--text-dim`                                                                                                                                                  |
-| `field-note`    | `p`                                              | Help under the field, as the label                                                                                                                                                                                 |
-| `field-problem` | `p`                                              | What is wrong with the value, as a status line: the danger glyph (`CircleAlert` in `--danger`, drawn by the class) hung before its words in `--text`; name it in the field's `aria-describedby`                    |
-| `field-group`   | `div`, `fieldset`                                | Label, field, and note stacked 4px apart; on a fieldset, its `legend` reads as a label                                                                                                                             |
-| `field-choice`  | `label` around a check, radio, or switch         | The control and its words 6px apart, at least 24px high; the whole label is the target                                                                                                                             |
-| `field-grid`    | a container                                      | Rows of `field-label` then value on one label column (`--field-label-width`, 136px by default); each label centred on a 24px control                                                                               |
-| `field-value`   | in `field-grid`                                  | A value of several lines (options, then a note), 4px apart                                                                                                                                                         |
-| `field-option`  | in `field-value`                                 | One line of a value: choices or a field, wrapping, at least 24px high                                                                                                                                              |
+| Class           | On                                               | What it draws                                                                                                                                                                                                       |
+| --------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `field`         | `input`, `select`, `textarea`                    | A well in the window ground, outlined in `--control-border`, 28px (`--control-height`): a dialog or a single prompt; its value in the code face at 12px. A textarea has no corner grip; its pane or dialog sizes it |
+| `field-sm`      | with `field`                                     | 24px (`--control-height-sm`): a page form, a toolbar, a settings row                                                                                                                                                |
+| `field-xs`      | with `field`                                     | 20px (`--control-height-xs`), 4px corners: an editor inside a row or a path bar                                                                                                                                     |
+| (none)          | `select.field`                                   | The platform arrow is replaced by an up and down chevron pair in `--text-dim`; a list box (`multiple` or `size`) has none                                                                                           |
+| (none)          | `input.field[type=number]`                       | A stepper at the end: the select's chevron pair over the platform's spin buttons, which stay the hit area (top half up, bottom half down) and draw nothing; the arrow keys still step                               |
+| `field-box`     | a `label` or `div` around a glyph and an `input` | The field's frame, heights (`field-sm`, `field-xs` on it), hover, and focus edge round a leading glyph (`ICON_SM`, in `--text-dim`) and a bare input: a filter box. Invalid takes `aria-invalid="true"` on the box  |
+| `check`         | `input[type=checkbox]`, `[type=radio]`           | A 14px box (`--icon-md`; a disc for a radio); on, an accent fill with the tick, dash (a checkbox's indeterminate state), or dot in `--on-accent`                                                                    |
+| `switch`        | `input[type=checkbox][role=switch]`              | A 24 by 14 track for a running thing turned on or off at once (a service, sharing); a setting is a `check`. The knob at the start on `--control-border`, at the end on `--accent` when on; it moves at once         |
+| `range`         | `input[type=range]`                              | A 4px trough on `--control-track` inside a `--control-border` hairline, filled in the accent up to `--range-fill` (`style={{ '--range-fill': '40%' }}`), and a 12px knob                                            |
+| `field-label`   | `label`, or any element                          | What the field is for: interface face, 12px on 16px, `--text-dim`                                                                                                                                                   |
+| `field-note`    | `p`                                              | Help under the field, as the label                                                                                                                                                                                  |
+| `field-problem` | `p`                                              | What is wrong with the value, as a status line: the danger glyph (`CircleAlert` in `--danger`, drawn by the class) hung before its words in `--text`; name it in the field's `aria-describedby`                     |
+| `field-group`   | `div`, `fieldset`                                | A group of choices on a `fieldset` under its `legend`, 4px apart. A field with its label is a `field-grid` row, never a label stacked over a field                                                                  |
+| `field-choice`  | `label` around a check, radio, or switch         | The control and its words 6px apart, at least 24px high; the whole label is the target                                                                                                                              |
+| `field-grid`    | a container                                      | Rows of `field-label` then value on one label column (`--field-label-width`, 136px by default); each label centred on a 24px control                                                                                |
+| `field-value`   | in `field-grid`                                  | A value of several lines (options, then a note), 4px apart                                                                                                                                                          |
+| `field-option`  | in `field-value`                                 | One line of a value: choices or a field, wrapping, at least 24px high                                                                                                                                               |
 
 ## Heights by place
 
@@ -73,7 +80,7 @@ One rule in every app: `field` (28px) in a dialog or a single prompt, `field-sm`
 Every control reads tokens only, in every theme. The demo shows each control in each state side by side.
 
 - **Hover:** the outline steps up to `--text`, a visible step in light and dark themes alike; a checked box or a switch takes the lit edge a filled button takes. A read-only field does not lift.
-- **Pressed:** an empty box takes the pressed wash; a filled box takes its tone's pressed fill (`--accent-pressed`, or `--danger-pressed` and `--warning-pressed` for a toned or invalid box), at least 1.12:1 from the rest fill (darker in light themes, lighter on near-black grounds), with no inset shadow, which on a 14px box would cancel a lighter step; its edge keeps the rest fill. A switch's track sinks inside the shared hairline and its knob stretches toward the far end while held; a slider's knob sinks on the pressed wash with a `--text` outline.
+- **Pressed:** an empty box takes the pressed wash; a filled box takes its tone's pressed fill (`--accent-pressed`, or `--danger-pressed` and `--warning-pressed` for a toned or invalid box), at least 1.12:1 from the rest fill (darker in light themes, lighter on near-black grounds), with no inset shadow, which on a 14px box would cancel a lighter step; its edge keeps the rest fill. A switch's track sinks inside the shared hairline while held, its knob still; a slider's knob sinks on the pressed wash with a `--text` outline.
 - **Focus:** a field (or a field box) draws a 2px accent edge on its own border (border plus a 1px ring at the flush offset), so nothing beside it moves; a check, radio, or switch takes the base ring; a slider rings its knob, not its box.
 - **Invalid:** `aria-invalid="true"` outlines a field in `--danger` (and rings it in the danger tone when focused). On a check or radio it is the danger tone, off or on: an empty box outlines in `--danger`, and a box that is on fills in it with `--on-danger` marks, so a choice that is on still says it is wrong. Invalid wins over a warning tone. Pair it with a `field-problem`.
 - **Warning:** `data-tone="warning"` on a field outlines it in `--warning` (a value that works but needs a second look: out of date, risky). Invalid wins over it.

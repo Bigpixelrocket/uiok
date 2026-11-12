@@ -8,16 +8,17 @@ const checkbox = (): HTMLInputElement =>
   screen.getByRole('checkbox', { name: 'Check all' }) as HTMLInputElement;
 
 describe('SelectAllBar', () => {
-  it('is a toolbar with Check all, the lead-in, and the bulk actions', () => {
+  it('is a toolbar with Check all, the count of checked rows, and the bulk actions', () => {
     render(
-      <SelectAllBar checked={0} onCheckAll={() => undefined} total={3}>
+      <SelectAllBar checked={2} onCheckAll={() => undefined} total={3}>
         <button type="button">Delete</button>
       </SelectAllBar>
     );
 
     const bar = screen.getByRole('toolbar', { name: 'With selected' });
 
-    expect(bar.textContent).toContain('With selected:');
+    expect(bar.textContent).toContain('2 of 3 selected');
+    expect(bar.textContent).not.toContain('With selected:');
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDefined();
   });
 

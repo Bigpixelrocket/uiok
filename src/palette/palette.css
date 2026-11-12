@@ -124,7 +124,8 @@
 }
 
 /* The notes under a palette's list, ruled off from it, their text over
-   the rows' names; a failure among them in the danger tone for words. */
+   the rows' names. A failure among them is a status line: the danger
+   glyph (surface.css) in the icon column, then words in the text colour. */
 .palette-notes {
   margin: var(--space-2) calc(-1 * var(--space-2)) 0;
   padding: var(--space-2) var(--space-2) 0;
@@ -138,7 +139,16 @@
 }
 
 .palette-notes .palette-failure {
-  color: var(--danger-text);
+  /* The glyph and its gap stand in the icon column, so the words still
+     start over the rows' names. */
+  padding-inline-start: calc(var(--space-3) + var(--icon-column) - var(--icon-md) - var(--space-3));
+  color: var(--text);
+}
+
+.palette-notes .palette-failure::before {
+  display: inline-block;
+  margin-inline-end: var(--space-3);
+  vertical-align: text-bottom;
 }
 
 /* A refused keystroke, said where the count stands, in the warning tone for

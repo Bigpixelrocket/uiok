@@ -41,6 +41,7 @@ describe('GhosttyTerminalSurface', () => {
 
     class TerminalTestElement extends EventTarget {
       style: Record<string, string> = {};
+      dataset: Record<string, string> = {};
       parentElement: TerminalTestElement | null = null;
       children: TerminalTestElement[] = [];
       className = '';
@@ -815,6 +816,25 @@ describe('GhosttyTerminalSurface', () => {
       harness.key(surface.input!, { key: 'a', code: 'KeyA' });
       expect(GhosttyTerminalCore.prototype.isViewportActive.call(coreOf(surface))).toBe(true);
     });
+
+    it('shows the overlay scroll thumb while the reader scrolls, then hides it', async () => {
+      const harness = createHarness();
+      const surface = await harness.create();
+      surface.write(Array.from({ length: 30 }, (_, index) => `line ${index}`).join('\r\n'));
+      harness.flushFrame();
+      // Output arriving on its own leaves the thumb at rest.
+      expect('scrolling' in surface.scrollbar.dataset).toBe(false);
+
+      harness.canvas.dispatchEvent(
+        Object.assign(new Event('wheel', { cancelable: true }), { deltaY: -64, deltaMode: 0 })
+      );
+      expect('scrolling' in surface.scrollbar.dataset).toBe(true);
+
+      vi.advanceTimersByTime(999);
+      expect('scrolling' in surface.scrollbar.dataset).toBe(true);
+      vi.advanceTimersByTime(1);
+      expect('scrolling' in surface.scrollbar.dataset).toBe(false);
+    });
   });
 
   describe('clipboard', () => {
@@ -1033,6 +1053,16 @@ describe('GhosttyTerminalSurface', () => {
       harness.pointer('pointerup', 6, 0, { metaKey: true });
       expect(onLinkActivate).toHaveBeenCalledOnce();
       expect(onLinkActivate.mock.calls[0]?.[0]).toBe('https://example.com');
+    });
+
+    it('keeps the I-beam over a link, never the hand', async () => {
+      const harness = createHarness();
+      const surface = await harness.create({ onLinkActivate: vi.fn() });
+      surface.write('https://example.com');
+      harness.flushFrame();
+
+      harness.pointer('pointermove', 5, 0, { metaKey: true });
+      expect(harness.canvas.style['cursor']).toBe('');
     });
 
     it('starts a selection when a Command-press on a link drags', async () => {

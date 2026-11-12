@@ -237,11 +237,11 @@ function CellKinds() {
                   ) : (
                     <>
                       {field('Product', false)}
-                      <Button onClick={commit} size="small" variant="primary">
-                        Save
-                      </Button>
                       <Button onClick={() => setEditing(null)} size="small">
                         Cancel
+                      </Button>
+                      <Button onClick={commit} size="small" variant="primary">
+                        Save
                       </Button>
                     </>
                   )

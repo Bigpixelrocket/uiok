@@ -251,26 +251,30 @@ describe('pointer states of the shared recipes and form controls', () => {
     document.body.innerHTML = '';
   });
 
-  it('keeps a pressed strip link in its own tone, without the hover underline', () => {
-    // The shared press weighs one pseudo-class; the link's own press rule
-    // outweighs it, so it is that rule's words that hold while pressed.
+  it('draws a strip action as a quiet control, never a link', () => {
+    // A plain strip action takes the shared press (words in --text) with no
+    // press rule of its own; a destructive one holds its danger words while
+    // pressed. No strip action is ever underlined.
     const rules = pressedRules();
     document.body.innerHTML = `<div class="listing-root">
-      <button class="pane-strip-link" data-want="var(--accent-text)">All</button>
-      <button class="pane-strip-link danger" data-want="var(--danger-text)">Clear</button>
+      <button class="pane-strip-link">All</button>
+      <button class="pane-strip-link danger">Clear</button>
     </div>`;
-    for (const link of document.querySelectorAll('button')) {
-      const own = rules
-        .filter(({ rule }) => /^\.pane-strip-link\b[^,]*:active/.test(rule.selectorText))
-        .filter(({ selector }) => link.matches(selector))
+    const [plain, danger] = [...document.querySelectorAll('button')];
+    const own = (link: Element | undefined) =>
+      rules
+        .filter(({ rule }) =>
+          rule.selectorText.split(',').some((part) => /^\s*\.pane-strip-link\b.*:active/.test(part))
+        )
+        .filter(({ selector }) => link?.matches(selector) === true)
         .map(({ rule }) => rule);
 
-      expect(own.at(-1)?.style.getPropertyValue('color'), link.className).toBe(link.dataset.want);
+    expect(own(plain)).toHaveLength(0);
+    expect(own(danger).at(-1)?.style.getPropertyValue('color')).toBe('var(--danger-text)');
+    const sheet = readStylesheet('src/styles.css');
+    for (const block of sheet.match(/[^{}]*\.pane-strip-link[^{}]*\{[^}]*\}/g) ?? []) {
+      expect(block).not.toMatch(/text-decoration:\s*underline/);
     }
-    const plain = rules.find(({ rule }) =>
-      /^\.pane-strip-link:active/.test(rule.selectorText)
-    )?.rule;
-    expect(plain?.style.getPropertyValue('text-decoration')).toBe('none');
     document.body.innerHTML = '';
   });
 

@@ -2,12 +2,12 @@
  * Every form control in each of its states, one labelled grid per control:
  * fields, selects, and textareas at rest, hovered, focused, read-only,
  * invalid, and in the warning and accent tones; the field box; checks,
- * radios, switches, and the slider off, on, mixed, hovered, pressed, toned,
+ * radios, switches (for a running thing turned on at once), and the slider off, on, mixed, hovered, pressed, toned,
  * and invalid; toggles off and on. Disabled is shown once, on a field and a
  * switch, every control fading the same way, and on a checkbox off and on,
  * whose disabled looks differ (an empty box keeps its full outline); a meter in its
  * three tones; the three field heights by place; groups and the rarer
- * controls (a stacked field group, a fieldset's legend, a list box, a choice
+ * controls (a field on the label column, a fieldset's legend, a list box, a choice
  * in running text, controls with no class); then a working form on one label
  * column.
  *
@@ -363,14 +363,14 @@ export function FieldDemo() {
         <DemoState label="Off">
           <Choice>
             <input className="switch" role="switch" type="checkbox" />
-            Start at login
+            Sharing
           </Choice>
         </DemoState>
         <DemoState label="Off, hover">
           <Forced force="hover" sel="input">
             <Choice>
               <input className="switch" role="switch" type="checkbox" />
-              Start at login
+              Sharing
             </Choice>
           </Forced>
         </DemoState>
@@ -553,13 +553,15 @@ export function FieldDemo() {
       </DemoStates>
 
       <DemoStates minCell="220px" title="Groups and rarer controls">
-        <DemoState label="field-group: label, field, note">
-          <div className="field-group">
+        <DemoState label="A field on the label column">
+          <div className="field-grid" style={{ '--field-label-width': 'auto' } as CSSProperties}>
             <label className="field-label" htmlFor="demo-group-user">
               User
             </label>
-            <input className="field" defaultValue="deploy" id="demo-group-user" />
-            <p className="field-note">The account the build signs in as.</p>
+            <div className="field-value">
+              <input className="field field-sm" defaultValue="deploy" id="demo-group-user" />
+              <p className="field-note">The account the build signs in as.</p>
+            </div>
           </div>
         </DemoState>
         <DemoState label="field-group on a fieldset">

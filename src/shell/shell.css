@@ -1,11 +1,11 @@
 /* The shell's shared surfaces: what an app's window draws around its own
    pages and every app of the family draws the same way. A Settings dialog
    (its frame, the sidebar of pages, a page's subsections, the theme picker,
-   a file's problems, the update card and its notes), the update pill's
-   entrance and failed state, the release channel tag, the About window's
-   layout, the sign-in prompts, the exit confirmation's sentences, and the
-   block a part of the window shows when it fails to load. None is a component: the app writes the markup
-   with these classes (docs/components/shell.md). The header, the brand
+   a file's problems, the update status and its notes), the update pill's
+   failed state, the release channel tag, the About window's layout, the
+   sign-in prompts, and the line a part of the window shows when it fails
+   to load. None is a component: the app writes the markup with these
+   classes (docs/components/shell.md). The header, the brand
    wordmark, the app's icon, window drag regions, and the startup screens
    stay the app's. */
 
@@ -53,9 +53,9 @@
    in view in the text colour with the rail lit beside it. A name too long
    for the sidebar wraps onto a second compact line rather than losing its
    end, between words, and inside a word only when the word alone cannot
-   fit (never with a hyphen the browser guessed). Hover and press are the
-   quiet control's shared recipe (styles.css); the chosen row takes
-   neither. The focus ring is the base sheet's, drawn inside the row. */
+   fit (never with a hyphen the browser guessed). Hover is the quiet row
+   tint alone and press the shared press (styles.css), as a source list's
+   rows take them; the chosen row takes neither. The focus ring is the base sheet's, drawn inside the row. */
 .settings-sidebar-page,
 .settings-sidebar-subsection {
   display: flex;
@@ -113,32 +113,17 @@
   color: var(--text);
 }
 
-/* A page's trailing label (the Updates row's offered build) as a warning
-   chip. On the current page's tint a second tint would sink its words, so
-   there it keeps the outline alone. */
+/* A page's trailing label (the Updates row's offered build): the shell's
+   small square tag (below, with the channel tag), outlined in the warning
+   tone. */
 .settings-sidebar-page > .settings-sidebar-chip {
-  display: inline-flex;
+  --tag-tone: var(--warning-line);
+
   flex: none;
-  align-items: center;
-  gap: var(--space-2);
   height: calc(var(--line-height-compact) + 2 * var(--line));
   margin-block: calc(-1 * var(--line));
   margin-inline-start: auto;
-  padding: 0 var(--space-3);
-  overflow: visible;
-  border: var(--line) solid var(--warning-line);
-  border-radius: var(--radius-pill);
-  background: var(--warning-wash-strong);
   color: var(--text);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-caption);
-  font-weight: var(--font-weight-strong);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.settings-sidebar-page[aria-current='page'] > .settings-sidebar-chip {
-  background: none;
 }
 
 .settings-sidebar-page .settings-sidebar-chip svg {
@@ -252,10 +237,10 @@
   margin: var(--space-6) var(--space-8) 0;
 }
 
-/* A new mistake in a settings file, outside the dialog: uiok's warning
-   notice band (.notice-card) across the window under the header, edge to
-   edge, which the content below gives room to, so it never covers a
-   control. */
+/* A new mistake in a settings file, outside the dialog: the window's
+   status line under the header (uiok's warning .notice-card), a plain line
+   with a small Show button and no close cross, which the content below
+   gives room to, so it never covers a control. */
 .settings-notice {
   flex: none;
   margin: 0;
@@ -329,10 +314,10 @@
    ring round its miniature and its name in the text colour and weight; the
    keyboard's focus adds the focus ring outside the frame, so a focused
    choice that is not chosen never reads as chosen. Under the pointer the
-   frame doubles to a 2px ring in --text-dim and the name lifts to --text;
-   held, the ring goes to full --text and the miniature sinks a pixel
-   under the pressed shadow, so rest, hover, and press are three distinct
-   pictures on any ground. A choice scrolled into view keeps room for its
+   frame's hairline darkens to --text-dim and the name lifts to --text;
+   held, the ring goes to a 2px --text ring over the pressed wash and
+   shadow, so rest, hover, and press are three distinct pictures on any
+   ground, and nothing grows or moves. A choice scrolled into view keeps room for its
    rings. */
 .theme-choices {
   display: grid;
@@ -378,7 +363,7 @@
 }
 
 .theme-choice:hover .theme-choice-frame {
-  box-shadow: inset 0 0 0 var(--line-strong) var(--text-dim);
+  box-shadow: inset 0 0 0 var(--line) var(--text-dim);
 }
 
 .theme-choice[aria-checked='true'] .theme-choice-frame {
@@ -390,10 +375,6 @@
   box-shadow:
     inset 0 0 0 var(--line-strong) var(--text),
     var(--shadow-pressed);
-}
-
-.theme-choice:active .theme-choice-frame > * {
-  transform: translateY(1px);
 }
 
 .theme-choice[aria-checked='true']:active .theme-choice-frame {
@@ -599,19 +580,20 @@
 
 /* ---- Updates ---- */
 
-/* The Updates page: the check cadence over the status card, both uiok's
-   .card; the rules here lay out what is inside them. */
+/* The Updates page, laid out as every Settings page is: the check
+   cadence, then the update's status, each a group with a hairline between
+   them, no frame and no fill. */
 .updates-page {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--space-8);
+  gap: var(--space-6);
   min-height: 0;
 }
 
 /* The check cadence: its label on the left at a Settings row's size, the
-   select at the end where the card's verb sits, and the note that follows
-   the choice under both. */
+   select at the row's end, and the note that follows the choice under
+   both. */
 .update-checks {
   display: grid;
   flex: none;
@@ -630,8 +612,11 @@
   grid-column: 1 / -1;
 }
 
-/* The status card: a glyph in the state's tone, the headline and what it
-   means, and the one verb at the end. */
+/* The update's status, one row as a status line says it: the state's glyph
+   in its tone, the state in the body size, the fact after it in the dim
+   small size (taking the next line when the row cannot hold both), and
+   the one verb at the row's end. A download, and What's new, follow as
+   rows of their own. */
 .update-card {
   display: flex;
   flex: none;
@@ -639,8 +624,13 @@
   gap: var(--space-6);
 }
 
-/* With notes at its foot the card fits them, and grows only to the bottom
-   of the column, where the list scrolls inside it. */
+.update-checks + .update-card {
+  padding-top: var(--space-6);
+  border-top: var(--line) solid var(--border);
+}
+
+/* With notes at its foot it fits them, and grows only to the bottom of the
+   column, where the list scrolls inside it. */
 .update-card.with-notes {
   flex: 0 1 auto;
   min-height: 0;
@@ -648,19 +638,15 @@
 
 .update-card-head {
   display: grid;
-  grid-template-columns: var(--icon-lg) minmax(0, 1fr) auto;
-  align-items: start;
+  grid-template-columns: var(--icon-md) minmax(0, 1fr) auto;
+  align-items: center;
   column-gap: var(--space-4);
-}
-
-.update-card-head > .button {
-  margin-top: calc(-1 * var(--space-1));
+  min-height: var(--control-height-sm);
 }
 
 .update-card-glyph {
-  width: var(--icon-lg);
-  height: var(--icon-lg);
-  margin-top: 1px;
+  width: var(--icon-md);
+  height: var(--icon-md);
   color: var(--text-dim);
 }
 
@@ -681,55 +667,29 @@
   color: var(--danger);
 }
 
-/* A failure is told as RunHeader tells it: the headline in the danger's
-   text tone, the reason under it in the body's quiet colour. */
-.update-card[data-tone='error'] .update-card-title {
-  color: var(--danger-text);
-}
-
 .update-card-said {
-  display: grid;
-  gap: var(--space-1);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-4);
   min-width: 0;
 }
 
+/* The state, in the text colour in every tone: the glyph carries the tone,
+   a failure included. */
 .update-card-title {
   color: var(--text);
-  font-size: var(--font-size-heading);
+  font-size: var(--font-size-body);
   font-weight: var(--font-weight-strong);
   line-height: var(--line-height-body);
 }
 
 .update-card-sub {
+  min-width: 0;
   color: var(--text-dim);
   font-size: var(--font-size-small);
   line-height: var(--line-height-compact);
   overflow-wrap: anywhere;
-}
-
-.update-card-note {
-  margin: 0;
-  color: var(--text-dim);
-  font-size: var(--font-size-small);
-}
-
-/* With a download under it (uiok's RunHeader), the head is the card's
-   title: quieter, ruled off, its glyph a size down, centred in the full
-   glyph's column so the title starts where it always does. */
-.update-card.with-run .update-card-head {
-  padding-bottom: var(--space-5);
-  border-bottom: var(--line) solid var(--border);
-}
-
-.update-card.with-run .update-card-title {
-  font-size: var(--font-size-body);
-}
-
-.update-card.with-run .update-card-glyph {
-  justify-self: center;
-  width: var(--icon-md);
-  height: var(--icon-md);
-  margin-top: var(--space-1);
 }
 
 /* What the system returned for a failed download (an error code, a host
@@ -863,13 +823,12 @@
 
 /* The update pill in a header: uiok's Button, tonal while a build is
    offered, primary once it is ready, neutral after a failed download. It
-   never reports progress. It slides in once, keeps its words on one line,
-   and after a failed download wears a warning outline (the button's own
+   never reports progress. It appears at once, as every control does,
+   keeps its words on one line, and after a failed download wears a warning outline (the button's own
    border, so hover and press keep it) and its glyph in the warning mark,
    never its words, which a light theme's amber could not hold at 4.5:1. */
 .shell-update-pill {
   white-space: nowrap;
-  animation: update-pill-in var(--duration-slow) var(--ease-out);
 }
 
 .shell-update-pill[data-state='download-failed'] {
@@ -880,58 +839,55 @@
   color: var(--warning);
 }
 
-@keyframes update-pill-in {
-  from {
-    opacity: 0;
-    transform: translateY(calc(-1 * var(--space-2)));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .shell-update-pill {
-    animation: none;
-  }
-}
-
 /* ---- Channel tag ---- */
 
-/* The release channel beside a lockup (an About window, a splash) on a
-   build that is not the release: small caps on a pill of the channel's
-   colour, so a screenshot always says which build it shows. An app that
-   colours its channels sets --channel (the hue) and --channel-text (its
-   words at 4.5:1 on the pill); without them the tag wears the accent. */
-.channel-tag {
-  --channel-tag-bg: color-mix(in srgb, var(--channel, var(--accent)) 14%, transparent);
-
+/* The shell's small square tag: a caption in the code face inside a
+   hairline of the tag's tone, on no fill, as a desktop window labels a
+   build or a count. The release channel beside a lockup (an About window,
+   a splash) on a build that is not the release wears it, so a screenshot
+   always says which build it shows; so does a Settings page's trailing
+   label (above). An app that colours its channels sets --channel (the
+   hairline's hue) and --channel-text (its words at 4.5:1 on the window's
+   ground); without them the tag wears the accent. */
+.channel-tag,
+.settings-sidebar-page > .settings-sidebar-chip {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  box-sizing: border-box;
   min-width: 0;
-  padding: 1px var(--space-3);
-  border-radius: var(--radius-pill);
-  background: var(--channel-tag-bg);
-  color: var(--channel-text, var(--accent-text));
-  font: var(--font-weight-strong) var(--font-size-caption) / var(--line-height-compact)
-    var(--font-ui);
-  letter-spacing: var(--tracking-caps);
-  text-transform: uppercase;
+  padding: 0 var(--space-2);
+  border: var(--line) solid var(--tag-tone);
+  border-radius: var(--radius-xs);
+  background: none;
+  font: var(--font-weight-regular) var(--font-size-caption) / var(--line-height-compact)
+    var(--font-mono);
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+.channel-tag {
+  --tag-tone: var(--channel, var(--accent));
+
+  color: var(--channel-text, var(--accent-text));
+  text-transform: uppercase;
 }
 
 /* ---- About window ---- */
 
-/* An About window: one panel centred in the window, the app's icon (sized
-   by the app), its lockup, and the version under it in the code face, the
-   one line a reader may select and copy. The app adds its window's drag
-   regions. */
+/* An About window: a fixed frame the size of the window that never scrolls,
+   its content centred in it: the app's icon (sized by the app), its
+   lockup, and the version under it in the code face, the one line a reader
+   may select and copy. The app adds its window's drag regions. */
 .about-window {
   display: grid;
   box-sizing: border-box;
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   align-content: center;
   justify-items: center;
   gap: var(--space-4);
-  padding: var(--space-12);
+  padding: var(--space-6);
   font-family: var(--font-ui);
   text-align: center;
 }
@@ -955,12 +911,23 @@
 
 /* ---- Sign-in prompts ---- */
 
-/* What a connection asks while it signs in: a secret in uiok's field
-   across the dialog (.field-group with its label and problem), or a new
-   host key's type and fingerprint in the code face under the question, the
+/* What a connection asks while it signs in: a secret as one row of the
+   label column (.field-grid: the label at the leading edge, the field
+   beside it, a problem or a choice under the field), or a new host key's
+   type and fingerprint in the code face under the question, the
    fingerprint whole on one line where it fits. */
 .dialog.sign-in-dialog {
   width: 420px;
+}
+
+/* The label column holds the label whole; each label's line is centred
+   on the dialog's 28px field. */
+.sign-in-dialog .field-grid {
+  --field-label-width: fit-content(40%);
+}
+
+.sign-in-dialog .field-grid > .field-label {
+  padding-block: calc((var(--control-height) - var(--line-height-compact)) / 2);
 }
 
 /* A block of its own, so no line box adds room under it. */
@@ -995,48 +962,54 @@
   user-select: text;
 }
 
-/* ---- Exit confirmation ---- */
-
-/* The confirmation an app shows before it quits or restarts with work
-   running: uiok's ConfirmDialog at its middle step (dialog-size-md), its
-   message one sentence a paragraph. Each sentence is a span in one message,
-   so a screen reader and a copy keep it one text. */
-.exit-confirmation-sentence {
-  display: block;
-}
-
-.exit-confirmation-sentence + .exit-confirmation-sentence {
-  margin-top: var(--space-3);
-}
-
 /* ---- Load failure ---- */
 
-/* The block a part of the window shows in place of its content when that
-   content failed to load: the failure's glyph (an icon of --icon-xl, as
-   every failure over an empty space has) in the danger tone, a headline,
-   the reason under it, centred. */
+/* What a part of the window shows in place of content that failed to
+   load, said where that content would start, as a status line: one line
+   at the pane's content inset, the failure's glyph in the danger tone, the
+   headline in the text colour, the reason after it in the dim tone, and a
+   small button (Try Again) right after the words. The headline and the
+   reason end in an ellipsis when the line cannot hold them; the host puts
+   their whole text in a tooltip (cutTooltip). A failure that blocks the
+   whole window is an alert dialog instead. */
 .space-load-failure {
   display: flex;
-  flex: 1;
-  flex-direction: column;
+  flex: none;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-4);
-  padding: var(--space-16);
-  text-align: center;
+  gap: var(--space-3);
+  min-width: 0;
+  padding: var(--space-4) var(--space-6);
+  color: var(--text);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-compact);
 }
 
 .space-load-failure > svg {
   flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
   color: var(--danger);
 }
 
+.space-load-failure :is(strong, p) {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .space-load-failure strong {
-  font-size: var(--font-size-heading);
+  flex-shrink: 0.5;
+  font-weight: var(--font-weight-medium);
 }
 
 .space-load-failure p {
-  max-width: 420px;
-  margin: 0;
   color: var(--text-dim);
+}
+
+.space-load-failure > :is(button, .button) {
+  flex: none;
+  margin-inline-start: var(--space-2);
 }

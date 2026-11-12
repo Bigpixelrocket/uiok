@@ -37,7 +37,7 @@ export function IconDemo() {
             </span>
           </DemoState>
         ))}
-        <DemoState label={`ICON_XL, ${ICON_XL}px, over a failure`}>
+        <DemoState label={`ICON_XL, ${ICON_XL}px, an About mark`}>
           <FolderOpen absoluteStrokeWidth aria-hidden="true" size={ICON_XL} />
         </DemoState>
       </DemoStates>

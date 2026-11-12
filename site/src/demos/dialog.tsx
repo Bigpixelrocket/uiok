@@ -243,7 +243,7 @@ const SHORTCUTS: readonly { readonly chord: Chord; readonly does: string }[] = [
   { chord: { key: 'k', meta: true }, does: 'Command palette' },
   { chord: { key: 'f', meta: true }, does: 'Filter the current pane' },
   { chord: { key: 'Backspace', meta: true }, does: 'Move to Trash' },
-  { chord: { key: 'Backspace', meta: true, alt: true }, does: 'Delete immediately' },
+  { chord: { key: 'Backspace', meta: true, alt: true }, does: 'Delete now' },
   { chord: { key: 'ArrowUp', meta: true }, does: 'Go to the first row' },
   { chord: { key: 'ArrowDown', meta: true }, does: 'Go to the last row' },
   { chord: { key: 'PageUp' }, does: 'Up a screen of rows' },
@@ -421,7 +421,7 @@ export function DialogDemo() {
           Rename…
         </Button>
         <Button onClick={() => setOpen('trash')}>Move to Trash…</Button>
-        <Button onClick={() => setOpen('delete')}>Delete Immediately…</Button>
+        <Button onClick={() => setOpen('delete')}>Delete Now…</Button>
         <Button onClick={() => setOpen('sign-out')}>Sign Out…</Button>
         <Button onClick={() => setOpen('delete-all')}>Delete 7 Long Paths…</Button>
         <Button onClick={() => setOpen('grant')}>Grant Access…</Button>

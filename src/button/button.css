@@ -169,3 +169,48 @@
   box-shadow: none;
   color: var(--text);
 }
+
+/* ---- Disclosure ----
+
+   A section a user shows or hides (Extra options, Advanced options): a
+   disclosure triangle and a plain label, as a desktop window draws one,
+   never a bezelled push button with a chevron. On a native button with
+   aria-expanded; the triangle points to the label's end while closed and
+   down while open, and turns at once. At rest the words are dim; under
+   the pointer, with the keyboard focus, and while open they are in the
+   text colour. The base sheet draws the focus ring. */
+.disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  min-height: var(--control-height-sm);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font: var(--font-weight-medium) var(--font-size-small) / var(--line-height-compact) var(--font-ui);
+  text-align: start;
+}
+
+.disclosure::before {
+  flex: none;
+  width: var(--space-4);
+  height: var(--space-4);
+  background: currentColor;
+  clip-path: polygon(20% 10%, 85% 50%, 20% 90%);
+  content: '';
+}
+
+.disclosure:dir(rtl)::before {
+  transform: scaleX(-1);
+}
+
+.disclosure[aria-expanded='true']::before {
+  transform: rotate(90deg);
+}
+
+.disclosure:is(:hover, :focus-visible, [aria-expanded='true']):not(:disabled) {
+  color: var(--text);
+}

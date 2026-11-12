@@ -102,6 +102,12 @@ const EXCEPTIONS: readonly Exception[] = [
     reason: "A terminal well sets plain text on the terminal engine's 19px cell height."
   },
   {
+    file: 'src/terminal/terminal.css',
+    property: 'font',
+    value: /\/\s*19px /,
+    reason: "A terminal's start failure is set as terminal text, on the engine's 19px cell height."
+  },
+  {
     file: 'src/activity/activity.css',
     property: 'animation',
     value: /0\.9s/,
@@ -175,12 +181,6 @@ const EXCEPTIONS: readonly Exception[] = [
     value: /^min\(620px, 100%\)$/,
     reason:
       "The Settings dialog's fixed frame height, a layout size, not a control; fixed so switching pages never moves the frame."
-  },
-  {
-    file: 'src/styles.css',
-    property: 'opacity',
-    value: /^0\.35$/,
-    reason: "The shared pulse's low point is a keyframe of the motion, not a state's opacity."
   }
 ];
 
@@ -194,11 +194,6 @@ const MIXED_PROPERTIES: readonly { file: string; property: string; reason: strin
     file: 'src/activity/activity.css',
     property: '--stripe-band',
     reason: "The stripes' band is a share of the ink a host passes as --stripe-ink."
-  },
-  {
-    file: 'src/shell/shell.css',
-    property: '--channel-tag-bg',
-    reason: "A channel tag's pill is a share of the channel hue an app passes as --channel."
   },
   {
     file: 'src/terminal/terminal.css',
@@ -645,7 +640,7 @@ describe('scale tokens in the stylesheets', () => {
       value: ''
     });
     const mix = 'color-mix(in srgb, var(--accent) 14%, transparent)';
-    expect(rule?.problem(mix, at('src/shell/shell.css', '--channel-tag-bg'))).toBeUndefined();
+    expect(rule?.problem(mix, at('src/activity/activity.css', '--stripe-band'))).toBeUndefined();
     expect(rule?.problem(mix, at('src/shell/shell.css', '--private-tint'))).toBeDefined();
   });
 

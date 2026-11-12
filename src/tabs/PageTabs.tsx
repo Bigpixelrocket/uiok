@@ -79,18 +79,18 @@ function tabOf(strip: HTMLElement, id: string): HTMLElement | null {
   return tabsOf(strip).find((tab) => tab.dataset.pageTab === id) ?? null;
 }
 
-/** Scrolls `strip` by `by`, kept within its scroll; smooth unless `instant` or reduced motion. */
-function scrollStrip(strip: HTMLElement, by: number, instant: boolean): void {
+/**
+ * Scrolls `strip` by `by`, kept within its scroll, at once: a desktop tab
+ * strip moves by a step, it does not glide.
+ */
+function scrollStrip(strip: HTMLElement, by: number): void {
   const within = Math.max(
     -strip.scrollLeft,
     Math.min(by, strip.scrollWidth - strip.clientWidth - strip.scrollLeft)
   );
 
   if (within === 0) return;
-  const still =
-    instant || (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
-
-  strip.scrollBy({ left: within, behavior: still ? 'instant' : 'smooth' });
+  strip.scrollBy({ left: within, behavior: 'instant' });
 }
 
 /**
@@ -101,7 +101,7 @@ function scrollStrip(strip: HTMLElement, by: number, instant: boolean): void {
  * chevron's inner edge, and one past the end edge brings in the first tab
  * start that clears it, which the snap then keeps.
  */
-function revealTab(strip: HTMLElement, tab: HTMLElement, instant: boolean): void {
+function revealTab(strip: HTMLElement, tab: HTMLElement): void {
   const bounds = strip.getBoundingClientRect();
   const box = tab.getBoundingClientRect();
   const before = box.left - (bounds.left + EDGE);
@@ -122,7 +122,7 @@ function revealTab(strip: HTMLElement, tab: HTMLElement, instant: boolean): void
       }
     }
   }
-  scrollStrip(strip, wanted, instant);
+  scrollStrip(strip, wanted);
 }
 
 /**
@@ -149,11 +149,7 @@ function pageStrip(strip: HTMLElement, side: 'start' | 'end'): void {
       last === undefined ? undefined : tabs.find((box) => box.left >= last.right - room);
     if (first !== undefined) by = first.left - inner;
   }
-  scrollStrip(
-    strip,
-    by ?? (side === 'start' ? -1 : 1) * Math.max(EDGE, bounds.width - 2 * EDGE),
-    false
-  );
+  scrollStrip(strip, by ?? (side === 'start' ? -1 : 1) * Math.max(EDGE, bounds.width - 2 * EDGE));
 }
 
 /** Props for {@link PageTabs}, over the type of its tab ids. */
@@ -202,7 +198,6 @@ export function PageTabs<Id extends string>({
 }: PageTabsProps<Id>): ReactElement {
   const strip = useRef<HTMLDivElement>(null);
   const focusable = current ?? tabs[0]?.id ?? null;
-  const drawn = useRef(false);
   // The tabs drawn, as a value that changes only when they do, not with
   // each new array a caller passes.
   const ids = JSON.stringify(tabs.map((tab) => tab.id));
@@ -225,16 +220,14 @@ export function PageTabs<Id extends string>({
     };
   }, [ids]);
 
-  // The current tab stays in view: at once, before the first paint, when
-  // the strip first draws tabs, then smoothly as it or the tabs change.
+  // The current tab stays in view, before the strip paints, when it first
+  // draws tabs and whenever the current tab or the tabs change.
   useLayoutEffect(() => {
     const element = strip.current;
     if (element === null) return;
-    const instant = !drawn.current;
     const tab = current === null ? null : tabOf(element, current);
 
-    if (element.children.length > 0) drawn.current = true;
-    if (tab !== null) revealTab(element, tab, instant);
+    if (tab !== null) revealTab(element, tab);
   }, [current, ids]);
 
   const onKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {

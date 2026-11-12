@@ -436,11 +436,9 @@ export function Terminal({
         tabIndex={readOnly ? 0 : -1}
       />
       {failed && (
-        <div className="terminal-failure">
-          <div className="notice notice-danger" role="alert">
-            <CircleAlert aria-hidden size={ICON_MD} />
-            <p className="notice-text">{labels.startFailed}</p>
-          </div>
+        <div className="terminal-failure" role="alert">
+          <CircleAlert aria-hidden className="terminal-failure-glyph" size={ICON_MD} />
+          <p className="terminal-failure-text">{labels.startFailed}</p>
         </div>
       )}
       {menu !== null && (

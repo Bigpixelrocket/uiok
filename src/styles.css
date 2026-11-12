@@ -82,20 +82,6 @@
   font-family: inherit;
 }
 
-/* A resizable box's corner grip (a textarea, a resizable frame): two short
-   diagonal strokes in the control outline on a clear ground, where the
-   platform would draw its grey hatch. */
-::-webkit-resizer {
-  background: linear-gradient(
-    135deg,
-    transparent 0 55%,
-    var(--control-border) 55% 62%,
-    transparent 62% 74%,
-    var(--control-border) 74% 81%,
-    transparent 81%
-  );
-}
-
 /* A meter (a password's strength, a quota): the slider's trough, a crisp
    bar on --control-track inside the --control-border hairline, filled in
    the tone of its value: success at the optimum, warning below it, danger
@@ -138,6 +124,67 @@ meter::-webkit-meter-even-less-good-value {
 ::selection {
   background: var(--text-selection-bg);
   color: var(--text);
+}
+
+/* In a window that is not in front, selected text greys to the quiet fill,
+   as the platform greys it. The host sets data-window-inactive on the root
+   from its window's blur and focus events; the listing reads the same
+   attribute for its selected rows and its active pane (docs/themes.md). */
+:root[data-window-inactive] ::selection {
+  background: var(--fill);
+}
+
+/* ---- Chrome is not selectable ---- */
+
+/* An application's chrome (labels, buttons, tabs, headings, menu items, a
+   row's parts) cannot be swept or double-clicked into a selection, so a
+   drag never smears a highlight across the window. Content opts back in:
+   what a user types, and what a user would copy (a value, a name, a path,
+   output). A host marks its own content with .selectable; a component's
+   content class sets user-select: text in its own rule. Both weigh
+   nothing, so a host rule wins. Inside selectable content the cursor is the
+   I-beam, which the browser draws only over text that can be selected. */
+:where(body) {
+  user-select: none;
+}
+
+:where(
+  input:not(
+    [type='checkbox'],
+    [type='radio'],
+    [type='range'],
+    [type='button'],
+    [type='submit'],
+    [type='reset']
+  ),
+  textarea,
+  [contenteditable]:not([contenteditable='false']),
+  code,
+  pre,
+  samp,
+  .selectable
+) {
+  user-select: text;
+}
+
+/* The arrow over every control, a link included, as a desktop
+   application draws it: no hand anywhere. Zero weight, so a host's own
+   control takes it with no class, and a resize or text cursor of its own
+   still wins. */
+:where(
+  a[href],
+  button,
+  select,
+  summary,
+  label,
+  [role='button'],
+  [role='link'],
+  [role='tab'],
+  [role='radio'],
+  [role='switch'],
+  input:is([type='checkbox'], [type='radio'], [type='range'])
+) {
+  cursor: default;
 }
 
 /* ---- Shared recipes ---- */
@@ -336,11 +383,13 @@ meter::-webkit-meter-even-less-good-value {
    (the selected tab, the checked segment, the current page), which a
    press would not change.
 
-   - Quiet control (an outlined-on-hover action, a crumb): the frosted wash
+   - Quiet control (an outlined-on-hover action, a crumb, a
+     strip's action): the frosted wash
      and ring, words to full text, as the neutral Button.
-   - Tab, segment, or sort label in a track or strip: the wash alone, words
-     to full text; the track already draws the frame.
-   - Pressed (both kinds, and the text-like controls: strip links, grid sort
+   - Tab, segment, or sort label in a track or strip, and a source list's
+     row (the Settings sidebar): the wash alone, words to full text; no
+     ring, since the track or the list already draws the frame.
+   - Pressed (both kinds, and the text-like controls: grid sort
      labels, palette levels): the face sinks, as Button's does, inside a
      hairline in --border-strong (--press-frost), so the press holds by
      shape where the wash is faint, with words in full text.
@@ -352,10 +401,11 @@ meter::-webkit-meter-even-less-good-value {
    The class carries states only, never a rest face, so the host keeps its
    own size and shape (docs/components/surface.md). */
 
-/* An outlined toggle chip (a mode, a filter, a reading of a field): off, a
-   --control-border outline on a clear ground with words in --text-dim; on
-   (aria-pressed="true"), the one look of "on" below. Hover and press are
-   the quiet control's (above). Heights follow the place, as a field's do:
+/* A toggle chip (a mode, a filter, a reading of a field), drawn as a scope
+   bar's item: off, borderless words in --text-dim on a clear ground (its
+   border is kept, transparent, so on and off are the same size); on
+   (aria-pressed="true"), the one look of "on" below, a filled segment
+   inside its ring. Hover and press are the quiet control's (above). Heights follow the place, as a field's do:
    28px, .toggle-chip-sm 24px, .toggle-chip-xs 20px inside a row; the corner
    follows the height. Before the recipes, so each of them wins over it. */
 .toggle-chip {
@@ -368,7 +418,7 @@ meter::-webkit-meter-even-less-good-value {
   height: var(--control-height);
   margin: 0;
   padding: 0 var(--space-4);
-  border: var(--line) solid var(--control-border);
+  border: var(--line) solid transparent;
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-dim);
@@ -419,8 +469,7 @@ meter::-webkit-meter-even-less-good-value {
     .pane-icon-act,
     .path-star,
     .crumb-label,
-    .settings-sidebar-page,
-    .settings-sidebar-subsection,
+    .pane-strip-link,
     .quiet-control,
     .toggle-chip
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
@@ -443,6 +492,8 @@ meter::-webkit-meter-even-less-good-value {
     .segmented-choice-option,
     .date-picker-day,
     .pane-sort.sortable,
+    .settings-sidebar-page,
+    .settings-sidebar-subsection,
     .quiet-track-item
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
     :not(
@@ -550,7 +601,6 @@ meter::-webkit-meter-even-less-good-value {
   content: '';
 }
 
-/* One turn and one breath, shared by every spinner and pulse. */
 /* The Spinner (src/icon): one turn per --duration-spin, standing still
    under reduced motion. */
 .spinner {
@@ -567,12 +617,6 @@ meter::-webkit-meter-even-less-good-value {
 @keyframes uiok-spin {
   to {
     transform: rotate(1turn);
-  }
-}
-
-@keyframes uiok-pulse {
-  50% {
-    opacity: 0.35;
   }
 }
 

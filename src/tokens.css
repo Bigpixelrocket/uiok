@@ -20,15 +20,13 @@
      - small: compact control labels, status lines, help text, dialog
        titles, grid cells, tooltips;
      - body: listing rows, regular Button labels, body text, the terminal;
-     - heading: a run headline, an empty state's title, a card title;
-     - figure: a run header's big figure;
+     - heading: a run headline and its clock, a Settings page title;
      - display: a startup or splash title. */
   --font-size-key: 10px;
   --font-size-caption: 11px;
   --font-size-small: 12px;
   --font-size-body: 13px;
   --font-size-heading: 14px;
-  --font-size-figure: 18px;
   --font-size-display: 20px;
 
   /* Line heights. compact sets 11 and 12 px text in one-line chrome; body
@@ -84,21 +82,22 @@
   --line: 1px;
   --line-strong: 2px;
 
-  /* Motion. fast: hover, focus, and press feedback, progress fills. base: a
-     surface entering or settling. slow: glides, a refusal's shake and red, a
-     bell. spin: one turn of a spinner, a pulse, a cursor blink. ease-out
-     enters and glides; ease-in-out shakes and pulses; progress and spinners
-     run linear. Under reduced motion the one-shot durations are zero (the
-     rule below), so a transition written with them needs no query of its
-     own; a loop still stops itself with animation: none. signal: a
+  /* Motion. Nothing animates in: a dialog, menu, palette, tooltip, or pill
+     appears at once, and a state change stays under 150ms. fast: hover,
+     focus, and press feedback, progress fills. base: a state change that
+     moves something (a width, a split), the longest a state change takes.
+     slow: a signal only, never a state change: a refusal's shake and red, a
+     bell. spin: one turn of a spinner, a cursor blink. ease-out eases a
+     signal; ease-in-out shakes; progress and spinners run linear. Under
+     reduced motion the one-shot durations are zero (the rule below), so a
+     transition written with them needs no query of its own; a loop still stops itself with animation: none. signal: a
      change that carries meaning by colour alone (a refusal's red without its
      shake); reduced motion keeps it, since nothing moves. loop: one sweep
      of a slow loop that shows work without a figure (a loading shimmer).
      notice: one beat of a flash that must be seen before it ends (a key
-     that just changed). Every "this is running" pulse breathes once per
-     spin. */
+     that just changed). */
   --duration-fast: 120ms;
-  --duration-base: 200ms;
+  --duration-base: 120ms;
   --duration-slow: 280ms;
   --duration-signal: 280ms;
   --duration-spin: 1s;
@@ -153,8 +152,9 @@
   /* Icon sizes (lucide's size prop, and icons sized in CSS): sm beside 11
      and 12 px text and in 20px inline controls; md beside 13px text in rows,
      tabs, and buttons; lg for a dialog's title icon, empty-state actions,
-     and a row's product mark; xl for the glyph over an empty state or a
-     failure. icon-column is the leading icon column of a row or menu
+     and a row's product mark; xl for a picture-sized mark (an About
+     window, a splash), never over an empty state or a failure.
+     icon-column is the leading icon column of a row or menu
      option. */
   --icon-sm: 12px;
   --icon-md: 14px;
@@ -203,7 +203,7 @@
 
 /* Reduced motion: every one-shot transition and animation written with the
    duration tokens ends at once, except --duration-signal, which moves
-   nothing. Loops (spinners, stripes, pulses, blinks)
+   nothing. Loops (spinners, stripes, blinks)
    stop in their own component's query with animation: none. */
 @media (prefers-reduced-motion: reduce) {
   :root {

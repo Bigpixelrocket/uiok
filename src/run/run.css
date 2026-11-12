@@ -1,9 +1,11 @@
 /* ---- Progress header (RunHeader) ----
 
    The header a view watching work in progress opens with: the state's
-   glyph and sentence, the big figure at the right edge, the optional bar,
-   and the facts. It carries its own type: the sentences in the interface
-   font, the figure (a clock or a percentage) in monospace. */
+   glyph and sentence, the figure at the right edge, the optional bar, and
+   the facts. It carries its own type: the sentences in the interface font,
+   the figure (a clock or a percentage) in monospace. The reason, the
+   figure, and the facts are content a user may copy (an error, a duration);
+   the rest is chrome. */
 .run-header {
   font-family: var(--font-ui);
   display: flex;
@@ -35,19 +37,15 @@
   color: var(--accent);
 }
 
-/* The done sentence keeps the plain text colour, and only the glyph and the
-   bar carry the green, a mark colour. A failed sentence is a status word
-   (--danger-text); its glyph and bar are marks (--danger). */
+/* Every sentence keeps the plain text colour: only the glyph and the bar
+   carry the state's tone (green when done, the danger mark when failed),
+   as a desktop status line says a failure with its glyph, not red words. */
 .run-header[data-state='done'] .run-header-glyph {
   color: var(--success);
 }
 
 .run-header[data-state='failed'] .run-header-glyph {
   color: var(--danger);
-}
-
-.run-header[data-state='failed'] .run-header-headline {
-  color: var(--danger-text);
 }
 
 .run-header-said {
@@ -67,6 +65,8 @@
 
 .run-header-reason {
   margin: var(--space-2) 0 0;
+  -webkit-user-select: text;
+  user-select: text;
   color: var(--text);
   font-size: var(--font-size-small);
   line-height: var(--line-height-prose);
@@ -75,15 +75,19 @@
 
 /* The figure reads live while the run goes on and dims once it is history
    (or before it starts), in weight as well as colour, since some themes
-   have barely a step between the text and dim text colours. */
+   have barely a step between the text and dim text colours. It is set at
+   the headline's size, strong and monospace: a read-out in a pane header,
+   not display type. */
 .run-header-figure {
   color: var(--text);
   font-family: var(--font-mono);
-  font-size: var(--font-size-figure);
+  font-size: var(--font-size-heading);
   font-variant-numeric: tabular-nums;
   font-weight: var(--font-weight-strong);
   line-height: var(--line-height-body);
   white-space: nowrap;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .run-header:is(
@@ -122,6 +126,8 @@
 }
 
 .run-header-facts {
+  -webkit-user-select: text;
+  user-select: text;
   display: flex;
   align-items: center;
   gap: var(--space-4);

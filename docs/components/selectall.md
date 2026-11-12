@@ -1,6 +1,6 @@
 # SelectAllBar (`@bigpixelrocket/uiok/selectall`)
 
-The footer of a list whose rows have checkboxes: Check all, then "With selected:" and the list's bulk actions. The checkbox is ticked when every row is, ticked and mixed when some are, clear when none are, and disabled when the list offers no row to check. `checkedAfterClick` gives the rows themselves Shift-click ranges.
+The footer of a list whose rows have checkboxes: Check all, then how many rows are checked ("3 of 8 selected", dim, as a status line says it) and the list's bulk actions. The checkbox is ticked when every row is, ticked and mixed when some are, clear when none are, and disabled when the list offers no row to check. `checkedAfterClick` gives the rows themselves Shift-click ranges.
 
 ## Example
 
@@ -43,8 +43,8 @@ The checkbox and the actions are ordinary Tab stops; Space toggles the checkbox.
 
 ## Styling
 
-`.select-all-bar`, `.select-all-check`, `.select-all-with`. The checkbox is the shared `.check`. The bar starts its checkbox `var(--line) + var(--space-3)` in, where a DataGrid's lead column starts its rows' boxes inside the frame, so a bar under a grid lines up with the rows; give the rows' own checkboxes `.check` too, so both draw alike.
+`.select-all-bar`, `.select-all-check`, `.select-all-count` (the count, dim, in tabular digits). The checkbox is the shared `.check`. The bar starts its checkbox `var(--line) + var(--space-3)` in, where a DataGrid's lead column starts its rows' boxes inside the frame, so a bar under a grid lines up with the rows; give the rows' own checkboxes `.check` too, so both draw alike.
 
 ## Labels read
 
-`selectAll` (`SelectAllLabels`): `checkAll`, `withSelected`, `label`. See `docs/labels.md`.
+`selectAll` (`SelectAllLabels`): `checkAll`, `selected`, `label`. See `docs/labels.md`.

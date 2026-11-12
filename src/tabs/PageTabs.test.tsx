@@ -274,17 +274,7 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     expect(scrollBy).not.toHaveBeenCalled();
   });
 
-  it('scrolls smoothly to a tab that becomes current past the edge', () => {
-    render(<WideStrip initial="members" />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Search' }));
-
-    expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ left: 112, behavior: 'smooth' });
-  });
-
-  it('scrolls without motion when the reader prefers reduced motion', () => {
-    vi.stubGlobal('matchMedia', (query: string) => ({
-      matches: query === '(prefers-reduced-motion: reduce)'
-    }));
+  it('scrolls at once, never smoothly, to a tab that becomes current past the edge', () => {
     render(<WideStrip initial="members" />);
     fireEvent.click(screen.getByRole('tab', { name: 'Search' }));
 
@@ -323,7 +313,7 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Members' }));
 
     // Scrolled to the end, Members starts at -26: 50px short of the clear span.
-    expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ left: -50, behavior: 'smooth' });
+    expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ left: -50, behavior: 'instant' });
   });
 
   it('shows a chevron at each edge that hides tabs, which pages the strip toward it', () => {
@@ -345,7 +335,7 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     // the start chevron's inner edge (246 less 24).
     layout.scrollWidth = 600;
     fireEvent.click(more('end'));
-    expect(scrollBy).toHaveBeenLastCalledWith({ left: 222, behavior: 'smooth' });
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 222, behavior: 'instant' });
 
     layout.scrollWidth = 412;
     layout.scrollLeft = 112;
@@ -354,7 +344,7 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     // Members (-26 to 54) is the last tab not drawn at the start; the earliest
     // tab start that keeps it whole is Overview's, the strip's own start.
     fireEvent.click(more('start'));
-    expect(scrollBy).toHaveBeenLastCalledWith({ left: -112, behavior: 'smooth' });
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -112, behavior: 'instant' });
   });
 
   it('pages back so the tab before the drawn ones ends the strip whole', () => {
@@ -369,7 +359,7 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     // the start chevron. The clear span is 252px, so Settings' start (-174) is
     // the earliest that keeps Search whole: Settings rests at 24, Search ends at 264.
     fireEvent.click(strip.parentElement?.querySelector('.page-tabs-more.start') as HTMLElement);
-    expect(scrollBy).toHaveBeenLastCalledWith({ left: -198, behavior: 'smooth' });
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -198, behavior: 'instant' });
   });
 
   it('brings in a tab past the end edge by a tab start, where the strip’s snap keeps it', () => {
@@ -379,7 +369,7 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
 
     // Alerts ends 50px past the clear span; Members' start, 62px on, is the
     // first tab start that clears it, so the strip rests there, not at 50.
-    expect(scrollBy).toHaveBeenLastCalledWith({ left: 62, behavior: 'smooth' });
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 62, behavior: 'instant' });
   });
 
   it('always comes to rest on a snap position, so no tab rests cut in the clear span', () => {

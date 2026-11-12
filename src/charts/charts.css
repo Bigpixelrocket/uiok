@@ -126,6 +126,9 @@
 .pie-value {
   color: var(--row-meta-text);
   font-variant-numeric: tabular-nums;
+  /* A share is a value a user may copy; the legend's names are chrome. */
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .pie-legend li.lit .pie-value {
@@ -211,12 +214,10 @@
   pointer-events: none;
 }
 
+/* A plot that takes a range drag keeps the arrow: nothing is resized, and
+   the guide line and the dragged range show the gesture. */
 .line-plot {
   fill: transparent;
-}
-
-.line-plot.selectable {
-  cursor: col-resize;
 }
 
 .line-selection,
@@ -264,14 +265,22 @@
   resize: both;
 }
 
+/* The corner still resizes the frame, as a window's corner does: the
+   resize cursor shows over it, but the browser's striped grip is not
+   drawn, which no desktop pane wears. */
+.scatter-frame::-webkit-resizer {
+  background: transparent;
+}
+
 .scatter-svg {
   display: block;
   font: var(--font-size-caption) var(--font-ui);
 }
 
+/* The plot keeps the arrow, as a line plot's range drag does: the guide
+   line and the zoom rectangle show the gesture, and nothing here resizes. */
 .scatter-plot {
   fill: transparent;
-  cursor: crosshair;
 }
 
 .scatter-point {
