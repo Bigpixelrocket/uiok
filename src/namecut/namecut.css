@@ -26,10 +26,13 @@
    in whatever face the line is set: a character is about 1ch, and the
    ellipsis about 1em in a proportional face. That floor is the widest the
    two can be; NameCut narrows a cut box (this head, and the words around
-   the name) to what it shows, so no blank stands after its ellipsis. */
+   the name) to what it shows, so no blank stands after its ellipsis. A
+   head shorter than that floor ("~/" of "~/n1000/.controller 85977") keeps
+   its own width, so a name that fits reads exactly as written, with no
+   blank between its head and its tail. */
 .name-cut-head {
   flex: 0 10000000000 auto;
-  min-width: calc(1ch + 1em);
+  min-width: calc-size(max-content, min(size, 1ch + 1em));
   overflow: hidden;
   text-overflow: ellipsis;
 }

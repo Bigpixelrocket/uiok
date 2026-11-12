@@ -83,7 +83,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - The terminal keeps every cell's text at 4.5:1 against that cell's background, draws selected text in `--terminal-selection-text`, shows a quiet outline cursor while unfocused, and shows a start failure in its place.
-- `NameCut` never leaves a gap between an ellipsis and the next part, and cuts a right-to-left name the mirrored way.
+- `NameCut` never leaves a gap between an ellipsis and the next part, nor after a head shorter than an ellipsis's room (`~/` in `~/n1000/.controller 85977`), and cuts a right-to-left name the mirrored way.
 - `DataGrid` keeps an open editor inside the grid's frame, and its focus ring on the frame. `DateTimePicker` keeps its time fields on one row.
 - The pinned actions column and side fades follow a right-to-left `dir`; a toggle that is on stays on under the pointer; scroll fades never cover a scroller's border or scrollbar.
 

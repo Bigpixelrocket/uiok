@@ -483,15 +483,17 @@ export function DialogDemo() {
           confirmLabel="Delete"
           forGood
           icon={Trash2}
-          message="These 3 items are deleted for good. This cannot be undone."
+          message="These 4 items are deleted for good. This cannot be undone."
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
           paths={[
+            // A short head ("~/") and names with spaces, which must read exactly as written.
+            '~/n1000/.controller 85977',
+            '~/Documents/Q3 budget review.xlsx',
             '~/projects/site/docs/deploying.md',
-            '~/projects/site/public/robots.txt',
             '~/projects/site/tests/App.test.tsx'
           ]}
-          title="Delete 3 Items Now?"
+          title="Delete 4 Items Now?"
         />
       ) : null}
       {open === 'delete-all' ? (
