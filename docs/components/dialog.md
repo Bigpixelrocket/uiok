@@ -186,23 +186,23 @@ A held key runs its slot once. A key the browser-key guard cancelled still reach
 
 ## `ConfirmDialog` (`ConfirmDialogProps`)
 
-| Prop           | Type                                 | Default    | Meaning                                                                          |
-| -------------- | ------------------------------------ | ---------- | -------------------------------------------------------------------------------- |
-| `title`        | `string`                             |            | What will happen, at most five words, one line                                   |
-| `message`      | `ReactNode`                          |            | One short sentence of consequence; a name in `<strong>` reads in the text colour |
-| `confirmLabel` | `string`                             |            | The primary's verb                                                               |
-| `cancelLabel`  | `string`                             | labels     | The leave verb; `dialog.cancel` unless given                                     |
-| `icon`         | `LucideIcon`                         |            | The action's icon                                                                |
-| `tone`         | `'danger' \| 'warning' \| 'primary'` | `'danger'` | `warning` for a safe yes that still ends work; `primary` for a plain grant       |
-| `facts`        | `readonly DialogFact[]`              | `[]`       | One-line rows of a label and a count or a few names (`DialogFacts`)              |
-| `paths`        | `readonly string[]`                  | `[]`       | The names or paths it touches, one line each, then "+N more" (`DialogNames`)     |
-| `children`     | `ReactNode`                          |            | A choice drawn under the message; the caller holds its state                     |
-| `className`    | `string`                             |            | Extra class on the box                                                           |
-| `forGood`      | `boolean`                            | `false`    | A delete that cannot be undone                                                   |
-| `onConfirm`    | `() => void`                         |            | The primary                                                                      |
-| `onCancel`     | `() => void`                         |            | Escape, the leave slot, a press outside                                          |
+| Prop           | Type                                 | Default    | Meaning                                                                                                                                                       |
+| -------------- | ------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`        | `string`                             |            | What will happen, at most five words, one line                                                                                                                |
+| `message`      | `ReactNode?`                         |            | One short sentence of consequence; a name in `<strong>` reads in the text colour. Leave it out (or `''`) when the title says all: no empty paragraph is drawn |
+| `confirmLabel` | `string`                             |            | The primary's verb                                                                                                                                            |
+| `cancelLabel`  | `string`                             | labels     | The leave verb; `dialog.cancel` unless given                                                                                                                  |
+| `icon`         | `LucideIcon`                         |            | The action's icon                                                                                                                                             |
+| `tone`         | `'danger' \| 'warning' \| 'primary'` | `'danger'` | `warning` for a safe yes that still ends work; `primary` for a plain grant                                                                                    |
+| `facts`        | `readonly DialogFact[]`              | `[]`       | One-line rows of a label and a count or a few names (`DialogFacts`)                                                                                           |
+| `paths`        | `readonly string[]`                  | `[]`       | The names or paths it touches, one line each, then "+N more" (`DialogNames`)                                                                                  |
+| `children`     | `ReactNode`                          |            | A choice drawn under the message; the caller holds its state                                                                                                  |
+| `className`    | `string`                             |            | Extra class on the box                                                                                                                                        |
+| `forGood`      | `boolean`                            | `false`    | A delete that cannot be undone                                                                                                                                |
+| `onConfirm`    | `() => void`                         |            | The primary                                                                                                                                                   |
+| `onCancel`     | `() => void`                         |            | Escape, the leave slot, a press outside                                                                                                                       |
 
-The message is the dialog's description, so a screen reader reads it with the title. The frame carries the type and box sizing, so it renders the same portalled to the body.
+The message is the dialog's description, so a screen reader reads it with the title. Without a message the facts list (or else the names list) is the description; with neither, the dialog has none, never an `aria-describedby` that points at nothing. The frame carries the type and box sizing, so it renders the same portalled to the body.
 
 - The title is one line, like every dialog's (see [The title](#the-title)).
 - The order is the platform's: the leave verb at the left edge, the action alone at the right, lit. A `danger` action is lit red; a `warning` question rules the strip amber and lights its action in the accent, since its yes is the safe choice.
@@ -252,6 +252,7 @@ The lists `ConfirmDialog` draws from `facts` and `paths`, for any other dialog b
 | `DialogFacts` | `label` | `string`                |         | The list's accessible name, when the message does not say what it lists |
 | `DialogNames` | `names` | `readonly string[]`     |         | The names or paths                                                      |
 | `DialogNames` | `max`   | `number`                | `5`     | The most lines shown, the "+N more" line included                       |
+| both          | `id`    | `string`                |         | The list's id, for a dialog that names it as its description            |
 
 A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode; more?: number }`; the host formats the count. `more` counts the names the value leaves out and ends the row in "+N more", never cut. A string value carries its whole text in a tooltip while it is cut; a node value passes its own `cutTooltip`.
 

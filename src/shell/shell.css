@@ -50,10 +50,10 @@
 
 /* A page's row: its glyph and its title, the chosen one on the current
    item's tint and ring. Its subsections unfold under it as indented child
-   rows, the one in view on the quiet fill in the text colour. A name too long
-   for the sidebar wraps onto a second compact line rather than losing its
-   end, between words, and inside a word only when the word alone cannot
-   fit (never with a hyphen the browser guessed). Hover is the quiet row
+   rows, the one in view on the quiet fill in the text colour. A row keeps
+   one line, as a source list's does: a name too long for the sidebar is
+   cut with an ellipsis, and the host gives it its whole text as a cut
+   tooltip (`cutTooltip`). Hover is the quiet row
    tint alone and press the shared press (styles.css), as a source list's
    rows take them; the chosen row takes neither. The focus ring is the base sheet's, drawn inside the row. */
 .settings-sidebar-page,
@@ -74,21 +74,21 @@
   font-size: var(--font-size-small);
   line-height: var(--line-height-compact);
   text-align: start;
-  overflow-wrap: break-word;
-  hyphens: manual;
+  white-space: nowrap;
   transition: var(--transition-control);
 }
 
-/* A page's row hangs its parts from the first line, so a name that wraps
-   keeps its glyph and chip beside its first line and the glyph column
-   stays straight. The block padding centres that one line in the bar. */
+/* A page's row hangs its parts from its one line, so the glyph column stays
+   straight. The block padding centres that line in the bar. */
 .settings-sidebar-page {
   align-items: flex-start;
   padding-block: calc((var(--bar-height) - var(--line-height-compact)) / 2);
 }
 
-.settings-sidebar-page > span {
+.settings-sidebar-page > span:not(.settings-sidebar-chip) {
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .settings-sidebar-page:focus-visible,
@@ -139,10 +139,15 @@
   padding: 0;
 }
 
+/* A subsection's row is its words alone, so it is a block that cuts them
+   with an ellipsis, its one line centred in the row by the block padding. */
 .settings-sidebar-subsection {
+  display: block;
   min-height: var(--row-height-dense);
-  padding-block: var(--space-1);
+  padding-block: calc((var(--row-height-dense) - var(--line-height-compact)) / 2);
+  overflow: hidden;
   color: var(--text-dim);
+  text-overflow: ellipsis;
 }
 
 /* The section in view is marked as a source list marks a child row it
@@ -253,6 +258,15 @@
   color: var(--text-dim);
 }
 
+/* The count of further problems as the line's own part, after the words:
+   a narrow window cuts the sentence and keeps the count whole. */
+.settings-notice > .settings-notice-more {
+  flex: none;
+  white-space: nowrap;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 /* ---- Settings files ---- */
 
 /* A file's name and the folder's path in the code face, the button at its
@@ -263,6 +277,8 @@
   font-family: var(--font-mono);
 }
 
+/* The folder's path is content a user copies (into a terminal, or Go to
+   Folder), so it selects as text. */
 .settings-file-path {
   min-width: 0;
   overflow: hidden;
@@ -270,6 +286,8 @@
   font-size: var(--font-size-small);
   text-overflow: ellipsis;
   white-space: nowrap;
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 .settings-file-action {

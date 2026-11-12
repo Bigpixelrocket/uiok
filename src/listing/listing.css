@@ -1387,7 +1387,7 @@ button.crumb-label > .crumb-text {
 }
 
 /* A line that says something about a listing, or stands in for its rows:
-   a quiet "Nothing here yet", a hint, a refusal (`danger`). Its words
+   a quiet "No history", a hint, a refusal (`danger`). Its words
    start on the row inset, where a row's icon, the column strip's first
    label, and the path bar's first crumb start, so the pane keeps one left
    edge and no line reads as indented. Its words are content: a user may
@@ -1439,11 +1439,11 @@ button.crumb-label > .crumb-text {
    Add action), the status line below, and between them, in the first
    row's place, one quiet line in the listing's own type, dim, on the row
    inset, and nothing more: no centred block, no picture, no sentence of
-   help, no row of buttons. A glyph the host puts first is not drawn; its
-   title (`strong` or `h2`) is that line; at most one small push button
-   (`Button size="small"`) may follow it at the start edge, where the pane
-   has no bar to hold the way on. What a sentence would explain belongs in
-   the tooltip of the action that does it. An empty list inside a working
+   help, no button. A glyph the host puts first is not drawn; its title
+   (`strong` or `h2`) is that line. The ways on stand in the pane's chrome:
+   its path bar's actions, or an add row (`.pane-add`) where it has no bar,
+   so the same action is never drawn twice. What a sentence would explain
+   belongs in the tooltip of the action that does it. An empty list inside a working
    pane says so with `.pane-message.empty` instead. */
 :where(.listing-root) .pane-empty {
   display: flex;
@@ -1470,10 +1470,6 @@ button.crumb-label > .crumb-text {
   color: inherit;
   font: inherit;
   line-height: var(--line-height-compact);
-}
-
-:where(.listing-root) .pane-empty > .button {
-  margin-block: var(--space-2);
 }
 
 /* A state (StateMark): its mark, or its spinner for a transition, and its

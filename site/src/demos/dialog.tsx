@@ -180,7 +180,12 @@ function ConnectDialog({
           <label className="field-label" htmlFor={portId}>
             Port
           </label>
-          <input className="field" defaultValue="3306" id={portId} inputMode="numeric" />
+          <input
+            className="field field-short"
+            defaultValue="3306"
+            id={portId}
+            inputMode="numeric"
+          />
           <label className="field-label" htmlFor={userId} {...userHelp.label}>
             User
           </label>

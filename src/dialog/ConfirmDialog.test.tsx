@@ -250,4 +250,45 @@ describe('ConfirmDialog', () => {
       expect(onCancel).toHaveBeenCalledTimes(2);
     });
   });
+
+  it('draws no empty message and is described by its list instead', () => {
+    render(
+      <UiokProvider>
+        <ConfirmDialog
+          confirmLabel="Close"
+          facts={[{ label: 'Processes', count: 2 }]}
+          icon={Trash2}
+          message=""
+          onCancel={() => undefined}
+          onConfirm={() => undefined}
+          title="Close Tab?"
+        />
+      </UiokProvider>
+    );
+    const dialog = screen.getByRole('dialog');
+    const describedBy = dialog.getAttribute('aria-describedby');
+
+    expect(dialog.querySelector('.dialog-message')).toBeNull();
+    expect(describedBy).not.toBeNull();
+    expect(document.getElementById(describedBy ?? '')?.classList.contains('dialog-facts')).toBe(
+      true
+    );
+    cleanup();
+  });
+
+  it('has no description at all with neither a message nor a list', () => {
+    render(
+      <ConfirmDialog
+        confirmLabel="Close"
+        icon={Trash2}
+        onCancel={() => undefined}
+        onConfirm={() => undefined}
+        title="Close Tab?"
+      />
+    );
+
+    expect(screen.getByRole('dialog').hasAttribute('aria-describedby')).toBe(false);
+    expect(screen.getByRole('dialog').querySelector('.dialog-message')).toBeNull();
+    cleanup();
+  });
 });

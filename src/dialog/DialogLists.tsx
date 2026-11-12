@@ -38,6 +38,8 @@ export interface DialogFactsProps {
   readonly facts: readonly DialogFact[];
   /** The list's accessible name, when the message above does not already say what it lists. */
   readonly label?: string;
+  /** The list's id, for a dialog that names it as its description. */
+  readonly id?: string;
 }
 
 /**
@@ -50,11 +52,11 @@ export interface DialogFactsProps {
  * facts, not sentences: the message above says what they mean. Styled by
  * the `.dialog-facts` rules in `@bigpixelrocket/uiok/styles.css`.
  */
-export function DialogFacts({ facts, label }: DialogFactsProps): ReactElement {
+export function DialogFacts({ facts, label, id }: DialogFactsProps): ReactElement {
   const labels = useLabels().dialog;
 
   return (
-    <dl aria-label={label} className="dialog-facts">
+    <dl aria-label={label} className="dialog-facts" id={id}>
       {facts.map((fact) => (
         <div className="dialog-fact" key={fact.label}>
           <dt className="dialog-label" {...cutTooltip(fact.label)}>
@@ -122,6 +124,8 @@ export interface DialogNamesProps {
    * unless given. A list of more names shows one fewer and ends in "+N more".
    */
   readonly max?: number;
+  /** The list's id, for a dialog that names it as its description. */
+  readonly id?: string;
 }
 
 /**
@@ -133,14 +137,18 @@ export interface DialogNamesProps {
  * Named for assistive technology by `dialog.affectedItems`. Styled by the
  * `.dialog-names` rules in `@bigpixelrocket/uiok/styles.css`.
  */
-export function DialogNames({ names, max = DEFAULT_MAX_NAMES }: DialogNamesProps): ReactElement {
+export function DialogNames({
+  names,
+  max = DEFAULT_MAX_NAMES,
+  id
+}: DialogNamesProps): ReactElement {
   const labels = useLabels().dialog;
   const limit = Math.max(1, Math.floor(max));
   const shown = names.length > limit ? names.slice(0, limit - 1) : names;
   const more = names.length - shown.length;
 
   return (
-    <ul aria-label={labels.affectedItems(names.length)} className="dialog-names">
+    <ul aria-label={labels.affectedItems(names.length)} className="dialog-names" id={id}>
       {shown.map((name, index) => (
         // A name may repeat (two files of one name in different lists); its
         // place in a list fixed while the dialog is open is its identity.

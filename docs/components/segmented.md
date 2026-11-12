@@ -21,14 +21,26 @@ import { SegmentedChoice } from '@bigpixelrocket/uiok/segmented';
 
 `T` is `string | number | null`.
 
-| Prop              | Type                       | Meaning                                           |
-| ----------------- | -------------------------- | ------------------------------------------------- |
-| `labelId`         | `string`                   | Id of the element naming the group                |
-| `choices`         | `readonly T[]`             | Every choice, in drawing order; distinct values   |
-| `value`           | `T`                        | The chosen one                                    |
-| `onChange`        | `(value: T) => void`       | Called with a new choice; not for the chosen one  |
-| `render`          | `(choice: T) => ReactNode` | A segment's content                               |
-| `disabledChoices` | `readonly T[]?`            | Choices that cannot be taken now; none by default |
+| Prop               | Type                       | Meaning                                                                                                                               |
+| ------------------ | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `labelId`          | `string`                   | Id of the element naming the group                                                                                                    |
+| `choices`          | `readonly T[]`             | Every choice, in drawing order; distinct values                                                                                       |
+| `value`            | `T`                        | The chosen one                                                                                                                        |
+| `onChange`         | `(value: T) => void`       | Called with a new choice; not for the chosen one                                                                                      |
+| `render`           | `(choice: T) => ReactNode` | A segment's content                                                                                                                   |
+| `disabledChoices`  | `readonly T[]?`            | Choices that cannot be taken now; none by default                                                                                     |
+| `aria-description` | `string?`                  | What the choice does, read when the group takes focus: spread `labelHelp(help).control` here and `labelHelp(help).label` on the label |
+
+## Help
+
+Help that explains the choice lives in the label's tooltip, as a field's does ([Field](field.md), `labelHelp`), not in a line under the control. Spread both halves of one `labelHelp`, so a screen reader hears the same words when the group takes focus:
+
+```tsx
+const help = labelHelp('How big each row is drawn.');
+
+<span className="field-label" id="density-label" {...help.label}>Density</span>
+<SegmentedChoice labelId="density-label" … {...help.control} />
+```
 
 ## Keyboard
 

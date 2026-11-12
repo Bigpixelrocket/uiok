@@ -28,9 +28,11 @@ export interface ConfirmDialogProps {
   /**
    * The consequence: one short sentence, one or two lines at most, as text
    * or with a name set apart in bold (`<strong>`). Context the dialog needs
-   * (where it acts) goes here too, never beside the title.
+   * (where it acts) goes here too, never beside the title. Leave it out (or
+   * pass `''`) when the title says all there is: no empty paragraph is drawn,
+   * and the facts or names list describes the dialog instead.
    */
-  readonly message: ReactNode;
+  readonly message?: ReactNode;
   /** The action's verb, the lit primary at the right edge. */
   readonly confirmLabel: string;
   /**
@@ -92,7 +94,8 @@ export interface ConfirmDialogProps {
  * on ⌥⌘⌫ with Return running nothing for a delete that cannot be undone
  * (`forGood`). The message describes the dialog (`aria-describedby`), so a
  * screen reader reads the consequence, and any name it holds, with the
- * title. The frame carries its type, margins, and box sizing, so it renders
+ * title; without a message the facts or names list describes it, and with
+ * neither the dialog has no description. The frame carries its type, margins, and box sizing, so it renders
  * the same portalled to the body as inside any page; its title keeps to one
  * line, cut with an ellipsis. Styled by the `.confirm-dialog` rules in
  * `@bigpixelrocket/uiok/styles.css`; reads the `dialog` labels.
@@ -115,6 +118,12 @@ export function ConfirmDialog({
   const labels = useLabels().dialog;
   const labelId = useId();
   const messageId = useId();
+  const listId = useId();
+  // An empty message draws nothing, so the dialog is described by what it does draw.
+  const hasMessage =
+    message !== undefined && message !== null && message !== false && message !== '';
+  const hasList = facts.length > 0 || paths.length > 0;
+  const describedBy = hasMessage ? messageId : hasList ? listId : undefined;
   const legend: DialogLegendModel = {
     leave: { label: cancelLabel ?? labels.cancel },
     primary: forGood
@@ -125,7 +134,7 @@ export function ConfirmDialog({
   return (
     <ModalDialog
       className={className ? `confirm-dialog ${className}` : 'confirm-dialog'}
-      describedBy={messageId}
+      describedBy={describedBy}
       icon={icon}
       labelId={labelId}
       legend={legend}
@@ -133,11 +142,13 @@ export function ConfirmDialog({
       title={title}
       tone={tone === 'primary' ? 'accent' : tone}
     >
-      <p className="dialog-message" id={messageId}>
-        {message}
-      </p>
-      {facts.length > 0 && <DialogFacts facts={facts} />}
-      {paths.length > 0 && <DialogNames names={paths} />}
+      {hasMessage && (
+        <p className="dialog-message" id={messageId}>
+          {message}
+        </p>
+      )}
+      {facts.length > 0 && <DialogFacts facts={facts} id={listId} />}
+      {paths.length > 0 && <DialogNames id={facts.length > 0 ? undefined : listId} names={paths} />}
       {children}
     </ModalDialog>
   );

@@ -46,6 +46,7 @@ describe('selection', () => {
       ['<div class="space-load-failure"><p>ECONNRESET</p></div>', 'p'],
       ['<p class="update-card-sub">ECONNRESET</p>', 'p'],
       ['<span class="settings-file-problem-text">line 4</span>', 'span'],
+      ['<code class="settings-file-path">~/.config/app</code>', 'code'],
       ['<div class="listing-root"><p class="pane-message">Nothing here.</p></div>', 'p'],
       ['<div class="dialog"><p class="dialog-message">Gone.</p></div>', '.dialog-message'],
       ['<p class="about-version">Version 3.4.0</p>', '.about-version']

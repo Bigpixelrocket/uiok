@@ -28,7 +28,7 @@ function CopyDialog({ onClose }: { readonly onClose: () => void }) {
         />
       }
     >
-      <p>Copy this file to the Seedbox? The title keeps the name&apos;s end in view.</p>
+      <p>Copy this file to the Seedbox?</p>
     </ModalDialog>
   );
 }
@@ -85,6 +85,7 @@ export function NameCutDemo() {
         <Button onClick={() => setOpen(true)} size="small">
           Cut in a Title Strip…
         </Button>
+        <span className="demo-label">The title keeps the name&apos;s end in view.</span>
       </div>
       {open ? <CopyDialog onClose={() => setOpen(false)} /> : null}
     </div>

@@ -369,7 +369,7 @@ export function ListingDemo() {
                 )
               }
             ]}
-            empty="Nothing here yet."
+            empty="No history"
             grid={STRIP_GRID}
             title="History"
           />

@@ -18,13 +18,22 @@ export interface SegmentedChoiceProps<T extends string | number | null> {
    * None unless given; the chosen one should not be among them.
    */
   readonly disabledChoices?: readonly T[];
+  /**
+   * What the choice does, as the group's accessible description: the
+   * `control` half of `labelHelp(help)` spread on the group, whose `label`
+   * half is the tooltip on the element `labelId` names. A screen reader
+   * hears it when the group takes focus.
+   */
+  readonly 'aria-description'?: string;
 }
 
 /**
  * One choice of several, drawn as a segmented control and announced as a
  * radio group: one Tab stop (the checked segment), and the arrow keys move
  * the choice, wrapping at the ends and passing over a disabled choice, with
- * the focus following it. Its look is
+ * the focus following it. Help that explains the choice is the label's
+ * tooltip and the group's description (`aria-description`, from
+ * `labelHelp`), as a field's is. Its look is
  * its own (`.segmented-choice` in `@bigpixelrocket/uiok/styles.css`), so it draws the same
  * in a dialog and on a page.
  */
@@ -34,7 +43,8 @@ export function SegmentedChoice<T extends string | number | null>({
   value,
   onChange,
   render,
-  disabledChoices = []
+  disabledChoices = [],
+  'aria-description': description
 }: SegmentedChoiceProps<T>): ReactElement {
   const group = useRef<HTMLDivElement>(null);
   const step = (event: KeyboardEvent, delta: number): void => {
@@ -56,6 +66,7 @@ export function SegmentedChoice<T extends string | number | null>({
 
   return (
     <div
+      aria-description={description}
       aria-labelledby={labelId}
       className="segmented-choice"
       onKeyDown={(event) => {

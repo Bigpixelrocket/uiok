@@ -15,7 +15,12 @@ import {
 import { ICON_SM, Spinner } from '../icon/index.js';
 import type { SortDirection } from '../labels/listing.js';
 import { useLabels } from '../labels/UiokProvider.js';
-import { InRowContext, RowLinkLookContext, type LinkLook } from '../pane/PaneActions.js';
+import {
+  InListingRowContext,
+  InRowContext,
+  RowLinkLookContext,
+  type LinkLook
+} from '../pane/PaneActions.js';
 import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
 import { pathParts } from './PathParts.logic.js';
 
@@ -530,36 +535,38 @@ export function Row({
   }, [cursor, rowKey]);
 
   return (
-    <InRowContext.Provider value={!tabbable}>
-      <div
-        aria-current={current ? 'true' : undefined}
-        className={['row', current ? 'cursor' : '', className ?? ''].filter(Boolean).join(' ')}
-        data-row-key={rowKey}
-        onClick={onOpen}
-        onFocus={() => cursor.point(rowKey)}
-        // Movement, not entry: a row scrolled under a still pointer as the
-        // keys move the cursor must not take the cursor back.
-        onPointerMove={() => {
-          if (!current) cursor.point(rowKey);
-        }}
-        role="row"
-        tabIndex={focusable ? (current || entry ? 0 : -1) : undefined}
-      >
-        <span aria-hidden className="row-icon">
-          {mark}
-        </span>
-        <span
-          className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
-          role="cell"
-          // A name in words carries itself whole as its tooltip while a
-          // narrow name column cuts it with an ellipsis.
-          {...(typeof name === 'string' ? cutTooltip(name) : {})}
+    <InListingRowContext.Provider value>
+      <InRowContext.Provider value={!tabbable}>
+        <div
+          aria-current={current ? 'true' : undefined}
+          className={['row', current ? 'cursor' : '', className ?? ''].filter(Boolean).join(' ')}
+          data-row-key={rowKey}
+          onClick={onOpen}
+          onFocus={() => cursor.point(rowKey)}
+          // Movement, not entry: a row scrolled under a still pointer as the
+          // keys move the cursor must not take the cursor back.
+          onPointerMove={() => {
+            if (!current) cursor.point(rowKey);
+          }}
+          role="row"
+          tabIndex={focusable ? (current || entry ? 0 : -1) : undefined}
         >
-          {name}
-        </span>
-        {children}
-      </div>
-    </InRowContext.Provider>
+          <span aria-hidden className="row-icon">
+            {mark}
+          </span>
+          <span
+            className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
+            role="cell"
+            // A name in words carries itself whole as its tooltip while a
+            // narrow name column cuts it with an ellipsis.
+            {...(typeof name === 'string' ? cutTooltip(name) : {})}
+          >
+            {name}
+          </span>
+          {children}
+        </div>
+      </InRowContext.Provider>
+    </InListingRowContext.Provider>
   );
 }
 
@@ -629,8 +636,10 @@ export interface PathCellProps {
   /** The whole path, slash-separated ("/opt/homebrew/var/mysql"). */
   readonly path: string;
   /**
-   * The name's own class, which colours it by its kind (a folder as a
-   * folder); the text tone without one. `pathParts(path).base` is the name.
+   * The name's own class, which marks it by its kind (a folder as a
+   * folder); the text tone without one. A kind's colour is never the
+   * accent, which in a row reads as a link. `pathParts(path).base` is the
+   * name.
    */
   readonly nameClassName?: string;
 }

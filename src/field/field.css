@@ -732,6 +732,17 @@ select.field option {
   max-width: 100%;
 }
 
+/* A field for a short value (a port, a count, a code) is a few characters
+   wide, as a desktop form sizes a field to what it holds, wherever it
+   stands: in a label column, a dialog's form grid, or a line of options.
+   Room for eight characters of the field's own code face. */
+.field.field-short {
+  flex: none;
+  justify-self: start;
+  width: calc(8ch + 2 * var(--space-4) + 2 * var(--line));
+  max-width: 100%;
+}
+
 /* One line of a value: a choice, a field, a status, with anything trailing
    (a key chord) pushed to the line's end. */
 .field-option {

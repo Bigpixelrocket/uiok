@@ -114,6 +114,23 @@ describe('placeTooltip', () => {
     expect(placeTooltip(strip, tip, viewport, 598).left).toBe(500);
   });
 
+  it('hangs from the leading edge of a control narrower than the tooltip', () => {
+    const label = { left: 200, top: 100, width: 40, height: 16 };
+
+    expect(placeTooltip(label, tip, viewport, 210)).toEqual({ left: 200, top: 122 });
+    expect(placeTooltip(label, tip, viewport, 210, null, true).left).toBe(140);
+  });
+
+  it('keeps a glyph button centred and a leading-edge tooltip inside the window', () => {
+    const glyph = { left: 200, top: 100, width: 24, height: 24 };
+    const late = { left: 750, top: 100, width: 40, height: 16 };
+    const early = { left: 10, top: 100, width: 40, height: 16 };
+
+    expect(placeTooltip(glyph, tip, viewport, 0).left).toBe(162);
+    expect(placeTooltip(late, tip, viewport, 0).left).toBe(694);
+    expect(placeTooltip(early, tip, viewport, 0, null, true).left).toBe(6);
+  });
+
   it('opens beside a control when asked, centred on its height', () => {
     const rail = { left: 0, top: 100, width: 28, height: 28 };
 

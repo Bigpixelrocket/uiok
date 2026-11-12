@@ -5,7 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
-import { RowIconAction, RowLinkLookContext, type LinkLook } from '../pane/PaneActions.js';
+import {
+  QuietAction,
+  RowIconAction,
+  RowLinkLookContext,
+  type LinkLook
+} from '../pane/PaneActions.js';
 import { CurrentDot } from './CurrentDot.js';
 import {
   Cell,
@@ -439,6 +444,25 @@ describe('a row', () => {
 
     expect(screen.getByRole('button', { name: 'Remove a' }).tabIndex).toBe(0);
     expect(rows.map((row) => row.tabIndex)).toEqual([0, 0, -1]);
+  });
+
+  it('draws a quiet action in a tabbable row as the row look says, keeping its Tab stop', () => {
+    render(
+      <RowCursorContext value={cursorOn('a', [])}>
+        <Listing columns={[]} grid="20px 1fr auto" title="Hosts">
+          <Row name="a" rowKey="a" tabbable>
+            <Cell>
+              <QuietAction icon={Trash2} label="Remove a" onClick={() => undefined} word="Remove" />
+            </Cell>
+          </Row>
+        </Listing>
+      </RowCursorContext>
+    );
+    const action = screen.getByRole('button', { name: 'Remove a' });
+
+    expect(action.classList.contains('wordless')).toBe(true);
+    expect(action.dataset.tooltip).toBe('Remove');
+    expect(action.tabIndex).toBe(0);
   });
 });
 

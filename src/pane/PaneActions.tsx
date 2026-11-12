@@ -34,6 +34,13 @@ export const InRowContext = createContext(false);
 export const useInRow = (): boolean => useContext(InRowContext);
 
 /**
+ * Set inside every listing row, a `tabbable` one included, whose
+ * `QuietAction`s follow `RowLinkLookContext` whether or not they keep their
+ * Tab stop. Internal to the library; not part of the package's surface.
+ */
+export const InListingRowContext = createContext(false);
+
+/**
  * Set inside a path bar's tools (`PanePathBar`'s children), whose
  * `QuietAction`s are toolbar items and follow `RowLinkLookContext` as a
  * row's do. Internal to the pane area; not part of the package's surface.
@@ -100,8 +107,10 @@ export interface QuietActionProps {
  * (and its `shortcut` after it) and kept for assistive technology in
  * `.pane-act-word`; its glyph and word where the host's look asks for words
  * (`text` or `both`; the glyph stays, so a tight bar that hides the word
- * still draws it). Anywhere else it draws its glyph and word. In a row it leaves the Tab order (`useInRow`), and a press
- * never reaches the row's own `onOpen`. Drawn by `.pane-act` in the listing
+ * still draws it), in a `tabbable` row as in any other. Anywhere else it
+ * draws its glyph and word. In a row it leaves the Tab order (`useInRow`)
+ * unless the row is `tabbable`, and a press never reaches the row's own
+ * `onOpen`. Drawn by `.pane-act` in the listing
  * look, `.pane-act.wordless` for the glyph alone.
  */
 export function QuietAction({
@@ -121,9 +130,11 @@ export function QuietAction({
   danger = false
 }: QuietActionProps): ReactElement {
   const inRow = useInRow();
+  const inListingRow = useContext(InListingRowContext);
   const inBar = useContext(InPathBarContext);
   const chosen = useContext(RowLinkLookContext);
-  const look: LinkLook = inRow || inBar ? chosen : 'both';
+  // A tabbable row keeps its controls in the Tab order but draws them as rows do.
+  const look: LinkLook = inRow || inListingRow || inBar ? chosen : 'both';
   // A glyph alone names itself in a tooltip of its word.
   const shownTip = tip ?? (look === 'icons' ? word : undefined);
 

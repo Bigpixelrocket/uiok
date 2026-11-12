@@ -37,12 +37,12 @@ A failure told in two parts, what failed and why, colours them one way everywher
 
 Each tone has one glyph, drawn first in a notice, a problem line, or a status card, in the tone's colour (`ICON_MD` in a notice and a problem line):
 
-| Tone    | Glyph           | Where                                                                                                                                                                                    |
-| ------- | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Danger  | `CircleAlert`   | A failure the user should act on: `notice-danger`, `field-problem`, `pane-message danger`, `palette-failure`, a settings file's problem, a load failure, a terminal that could not start |
-| Warning | `TriangleAlert` | A state that works but needs a second look: `notice-warning`                                                                                                                             |
-| Success | `CircleCheck`   | A finished step: `notice-success`, and a `RunHeader` that is done                                                                                                                        |
-| Note    | `Info`          | A neutral `notice`: a fact the user may want, nothing wrong                                                                                                                              |
+| Tone    | Glyph           | Where                                                                                                                                                                                                                                       |
+| ------- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Danger  | `CircleAlert`   | A failure the user should act on: `notice-danger`, `field-problem`, `pane-message danger`, `palette-failure`, a settings file's problem, the settings folder's path (`settings-file-path`), a load failure, a terminal that could not start |
+| Warning | `TriangleAlert` | A state that works but needs a second look: `notice-warning`                                                                                                                                                                                |
+| Success | `CircleCheck`   | A finished step: `notice-success`, and a `RunHeader` that is done                                                                                                                                                                           |
+| Note    | `Info`          | A neutral `notice`: a fact the user may want, nothing wrong                                                                                                                                                                                 |
 
 `CircleX` marks one thing only: a run that failed, as `RunHeader`'s failed state draws it (and a host's list of runs that follows `RunHeader`'s run states). A notice or a status line that reports a failure takes `CircleAlert`, never `CircleX`.
 
@@ -56,7 +56,7 @@ Chrome cannot be selected: the base sheet sets `user-select: none` on the body, 
 
 - Fields (text inputs, textareas, anything `contenteditable`).
 - `selectable`, on a host's own content: a value, a name, a path, output, anything a user would copy. A `code`, `pre`, or `samp` element is not content by its tag: a command named in a label or a token in a menu is chrome, so a value a user copies takes `selectable` (`<code className="selectable">`).
-- Each component's content, in its own rule: a listing's summary, messages, empty space, and well (`pane-summary`, `pane-filter-summary`, `pane-message`, `pane-empty`, `pane-well`); a grid's empty line (`data-grid-empty`); a dialog's message, values, fact counts and values, and names (`dialog-message`, `dialog-value`, `dialog-fact-count`, `dialog-fact-value`, `dialog-names > li`); a message's words (`notice-text`, `field-problem`, a settings file's problem, a load failure's headline and reason, the update status's fact, a palette's note and failure); a run's reason, figure, and facts; a pie's value; the terminal's copy buffer; the About window's version; a host key's fingerprint.
+- Each component's content, in its own rule: a listing's summary, messages, empty space, and well (`pane-summary`, `pane-filter-summary`, `pane-message`, `pane-empty`, `pane-well`); a grid's empty line (`data-grid-empty`); a dialog's message, values, fact counts and values, and names (`dialog-message`, `dialog-value`, `dialog-fact-count`, `dialog-fact-value`, `dialog-names > li`); a message's words (`notice-text`, `field-problem`, a settings file's problem, the settings folder's path (`settings-file-path`), a load failure's headline and reason, the update status's fact, a palette's note and failure); a run's reason, figure, and facts; a pie's value; the terminal's copy buffer; the About window's version; a host key's fingerprint.
 
 A listing and a grid select rows, not text, as a file manager does: a drag, Shift-click, or double-click on a row never starts a text selection, even inside a `selectable` host, and a grid copies its cursor cell with ⌘C.
 

@@ -1271,11 +1271,12 @@ a {
   background: var(--ground);
 }
 
-/* A host's colour for a name by its kind (PathCell's nameClassName): a
-   document in the accent's text tone. A selection paints its own words, so
-   the rule leaves a selected row alone. */
+/* A host's mark for a name by its kind (PathCell's nameClassName): a
+   document a weight up, in the text colour. Never the accent, which in a row
+   reads as a link. A selection paints its own words, so the rule leaves a
+   selected row alone. */
 :where(.listing-root) .row:where(:not(.selected)) .pane-path-name.demo-kind-doc {
-  color: var(--accent-text);
+  font-weight: var(--font-weight-medium);
 }
 
 /* A host's quieter entry (an ignored file), as the listing page describes:

@@ -344,7 +344,7 @@ function SettingsDialog({ onClose }: { readonly onClose: () => void }): ReactEle
                   type="button"
                 >
                   <Icon size={ICON_MD} />
-                  <span>{title}</span>
+                  <span {...cutTooltip(title)}>{title}</span>
                   {id === 'updates' ? <span className="settings-sidebar-chip">2.5.0</span> : null}
                 </button>
                 {id === page && subsections.length > 1 ? (
@@ -356,6 +356,7 @@ function SettingsDialog({ onClose }: { readonly onClose: () => void }): ReactEle
                         key={name}
                         onClick={() => setSubsection(name)}
                         type="button"
+                        {...cutTooltip(name)}
                       >
                         {name}
                       </button>
@@ -369,7 +370,9 @@ function SettingsDialog({ onClose }: { readonly onClose: () => void }): ReactEle
             <span className="settings-sidebar-header overline">Workspace</span>
             <button className="settings-sidebar-page" type="button">
               <KeyRound size={ICON_MD} />
-              <span>Keyboard shortcuts and the keys they are bound to</span>
+              <span {...cutTooltip('Keyboard shortcuts and the keys they are bound to')}>
+                Keyboard shortcuts and the keys they are bound to
+              </span>
             </button>
           </div>
         </nav>
@@ -523,18 +526,17 @@ export function ShellDemo(): ReactElement {
       <div className="shell-demo-window">
         <div className="settings-notice notice notice-card notice-warning" role="status">
           <TriangleAlert aria-hidden size={ICON_MD} />
-          {/* A status line is one line: cut with an ellipsis in a narrow
-              window, its whole text in a tooltip while cut. */}
+          {/* A status line is one line: its words cut with an ellipsis in a
+              narrow window, their whole text in a tooltip while cut, and the
+              count of further problems kept whole after them. */}
           <p
             className="notice-text"
-            {...cutTooltip(
-              'settings.toml, line 12 The theme is not one this version knows. 1 more problem'
-            )}
+            {...cutTooltip('settings.toml, line 12 The theme is not one this version knows.')}
           >
             <span className="settings-notice-place">settings.toml, line 12</span> The theme is not
             one this version knows.
-            <span className="settings-notice-more"> 1 more problem</span>
           </p>
+          <span className="settings-notice-more">1 more problem</span>
           <div className="notice-actions">
             <Button size="small">Show</Button>
           </div>

@@ -176,11 +176,16 @@ export interface TooltipPosition {
 export type TooltipBeside = 'left' | 'right';
 
 /**
- * Places a tooltip under its control, centred on it. A control wider than
- * its tooltip (a strip of empty ground) centres the tooltip on the pointer
- * instead, without letting it run past the control's ends, so the tooltip
- * opens where the eye is. It opens above when the window ends too soon below
- * and there is room above, and it slides sideways to stay inside the window.
+ * Places a tooltip under its control. A tooltip wider than its control hangs
+ * from the control's leading edge (the left, or the right in a right-to-left
+ * page), as a desktop tooltip starts where the pointer is, so one on a short
+ * label at the start of a row does not spread back over the pane beside it.
+ * A glyph button (a control no wider than it is tall) keeps its tooltip
+ * centred under it. A control wider than its tooltip (a strip of empty
+ * ground) centres the tooltip on the pointer instead, without letting it run
+ * past the control's ends, so the tooltip opens where the eye is. It opens
+ * above when the window ends too soon below and there is room above, and it
+ * slides sideways to stay inside the window.
  *
  * Given `beside`, it opens on that side of the control instead, centred on
  * its height and kept inside the window; on the other side when the window
@@ -191,7 +196,8 @@ export function placeTooltip(
   tip: TooltipExtent,
   viewport: TooltipExtent,
   pointerX: number,
-  beside?: TooltipBeside | null
+  beside?: TooltipBeside | null,
+  rtl = false
 ): TooltipPosition {
   if (beside) {
     const right = anchor.left + anchor.width + GAP;
@@ -225,13 +231,17 @@ export function placeTooltip(
   const above = anchor.top - GAP - tip.height;
   const fitsBelow = below + tip.height <= viewport.height - MARGIN;
   const half = tip.width / 2;
-  const centre =
+  const x =
     anchor.width > tip.width
-      ? Math.max(anchor.left + half, Math.min(pointerX, anchor.left + anchor.width - half))
-      : anchor.left + anchor.width / 2;
+      ? Math.max(anchor.left + half, Math.min(pointerX, anchor.left + anchor.width - half)) - half
+      : anchor.width <= anchor.height
+        ? anchor.left + anchor.width / 2 - half
+        : rtl
+          ? anchor.left + anchor.width - tip.width
+          : anchor.left;
 
   return {
-    left: Math.max(MARGIN, Math.min(centre - half, viewport.width - tip.width - MARGIN)),
+    left: Math.max(MARGIN, Math.min(x, viewport.width - tip.width - MARGIN)),
     top: fitsBelow || above < MARGIN ? below : above
   };
 }

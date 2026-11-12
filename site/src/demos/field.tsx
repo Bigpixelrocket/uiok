@@ -633,7 +633,7 @@ export function FieldDemo() {
           <input
             aria-describedby="demo-port-problem"
             aria-invalid={portProblem !== ''}
-            className="field field-sm"
+            className="field field-sm field-short"
             id="demo-port"
             inputMode="numeric"
             onChange={(event) => setPort(event.target.value)}

@@ -25,17 +25,17 @@ interface ShownTooltip {
   readonly value: boolean;
   /** The side it opens on, or null for below (or above). */
   readonly beside: TooltipBeside | null;
+  /** The control reads right to left, so its leading edge is its right. */
+  readonly rtl: boolean;
 }
 
 // The physical side a `data-tooltip-side` names, by the element's own direction.
-const besideOf = (anchor: Element): TooltipBeside | null => {
+const besideOf = (anchor: Element, rtl: boolean): TooltipBeside | null => {
   const side = anchor.getAttribute('data-tooltip-side');
 
   if (side !== 'start' && side !== 'end') {
     return null;
   }
-
-  const rtl = getComputedStyle(anchor).direction === 'rtl';
 
   return (side === 'end') !== rtl ? 'right' : 'left';
 };
@@ -50,6 +50,9 @@ const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
     return null;
   }
 
+  const style = getComputedStyle(anchor);
+  const rtl = style.direction === 'rtl';
+
   return {
     anchor,
     label,
@@ -58,9 +61,9 @@ const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
     pointerX,
     // A cut text completes its own element, so it keeps that element's face.
     value:
-      anchor.hasAttribute('data-tooltip-value') ||
-      (cut && isMonospaceFamily(getComputedStyle(anchor).fontFamily)),
-    beside: besideOf(anchor)
+      anchor.hasAttribute('data-tooltip-value') || (cut && isMonospaceFamily(style.fontFamily)),
+    beside: besideOf(anchor, rtl),
+    rtl
   };
 };
 
@@ -172,7 +175,8 @@ export function TooltipLayer(): ReactElement | null {
       { width: tip.offsetWidth, height: tip.offsetHeight },
       { width: window.innerWidth, height: window.innerHeight },
       shown.pointerX,
-      shown.beside
+      shown.beside,
+      shown.rtl
     );
 
     tip.style.left = `${left}px`;
