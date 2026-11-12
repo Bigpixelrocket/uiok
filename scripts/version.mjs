@@ -5,8 +5,8 @@
  * - `check <base>`: run by CI on pull requests. A change that reaches the
  *   published package must raise the version to the next patch, minor, or
  *   major of `<base>`'s, and a raised version needs a dated CHANGELOG.md
- *   section listing its changes, its link reference, an empty
- *   `[Unreleased]`, and a matching package-lock.json. It compares the working
+ *   section listing its changes, its link reference, and an empty
+ *   `[Unreleased]`. It compares the working
  *   tree, untracked files included, with the merge base of `<base>` and HEAD,
  *   so it also runs locally before a commit:
  *   `node scripts/version.mjs check origin/main`.
@@ -106,7 +106,6 @@ export function versionProblems({
   startPackage,
   baseVersion,
   headPackage,
-  lockfile,
   changelog,
   changedPaths,
   today
@@ -119,7 +118,7 @@ export function versionProblems({
   ];
   const rebase =
     startPackage.version === from ? '' : `Rebase on the base branch, which is at ${from}, then: `;
-  const bump = `${rebase}Run \`npm version patch --no-git-tag-version\` (\`minor\` for a breaking change before 1.0; from 1.0, \`major\` for breaking, \`minor\` for a feature, \`patch\` for a fix), then add a "## [<new version>] - ${today}" section to CHANGELOG.md with its link reference.`;
+  const bump = `${rebase}Run \`pnpm version patch --no-git-tag-version --no-git-checks\` (\`minor\` for a breaking change before 1.0; from 1.0, \`major\` for breaking, \`minor\` for a feature, \`patch\` for a fix), then add a "## [<new version>] - ${today}" section to CHANGELOG.md with its link reference.`;
 
   if (!RELEASE_VERSION.test(to)) {
     return [
@@ -135,13 +134,13 @@ export function versionProblems({
   }
   if (compareVersions(to, from) <= 0) {
     return [
-      `package.json version ${to} is not above the base branch's ${from}, which already took it or a later one. Rebase on the base branch, set the version back to ${from} (package-lock.json too), drop your "## [${to}]" CHANGELOG.md heading and link reference, and bump again from ${from}.`
+      `package.json version ${to} is not above the base branch's ${from}, which already took it or a later one. Rebase on the base branch, set the version back to ${from}, drop your "## [${to}]" CHANGELOG.md heading and link reference, and bump again from ${from}.`
     ];
   }
   const next = nextVersions(from);
   if (!next.includes(to)) {
     return [
-      `package.json version ${to} skips ahead of the base branch's ${from}; a bump is one step: ${next.join(', ')} (patch, minor, major). Set the version back to ${from} (package-lock.json too) and run \`npm version <patch|minor|major> --no-git-tag-version\`.`
+      `package.json version ${to} skips ahead of the base branch's ${from}; a bump is one step: ${next.join(', ')} (patch, minor, major). Set the version back to ${from} and run \`pnpm version <patch|minor|major> --no-git-tag-version --no-git-checks\`.`
     ];
   }
 
@@ -180,11 +179,6 @@ export function versionProblems({
       `CHANGELOG.md's "[Unreleased]" link must compare from v${to}: "[Unreleased]: ${repository}/compare/v${to}...HEAD".`
     );
   }
-  if (lockfile.version !== to || lockfile.packages?.['']?.version !== to) {
-    problems.push(
-      `package-lock.json does not have version ${to}. Run \`npm install --package-lock-only\` to match package.json.`
-    );
-  }
   return problems;
 }
 
@@ -211,7 +205,6 @@ function check(base) {
     startPackage,
     baseVersion,
     headPackage,
-    lockfile: JSON.parse(readText('package-lock.json')),
     changelog: readText('CHANGELOG.md'),
     // NUL-separated, so git does not quote non-ASCII paths; untracked files count too.
     changedPaths: [

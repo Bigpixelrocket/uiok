@@ -50,10 +50,6 @@ function changelog(version: string, previous = '0.1.0') {
   ].join('\n');
 }
 
-function lockfile(version: string) {
-  return { version, packages: { '': { version } } };
-}
-
 /** `from` is where the branch started; `base` is the base branch's version now. */
 function problems(options: {
   from?: string;
@@ -61,7 +57,6 @@ function problems(options: {
   to?: string;
   changedPaths: string[];
   log?: string;
-  lock?: string;
   head?: Record<string, unknown>;
 }) {
   const { from = '0.1.0', base = from, to = from, changedPaths, head = {} } = options;
@@ -69,7 +64,6 @@ function problems(options: {
     startPackage: packageJson(from),
     baseVersion: base,
     headPackage: packageJson(to, head),
-    lockfile: lockfile(options.lock ?? to),
     changelog: options.log ?? changelog(to, from),
     changedPaths,
     today: '2026-11-08'
@@ -132,7 +126,7 @@ describe('versionProblems', () => {
     const [problem, ...rest] = problems({ changedPaths: ['src/button/Button.tsx'] });
     expect(rest).toEqual([]);
     expect(problem).toContain('src/button/Button.tsx');
-    expect(problem).toContain('npm version patch --no-git-tag-version');
+    expect(problem).toContain('pnpm version patch --no-git-tag-version --no-git-checks');
   });
 
   it('asks for a bump when a consumer-facing package.json field changes', () => {
@@ -143,7 +137,7 @@ describe('versionProblems', () => {
     expect(problem).toContain('package.json peerDependencies');
   });
 
-  it('passes a bump with a dated section, its link, and a matching lockfile', () => {
+  it('passes a bump with a dated section and its link', () => {
     expect(problems({ to: '0.1.1', changedPaths: ['src/button/Button.tsx'] })).toEqual([]);
   });
 
@@ -187,22 +181,20 @@ describe('versionProblems', () => {
     expect(problem).toContain('bump again from 0.1.1');
   });
 
-  it('names each missing changelog and lockfile piece of a bump', () => {
+  it('names each missing changelog piece of a bump', () => {
     const found = problems({
       to: '0.1.1',
       changedPaths: ['src/button/Button.tsx'],
       log: changelog('0.1.0', '0.0.9').replace(
         '## [Unreleased]\n',
         '## [Unreleased]\n\n- Pending.\n'
-      ),
-      lock: '0.1.0'
+      )
     });
-    expect(found).toHaveLength(5);
+    expect(found).toHaveLength(4);
     expect(found[0]).toContain('no "## [0.1.1] - 2026-11-08" heading');
     expect(found[1]).toContain(`"[0.1.1]: ${REPOSITORY}/compare/v0.1.0...v0.1.1"`);
     expect(found[2]).toContain('"## [Unreleased]" section has entries');
     expect(found[3]).toContain('compare from v0.1.1');
-    expect(found[4]).toContain('npm install --package-lock-only');
   });
 
   it('wants the new section to be the newest', () => {

@@ -7,7 +7,7 @@ Merging a version bump to `main` releases it. A pull request that changes the pu
 Every push to `main` runs `.github/workflows/release.yml`:
 
 1. If npm already has `package.json`'s version, it skips to step 3. If the version is not above npm's `latest`, it fails rather than publish a downgrade.
-2. Otherwise it runs `npm run check` and `npm publish --provenance --access public`. It authenticates through npm Trusted Publishing (OIDC), so the repository stores no npm token, and npm attaches a provenance statement.
+2. Otherwise it installs with pnpm, runs `pnpm run check`, and publishes with `npm publish --provenance --access public`, so npm packs the same tarball `npm pack` and `scripts/verify-pack.mjs` see. It authenticates through npm Trusted Publishing (OIDC), so the repository stores no npm token, and npm attaches a provenance statement.
 3. If the GitHub Release `vX.Y.Z` does not exist yet, it creates it, and the tag with it on the commit npm published from, using the version's `CHANGELOG.md` section as the notes.
 
 Each step checks before it acts, so a push without a version change does nothing. Runs queue one at a time, and GitHub keeps only the newest waiting run: a version whose pending Release run was cancelled by a later push is folded into the next, and the version in that push is the one published. Confirm a release under the repository's Actions tab, then check the version and its provenance badge on https://www.npmjs.com/package/@bigpixelrocket/uiok.
@@ -27,11 +27,11 @@ The package is `@bigpixelrocket/uiok`, owned by the `bigpixelrocket` npm organiz
 1. Publish `0.1.0` from a clean checkout of `main`, signed in to an npm account in the `@bigpixelrocket:developers` team:
 
    ```sh
-   npm ci
+   pnpm install --frozen-lockfile
    npm publish --no-provenance --access public
    ```
 
-   `prepublishOnly` runs `npm run check` first. `--no-provenance` overrides `publishConfig.provenance`, since provenance can only be generated in CI. `publishConfig.access` already makes the scoped package public, so `--access public` only states that explicitly.
+   `prepublishOnly` runs `pnpm run check` first. `--no-provenance` overrides `publishConfig.provenance`, since provenance can only be generated in CI. `publishConfig.access` already makes the scoped package public, so `--access public` only states that explicitly.
 
 2. Open the package settings at https://www.npmjs.com/package/@bigpixelrocket/uiok/access, find **Trusted Publisher**, choose **GitHub Actions**, and enter:
    - Organization or user: `Bigpixelrocket`
