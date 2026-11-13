@@ -78,7 +78,7 @@ function MarkedRows({
         <RowCursorContext value={cursor}>
           <Listing
             columns={[]}
-            empty="No match"
+            empty={rows.length === 0 ? 'No match' : null}
             grid="var(--icon-column) minmax(0, 1fr)"
             title="Match"
           >
