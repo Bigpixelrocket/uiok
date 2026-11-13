@@ -582,6 +582,18 @@ describe('pointer states of the shared recipes and form controls', () => {
     document.body.innerHTML = '';
   });
 
+  it("leaves a strip's control cell around a label as tall as a plain label's", () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="listing-root"><div class="pane-listing">
+      <div class="pane-columns pane-strip"><span class="row-meta pane-col-control">
+        <button class="pane-sort">Traffic</button></span></div></div></div>`;
+    const cell = document.querySelector('.pane-col-control') as Element;
+
+    expect(declaredValues(cell, 'padding-block')).not.toContain('var(--space-1)');
+    expect(declaredValues(cell, 'align-items').at(-1)).toBe('center');
+    document.body.innerHTML = '';
+  });
+
   it('draws the 20px Button and the strip action from the same values', () => {
     const block = (sheet: string, selector: string): string =>
       new RegExp(`^${selector.replace('.', '\\.')} \\{([^}]*)\\}`, 'm').exec(

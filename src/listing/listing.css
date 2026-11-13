@@ -1491,7 +1491,10 @@ button.crumb-label > .crumb-text {
   height: calc(var(--pane-columns-height) - 2 * var(--line) - 2 * var(--space-1));
 }
 
-:where(.listing-root) .pane-columns > .pane-col-control {
+/* Only a cell that holds such a button makes that room: a control cell
+   around a label (a sort, a word with a tooltip) stays as tall as a plain
+   label's, so its strip matches a strip of labels beside it. */
+:where(.listing-root) .pane-columns > .pane-col-control:has(> :is(.pane-strip-link, .button-xs)) {
   box-sizing: border-box;
   align-items: stretch;
   padding-block: var(--space-1);
