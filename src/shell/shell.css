@@ -742,18 +742,23 @@
   user-select: text;
 }
 
-/* What the system returned for a failed download (an error code, a host
-   and its port) is a line a user could copy, so it is set in the code face
-   at the small size, as every printed system line is. */
 /* The download's state is a status line in a preferences page, not a pane's
    heading: the progress header under the card says it at the card title's
-   size and weight, so the bar and its caption carry the state. */
+   size and weight, so the bar and its caption carry the state. Its glyph
+   stays centred on that shorter line. */
 .update-card .run-header-headline {
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-regular);
   line-height: var(--line-height-compact);
 }
 
+.update-card .run-header-glyph {
+  margin-top: calc((var(--line-height-compact) - var(--icon-lg)) / 2);
+}
+
+/* What the system returned for a failed download (an error code, a host
+   and its port) is a line a user could copy, so it is set in the code face
+   at the small size, as every printed system line is. */
 .update-card .run-header-reason {
   font-family: var(--font-mono);
   font-size: var(--font-size-small);

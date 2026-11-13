@@ -396,9 +396,6 @@ function AddHostsDialog({
       title="Add Hosts"
     >
       <div className="demo-stack">
-        <p className="dialog-help">
-          The box stays where it opened while hosts are added; a window resize centres it again.
-        </p>
         {hosts.map((host, index) => (
           <input
             aria-label={`Host ${index + 1}`}
@@ -473,6 +470,9 @@ export function DialogDemo() {
       <div className="demo-row">
         <span className="demo-label">Pinned top</span>
         <Button onClick={() => setOpen('hosts')}>Add Hosts…</Button>
+        <span className="demo-readout">
+          The box stays where it opened while hosts are added; a window resize centres it again.
+        </span>
       </div>
       <code className="demo-readout">
         file: {name}
@@ -583,7 +583,7 @@ export function DialogDemo() {
           confirmLabel="Delete"
           forGood
           icon={Trash2}
-          message="A title this long is cut on its one line; its whole text is a tooltip."
+          message="These items cannot be recovered."
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
           title="Delete Now from the Production Environment Folder"
