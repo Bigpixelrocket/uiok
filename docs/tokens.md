@@ -120,7 +120,7 @@ A field's height follows its place, the same in every app: `--control-height` (`
 
 ## Focus
 
-One ring for everything focusable. The base sheet draws it with zero weight (`:where(…):focus-visible`), so a component changes only the offset:
+One ring for everything focusable. The base sheet draws it at the weight of one pseudo-class (`:where(…):focus-visible`), so a class rule after the base sheet changes only the offset; a bare element rule such as `button { outline: none }` does not remove it:
 
 | Token                  | Value | Use                                                                                                                |
 | ---------------------- | ----- | ------------------------------------------------------------------------------------------------------------------ |

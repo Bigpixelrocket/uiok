@@ -26,7 +26,9 @@ export interface LabelHelp {
  * what the current choice does ("The next check is at 14:00.") stays a
  * `.field-note` under the control, since it changes with the choice. A
  * label with help shows a cue (a dashed underline, as any word that holds
- * a tooltip), and its tooltip opens above it, never over its control.
+ * a tooltip), and its tooltip opens above it, never over its control. The
+ * tooltip opens under the pointer only, so help a user must read to fill
+ * the field stays visible as a `.field-note` instead.
  */
 export function labelHelp(help: string | null | undefined): LabelHelp {
   return help

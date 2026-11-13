@@ -580,9 +580,10 @@ meter::-webkit-meter-even-less-good-value {
 }
 
 /* A focusable element that the keyboard reached: one ring from the focus
-   tokens. :where() gives it no weight, so a component that must draw its
-   ring inside a clipping parent changes only outline-offset, and a host's
-   own rule wins over it. A container focused by script (tabindex="-1")
+   tokens. :where() leaves it the weight of :focus-visible alone, so a
+   component that must draw its ring inside a clipping parent changes only
+   outline-offset, and a host's class rule after it wins over it (a bare
+   element rule does not). A container focused by script (tabindex="-1")
    draws no ring here. */
 :where(
   button,
