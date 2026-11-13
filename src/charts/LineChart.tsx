@@ -133,12 +133,18 @@ export function LineChart({
     return unscaled(x, time, 0, plotWidth);
   };
   const shown = hover === null ? null : nearestMoment(moments, hover);
+  // A value to draw: one that is not missing, inside the time axis.
+  const drawable = series.some((entry) =>
+    entry.points.some(
+      (point) => point.value !== null && point.at >= time.min && point.at <= time.max
+    )
+  );
 
   return (
     <figure aria-label={label} className="line-chart">
       <div className="line-frame" ref={frame}>
         {/* With no value to draw, the plot keeps its place and says so there. */}
-        {moments.length === 0 ? (
+        {!drawable ? (
           <div className="chart-empty" style={{ height }}>
             {labels.noValue}
           </div>

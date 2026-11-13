@@ -35,6 +35,34 @@ const chart = (onSelect?: (from: number, to: number) => void) => (
 );
 
 describe('the line chart', () => {
+  it('says it has no value when nothing in its time axis has one', () => {
+    const empty = (series: LineSeries[]) =>
+      render(
+        <LineChart
+          format={String}
+          from={0}
+          label="Queries"
+          series={series}
+          timeText={String}
+          to={1000}
+        />
+      ).container;
+    const cases: LineSeries[][] = [
+      [],
+      [{ label: 'reads', points: [{ at: 500, value: null }] }],
+      [{ label: 'reads', points: [{ at: 2000, value: 4 }] }]
+    ];
+
+    for (const series of cases) {
+      const container = empty(series);
+
+      expect(container.querySelector('.chart-empty')?.textContent).toBe('no value');
+      expect(container.querySelector('.line-svg')).toBeNull();
+      container.remove();
+    }
+    expect(empty(SERIES).querySelector('.chart-empty')).toBeNull();
+  });
+
   it('reads out every series at the moment nearest the pointer, a missing value as dashes', () => {
     render(chart());
 
