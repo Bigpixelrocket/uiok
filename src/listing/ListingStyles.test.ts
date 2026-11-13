@@ -573,27 +573,69 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
-  it('ends the pinned cells with their rows, past a self-scrolling listing’s padding', () => {
-    // A sticky box stops at its scroller's padding; a listing that scrolls
-    // itself pads its end by the row inset, so the cells reach back over it
-    // (a marked cursor row's ring would otherwise show its end twice). Only
-    // a list around the listing that scrolls sideways holds them at 0.
+  it('sticks the pinned cells at the edge of whatever scrolls them, with no end padding to reach back over', () => {
+    // A sticky box stops at its scroller's padding, and the cell cannot tell
+    // which box scrolls it. A pinned listing ends its grid with an empty
+    // track as wide as the row inset instead of padding its end, so the
+    // cells stick at 0 in a host's own scroller with no padding (where a
+    // negative inset left their end inset outside the scrollport), in a
+    // .pane-list, and in a listing that scrolls itself alike.
     applyStylesheets(styles);
-    document.body.innerHTML = `<section class="listing-root"><div class="pane-list">
-      <div class="pane-listing pane-pin-end" role="table">
-        <div class="row marked cursor"><span class="row-name">a</span><span class="row-meta pane-action-cell"></span></div>
-      </div></div></section>`;
-    const cell = getComputedStyle(document.querySelector('.row-meta') as Element);
+    const hosts = [
+      '<div class="g-host" style="overflow-y: auto">LISTING</div>',
+      '<div class="pane-list">LISTING</div>',
+      'LISTING'
+    ];
+    const listing = `<div class="pane-listing pane-pin-end" role="table" style="--pane-grid: 20px 1fr 80px">
+        <div class="pane-columns pane-strip"><span class="row-name"></span><span class="row-meta"></span></div>
+        <div class="row marked cursor"><span class="row-name">a</span><span class="row-meta pane-action-cell">In use here</span></div>
+        <p class="pane-message">note</p>
+      </div>`;
 
-    expect(cell.getPropertyValue('inset-inline-end').trim()).toBe(
-      'calc(-1 * var(--pane-row-inset))'
+    for (const host of hosts) {
+      document.body.innerHTML = `<section class="listing-root">${host.replace('LISTING', listing)}</section>`;
+      const table = document.querySelector('.pane-listing') as HTMLElement;
+      const [strip, row, message] = [...table.children] as HTMLElement[];
+
+      for (const cell of document.querySelectorAll('.row-meta')) {
+        expect(getComputedStyle(cell).getPropertyValue('inset-inline-end').trim(), host).toBe(
+          '0px'
+        );
+        expect(getComputedStyle(cell).getPropertyValue('padding-inline-end').trim(), host).toBe(
+          'var(--pane-row-inset)'
+        );
+      }
+      expect(getComputedStyle(table).gridTemplateColumns.replace(/\s+/g, ' '), host).toBe(
+        'var(--pane-grid, var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr)) var(--pane-row-inset)'
+      );
+      expect(getComputedStyle(table).paddingInlineEnd, host).toBe('0px');
+      expect(declaredValues(table, 'padding'), host).toEqual(['0 var(--pane-row-inset)']);
+      for (const child of [strip, row, message]) {
+        expect(getComputedStyle(child as Element).marginInlineEnd, host).toBe('0px');
+      }
+      for (const child of [strip, row]) {
+        expect(getComputedStyle(child as Element).paddingInlineEnd, host).toBe('0px');
+      }
+    }
+    // No rule depends on which box scrolls the listing any more.
+    expect(sheet).not.toMatch(/uiok-pane-pin-list|scroll-state/);
+    document.body.innerHTML = '';
+  });
+
+  it('keeps the end padding of a listing that pins nothing', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-listing" role="table">
+        <div class="row"><span class="row-name">a</span><span class="row-meta">b</span></div>
+      </div></section>`;
+    const table = document.querySelector('.pane-listing') as Element;
+
+    // Only the pinned listing trades its end padding for a track.
+    expect(declaredValues(table, 'padding')).toEqual(['0 var(--pane-row-inset)']);
+    expect(declaredValues(table, 'padding-inline-end')).toEqual([]);
+    expect(declaredValues(table, 'grid-template-columns')).toHaveLength(1);
+    expect(declaredValues(document.querySelector('.row') as Element, 'margin-inline-end')).toEqual(
+      []
     );
-    expect(sheet).toMatch(
-      /@container uiok-pane-pin-list scroll-state\(scrollable: inline\) \{\n\s*:where\(\.listing-root \.pane-listing\.pane-pin-end\) > :is\(\.row, \.pane-columns\) > :last-child \{\n\s*inset-inline-end: 0;/
-    );
-    expect(declaredValues(document.querySelector('.pane-list') as Element, 'container')).toEqual([
-      'uiok-pane-pin-list / scroll-state'
-    ]);
     document.body.innerHTML = '';
   });
 

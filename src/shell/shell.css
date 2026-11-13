@@ -1012,10 +1012,6 @@
   width: 100%;
 }
 
-.dialog.sign-in-host-key {
-  width: 520px;
-}
-
 .sign-in-fingerprint {
   display: flex;
   gap: var(--space-5);

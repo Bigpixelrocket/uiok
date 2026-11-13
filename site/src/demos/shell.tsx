@@ -25,6 +25,7 @@ import {
   Palette as PaletteIcon,
   Power,
   RefreshCw,
+  Server,
   Settings as SettingsIcon,
   ShieldQuestion,
   TriangleAlert
@@ -476,31 +477,31 @@ function PasswordPrompt({ onClose }: { readonly onClose: () => void }): ReactEle
   );
 }
 
-/** A host key the computer has not seen before. */
+/**
+ * A host key the computer has not seen before, asked as every confirmation
+ * is: the host is the one item, and the key's type and fingerprint follow
+ * it in their framed block.
+ */
 function HostKeyPrompt({ onClose }: { readonly onClose: () => void }): ReactElement {
-  const labelId = useId();
   return (
-    <ModalDialog
-      className="sign-in-host-key"
+    <ConfirmDialog
+      confirmLabel="Trust"
       icon={ShieldQuestion}
-      labelId={labelId}
-      legend={{
-        leave: { label: 'Cancel' },
-        primary: { label: 'Trust and Connect', onRun: onClose }
-      }}
+      itemIcon={Server}
+      items={[{ name: 'build.example.com', detail: 'Build server' }]}
+      message="ssh has not seen this server’s host key before. Trust it only if this fingerprint is the server’s."
       onCancel={onClose}
-      title="Trust This Host?"
+      onConfirm={onClose}
+      title="Trust Host Key?"
+      tone="primary"
     >
-      <p>
-        First connection to <strong>build.example.com</strong>: check the key with its owner.
-      </p>
       <dl className="sign-in-fingerprint">
         <dt>ED25519</dt>
         <dd>
           <code>SHA256:8b2fQx0Zr1m4V3kKpN7uYc9hT6wLsE5aJdG2oRiB4Hc</code>
         </dd>
       </dl>
-    </ModalDialog>
+    </ConfirmDialog>
   );
 }
 

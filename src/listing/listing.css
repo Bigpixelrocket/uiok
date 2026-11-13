@@ -1859,7 +1859,7 @@ button.crumb-label > .crumb-text {
    end, centred in the row. */
 :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
   position: sticky;
-  inset-inline-end: calc(-1 * var(--pane-row-inset));
+  inset-inline-end: 0;
   z-index: var(--z-raised);
   align-self: stretch;
   display: flex;
@@ -1882,21 +1882,28 @@ button.crumb-label > .crumb-text {
   background: var(--strip);
 }
 
-/* A sticky box stops at its scroller's padding. A listing that is its own
-   scroller pads its end by the row inset, so its pinned cells would stop
-   that far inside their rows' end, scrolled or not, and a marked cursor
-   row's ring would show its end twice. The cells reach back over that
-   padding (`inset-inline-end` above), so they always end with their row.
-   A list around the listing has no padding: while it scrolls sideways, the
-   cells stop at its edge, as their own padding asks. */
-:where(.listing-root) .pane-list:has(.pane-pin-end) {
-  container: uiok-pane-pin-list / scroll-state;
+/* A sticky box stops at its scroller's padding, and a pinned cell cannot
+   tell which box scrolls it: the listing itself, a `.pane-list`, or a
+   host's own scroller with no padding. So a pinned listing pads its end
+   with no padding at all: it ends its grid with an empty track as wide as
+   the row inset instead, which every row and the strip span. The tracks
+   before it keep their places, each row still runs to the listing's end,
+   and the pinned cells (`inset-inline-end: 0` above) reach over that track
+   to end with their row, then stop at the scroller's edge, its end inset
+   inside the scrollport, whichever box scrolls them. */
+:where(.listing-root) .pane-listing.pane-pin-end:where([role='table']) {
+  grid-template-columns:
+    var(--pane-grid, var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr))
+    var(--pane-row-inset);
+  padding-inline-end: 0;
 }
 
-@container uiok-pane-pin-list scroll-state(scrollable: inline) {
-  :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
-    inset-inline-end: 0;
-  }
+:where(.listing-root .pane-listing.pane-pin-end[role='table']) > * {
+  margin-inline-end: 0;
+}
+
+:where(.listing-root .pane-listing.pane-pin-end[role='table']) > :is(.row, .pane-columns) {
+  padding-inline-end: 0;
 }
 
 /* While columns run on under the pinned cells, a hairline on their leading
