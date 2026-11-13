@@ -225,7 +225,7 @@ Every confirmation has the same four parts, in this order, whether it acts on on
 3. **The items** (`items`, with `itemIcon`) are the things the action acts on, always as one framed list, one row each: the kind's glyph, the name in monospace, and one dim detail at the row's end where the kind has one (a host, a file's folder, a size). One item is a list of one row. Up to five items show in full; more show the first five and a last row "+N more" (`dialog.moreItems`), since the lead carries the total. A name wraps (up to three lines, breaking after `/`, `_`, `.`, `:`, or `@` where it can) before it is cut at its end, and one still cut shows its whole text in a tooltip. The name and the detail share the row by what they hold, with no fixed share: a short detail (a host) stays on one line while the row has room for it, and a long one takes the width the name leaves. A detail still too long for three lines is cut at its start, so a folder keeps its nearest, distinguishing folders (`…/production/terraform`, not `~/projects/infra…`); its first shown line begins with an ellipsis, and its whole text is a tooltip. A dialog that names several kinds of things passes `groups`: each group's short label and count stand above the same list.
 4. **The buttons**: Cancel on Escape at the start, the action at the end, named by its verb, red when it destroys.
 
-A confirmation with items or statements is the medium width (480px) whatever their number, and its height comes from its content: the item list never draws more than six rows, so it never scrolls.
+A confirmation with items or statements (the prop, or a `DialogStatements` passed as children) is the medium width (480px) whatever their number, and its height comes from its content: the item list never draws more than six rows, so it never scrolls.
 
 #### Statements
 
@@ -294,7 +294,7 @@ A `DialogItem` is `{ name: string; detail?: string; icon?: LucideIcon }`; a `Dia
 
 A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode; more?: number }`; the host formats the count. A string value carries its whole text in a tooltip while it is cut; a node value passes its own `cutTooltip`.
 
-`DialogStatements` (`label`, `lines`, `id`) is the block `statements` draws, for any other dialog body.
+`DialogStatements` (`label`, `lines`, `id`) is the block `statements` draws, for any other dialog body. In a `ConfirmDialog`, prefer the `statements` prop; a `DialogStatements` passed as children still gives the confirmation its 480px width.
 
 `DialogNames` (`names`, `id`) is deprecated: it draws its names as `DialogItems` without glyphs or details. Pass items instead.
 

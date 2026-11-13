@@ -652,8 +652,10 @@
 }
 
 /* A confirmation that lists items takes the medium width, the same for one
-   item and a thousand. A host's width step still wins (two classes). */
-.dialog:where(.confirm-items) {
+   item and a thousand. A host's width step still wins (two classes). A
+   statement block a host passes as children counts as a list too, so a
+   confirmation keeps one width however its statements reach it. */
+.dialog:where(.confirm-items, .confirm-dialog:has(.dialog-statements-block)) {
   width: 480px;
 }
 

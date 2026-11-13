@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { ConfirmDialog } from './ConfirmDialog.js';
-import { shownItems, type DialogItem } from './DialogLists.js';
+import { DialogStatements, shownItems, type DialogItem } from './DialogLists.js';
 
 /** `count` saved servers, each with its host as the detail. */
 const servers = (count: number): DialogItem[] =>
@@ -332,6 +332,26 @@ describe('ConfirmDialog items', () => {
 
       renderRun([long]);
       expect(screen.getByRole('region', { name: 'SQL' }).textContent).toBe(long);
+    });
+
+    it('takes the items width when a host passes the block as children', () => {
+      applyStylesheets(readStylesheet('src/dialog/dialog.css'));
+      render(
+        <ConfirmDialog
+          confirmLabel="Run"
+          icon={Play}
+          message="This runs 2 statements on Local MySQL."
+          onCancel={vi.fn()}
+          onConfirm={vi.fn()}
+          title="Run Destructive Queries?"
+        >
+          <DialogStatements label="SQL" lines={SQL.slice(0, 2)} />
+        </ConfirmDialog>
+      );
+      const dialog = screen.getByRole('dialog');
+
+      expect(dialog.classList.contains('confirm-items')).toBe(false);
+      expect(declaredValues(dialog, 'width').at(-1)).toBe('480px');
     });
 
     it('draws nothing for an empty batch', () => {
