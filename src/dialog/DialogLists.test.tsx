@@ -5,43 +5,22 @@ import { applyStylesheets, declaredValues, readStylesheet } from '../../test/sty
 import { DialogFacts, DialogNames } from './DialogLists.js';
 
 describe('DialogNames', () => {
-  it('draws a name that fits exactly as written, its head and tail meeting with no blank', () => {
-    applyStylesheets(readStylesheet('src/namecut/namecut.css'));
-
+  it('draws names as the framed item list, exactly as written', () => {
     const names = ['~/n1000/.controller 85977', '~/Documents/Q3 budget review.xlsx', '~/a b/c'];
 
     render(<DialogNames names={names} />);
 
-    const lines = screen
+    const shown = screen
       .getAllByRole('listitem')
-      .map((item) => item.querySelector('.name-cut-line'));
+      .map((item) => item.querySelector('.dialog-item-name')?.textContent);
 
-    // The drawn parts join into the path itself: no character added between them.
-    expect(lines.map((line) => line?.textContent)).toEqual(names);
-
-    // A middle cut that leaves a head of two characters ("~/") must not widen
-    // it to the floor a cut head keeps for its ellipsis: the floor is capped
-    // at the head's own width, so an uncut head ends where its text ends.
-    const head = lines[0]?.querySelector('.name-cut-head');
-
-    expect(head?.textContent).toBe('~/');
-    expect(declaredValues(head as Element, 'min-width').at(-1)).toBe(
-      'calc-size(max-content, min(size, 1ch + 1em))'
-    );
-  });
-
-  it('keeps a short name whole, in one part', () => {
-    render(<DialogNames names={['~/a b/c']} />);
-
-    const line = screen.getByRole('listitem').querySelector('.name-cut-line');
-
-    expect(line?.children).toHaveLength(1);
-    expect(line?.textContent).toBe('~/a b/c');
+    expect(shown).toEqual(names);
+    expect(screen.getByRole('list').classList.contains('dialog-items')).toBe(true);
   });
 });
 
 describe('DialogFacts', () => {
-  it('keeps "+N more" whole after a value cut with its full text in a tooltip', () => {
+  it('keeps "+N more" whole after a value that wraps before it is cut, its text a tooltip', () => {
     applyStylesheets(readStylesheet('src/dialog/dialog.css'));
 
     render(
@@ -65,7 +44,10 @@ describe('DialogFacts', () => {
     // The names are the box that cuts, so they carry the tooltip.
     expect(names?.getAttribute('data-tooltip')).toBe('Local MySQL (shop), Production (shop_live)');
     expect(names?.hasAttribute('data-tooltip-cut')).toBe(true);
-    expect(getComputedStyle(names as Element).textOverflow).toBe('ellipsis');
+    // An identifying value wraps, up to three lines, before it is ever cut.
+    expect(getComputedStyle(names as Element).whiteSpace).not.toBe('nowrap');
+    expect(declaredValues(names as Element, 'overflow-wrap').at(-1)).toBe('anywhere');
+    expect(declaredValues(names as Element, '-webkit-line-clamp').at(-1)).toBe('3');
     expect(getComputedStyle(names as Element).minWidth).toBe('0px');
 
     // The count of the rest never shrinks, so it stays in view.
@@ -75,11 +57,12 @@ describe('DialogFacts', () => {
       'flex'
     );
 
-    // A row with nothing left out keeps one cut value with its tooltip.
+    // A row with nothing left out wraps its value the same way, with its tooltip.
     const value = second?.querySelector('.dialog-fact-value');
 
     expect(value?.querySelector('.dialog-fact-more')).toBeNull();
     expect(value?.getAttribute('data-tooltip')).toBe('nightly-backup, sitemap');
+    expect(declaredValues(value as Element, '-webkit-line-clamp').at(-1)).toBe('3');
   });
 
   it('shows "+N more" alone when the row names none', () => {

@@ -91,7 +91,7 @@ describe('ConfirmDialog', () => {
     expect(rows[1]?.querySelector('.dialog-fact-count')).toBeNull();
   });
 
-  it('lists its paths one line each, the first few and then +N more, out of the Tab order', () => {
+  it('draws deprecated paths as items, the name and its folder, out of the Tab order', () => {
     const onConfirm = vi.fn();
     const paths = Array.from({ length: 7 }, (_, index) => `~/projects/site/file-${index}.txt`);
 
@@ -99,7 +99,7 @@ describe('ConfirmDialog', () => {
       <ConfirmDialog
         confirmLabel="Delete"
         icon={Trash2}
-        message="Delete these 7 items? This cannot be undone."
+        message="These 7 items are deleted for good."
         onCancel={vi.fn()}
         onConfirm={onConfirm}
         paths={paths}
@@ -111,9 +111,11 @@ describe('ConfirmDialog', () => {
     const list = screen.getByRole('list', { name: 'Affected items' });
     const items = screen.getAllByRole('listitem');
 
-    expect(items).toHaveLength(5);
-    expect(items[0]?.querySelector('.name-cut')).toBeTruthy();
-    expect(items.at(-1)?.textContent).toBe('+3 more');
+    // Five in full, then the rest counted.
+    expect(items).toHaveLength(6);
+    expect(items[0]?.querySelector('.dialog-item-name')?.textContent).toBe('file-0.txt');
+    expect(items[0]?.querySelector('.dialog-item-detail')?.textContent).toBe('~/projects/site');
+    expect(items.at(-1)?.textContent).toBe('+2 more');
     expect(list.hasAttribute('tabindex')).toBe(false);
 
     fireEvent.keyDown(dialog, { key: 'Enter' });
@@ -161,7 +163,7 @@ describe('ConfirmDialog', () => {
 
     expect(screen.getByRole('button', { name: 'Abbrechen' })).toBeTruthy();
     expect(screen.getByRole('list', { name: '6 Objekte' })).toBeTruthy();
-    expect(screen.getByText('+2 weitere')).toBeTruthy();
+    expect(screen.getByText('+1 weitere')).toBeTruthy();
 
     rerender(
       <UiokProvider labels={{ dialog: { cancel: 'Abbrechen' } }}>
@@ -270,6 +272,7 @@ describe('ConfirmDialog', () => {
 
     expect(dialog.querySelector('.dialog-message')).toBeNull();
     expect(describedBy).not.toBeNull();
+    // Facts describe a dialog only when it has neither a lead nor items.
     expect(document.getElementById(describedBy ?? '')?.classList.contains('dialog-facts')).toBe(
       true
     );

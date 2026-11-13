@@ -403,9 +403,9 @@
 
 /* ---- Confirmation dialog (ConfirmDialog) ----
 
-   Read at a glance: the one-line title says what will happen, one short
-   sentence says what it means, and at most one compact list carries the
-   details, every row one line. The frame carries the type, margins, and
+   Read at a glance and the same for one item or a thousand: the one-line
+   title names the action, the lead says what happens and to how many, the
+   items sit in one framed list, and facts about the action follow. The frame carries the type, margins, and
    box sizing (above). */
 .dialog-message {
   color: var(--text-dim);
@@ -428,8 +428,8 @@
    A desktop property list: one line per row, the labels in a leading
    column, the counts in a column of their own (end-aligned, tabular, so
    they line up), then the values. The rows share the list's columns
-   (subgrid). A label column never takes more than two fifths of the body;
-   every part is cut with an ellipsis rather than wrap. A row without a
+   (subgrid). A label column never takes more than two fifths of the body
+   and keeps to one line; a value wraps before it is cut. A row without a
    count leaves its column empty, and a list without counts has no column
    at all, since the gap after a count is the count's own padding. */
 .dialog-facts {
@@ -481,26 +481,35 @@
 .dialog-fact-value {
   grid-column: 2;
   min-width: 0;
-  overflow: hidden;
   color: var(--text-dim);
-  text-overflow: ellipsis;
-  white-space: nowrap;
   -webkit-user-select: text;
   user-select: text;
 }
 
-/* A value that leaves names out ends in "+N more": the names give way with
-   an ellipsis and the count stays whole after them, so the row always says
+/* A value may identify what the action touches (a path, a statement), so it
+   wraps, after a separator where it can, up to three lines before it is
+   cut; one still cut shows its whole text in a tooltip. */
+.dialog-fact-value,
+.dialog-fact-names {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+}
+
+/* A value that leaves names out ends in "+N more": the names wrap and give
+   way first and the count stays whole after them, so the row always says
    how many it omits. The names carry the tooltip, being the box that cuts. */
-.dialog-fact-value-more {
+.dialog-fact-value.dialog-fact-value-more {
   display: flex;
+  align-items: baseline;
   gap: var(--space-2);
 }
 
 .dialog-fact-names {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .dialog-fact-more {
@@ -508,31 +517,111 @@
   font-family: var(--font-ui);
 }
 
-/* ---- Name list (DialogNames) ----
+/* ---- Item list (DialogItems) ----
 
-   The items a confirmation acts on, one line each in monospace, at the
-   body's start edge like the message above. A long name or path is cut in
-   its middle (NameCut), so its start and its file name both show. The list
-   stops at a fixed number of lines and its last line counts the rest
-   ("+N more") in the interface font, as words. */
-.dialog-names {
+   The things a confirmation acts on, as one framed list (a well, the frame
+   a confirmation's path list had at the end of Phase I): one row per item,
+   its kind's glyph, its name in monospace in the text colour, and one dim
+   detail at the row's end. The rows share the list's three columns
+   (subgrid), so names and details line up. A name or detail wraps, up to
+   three lines, after a separator where it can and anywhere where it
+   cannot, before it is cut. The list draws at most
+   six rows (five items and "+N more"), so it never needs to scroll. */
+.dialog-items-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.dialog-items-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+}
+
+.dialog-items-count {
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+}
+
+.dialog-items {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) fit-content(40%);
+  gap: var(--space-2) var(--space-4);
   margin: 0;
-  padding: 0;
+  /* Text starts 12px in, level with the body's edge inside the frame, as
+     the Phase I well did. */
+  padding: var(--space-3) var(--space-6);
   list-style: none;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
   color: var(--text-dim);
   font-family: var(--font-mono);
   font-size: var(--font-size-small);
   line-height: var(--line-height-compact);
 }
 
-.dialog-names > li {
+.dialog-item {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: start;
   min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  -webkit-user-select: text;
-  user-select: text;
 }
 
-.dialog-names-more {
+/* The glyph sits on the name's first line; an item without one keeps the
+   column, so every name starts on one edge. */
+.dialog-item-glyph {
+  grid-column: 1;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  margin-block-start: calc((var(--line-height-compact) - var(--icon-md)) / 2);
+  color: var(--text-faint);
+}
+
+.dialog-item-name,
+.dialog-item-detail {
+  display: -webkit-box;
+  min-width: 0;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+}
+
+.dialog-item-name {
+  grid-column: 2;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  color: var(--text);
+}
+
+.dialog-item-detail {
+  grid-column: 3;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  text-align: end;
+}
+
+/* The last row counts the rest in words, under the names. */
+.dialog-items-more {
+  display: block;
+  grid-column: 2 / -1;
   font-family: var(--font-ui);
+}
+
+/* A confirmation that lists items takes the medium width, the same for one
+   item and a thousand. A host's width step still wins (two classes). */
+.dialog:where(.confirm-items) {
+  width: 480px;
+}
+
+/* Several groups (a quit's processes and terminals) stack apart. */
+.confirm-items-lists {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+  min-width: 0;
 }

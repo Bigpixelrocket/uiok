@@ -39,4 +39,15 @@ describe('menu look', () => {
     }
     document.body.innerHTML = '';
   });
+
+  it('wraps a note that explains a state to two lines before it cuts it', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<p class="folder-menu-note">Folders you cannot read are listed but cannot be opened.</p>`;
+
+    const note = document.querySelector('.folder-menu-note') as Element;
+
+    expect(declaredValues(note, 'white-space')).not.toContain('nowrap');
+    expect(declaredValues(note, '-webkit-line-clamp').at(-1)).toBe('2');
+    document.body.innerHTML = '';
+  });
 });

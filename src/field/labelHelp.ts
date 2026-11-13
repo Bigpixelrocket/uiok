@@ -2,7 +2,11 @@ import { tooltip, type TooltipAttributes } from '../tooltip/Tooltip.logic.js';
 
 /** The two halves of a field's help: what its label wears and what its control wears. */
 export interface LabelHelp {
-  /** Spread on the `.field-label`: the help as the label's hover tooltip. */
+  /**
+   * Spread on the `.field-label`: the help as the label's hover tooltip,
+   * opening above the label (or at its end where there is no room above),
+   * and `data-label-help`, which draws the help cue: a dashed underline.
+   */
   readonly label: TooltipAttributes;
   /**
    * Spread on the control the label names: the help as its accessible
@@ -20,10 +24,15 @@ export interface LabelHelp {
  * screen reader through the control. Without help both halves are empty,
  * so a row may pass its optional note straight through. A line that says
  * what the current choice does ("The next check is at 14:00.") stays a
- * `.field-note` under the control, since it changes with the choice.
+ * `.field-note` under the control, since it changes with the choice. A
+ * label with help shows a cue (a dashed underline, as any word that holds
+ * a tooltip), and its tooltip opens above it, never over its control.
  */
 export function labelHelp(help: string | null | undefined): LabelHelp {
   return help
-    ? { label: tooltip(help), control: { 'aria-description': help } }
+    ? {
+        label: { ...tooltip(help, null, { side: 'above' }), 'data-label-help': '' },
+        control: { 'aria-description': help }
+      }
     : { label: {}, control: {} };
 }

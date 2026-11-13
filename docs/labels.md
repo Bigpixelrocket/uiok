@@ -102,8 +102,9 @@ Counts arrive as numbers, so the app formats them for its locale and picks the p
 | `clear`         | `string`                    | `Clear`          |
 | `affectedItems` | `(count: number) => string` | `Affected items` |
 | `moreItems`     | `(count: number) => string` | `+3 more`        |
+| `itemCount`     | `(count: number) => string` | `3 items`        |
 
-`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's list of names or paths, given how many it holds. `moreItems` is that list's last line when it stops short, given how many items it leaves out (`DialogNames`).
+`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's item list (one without a group label), given how many it holds. `moreItems` is that list's last row when it stops short, given how many items it leaves out (`DialogItems`). `itemCount` is the count a screen reader hears after the lead and before the names.
 
 ### `legend`
 

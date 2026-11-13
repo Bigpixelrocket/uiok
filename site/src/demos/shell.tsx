@@ -3,8 +3,8 @@
  * (Appearance with the theme picker, Updates with the status card and its
  * notes, Files with a file's problems), the theme picker and the update
  * card in each tone on the page itself (a note under the ready card's head,
- * a failed download under a ruled-off head), the status line a settings file's new mistake shows under the
- * header, the update pill's states, the channel tag in the accent and in a
+ * a failed download under a ruled-off head), the alert a settings file's new
+ * mistake raises, the update pill's states, the channel tag in the accent and in a
  * host's own hue, the About window, the sign-in prompts (a password asked
  * again after a refusal, a new host key), the exit confirmation, and the
  * load failure block. The Files page of the Settings dialog holds a change a
@@ -12,9 +12,11 @@
  */
 
 import {
+  ArrowUpDown,
   Box,
   CircleAlert,
   CircleCheck,
+  Cog,
   Download,
   FileText,
   Info,
@@ -504,29 +506,70 @@ function HostKeyPrompt({ onClose }: { readonly onClose: () => void }): ReactElem
 
 /**
  * The confirmation shown before an app quits with work running: a title of
- * a few words, one sentence of consequence, then what is running as facts.
+ * a few words, the lead, then what is running as labelled groups of items.
  */
 function ExitConfirmation({ onClose }: { readonly onClose: () => void }): ReactElement {
   return (
     <ConfirmDialog
       cancelLabel="Keep Running"
-      className="exit-confirmation dialog-size-md"
+      className="exit-confirmation"
       confirmLabel="Quit"
-      facts={[
-        { label: 'Processes', count: 3, value: 'api, web, worker' },
-        { label: 'Transfers', count: 1, value: 'backup.tar.gz' }
+      groups={[
+        {
+          label: 'Running processes',
+          icon: Cog,
+          items: [
+            { name: 'api', detail: 'shop' },
+            { name: 'web', detail: 'shop' },
+            { name: 'worker', detail: 'shop' }
+          ]
+        },
+        {
+          label: 'Transfers',
+          icon: ArrowUpDown,
+          items: [{ name: 'backup.tar.gz', detail: '1.2 GB' }]
+        }
       ]}
       icon={Power}
-      message="Logs are kept; the transfer resumes at the next launch."
+      message="Quitting stops 3 processes and pauses 1 transfer. Logs are kept, and the transfer resumes at the next launch."
       onCancel={onClose}
       onConfirm={onClose}
-      title="Quit and Stop Tasks?"
+      title="Quit?"
       tone="warning"
     />
   );
 }
 
-type Open = 'settings' | 'password' | 'host-key' | 'exit' | null;
+/**
+ * The alert a host raises when a settings file it reads has a new problem:
+ * a short title, one sentence on what happens meanwhile, the problem as a
+ * fact row (its place and message, then how many more), Close on Escape,
+ * and Show Problems, which opens the Settings page that lists them all.
+ */
+function SettingsAlert({ onClose }: { readonly onClose: () => void }): ReactElement {
+  return (
+    <ConfirmDialog
+      cancelLabel="Close"
+      className="settings-alert dialog-size-md"
+      confirmLabel="Show Problems"
+      facts={[
+        {
+          label: 'settings.toml line 12',
+          value: 'The theme is not one this version knows.',
+          more: 1
+        }
+      ]}
+      icon={TriangleAlert}
+      message="A setting the app cannot read keeps its last valid value until the file is fixed."
+      onCancel={onClose}
+      onConfirm={onClose}
+      title="Settings File Problem"
+      tone="warning"
+    />
+  );
+}
+
+type Open = 'settings' | 'password' | 'host-key' | 'exit' | 'settings-alert' | null;
 
 /** The shell surfaces page's demo. */
 export function ShellDemo(): ReactElement {
@@ -548,28 +591,14 @@ export function ShellDemo(): ReactElement {
       {open === 'exit' ? <ExitConfirmation onClose={close} /> : null}
 
       <h3 className="demo-subhead">Settings notice</h3>
-      {/* The status line under the header about a new mistake in a settings
-          file, in a frame standing in for the window. No close cross: it goes
-          when the file is fixed. */}
-      <div className="shell-demo-window">
-        <div className="settings-notice notice notice-card notice-warning" role="status">
-          <TriangleAlert aria-hidden size={ICON_MD} />
-          {/* A status line is one line: its words cut with an ellipsis in a
-              narrow window, their whole text in a tooltip while cut, and the
-              count of further problems kept whole after them. */}
-          <p
-            className="notice-text"
-            {...cutTooltip('settings.toml, line 12 The theme is not one this version knows.')}
-          >
-            <span className="settings-notice-place">settings.toml, line 12</span> The theme is not
-            one this version knows.
-          </p>
-          <span className="settings-notice-more">1 more problem</span>
-          <div className="notice-actions">
-            <Button size="small">Show</Button>
-          </div>
-        </div>
+      {/* A new mistake in a settings file needs the user's attention but is
+          not the outcome of what they just did, so it is an alert dialog, not
+          a line under the header: a short title, one sentence, the problem as
+          a fact row ending in "+N more", Close and Show Problems. */}
+      <div className="demo-row">
+        <Button onClick={() => setOpen('settings-alert')}>Settings File Problem…</Button>
       </div>
+      {open === 'settings-alert' ? <SettingsAlert onClose={close} /> : null}
 
       <h3 className="demo-subhead">Theme picker</h3>
       <ThemeChoices chosen={light} ids={LIGHT_THEME_IDS} label="Light theme" onChoose={setLight} />

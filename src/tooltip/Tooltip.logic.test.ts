@@ -86,6 +86,33 @@ describe('isMonospaceFamily', () => {
 });
 
 describe('placeTooltip', () => {
+  describe('above, for a label with help', () => {
+    const label = { left: 300, top: 200, width: 40, height: 16 };
+
+    it('opens over the label at its leading edge, never over the control under it', () => {
+      const at = placeTooltip(label, tip, viewport, 0, null, false, false, true);
+
+      expect(at.top + tip.height).toBeLessThanOrEqual(label.top);
+      expect(at.left).toBe(label.left);
+    });
+
+    it('hangs from the right edge over a right-to-left label', () => {
+      const at = placeTooltip(label, tip, viewport, 0, null, true, false, true);
+
+      expect(at.top + tip.height).toBeLessThanOrEqual(label.top);
+      expect(at.left + tip.width).toBe(label.left + label.width);
+    });
+
+    it('opens beside the label at its end where the window has no room above', () => {
+      const top = { ...label, top: 4 };
+      const ltr = placeTooltip(top, tip, viewport, 0, null, false, false, true);
+      const rtl = placeTooltip(top, tip, viewport, 0, null, true, false, true);
+
+      expect(ltr.left).toBeGreaterThanOrEqual(top.left + top.width);
+      expect(rtl.left + tip.width).toBeLessThanOrEqual(top.left);
+    });
+  });
+
   it('hangs under the control, centred on it', () => {
     expect(placeTooltip({ left: 390, top: 100, width: 20, height: 20 }, tip, viewport, 0)).toEqual({
       left: 350,

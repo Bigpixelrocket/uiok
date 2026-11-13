@@ -446,7 +446,7 @@ describe('a row', () => {
     expect(rows.map((row) => row.tabIndex)).toEqual([0, 0, -1]);
   });
 
-  it('draws a quiet action in a tabbable row as the row look says, keeping its Tab stop', () => {
+  it('draws a quiet action in a tabbable row with its word, keeping its Tab stop', () => {
     render(
       <RowCursorContext value={cursorOn('a', [])}>
         <Listing columns={[]} grid="20px 1fr auto" title="Hosts">
@@ -460,8 +460,10 @@ describe('a row', () => {
     );
     const action = screen.getByRole('button', { name: 'Remove a' });
 
-    expect(action.classList.contains('wordless')).toBe(true);
-    expect(action.dataset.tooltip).toBe('Remove');
+    // Reached by Tab, it shows what it does without a hover.
+    expect(action.classList.contains('wordless')).toBe(false);
+    expect(action.querySelector('.pane-act-word')?.textContent).toBe('Remove');
+    expect(action.dataset.tooltip).toBeUndefined();
     expect(action.tabIndex).toBe(0);
   });
 });

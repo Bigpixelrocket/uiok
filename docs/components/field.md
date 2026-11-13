@@ -77,7 +77,7 @@ const hostHelp = labelHelp('A name or an address this computer can reach.');
 
 ## Help (`labelHelp`)
 
-A desktop form shows a label and its control; what the control is for lives in the label's tooltip, not in a sentence under the field. `labelHelp(help)` returns both halves: spread `label` on the `field-label` (the help as its hover tooltip, from `tooltip()`) and `control` on the input or select it names (the help as its `aria-description`, which a screen reader reads when the control takes focus; a description on a label is never read). Without help both halves are empty, so a settings row may pass an optional note straight through. `TooltipLayer` must be mounted once, as for every tooltip.
+A desktop form shows a label and its control; what the control is for lives in the label's tooltip, not in a sentence under the field. `labelHelp(help)` returns both halves: spread `label` on the `field-label` (the help as its hover tooltip, from `tooltip()`) and `control` on the input or select it names (the help as its `aria-description`, which a screen reader reads when the control takes focus; a description on a label is never read). A label with help shows a cue, a dashed underline in `--text-faint` (`data-label-help`), so it reads apart from a label without, and its tooltip opens above the label (at its end where the window has no room above), never over the control it explains. Without help both halves are empty, so a settings row may pass an optional note straight through. `TooltipLayer` must be mounted once, as for every tooltip.
 
 ```tsx
 const help = labelHelp(row.help);

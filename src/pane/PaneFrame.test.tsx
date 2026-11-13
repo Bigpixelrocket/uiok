@@ -69,7 +69,7 @@ describe('QuietAction', () => {
     expect(button?.classList.contains('wordless')).toBe(false);
   });
 
-  it('is a glyph alone in a row and a path bar, its word its tooltip, unless the look asks for words', () => {
+  it('is a glyph alone in a row, its word its tooltip, unless the look asks for words; a path bar shows its word', () => {
     const action = (
       <QuietAction
         icon={Play}
@@ -89,8 +89,12 @@ describe('QuietAction', () => {
     expect(rowButton?.getAttribute('data-tooltip-shortcut')).toBe('⌥↩');
     inRow.unmount();
 
+    // A path bar's tool is a command reached by Tab: it says its word where
+    // it fits, whatever the row look, and the bar hides it only when tight.
     const bar = render(<PanePathBar trail={[]}>{action}</PanePathBar>);
-    expect(bar.container.querySelector('.path-tools > .pane-act.wordless')).not.toBeNull();
+    const barButton = bar.container.querySelector('.path-tools > .pane-act');
+    expect(barButton?.classList.contains('wordless')).toBe(false);
+    expect(barButton?.hasAttribute('data-tooltip')).toBe(false);
     bar.unmount();
 
     const worded = render(

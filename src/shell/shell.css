@@ -258,32 +258,6 @@
   margin: var(--space-6) var(--space-8) 0;
 }
 
-/* A new mistake in a settings file, outside the dialog: the window's
-   status line under the header (uiok's warning .notice-card), a plain line
-   with a small Show button and no close cross, which the content below
-   gives room to, so it never covers a control. */
-.settings-notice {
-  flex: none;
-  margin: 0;
-}
-
-.settings-notice-place {
-  font-family: var(--font-mono);
-}
-
-.settings-notice-more {
-  color: var(--text-dim);
-}
-
-/* The count of further problems as the line's own part, after the words:
-   a narrow window cuts the sentence and keeps the count whole. */
-.settings-notice > .settings-notice-more {
-  flex: none;
-  white-space: nowrap;
-  -webkit-user-select: text;
-  user-select: text;
-}
-
 /* ---- Settings files ---- */
 
 /* A file's name and the folder's path in the code face, the button at its

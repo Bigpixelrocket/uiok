@@ -405,11 +405,11 @@ meter::-webkit-meter-even-less-good-value {
    The class carries states only, never a rest face, so the host keeps its
    own size and shape (docs/components/surface.md). */
 
-/* A toggle chip (a mode, a filter, a reading of a field), drawn as a scope
-   bar's item: off, borderless words in --text-dim on a clear ground (its
-   border is kept, transparent, so on and off are the same size); on
-   (aria-pressed="true"), the one look of "on" below, a filled segment
-   inside its ring. Hover and press are the quiet control's (above). Heights follow the place, as a field's do:
+/* An outlined toggle chip (a mode, a filter, a reading of a field): off, a
+   --control-border outline on a clear ground with words in --text-dim, so
+   an unpressed toggle still reads as a control; on (aria-pressed="true"),
+   the one look of "on" below, a filled segment inside its ring. Hover and
+   press are the quiet control's (above). Heights follow the place, as a field's do:
    28px, .toggle-chip-sm 24px, .toggle-chip-xs 20px inside a row; the corner
    follows the height. Before the recipes, so each of them wins over it. */
 .toggle-chip {
@@ -422,7 +422,7 @@ meter::-webkit-meter-even-less-good-value {
   height: var(--control-height);
   margin: 0;
   padding: 0 var(--space-4);
-  border: var(--line) solid transparent;
+  border: var(--line) solid var(--control-border);
   border-radius: var(--radius-md);
   background: transparent;
   color: var(--text-dim);

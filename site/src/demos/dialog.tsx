@@ -1,8 +1,9 @@
 /**
  * Every dialog variant: a rename over the frame (Return renames, Escape
  * cancels), the three confirmation tones, one with a choice under its
- * message, deletes that cannot be undone with a one-line name list (one
- * ending in "+N more"), a quit confirmation with a fact list, a long title
+ * message, deletes that cannot be undone with their files as a framed item
+ * list (one ending in "+N more"), a quit confirmation with two labelled
+ * groups, a long title
  * cut on its one line, and a command editor whose legend holds a destructive
  * secondary verb and wraps to two rows. Then one dialog on each width step:
  * a connection form on the label column (medium), a frosted shortcuts sheet
@@ -11,6 +12,8 @@
  */
 
 import {
+  Cog,
+  File,
   FilePen,
   KeyRound,
   Keyboard,
@@ -23,7 +26,12 @@ import {
 import { useId, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { ConfirmDialog, ModalDialog, type DialogFact } from '@bigpixelrocket/uiok/dialog';
+import {
+  ConfirmDialog,
+  ModalDialog,
+  type DialogItem,
+  type DialogItemGroup
+} from '@bigpixelrocket/uiok/dialog';
 import { labelHelp } from '@bigpixelrocket/uiok/field';
 import { DataGrid, type DataGridColumn } from '@bigpixelrocket/uiok/grid';
 import { type Chord } from '@bigpixelrocket/uiok/keyboard';
@@ -58,20 +66,34 @@ const LONG_PATHS = [
   '~/projects/site/tests/fixtures/very-long-fixture-name-for-the-snapshot-suite.json'
 ];
 
+/** A path as an item: its file name, with its folder as the detail. */
+const fileItem = (path: string): DialogItem => {
+  const cut = path.lastIndexOf('/');
+  return { name: path.slice(cut + 1), detail: path.slice(0, cut) };
+};
+
 /**
- * The quit confirmation's facts: a row per kind of thing the quit ends, its
- * count, and the first names, each row one line.
+ * The quit confirmation's groups: each kind of thing the quit ends, its
+ * label and count above the same framed list as a delete's items.
  */
-const QUIT_FACTS: readonly DialogFact[] = [
-  { label: 'Terminals', count: 6, value: 'zsh, npm run dev, vite, psql, htop, tail -f app.log' },
+const QUIT_GROUPS: readonly DialogItemGroup[] = [
   {
-    label: 'Projects',
-    count: 9,
-    value: 'shop (web, worker, queue), blog (vite), docs (serve)',
-    // The rest are counted after the names and stay in view however the names are cut.
-    more: 2
+    label: 'Running processes',
+    icon: Cog,
+    items: [
+      { name: 'npm run dev', detail: 'shop' },
+      { name: 'php artisan queue:work', detail: 'shop' },
+      { name: 'vite', detail: 'blog' }
+    ]
   },
-  { label: 'Schedules', count: 2, value: 'nightly-backup, sitemap' }
+  {
+    label: 'Open terminals',
+    icon: SquareTerminal,
+    items: [
+      { name: 'zsh', detail: '~/projects/shop' },
+      { name: 'psql', detail: '~/projects/blog' }
+    ]
+  }
 ];
 
 /** A rename dialog over the frame. */
@@ -507,16 +529,17 @@ export function DialogDemo() {
           confirmLabel="Delete"
           forGood
           icon={Trash2}
-          message="These 4 items cannot be recovered."
+          itemIcon={File}
+          items={[
+            // Names with spaces, which must read exactly as written, each with its folder.
+            { name: '.controller 85977', detail: '~/n1000' },
+            { name: 'Q3 budget review.xlsx', detail: '~/Documents' },
+            { name: 'deploying.md', detail: '~/projects/site/docs' },
+            { name: 'App.test.tsx', detail: '~/projects/site/tests' }
+          ]}
+          message="This deletes 4 items for good. They cannot be recovered."
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
-          paths={[
-            // A short head ("~/") and names with spaces, which must read exactly as written.
-            '~/n1000/.controller 85977',
-            '~/Documents/Q3 budget review.xlsx',
-            '~/projects/site/docs/deploying.md',
-            '~/projects/site/tests/App.test.tsx'
-          ]}
           title="Delete Now?"
         />
       ) : null}
@@ -525,10 +548,11 @@ export function DialogDemo() {
           confirmLabel="Delete"
           forGood
           icon={Trash2}
-          message={`These ${LONG_PATHS.length} items cannot be recovered.`}
+          itemIcon={File}
+          items={LONG_PATHS.map(fileItem)}
+          message={`This deletes ${LONG_PATHS.length} items for good. They cannot be recovered.`}
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
-          paths={LONG_PATHS}
           title="Delete Now?"
         />
       ) : null}
@@ -569,12 +593,11 @@ export function DialogDemo() {
           cancelLabel="Keep Running"
           confirmLabel="Quit"
           icon={Power}
-          className="dialog-size-md"
-          facts={QUIT_FACTS}
-          message="Every process and schedule below stops; logs are kept."
+          groups={QUIT_GROUPS}
+          message="Quitting stops 3 running processes and closes 2 open terminals. Their logs are kept."
           onCancel={close('kept running')}
           onConfirm={close('quit')}
-          title="Quit and Stop Processes?"
+          title="Quit?"
           tone="warning"
         />
       ) : null}

@@ -25,6 +25,8 @@ interface ShownTooltip {
   readonly value: boolean;
   /** The side it opens on, or null for below (or above). */
   readonly beside: TooltipBeside | null;
+  /** It opens above its element by preference (a label's help). */
+  readonly above: boolean;
   /** The control reads right to left, so its leading edge is its right. */
   readonly rtl: boolean;
 }
@@ -78,6 +80,7 @@ const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
     value:
       anchor.hasAttribute('data-tooltip-value') || (cut && isMonospaceFamily(style.fontFamily)),
     beside: besideOf(anchor, rtl),
+    above: anchor.getAttribute('data-tooltip-side') === 'above',
     rtl
   };
 };
@@ -192,7 +195,8 @@ export function TooltipLayer(): ReactElement | null {
       shown.pointerX,
       shown.beside,
       shown.rtl,
-      isGlyphButton(shown.anchor)
+      isGlyphButton(shown.anchor),
+      shown.above
     );
 
     tip.style.left = `${left}px`;

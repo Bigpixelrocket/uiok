@@ -12,17 +12,21 @@ export interface TooltipAttributes {
   readonly 'data-tooltip-cut'?: string;
   /** Present when the text is a value (a path, a name), set in monospace. */
   readonly 'data-tooltip-value'?: string;
-  /** The side the tooltip opens on, when not below or above its element. */
+  /** The side the tooltip opens on, when not below its element. */
   readonly 'data-tooltip-side'?: TooltipSide;
+  /** Present on a label that has help, which draws the help cue (a dashed underline). */
+  readonly 'data-label-help'?: string;
 }
 
 /**
- * A side a tooltip may open on instead of below or above: `end` is the
- * inline end of the element (right in a left-to-right page), `start` the
- * other. A tool rail on a window's edge opens its tooltips toward the
- * content so they never cover the next tool.
+ * A side a tooltip may open on instead of below: `end` is the inline end of
+ * the element (right in a left-to-right page), `start` the other. A tool
+ * rail on a window's edge opens its tooltips toward the content so they
+ * never cover the next tool. `above` opens it over the element, or at its
+ * end where the window has no room above, so a label's help never covers
+ * the control under it.
  */
-export type TooltipSide = 'start' | 'end';
+export type TooltipSide = 'start' | 'end' | 'above';
 
 /** How a tooltip is drawn and placed, beyond what it says. */
 export interface TooltipOptions {
@@ -31,7 +35,7 @@ export interface TooltipOptions {
    * command): it is set in monospace, as the value is everywhere else.
    */
   readonly value?: boolean;
-  /** Open beside the element instead of below it. */
+  /** Open beside or above the element instead of below it. */
   readonly side?: TooltipSide;
 }
 
@@ -193,6 +197,10 @@ export type TooltipBeside = 'left' | 'right';
  * Given `beside`, it opens on that side of the control instead, centred on
  * its height and kept inside the window; on the other side when the window
  * ends too soon, and below as usual when neither side has room.
+ *
+ * Given `preferAbove` (a label's help), it opens over the control, at the same
+ * edge; where the window has no room above, beside the control at its
+ * inline end, and below only when neither has room.
  */
 export function placeTooltip(
   anchor: TooltipAnchorBox,
@@ -201,8 +209,26 @@ export function placeTooltip(
   pointerX: number,
   beside?: TooltipBeside | null,
   rtl = false,
-  glyph: boolean = anchor.width <= anchor.height
+  glyph: boolean = anchor.width <= anchor.height,
+  preferAbove = false
 ): TooltipPosition {
+  if (preferAbove) {
+    const over = anchor.top - GAP - tip.height;
+
+    if (over >= MARGIN) {
+      const below = placeTooltip(anchor, tip, viewport, pointerX, null, rtl, glyph);
+
+      return { left: below.left, top: over };
+    }
+
+    const end = rtl ? 'left' : 'right';
+    const right = anchor.left + anchor.width + GAP;
+    const left = anchor.left - GAP - tip.width;
+    const fits = end === 'right' ? right + tip.width <= viewport.width - MARGIN : left >= MARGIN;
+
+    if (fits) return placeTooltip(anchor, tip, viewport, pointerX, end, rtl, glyph);
+  }
+
   if (beside) {
     const right = anchor.left + anchor.width + GAP;
     const left = anchor.left - GAP - tip.width;

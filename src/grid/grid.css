@@ -255,23 +255,31 @@
 }
 
 /* A cell whose value leads out of its row (`onOpen`: a foreign key into
-   another table, a download): the value plain, in its own text colour, as
-   any value is, never a link's accent or underline. On the cursor cell a
-   small dim arrow at the cell's trailing edge says Return or a click
-   follows it. A value that opens a document (a download, which a host
-   marks `cell-binary`) keeps a quiet underline, the one place a link's
-   look still says what it does. Nothing changes under the pointer. */
+   another table, a download) is a link to another record, not an action,
+   so it looks like one, as at the end of Phase I: the accent's text colour
+   over an accent underline that darkens under the pointer, so a mouse user
+   sees which columns lead elsewhere. On the cursor cell a small dim arrow
+   at the cell's trailing edge says Return or a click follows it. A value
+   that opens a document (a download, which a host marks `cell-binary`)
+   keeps its quieter underline in the cell's own colour. The pointer stays
+   the arrow. */
 .data-grid-link {
   max-width: 100%;
   padding: 0;
   overflow: hidden;
   border: none;
   background: none;
-  color: inherit;
+  color: var(--accent-text);
   font: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--accent-line);
   text-overflow: ellipsis;
   white-space: nowrap;
   cursor: default;
+}
+
+.data-grid-link:hover:enabled {
+  text-decoration-color: var(--accent-text);
 }
 
 /* The cursor cell's arrow is the icon family's (lucide ArrowRight at
@@ -303,6 +311,7 @@
 }
 
 .data-grid-cell.cell-binary .data-grid-link {
+  color: inherit;
   text-decoration: underline;
   text-decoration-color: var(--text-faint);
   text-underline-offset: var(--space-1);

@@ -640,6 +640,16 @@ select.field option {
   overflow-wrap: anywhere;
 }
 
+/* A label that holds help (labelHelp's data-label-help) shows a cue: the
+   dashed underline every word that holds a tooltip wears, in a faint tone,
+   so a label with help reads apart from one without. The help opens above
+   the label, never over the control it explains. */
+[data-label-help] {
+  text-decoration: underline dashed var(--text-faint);
+  text-decoration-thickness: var(--line);
+  text-underline-offset: var(--space-1);
+}
+
 /* A line under a control that says what the current choice does ("Worn
    while the system is light."), so it changes with the choice. Help that
    explains the control itself is its label's tooltip (labelHelp), not a

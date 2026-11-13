@@ -5,7 +5,7 @@ Every modal dialog shares one frame and one footer: a title strip that says what
 - `ModalDialog`: the frame, its focus rules, and the one keydown path for its keys.
 - `DialogLegend`: the key legend footer, with `legendKeyAction` deciding which slot a keystroke runs.
 - `ConfirmDialog`: the one confirmation, built on both.
-- `DialogFacts` and `DialogNames`: the compact lists a confirmation or alert holds, one line per row.
+- `DialogItems` and `DialogFacts`: the framed list of what a confirmation acts on, and the property list of facts about an action.
 - `DialogLayer`: where a host's dialogs mount, so they paint above every pane.
 
 ## Example
@@ -190,75 +190,108 @@ A held key runs its slot once. A key the browser-key guard cancelled still reach
 
 ## `ConfirmDialog` (`ConfirmDialogProps`)
 
-| Prop           | Type                                 | Default    | Meaning                                                                                                                                                       |
-| -------------- | ------------------------------------ | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`        | `string`                             |            | What will happen, at most five words, one line                                                                                                                |
-| `message`      | `ReactNode?`                         |            | One short sentence of consequence; a name in `<strong>` reads in the text colour. Leave it out (or `''`) when the title says all: no empty paragraph is drawn |
-| `confirmLabel` | `string`                             |            | The primary's verb                                                                                                                                            |
-| `cancelLabel`  | `string`                             | labels     | The leave verb; `dialog.cancel` unless given                                                                                                                  |
-| `icon`         | `LucideIcon`                         |            | The action's icon                                                                                                                                             |
-| `tone`         | `'danger' \| 'warning' \| 'primary'` | `'danger'` | `warning` for a safe yes that still ends work; `primary` for a plain grant                                                                                    |
-| `facts`        | `readonly DialogFact[]`              | `[]`       | One-line rows of a label and a count or a few names (`DialogFacts`)                                                                                           |
-| `paths`        | `readonly string[]`                  | `[]`       | The names or paths it touches, one line each, then "+N more" (`DialogNames`)                                                                                  |
-| `children`     | `ReactNode`                          |            | A choice drawn under the message; the caller holds its state                                                                                                  |
-| `className`    | `string`                             |            | Extra class on the box                                                                                                                                        |
-| `forGood`      | `boolean`                            | `false`    | A delete that cannot be undone                                                                                                                                |
-| `onConfirm`    | `() => void`                         |            | The primary                                                                                                                                                   |
-| `onCancel`     | `() => void`                         |            | Escape, the leave slot, a press outside                                                                                                                       |
+| Prop           | Type                                 | Default        | Meaning                                                                                                                                                       |
+| -------------- | ------------------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`        | `string`                             |                | What will happen, at most five words, one line                                                                                                                |
+| `message`      | `ReactNode?`                         |                | One short sentence of consequence; a name in `<strong>` reads in the text colour. Leave it out (or `''`) when the title says all: no empty paragraph is drawn |
+| `confirmLabel` | `string`                             |                | The primary's verb                                                                                                                                            |
+| `cancelLabel`  | `string`                             | labels         | The leave verb; `dialog.cancel` unless given                                                                                                                  |
+| `icon`         | `LucideIcon`                         |                | The action's icon                                                                                                                                             |
+| `tone`         | `'danger' \| 'warning' \| 'primary'` | `'danger'`     | `warning` for a safe yes that still ends work; `primary` for a plain grant                                                                                    |
+| `items`        | `readonly DialogItem[]`              |                | The things the action acts on: name, optional detail, optional glyph (`DialogItems`)                                                                          |
+| `itemIcon`     | `LucideIcon`                         |                | The kind's glyph on every item row that names no other                                                                                                        |
+| `itemCount`    | `number`                             | `items.length` | The total, when `items` holds only the first few                                                                                                              |
+| `groups`       | `readonly DialogItemGroup[]`         | `[]`           | Labelled lists for several kinds of things (a quit's processes and terminals)                                                                                 |
+| `facts`        | `readonly DialogFact[]`              | `[]`           | Facts about the action, never the things it acts on (`DialogFacts`), under the items                                                                          |
+| `paths`        | `readonly string[]`                  |                | Deprecated: drawn as `items`, the last part the name and its folder the detail                                                                                |
+| `children`     | `ReactNode`                          |                | A choice drawn under the message; the caller holds its state                                                                                                  |
+| `className`    | `string`                             |                | Extra class on the box                                                                                                                                        |
+| `forGood`      | `boolean`                            | `false`        | A delete that cannot be undone                                                                                                                                |
+| `onConfirm`    | `() => void`                         |                | The primary                                                                                                                                                   |
+| `onCancel`     | `() => void`                         |                | Escape, the leave slot, a press outside                                                                                                                       |
 
-The message is the dialog's description, so a screen reader reads it with the title. Without a message the facts list (or else the names list) is the description; with neither, the dialog has none, never an `aria-describedby` that points at nothing. The frame carries the type and box sizing, so it renders the same portalled to the body.
+The dialog's description reads the lead, then the count (`dialog.itemCount`, for screen readers only), then the names, so a screen reader reads what will happen and to what with the title. Without a lead or items the facts list is the description; with none of them, the dialog has none, never an `aria-describedby` that points at nothing. The frame carries the type and box sizing, so it renders the same portalled to the body.
 
 - The title is one line, like every dialog's (see [The title](#the-title)).
 - The order is the platform's: the leave verb at the left edge, the action alone at the right, lit. A `danger` action is lit red; a `warning` question rules the strip amber and lights its action in the accent, since its yes is the safe choice.
 - Pick the tone by what the yes destroys. `danger` (the default) is for an action that destroys something saved: a delete, a drop, an overwrite. Throwing away input the user has not saved yet (leave with unsaved changes, discard an edit) destroys nothing saved, so it is `warning`; pass the tone, since the default would paint it red.
 - The key legend, the leave-then-action order, the tones, and the focus rules are the frame's; a confirmation adds no controls of its own beyond the caller's choice.
 
-### Read at a glance
+### One anatomy for every case
 
-A confirmation or alert appears often, so it is read at a glance, not studied: what it is (the title), what it means (one sentence), and then, only for someone who wants them, the details (one list). Its body is the sentence and at most one list. No paragraphs, no sentence per fact.
+Every confirmation has the same four parts, in this order, whether it acts on one thing, three, ten, or a thousand, so a user reads every one the same way:
 
-1. **The message** is one short consequence sentence, one or two lines in the dialog's width. Context (where it acts) belongs in it. It does not repeat the title's question and adds no stock second sentence: "These 4 items cannot be recovered.", not "These 4 items are deleted for good. This cannot be undone."
-2. **Facts** (`facts`, or `DialogFacts` in any dialog body) are a desktop property list: one line per row, a label in the leading column, then a count in a column of its own (aligned, tabular figures) and the first few names. Labels, counts, and values each line up; every part is cut with an ellipsis rather than wrap, a cut label or string value showing its whole text in a tooltip. Write the first few names short and pass how many the value leaves out as `more`: the row ends in "+N more" (`dialog.moreItems`), drawn whole after the names, which give way first, so the row always says how many it omits however long the names are.
-3. **Names** (`paths`, or `DialogNames`) list the items a "these N items" question acts on: one line each, in monospace, a long name or path cut in its middle (`NameCut`), so its start and its file name both show. The list shows at most five lines (`max`); a longer one shows the first four and ends in "+N more" (`dialog.moreItems`), so it never grows into a tall block.
+1. **The title** names the action and the kind of thing, in Title Case, at most five words, with no count and no name: "Delete Server?", "Delete Servers?", "Move to Trash?", "Quit?".
+2. **The lead** (`message`) is one sentence that says what will happen and to how many things, and, where it matters, one more that says what will not happen or cannot be undone: "This removes 3 servers from the list. Their databases stay where they are."
+3. **The items** (`items`, with `itemIcon`) are the things the action acts on, always as one framed list, one row each: the kind's glyph, the name in monospace, and one dim detail at the row's end where the kind has one (a host, a file's folder, a size). One item is a list of one row. Up to five items show in full; more show the first five and a last row "+N more" (`dialog.moreItems`), since the lead carries the total. A name wraps (up to three lines, breaking after `/`, `_`, `.`, `:`, or `@` where it can) before it is cut, and one still cut shows its whole text in a tooltip. A dialog that names several kinds of things passes `groups`: each group's short label and count stand above the same list.
+4. **The buttons**: Cancel on Escape at the start, the action at the end, named by its verb, red when it destroys.
 
-The quit confirmation, written this way:
+A confirmation with items is the medium width (480px) whatever their number, and its height comes from its content: the list never draws more than six rows, so it never scrolls.
+
+#### Item or fact?
+
+- **An item** is a thing the action acts on: a server deleted, a file moved, a process stopped. It goes in `items` (or a group), even when there is only one. "Name: Production" as a fact row is wrong: Production is the item.
+- **A fact** is about the action itself: where it acts ("Where", a folder), what it costs, what it keeps. It goes in `facts`, a property list drawn under the items: a label in the leading column, then an optional count in its own column and the value. A value wraps (up to three lines) before it is cut, so a path or a statement that identifies what the action touches stays readable; pass how many names a value leaves out as `more` and the row ends in "+N more".
+
+Deleting servers, one or a thousand:
 
 ```tsx
-import { Power } from 'lucide-react';
+import { Server, Trash2 } from 'lucide-react';
+
+<ConfirmDialog
+  confirmLabel="Delete"
+  icon={Trash2}
+  itemIcon={Server}
+  items={servers.map((server) => ({ name: server.name, detail: server.host }))}
+  message={`This removes ${count} servers from the list. Their databases stay where they are.`}
+  onCancel={cancel}
+  onConfirm={remove}
+  title={count === 1 ? 'Delete Server?' : 'Delete Servers?'}
+/>;
+```
+
+A quit that names two kinds of things:
+
+```tsx
+import { Cog, Power, SquareTerminal } from 'lucide-react';
 
 <ConfirmDialog
   cancelLabel="Keep Running"
-  className="dialog-size-md"
   confirmLabel="Quit"
-  facts={[
-    { label: 'Terminals', count: 6, value: 'zsh, npm run dev, vite, psql', more: 2 },
-    { label: 'Projects', count: 9, value: 'shop (web, worker, queue), blog (vite)', more: 2 },
-    { label: 'Schedules', count: 2, value: 'nightly-backup, sitemap' }
+  groups={[
+    { label: 'Running processes', icon: Cog, items: processes },
+    { label: 'Open terminals', icon: SquareTerminal, items: terminals }
   ]}
   icon={Power}
-  message="Every process and schedule below stops; logs are kept."
+  message="Quitting stops 3 running processes and closes 2 open terminals. Their logs are kept."
   onCancel={keepRunning}
   onConfirm={quit}
-  title="Quit and Stop Processes?"
+  title="Quit?"
   tone="warning"
 />;
 ```
 
-It replaces a title that was a sentence and four paragraphs (one for the terminals, one for the projects, one for the schedules, one for the consequence): the title says what will happen, the sentence what it means, and each kind of thing is one row a glance reads down.
+Pass every item; the dialog draws the first five. A host that holds only the first few passes the total as `itemCount` (or a group's `count`).
 
-## `DialogFacts` (`DialogFactsProps`) and `DialogNames` (`DialogNamesProps`)
+## `DialogItems` (`DialogItemsProps`) and `DialogFacts` (`DialogFactsProps`)
 
-The lists `ConfirmDialog` draws from `facts` and `paths`, for any other dialog body (an alert on `ModalDialog`).
+The lists `ConfirmDialog` draws, for any other dialog body (an alert or a form on `ModalDialog`).
 
-| Component     | Prop    | Type                    | Default | Meaning                                                                 |
-| ------------- | ------- | ----------------------- | ------- | ----------------------------------------------------------------------- |
-| `DialogFacts` | `facts` | `readonly DialogFact[]` |         | The rows, in reading order                                              |
-| `DialogFacts` | `label` | `string`                |         | The list's accessible name, when the message does not say what it lists |
-| `DialogNames` | `names` | `readonly string[]`     |         | The names or paths                                                      |
-| `DialogNames` | `max`   | `number`                | `5`     | The most lines shown, the "+N more" line included                       |
-| both          | `id`    | `string`                |         | The list's id, for a dialog that names it as its description            |
+| Component     | Prop    | Type                    | Default        | Meaning                                                                 |
+| ------------- | ------- | ----------------------- | -------------- | ----------------------------------------------------------------------- |
+| `DialogItems` | `items` | `readonly DialogItem[]` |                | The items, in reading order; the first five are drawn                   |
+| `DialogItems` | `icon`  | `LucideIcon`            |                | The kind's glyph on every row that names no other                       |
+| `DialogItems` | `count` | `number`                | `items.length` | The total, for "+N more" and the count read with the list               |
+| `DialogItems` | `label` | `string`                |                | A group's label, drawn with its count above the frame                   |
+| `DialogFacts` | `facts` | `readonly DialogFact[]` |                | The rows, in reading order                                              |
+| `DialogFacts` | `label` | `string`                |                | The list's accessible name, when the message does not say what it lists |
+| both          | `id`    | `string`                |                | The block's id, for a dialog that names it as its description           |
 
-A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode; more?: number }`; the host formats the count. `more` counts the names the value leaves out and ends the row in "+N more", never cut. A string value carries its whole text in a tooltip while it is cut; a node value passes its own `cutTooltip`.
+A `DialogItem` is `{ name: string; detail?: string; icon?: LucideIcon }`; a `DialogItemGroup` is `{ label: string; items: readonly DialogItem[]; icon?: LucideIcon; count?: number }`. `shownItems(available, count)` returns how many rows a list draws and how many "+N more" counts; `DIALOG_ITEMS_SHOWN` is five.
+
+A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode; more?: number }`; the host formats the count. A string value carries its whole text in a tooltip while it is cut; a node value passes its own `cutTooltip`.
+
+`DialogNames` (`names`, `id`) is deprecated: it draws its names as `DialogItems` without glyphs or details. Pass items instead.
 
 ### Deletes that cannot be undone
 
@@ -266,10 +299,10 @@ People confirm a delete out of habit, ⌘⌫ then Return, without reading. With 
 
 ## Styling
 
-Nothing animates in: a dialog and a frosted wash are there on the frame they open, with no fade, drop, or scale, as a desktop sheet appears. The message, names, counts, and values in a body can be selected and copied; the title, labels, and legend cannot.
+Nothing animates in: a dialog and a frosted wash are there on the frame they open, with no fade, drop, or scale, as a desktop sheet appears. The lead, item names and details, counts, and values in a body can be selected and copied; the title, labels, and legend cannot.
 
-`.dialog-backdrop`, `.frosted`, `.dialog-layer`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.legend-danger`, `.confirm-dialog`, `.dialog-message`, `.dialog-facts`, `.dialog-fact`, `.dialog-fact-count`, `.dialog-fact-value`, `.dialog-fact-value-more`, `.dialog-fact-names`, `.dialog-fact-more`, `.dialog-names`, `.dialog-names-more`. The frame declares `--dialog-tone` and `--dialog-icon`, reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
+`.dialog-backdrop`, `.frosted`, `.dialog-layer`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.legend-danger`, `.confirm-dialog`, `.dialog-message`, `.dialog-facts`, `.dialog-fact`, `.dialog-fact-count`, `.dialog-fact-value`, `.dialog-fact-value-more`, `.dialog-fact-names`, `.dialog-fact-more`, `.confirm-items` (a confirmation with items, 480px), `.confirm-items-lists`, `.dialog-items-block`, `.dialog-items-head`, `.dialog-items-count`, `.dialog-items`, `.dialog-item`, `.dialog-item-glyph`, `.dialog-item-name`, `.dialog-item-detail`, `.dialog-items-more`. The frame declares `--dialog-tone` and `--dialog-icon`, reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
 
 ## Labels read
 
-`dialog`: `cancel` (ConfirmDialog's default leave verb, `filterLeaveLabel`), `clear` (`filterLeaveLabel`), `affectedItems(count)` (the name list's accessible name), `moreItems(count)` (its "+N more" line). `keys` through `KeyChord` for the slots' caps. See [labels](../labels.md).
+`dialog`: `cancel` (ConfirmDialog's default leave verb, `filterLeaveLabel`), `clear` (`filterLeaveLabel`), `affectedItems(count)` (an item list's accessible name when it has no label), `itemCount(count)` (the count read before the names), `moreItems(count)` (the "+N more" row). `keys` through `KeyChord` for the slots' caps. See [labels](../labels.md).

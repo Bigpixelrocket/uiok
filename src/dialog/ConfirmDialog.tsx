@@ -4,7 +4,13 @@ import { useId, type ReactElement, type ReactNode } from 'react';
 import type { Chord } from '../keyboard/Keyboard.logic.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import type { DialogLegendModel } from './DialogLegend.logic.js';
-import { DialogFacts, DialogNames, type DialogFact } from './DialogLists.js';
+import {
+  DialogFacts,
+  DialogItems,
+  type DialogFact,
+  type DialogItem,
+  type DialogItemGroup
+} from './DialogLists.js';
 import { ModalDialog } from './ModalDialog.js';
 
 /** The Delete Now chord (Finder's chord for a delete that skips the Trash), which confirms a delete that cannot be undone. */
@@ -26,11 +32,11 @@ export interface ConfirmDialogProps {
    */
   readonly title: string;
   /**
-   * The consequence: one short sentence, one or two lines at most, as text
-   * or with a name set apart in bold (`<strong>`). Context the dialog needs
-   * (where it acts) goes here too, never beside the title. Leave it out (or
-   * pass `''`) when the title says all there is: no empty paragraph is drawn,
-   * and the facts or names list describes the dialog instead.
+   * The lead: one sentence that says what will happen and to how many
+   * things ("This removes 3 servers from the list."), and, where it matters,
+   * one more that says what will not happen or cannot be undone. Text, or
+   * with a word set apart in bold (`<strong>`). Leave it out (or pass `''`)
+   * only when the title says all there is: no empty paragraph is drawn.
    */
   readonly message?: ReactNode;
   /** The action's verb, the lit primary at the right edge. */
@@ -51,14 +57,37 @@ export interface ConfirmDialogProps {
    */
   readonly tone?: ConfirmTone;
   /**
-   * The facts the decision rests on, as one-line rows of a label and a
-   * count or a few names (`DialogFacts`), under the message.
+   * The things the action acts on, as data: each item's name, an optional
+   * dim detail (a host, a folder, a size), and a glyph where it differs
+   * from `itemIcon`. The dialog draws them as one framed list under the
+   * lead, five rows in full and then "+N more" (`DialogItems`). One item is
+   * a list of one row: never a fact row.
+   */
+  readonly items?: readonly DialogItem[];
+  /** The kind's glyph on every item row that names no other (a server, a file). */
+  readonly itemIcon?: LucideIcon;
+  /**
+   * How many things the action acts on in all, when `items` holds only the
+   * first few; `items.length` unless given.
+   */
+  readonly itemCount?: number;
+  /**
+   * Labelled lists, for a confirmation that names several kinds of things
+   * (a quit's running processes and open terminals): each its label and
+   * count above the same framed list. Drawn after `items`.
+   */
+  readonly groups?: readonly DialogItemGroup[];
+  /**
+   * Facts about the action itself, never the things it acts on: where it
+   * acts, what it costs ("Where", a folder). One-line rows of a label and a
+   * value (`DialogFacts`), under the items.
    */
   readonly facts?: readonly DialogFact[];
   /**
-   * The names or paths the action touches, one line each, cut in their
-   * middle, the first few and then "+N more" (`DialogNames`), under the
-   * message. A confirmation shows at most one list: `facts` or `paths`.
+   * Paths the action touches, drawn as `items`: each path's last part as
+   * the name and its folder as the detail, with `itemIcon`.
+   *
+   * @deprecated Pass `items` with the kind's glyph and detail.
    */
   readonly paths?: readonly string[];
   /**
@@ -86,18 +115,17 @@ export interface ConfirmDialogProps {
 
 /**
  * The one confirmation surface, for destructive, privileged, and
- * side-effect-bearing actions, read at a glance: a one-line title that says
- * what will happen, one short sentence of consequence, then its facts and
- * the names it acts on as compact lists (each row one line), an optional
- * choice the caller draws, then the legend's esc Cancel (or the
- * leave verb named) and the named action at the right edge, on Return, or
- * on ⌥⌘⌫ with Return running nothing for a delete that cannot be undone
- * (`forGood`). The message describes the dialog (`aria-describedby`), so a
- * screen reader reads the consequence, and any name it holds, with the
- * title; without a message the facts or names list describes it, and with
- * neither the dialog has no description. The frame carries its type, margins, and box sizing, so it renders
- * the same portalled to the body as inside any page; its title keeps to one
- * line, cut with an ellipsis. Styled by the `.confirm-dialog` rules in
+ * side-effect-bearing actions, with the same four parts whether it acts on
+ * one thing or a thousand: a one-line title naming the action, the lead
+ * sentence, the items as one framed list (`items`, then any labelled
+ * `groups`, five rows in full and then "+N more"), then the legend's esc
+ * Cancel (or the leave verb named) and the named action at the right edge,
+ * on Return, or on ⌥⌘⌫ with Return running nothing for a delete that cannot
+ * be undone (`forGood`). Facts about the action and a choice the caller
+ * draws sit under the items. A dialog with items is the medium width,
+ * whatever their number. Its description (`aria-describedby`) reads the
+ * lead, then the count, then the names; without a lead or items the facts
+ * describe it. Styled by the `.confirm-dialog` rules in
  * `@bigpixelrocket/uiok/styles.css`; reads the `dialog` labels.
  */
 export function ConfirmDialog({
@@ -107,8 +135,12 @@ export function ConfirmDialog({
   cancelLabel,
   icon,
   tone = 'danger',
+  items,
+  itemIcon,
+  itemCount,
+  groups = [],
   facts = [],
-  paths = [],
+  paths,
   children,
   className,
   forGood = false,
@@ -118,12 +150,18 @@ export function ConfirmDialog({
   const labels = useLabels().dialog;
   const labelId = useId();
   const messageId = useId();
-  const listId = useId();
+  const itemsId = useId();
+  const factsId = useId();
   // An empty message draws nothing, so the dialog is described by what it does draw.
   const hasMessage =
     message !== undefined && message !== null && message !== false && message !== '';
-  const hasList = facts.length > 0 || paths.length > 0;
-  const describedBy = hasMessage ? messageId : hasList ? listId : undefined;
+  const list = items ?? paths?.map(pathItem) ?? [];
+  const hasItems = list.length > 0 || groups.length > 0;
+  const described = [hasMessage ? messageId : null, hasItems ? itemsId : null].filter(
+    (part) => part !== null
+  );
+  const describedBy =
+    described.length > 0 ? described.join(' ') : facts.length > 0 ? factsId : undefined;
   const legend: DialogLegendModel = {
     leave: { label: cancelLabel ?? labels.cancel },
     primary: forGood
@@ -133,7 +171,9 @@ export function ConfirmDialog({
 
   return (
     <ModalDialog
-      className={className ? `confirm-dialog ${className}` : 'confirm-dialog'}
+      className={['confirm-dialog', hasItems ? 'confirm-items' : null, className]
+        .filter(Boolean)
+        .join(' ')}
       describedBy={describedBy}
       icon={icon}
       labelId={labelId}
@@ -147,9 +187,35 @@ export function ConfirmDialog({
           {message}
         </p>
       )}
-      {facts.length > 0 && <DialogFacts facts={facts} id={listId} />}
-      {paths.length > 0 && <DialogNames id={facts.length > 0 ? undefined : listId} names={paths} />}
+      {hasItems && (
+        <div className="confirm-items-lists" id={itemsId}>
+          {list.length > 0 && <DialogItems count={itemCount} icon={itemIcon} items={list} />}
+          {groups.map((group) => (
+            <DialogItems
+              count={group.count}
+              icon={group.icon}
+              items={group.items}
+              key={group.label}
+              label={group.label}
+            />
+          ))}
+        </div>
+      )}
+      {facts.length > 0 && <DialogFacts facts={facts} id={factsId} />}
       {children}
     </ModalDialog>
   );
+}
+
+/**
+ * A path as an item: its last part is the name, the folder that holds it
+ * the detail ("deploying.md" in "~/projects/site/docs").
+ */
+function pathItem(path: string): DialogItem {
+  const trimmed = path.length > 1 ? path.replace(/\/+$/, '') : path;
+  const cut = trimmed.lastIndexOf('/');
+
+  return cut <= 0 || cut === trimmed.length - 1
+    ? { name: path }
+    : { name: trimmed.slice(cut + 1), detail: trimmed.slice(0, cut) };
 }

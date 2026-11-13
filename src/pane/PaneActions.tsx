@@ -11,9 +11,11 @@ import { describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
 export type LinkLook = 'icons' | 'text' | 'both';
 
 /**
- * How the `RowIconAction`s under it, and the `QuietAction`s in its rows and
- * path bars, draw. An app whose rows follow a preference provides it; icons
- * alone without one, each word kept as the control's tooltip and name. A
+ * How the `RowIconAction`s under it, and the `QuietAction`s in its rows,
+ * draw. An app whose rows follow a preference provides it; icons alone
+ * without one, each word kept as the control's tooltip and name. A path
+ * bar's tools and a `tabbable` row's actions show their words unless the
+ * look is `text` or `both` (which they follow); `icons` does not reach them. A
  * `Listing` whose grid is a function of the look steps it down to a plainer
  * one when its words would make it scroll sideways.
  */
@@ -102,13 +104,15 @@ export interface QuietActionProps {
 /**
  * A row's one quiet action, or a compact control in a path bar: in the dim
  * tone at rest, in full words on the cursor row (and as a path bar's lead
- * action, `lit`). In a row or a path bar it draws as `RowLinkLookContext`
- * says: a glyph alone by default (`icons`), with its word as its tooltip
- * (and its `shortcut` after it) and kept for assistive technology in
- * `.pane-act-word`; its glyph and word where the host's look asks for words
- * (`text` or `both`; the glyph stays, so a tight bar that hides the word
- * still draws it), in a `tabbable` row as in any other. Anywhere else it
- * draws its glyph and word. In a row it leaves the Tab order (`useInRow`)
+ * action, `lit`). In a row the keys reach (not `tabbable`) it draws as
+ * `RowLinkLookContext` says: a glyph alone by default (`icons`), with its
+ * word as its tooltip (and its `shortcut` after it) and kept for assistive
+ * technology in `.pane-act-word`, or its glyph and word under a look of
+ * words. A path bar's tool, a `tabbable` row's action, and a toolbar's
+ * command draw their glyph and word by default, whatever the row look, so
+ * a command reached by Tab shows what it does without a hover; a path bar
+ * too tight for its words hides them and keeps the glyph, its word then
+ * its tooltip. In a row it leaves the Tab order (`useInRow`)
  * unless the row is `tabbable`, and a press never reaches the row's own
  * `onOpen`. Drawn by `.pane-act` in the listing
  * look, `.pane-act.wordless` for the glyph alone.
@@ -133,8 +137,15 @@ export function QuietAction({
   const inListingRow = useContext(InListingRowContext);
   const inBar = useContext(InPathBarContext);
   const chosen = useContext(RowLinkLookContext);
-  // A tabbable row keeps its controls in the Tab order but draws them as rows do.
-  const look: LinkLook = inRow || inListingRow || inBar ? chosen : 'both';
+  // Only an untabbable row's actions follow the icons look: the row's keys and
+  // menu name them. A path bar's tools and a tabbable row's actions are
+  // commands reached by Tab, so they say their word wherever it fits (the
+  // bar hides it, glyph kept, when it does not).
+  const look: LinkLook = inRow
+    ? chosen
+    : (inListingRow || inBar) && chosen !== 'icons'
+      ? chosen
+      : 'both';
   // A glyph alone names itself in a tooltip of its word.
   const shownTip = tip ?? (look === 'icons' ? word : undefined);
 
