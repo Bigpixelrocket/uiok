@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import { Fragment, type ReactElement, type ReactNode } from 'react';
+import { Fragment, useId, useLayoutEffect, useRef, type ReactElement, type ReactNode } from 'react';
 
 import { ICON_MD } from '../icon/sizes.js';
 import type { DialogLabels } from '../labels/dialog.js';
@@ -215,6 +215,23 @@ export function DialogItems({ items, icon, count, label, id }: DialogItemsProps)
   const labels = useLabels().dialog;
   const total = Math.max(items.length, Math.floor(count ?? items.length));
   const { shown, more } = shownItems(items.length, total);
+  const listRef = useRef<HTMLUListElement>(null);
+
+  // A detail too long for its three lines loses its start, not its end, so
+  // the folders nearest the item stay; which details are cut depends on
+  // layout, so it is read after each layout and on every resize.
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (list === null) return undefined;
+    const mark = (): void => markCutDetails(list);
+
+    mark();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+    const observer = new ResizeObserver(mark);
+
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, [items, shown]);
 
   return (
     <div className="dialog-items-block" id={id}>
@@ -226,7 +243,7 @@ export function DialogItems({ items, icon, count, label, id }: DialogItemsProps)
           <span className="dialog-items-count">{total.toLocaleString()}</span>
         </div>
       )}
-      <ul aria-label={label ?? labels.affectedItems(total)} className="dialog-items">
+      <ul aria-label={label ?? labels.affectedItems(total)} className="dialog-items" ref={listRef}>
         {items.slice(0, shown).map((item, index) => {
           const Glyph = item.icon ?? icon;
 
@@ -243,12 +260,8 @@ export function DialogItems({ items, icon, count, label, id }: DialogItemsProps)
                 {breakable(item.name)}
               </span>
               {item.detail === undefined || item.detail === '' ? null : (
-                <span
-                  className="dialog-item-detail dialog-value"
-                  dir="auto"
-                  {...cutTooltip(item.detail)}
-                >
-                  {breakable(item.detail)}
+                <span className="dialog-item-detail dialog-value" dir="auto">
+                  <span className="dialog-item-detail-text">{breakable(item.detail)}</span>
                 </span>
               )}
             </li>
@@ -258,6 +271,27 @@ export function DialogItems({ items, icon, count, label, id }: DialogItemsProps)
       </ul>
     </div>
   );
+}
+
+/**
+ * Marks each detail of `list` whose text runs past its three lines, so
+ * cut at its start: `data-cut="start"` (the stylesheet starts its first
+ * shown line with an ellipsis, to say more stands before it) and its whole text as
+ * a tooltip. A detail that fits loses both.
+ */
+function markCutDetails(list: HTMLElement): void {
+  for (const detail of list.querySelectorAll<HTMLElement>('.dialog-item-detail')) {
+    const text = detail.firstElementChild;
+    const cut = text instanceof HTMLElement && text.offsetHeight > detail.clientHeight + 1;
+
+    if (cut) {
+      detail.dataset.cut = 'start';
+      detail.dataset.tooltip = text.textContent;
+    } else {
+      delete detail.dataset.cut;
+      delete detail.dataset.tooltip;
+    }
+  }
 }
 
 /**
@@ -303,4 +337,63 @@ export interface DialogNamesProps {
  */
 export function DialogNames({ names, id }: DialogNamesProps): ReactElement {
   return <DialogItems id={id} items={names.map((name) => ({ name }))} />;
+}
+
+/** Props for {@link DialogStatements}. */
+export interface DialogStatementsProps {
+  /** What the statements are, short, as the block's heading and accessible name: "SQL". */
+  readonly label: string;
+  /**
+   * Every statement the action runs, in the order it runs them, each whole:
+   * the block draws all of them, never a first few, so pass none cut short.
+   */
+  readonly lines: readonly string[];
+  /** The block's id, for a dialog that names it in its description. */
+  readonly id?: string;
+}
+
+/**
+ * The statements a confirmation runs (a batch of SQL), shown in full so
+ * nothing runs that the user could not read first: the label and the count
+ * above a framed block in the code face, one statement per line, each
+ * wrapping whole under a hanging indent and selectable. The block is
+ * capped at about eight lines and scrolls on its own beyond that, never
+ * slicing the list or ending in "+N more". It is a region named by the
+ * label that Tab reaches, so the arrow keys, Page Up and Page Down, Home
+ * and End scroll it, and assistive technology reads it as a list of every
+ * statement. Styled by the `.dialog-statements` rules in
+ * `@bigpixelrocket/uiok/styles.css`.
+ */
+export function DialogStatements({ label, lines, id }: DialogStatementsProps): ReactElement {
+  const labelId = useId();
+
+  return (
+    <div className="dialog-statements-block" id={id}>
+      <div className="dialog-items-head">
+        <span className="dialog-label" id={labelId}>
+          {label}
+        </span>
+        <span className="dialog-items-count">{lines.length.toLocaleString()}</span>
+      </div>
+      {/* The frame draws the border and the focus ring, which the scroller's fade would clip. */}
+      <div className="dialog-statements-frame">
+        {/* Focusable so a keyboard can scroll it; a region so it is named and found. */}
+        <div
+          aria-labelledby={labelId}
+          className="dialog-statements scroll-fade"
+          role="region"
+          tabIndex={0}
+        >
+          <ol>
+            {lines.map((line, index) => (
+              // A statement may repeat; its place in a batch fixed while the dialog is open is its identity.
+              <li className="dialog-statement" key={`${index}:${line}`}>
+                <code dir="ltr">{line}</code>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </div>
+    </div>
+  );
 }

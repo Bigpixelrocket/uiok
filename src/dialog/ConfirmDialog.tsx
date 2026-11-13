@@ -7,9 +7,11 @@ import type { DialogLegendModel } from './DialogLegend.logic.js';
 import {
   DialogFacts,
   DialogItems,
+  DialogStatements,
   type DialogFact,
   type DialogItem,
-  type DialogItemGroup
+  type DialogItemGroup,
+  type DialogStatementsProps
 } from './DialogLists.js';
 import { ModalDialog } from './ModalDialog.js';
 
@@ -78,6 +80,13 @@ export interface ConfirmDialogProps {
    */
   readonly groups?: readonly DialogItemGroup[];
   /**
+   * The statements the action runs (a batch of SQL), every one of them,
+   * under its own short label: `{ label: 'SQL', lines }`. Drawn whole,
+   * after the items and groups, in a framed block that scrolls on its own
+   * past about eight lines (`DialogStatements`); never sliced.
+   */
+  readonly statements?: Omit<DialogStatementsProps, 'id'>;
+  /**
    * Facts about the action itself, never the things it acts on: where it
    * acts, what it costs ("Where", a folder). One-line rows of a label and a
    * value (`DialogFacts`), under the items.
@@ -118,12 +127,13 @@ export interface ConfirmDialogProps {
  * side-effect-bearing actions, with the same four parts whether it acts on
  * one thing or a thousand: a one-line title naming the action, the lead
  * sentence, the items as one framed list (`items`, then any labelled
- * `groups`, five rows in full and then "+N more"), then the legend's esc
+ * `groups`, five rows in full and then "+N more"), any statements it runs
+ * in full (`statements`), then the legend's esc
  * Cancel (or the leave verb named) and the named action at the right edge,
  * on Return, or on ⌥⌘⌫ with Return running nothing for a delete that cannot
  * be undone (`forGood`). Facts about the action and a choice the caller
- * draws sit under the items. A dialog with items is the medium width,
- * whatever their number. Its description (`aria-describedby`) reads the
+ * draws sit under them. A dialog with items or statements is the medium
+ * width, whatever their number. Its description (`aria-describedby`) reads the
  * lead, then the count, then the names; without a lead or items the facts
  * describe it. Styled by the `.confirm-dialog` rules in
  * `@bigpixelrocket/uiok/styles.css`; reads the `dialog` labels.
@@ -139,6 +149,7 @@ export function ConfirmDialog({
   itemIcon,
   itemCount,
   groups = [],
+  statements,
   facts = [],
   paths,
   children,
@@ -157,6 +168,7 @@ export function ConfirmDialog({
     message !== undefined && message !== null && message !== false && message !== '';
   const list = items ?? paths?.map(pathItem) ?? [];
   const hasItems = list.length > 0 || groups.length > 0;
+  const hasStatements = statements !== undefined && statements.lines.length > 0;
   const described = [hasMessage ? messageId : null, hasItems ? itemsId : null].filter(
     (part) => part !== null
   );
@@ -171,7 +183,7 @@ export function ConfirmDialog({
 
   return (
     <ModalDialog
-      className={['confirm-dialog', hasItems ? 'confirm-items' : null, className]
+      className={['confirm-dialog', hasItems || hasStatements ? 'confirm-items' : null, className]
         .filter(Boolean)
         .join(' ')}
       describedBy={describedBy}
@@ -201,6 +213,7 @@ export function ConfirmDialog({
           ))}
         </div>
       )}
+      {hasStatements && <DialogStatements label={statements.label} lines={statements.lines} />}
       {facts.length > 0 && <DialogFacts facts={facts} id={factsId} />}
       {children}
     </ModalDialog>

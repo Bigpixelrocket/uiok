@@ -55,7 +55,11 @@ type Open =
   | 'hosts'
   | null;
 
-/** Paths long enough to be cut in their middle, and more than the name list shows. */
+/**
+ * Paths whose folders are long, and more than the item list shows: a folder
+ * too long for its three lines loses its start and keeps the folders
+ * nearest the file.
+ */
 const LONG_PATHS = [
   '~/projects/infrastructure-and-deployment-scripts/environments/production/terraform/main.tf',
   '~/projects/infrastructure-and-deployment-scripts/environments/production/terraform/variables.tf',
@@ -514,14 +518,12 @@ export function DialogDemo() {
         <ConfirmDialog
           confirmLabel="Move to Trash"
           icon={Trash2}
-          message={
-            <>
-              Move <strong>{name}</strong> to the Trash?
-            </>
-          }
+          itemIcon={File}
+          items={[{ name, detail: '~/Documents' }]}
+          message="This moves 1 file to the Trash. You can put it back from there."
           onCancel={close('cancelled')}
           onConfirm={close('moved to the Trash')}
-          title="Move to Trash"
+          title="Move to Trash?"
         />
       ) : null}
       {open === 'delete' ? (
@@ -560,10 +562,10 @@ export function DialogDemo() {
         <ConfirmDialog
           confirmLabel="Sign Out"
           icon={LogOut}
-          message="Two uploads still running will stop."
+          message="This signs you out of this window. The 2 uploads still running stop."
           onCancel={close('cancelled')}
           onConfirm={close('signed out')}
-          title="Sign Out"
+          title="Sign Out?"
           tone="warning"
         >
           {/* A choice under the message; the caller holds its state. */}
@@ -579,12 +581,12 @@ export function DialogDemo() {
           icon={KeyRound}
           message={
             <>
-              The build can read files in <strong>~/projects/site</strong> until you sign out.
+              This lets the build read files in <strong>~/projects/site</strong> until you sign out.
             </>
           }
           onCancel={close('cancelled')}
           onConfirm={close('granted')}
-          title="Grant Access"
+          title="Grant Access?"
           tone="primary"
         />
       ) : null}

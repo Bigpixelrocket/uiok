@@ -2,7 +2,8 @@
  * Dialogs: the `ModalDialog` frame, its `DialogLegend` key legend footer and
  * the rules for which slot a key runs, the one `ConfirmDialog`, the compact
  * lists a confirmation's body holds (`DialogItems` for what it acts on,
- * `DialogFacts` for facts about the action), and the
+ * `DialogStatements` for the statements it runs, `DialogFacts` for facts
+ * about the action), and the
  * `DialogLayer` a host mounts them into.
  */
 
@@ -13,13 +14,15 @@ export {
   DialogFacts,
   DialogItems,
   DialogNames,
+  DialogStatements,
   shownItems,
   type DialogFact,
   type DialogFactsProps,
   type DialogItem,
   type DialogItemGroup,
   type DialogItemsProps,
-  type DialogNamesProps
+  type DialogNamesProps,
+  type DialogStatementsProps
 } from './DialogLists.js';
 export { DialogLegend, type DialogLegendProps } from './DialogLegend.js';
 export {

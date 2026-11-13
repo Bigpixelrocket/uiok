@@ -12,7 +12,7 @@ Every modal dialog shares one frame and one footer: a title strip that says what
 
 ```tsx
 import { useId, useState } from 'react';
-import { FilePen, Trash2 } from 'lucide-react';
+import { File, FilePen, Trash2 } from 'lucide-react';
 import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
 
 function RenameDialog({ name, onRename, onCancel }) {
@@ -41,14 +41,12 @@ function RenameDialog({ name, onRename, onCancel }) {
 <ConfirmDialog
   confirmLabel="Move to Trash"
   icon={Trash2}
-  message={
-    <>
-      Move <strong>notes.txt</strong> from ~/Downloads to the Trash?
-    </>
-  }
+  itemIcon={File}
+  items={[{ name: 'notes.txt', detail: '~/Downloads' }]}
+  message="This moves 1 file to the Trash. You can put it back from there."
   onCancel={close}
   onConfirm={trash}
-  title="Move to Trash"
+  title="Move to Trash?"
 />;
 ```
 
@@ -190,25 +188,26 @@ A held key runs its slot once. A key the browser-key guard cancelled still reach
 
 ## `ConfirmDialog` (`ConfirmDialogProps`)
 
-| Prop           | Type                                 | Default        | Meaning                                                                                                                                                       |
-| -------------- | ------------------------------------ | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `title`        | `string`                             |                | What will happen, at most five words, one line                                                                                                                |
-| `message`      | `ReactNode?`                         |                | One short sentence of consequence; a name in `<strong>` reads in the text colour. Leave it out (or `''`) when the title says all: no empty paragraph is drawn |
-| `confirmLabel` | `string`                             |                | The primary's verb                                                                                                                                            |
-| `cancelLabel`  | `string`                             | labels         | The leave verb; `dialog.cancel` unless given                                                                                                                  |
-| `icon`         | `LucideIcon`                         |                | The action's icon                                                                                                                                             |
-| `tone`         | `'danger' \| 'warning' \| 'primary'` | `'danger'`     | `warning` for a safe yes that still ends work; `primary` for a plain grant                                                                                    |
-| `items`        | `readonly DialogItem[]`              |                | The things the action acts on: name, optional detail, optional glyph (`DialogItems`)                                                                          |
-| `itemIcon`     | `LucideIcon`                         |                | The kind's glyph on every item row that names no other                                                                                                        |
-| `itemCount`    | `number`                             | `items.length` | The total, when `items` holds only the first few                                                                                                              |
-| `groups`       | `readonly DialogItemGroup[]`         | `[]`           | Labelled lists for several kinds of things (a quit's processes and terminals)                                                                                 |
-| `facts`        | `readonly DialogFact[]`              | `[]`           | Facts about the action, never the things it acts on (`DialogFacts`), under the items                                                                          |
-| `paths`        | `readonly string[]`                  |                | Deprecated: drawn as `items`, the last part the name and its folder the detail                                                                                |
-| `children`     | `ReactNode`                          |                | A choice drawn under the message; the caller holds its state                                                                                                  |
-| `className`    | `string`                             |                | Extra class on the box                                                                                                                                        |
-| `forGood`      | `boolean`                            | `false`        | A delete that cannot be undone                                                                                                                                |
-| `onConfirm`    | `() => void`                         |                | The primary                                                                                                                                                   |
-| `onCancel`     | `() => void`                         |                | Escape, the leave slot, a press outside                                                                                                                       |
+| Prop           | Type                                          | Default        | Meaning                                                                                                                                                       |
+| -------------- | --------------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`        | `string`                                      |                | What will happen, at most five words, one line                                                                                                                |
+| `message`      | `ReactNode?`                                  |                | One short sentence of consequence; a name in `<strong>` reads in the text colour. Leave it out (or `''`) when the title says all: no empty paragraph is drawn |
+| `confirmLabel` | `string`                                      |                | The primary's verb                                                                                                                                            |
+| `cancelLabel`  | `string`                                      | labels         | The leave verb; `dialog.cancel` unless given                                                                                                                  |
+| `icon`         | `LucideIcon`                                  |                | The action's icon                                                                                                                                             |
+| `tone`         | `'danger' \| 'warning' \| 'primary'`          | `'danger'`     | `warning` for a safe yes that still ends work; `primary` for a plain grant                                                                                    |
+| `items`        | `readonly DialogItem[]`                       |                | The things the action acts on: name, optional detail, optional glyph (`DialogItems`)                                                                          |
+| `itemIcon`     | `LucideIcon`                                  |                | The kind's glyph on every item row that names no other                                                                                                        |
+| `itemCount`    | `number`                                      | `items.length` | The total, when `items` holds only the first few                                                                                                              |
+| `groups`       | `readonly DialogItemGroup[]`                  | `[]`           | Labelled lists for several kinds of things (a quit's processes and terminals)                                                                                 |
+| `statements`   | `{ label: string; lines: readonly string[] }` |                | Every statement the action runs (a batch of SQL), under its own label, after the items (`DialogStatements`); never sliced                                     |
+| `facts`        | `readonly DialogFact[]`                       | `[]`           | Facts about the action, never the things it acts on (`DialogFacts`), under the items                                                                          |
+| `paths`        | `readonly string[]`                           |                | Deprecated: drawn as `items`, the last part the name and its folder the detail                                                                                |
+| `children`     | `ReactNode`                                   |                | A choice drawn under the message; the caller holds its state                                                                                                  |
+| `className`    | `string`                                      |                | Extra class on the box                                                                                                                                        |
+| `forGood`      | `boolean`                                     | `false`        | A delete that cannot be undone                                                                                                                                |
+| `onConfirm`    | `() => void`                                  |                | The primary                                                                                                                                                   |
+| `onCancel`     | `() => void`                                  |                | Escape, the leave slot, a press outside                                                                                                                       |
 
 The dialog's description reads the lead, then the count (`dialog.itemCount`, for screen readers only), then the names, so a screen reader reads what will happen and to what with the title. Without a lead or items the facts list is the description; with none of them, the dialog has none, never an `aria-describedby` that points at nothing. The frame carries the type and box sizing, so it renders the same portalled to the body.
 
@@ -223,10 +222,14 @@ Every confirmation has the same four parts, in this order, whether it acts on on
 
 1. **The title** names the action and the kind of thing, in Title Case, at most five words, with no count and no name: "Delete Server?", "Delete Servers?", "Move to Trash?", "Quit?".
 2. **The lead** (`message`) is one sentence that says what will happen and to how many things, and, where it matters, one more that says what will not happen or cannot be undone: "This removes 3 servers from the list. Their databases stay where they are."
-3. **The items** (`items`, with `itemIcon`) are the things the action acts on, always as one framed list, one row each: the kind's glyph, the name in monospace, and one dim detail at the row's end where the kind has one (a host, a file's folder, a size). One item is a list of one row. Up to five items show in full; more show the first five and a last row "+N more" (`dialog.moreItems`), since the lead carries the total. A name wraps (up to three lines, breaking after `/`, `_`, `.`, `:`, or `@` where it can) before it is cut, and one still cut shows its whole text in a tooltip. A dialog that names several kinds of things passes `groups`: each group's short label and count stand above the same list.
+3. **The items** (`items`, with `itemIcon`) are the things the action acts on, always as one framed list, one row each: the kind's glyph, the name in monospace, and one dim detail at the row's end where the kind has one (a host, a file's folder, a size). One item is a list of one row. Up to five items show in full; more show the first five and a last row "+N more" (`dialog.moreItems`), since the lead carries the total. A name wraps (up to three lines, breaking after `/`, `_`, `.`, `:`, or `@` where it can) before it is cut at its end, and one still cut shows its whole text in a tooltip. The name and the detail share the row by what they hold, with no fixed share: a short detail (a host) stays on one line while the row has room for it, and a long one takes the width the name leaves. A detail still too long for three lines is cut at its start, so a folder keeps its nearest, distinguishing folders (`…/production/terraform`, not `~/projects/infra…`); its first shown line begins with an ellipsis, and its whole text is a tooltip. A dialog that names several kinds of things passes `groups`: each group's short label and count stand above the same list.
 4. **The buttons**: Cancel on Escape at the start, the action at the end, named by its verb, red when it destroys.
 
-A confirmation with items is the medium width (480px) whatever their number, and its height comes from its content: the list never draws more than six rows, so it never scrolls.
+A confirmation with items or statements is the medium width (480px) whatever their number, and its height comes from its content: the item list never draws more than six rows, so it never scrolls.
+
+#### Statements
+
+A confirmation that runs statements (a batch of SQL) shows every one of them, so nothing runs that the user could not read first. Pass them whole as `statements={{ label: 'SQL', lines }}`: the label (the app's own word) and the count stand above a framed block in the code face, one statement per line, each wrapping whole under a two-character hanging indent. Past about eight lines the block scrolls on its own, with the scroll fade at the edge that has more; it is never sliced and never ends in "+N more". The block is a region named by its label and a Tab stop, so the arrow keys, Page Up and Page Down, Home, and End scroll it, and a screen reader reads it as a list of every statement. The lead still says how many statements run and where; do not invent the things they touch as items when the dialog does not know them.
 
 #### Item or fact?
 
@@ -273,7 +276,7 @@ import { Cog, Power, SquareTerminal } from 'lucide-react';
 
 Pass every item; the dialog draws the first five. A host that holds only the first few passes the total as `itemCount` (or a group's `count`).
 
-## `DialogItems` (`DialogItemsProps`) and `DialogFacts` (`DialogFactsProps`)
+## `DialogItems` (`DialogItemsProps`), `DialogStatements` (`DialogStatementsProps`), and `DialogFacts` (`DialogFactsProps`)
 
 The lists `ConfirmDialog` draws, for any other dialog body (an alert or a form on `ModalDialog`).
 
@@ -290,6 +293,8 @@ The lists `ConfirmDialog` draws, for any other dialog body (an alert or a form o
 A `DialogItem` is `{ name: string; detail?: string; icon?: LucideIcon }`; a `DialogItemGroup` is `{ label: string; items: readonly DialogItem[]; icon?: LucideIcon; count?: number }`. `shownItems(available, count)` returns how many rows a list draws and how many "+N more" counts; `DIALOG_ITEMS_SHOWN` is five.
 
 A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode; more?: number }`; the host formats the count. A string value carries its whole text in a tooltip while it is cut; a node value passes its own `cutTooltip`.
+
+`DialogStatements` (`label`, `lines`, `id`) is the block `statements` draws, for any other dialog body.
 
 `DialogNames` (`names`, `id`) is deprecated: it draws its names as `DialogItems` without glyphs or details. Pass items instead.
 
