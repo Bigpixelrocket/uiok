@@ -380,7 +380,12 @@ meter::-webkit-meter-even-less-good-value {
    shows the hover look. Only a control that can act takes them: a button,
    a link, or a role a control has, not disabled, and not the chosen item
    (the selected tab, the checked segment, the current page), which a
-   press would not change.
+   press would not change. A control whose pop-up is up (aria-expanded
+   with aria-haspopup: a menu or listbox trigger, or an expanded crumb,
+   which only ever opens its menu) keeps its hovered face while the pop-up
+   is open. A fold or disclosure that is open is not
+   holding anything up; its glyph says it is open, so it keeps its rest
+   face.
 
    - Quiet control (an outlined-on-hover action, a crumb, a
      strip's action): the frosted wash
@@ -480,7 +485,10 @@ meter::-webkit-meter-even-less-good-value {
       [aria-pressed='true'],
       [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
     )
-  ):is(:hover, [aria-expanded='true']) {
+  ):is(
+    :hover,
+    [aria-expanded='true']:where([aria-haspopup]:not([aria-haspopup='false']), .crumb-label)
+  ) {
   box-shadow: var(--hover-frost);
   background: var(--hover-wash);
   color: var(--text);
@@ -503,7 +511,10 @@ meter::-webkit-meter-even-less-good-value {
       [aria-pressed='true'],
       [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
     )
-  ):is(:hover, [aria-expanded='true']) {
+  ):is(
+    :hover,
+    [aria-expanded='true']:where([aria-haspopup]:not([aria-haspopup='false']), .crumb-label)
+  ) {
   background: var(--hover-wash);
   color: var(--text);
 }

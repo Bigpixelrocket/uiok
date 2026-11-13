@@ -761,6 +761,9 @@ const PAIRINGS = [
   // State marks on every row state (an idle or busy ring, a status dot's
   // ring, a glyph on the other pane's cursor): the row's edge hook
   // (--control-border-strong, above) or --text-on-surface, both at 3:1.
+  // The busy ring and spinner on a quiet mark or a quiet selection take
+  // --text-on-surface on the neutral fill ('the inactive cursor' is that
+  // fill over a listing), where the accent misses 3:1 in some themes.
   ...pairs('var(--text-on-surface)', 3, [
     'the cursor row',
     'the inactive cursor',

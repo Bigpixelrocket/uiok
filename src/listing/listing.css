@@ -671,11 +671,14 @@ button.crumb-label > .crumb-text {
 }
 
 /* On a row that wears a state fill (the cursor, a mark, the pointer's row
-   hover, a quiet selection), an action under the pointer or held keeps the
-   row's own fill under its words: the tones are floored on that fill, and
-   the translucent wash over it would make a ground nothing is floored on.
-   The frosted ring (hover) and the pressed hairline and shadow (press)
-   still say it answers. */
+   hover, a quiet selection), an action under the pointer, held, or holding
+   its pop-up open keeps the row's own fill under its words: the tones are
+   floored on that fill, and the translucent wash over it would make a
+   ground nothing is floored on. The frosted ring (hover) and the pressed
+   hairline and shadow (press) still say it answers. Every control the
+   base sheet's hover and press recipes wash is listed, the classes a host
+   joins them by (.quiet-control, .toggle-chip, .quiet-track-item)
+   included; a test holds this list to the recipes'. */
 :where(.listing-root)
   :is(
     .row:is(.cursor, .marked):where(:not(.selected)),
@@ -686,7 +689,32 @@ button.crumb-label > .crumb-text {
       )
       .row.selected
   )
-  :is(.pane-act, .pane-icon-act):is(:hover, :active):enabled {
+  :is(
+    .pager-step,
+    .legend-slot,
+    .keylegend-verbs button,
+    .pane-act,
+    .pane-icon-act,
+    .path-star,
+    .page-tab,
+    .segmented-choice-option,
+    .date-picker-day,
+    .crumb-label,
+    .pane-sort.sortable,
+    .pane-strip-link,
+    .data-grid-sort,
+    .palette-level,
+    .disclosure,
+    .settings-sidebar-page,
+    .settings-sidebar-subsection,
+    .quiet-control,
+    .quiet-track-item,
+    .toggle-chip
+  ):is(
+    :hover,
+    :active,
+    [aria-expanded='true']:where([aria-haspopup]:not([aria-haspopup='false']), .crumb-label)
+  ):enabled {
   background: transparent;
 }
 
@@ -1406,7 +1434,9 @@ button.crumb-label > .crumb-text {
    it. It takes the base sheet's shared quiet hover (the frosted box) and
    press. Its edge stands on the column's right edge. Its hit area grows to
    --hit-target in the block axis. Its look is its own class's, so it draws
-   the same outside a strip. */
+   the same outside a strip. Its values are the 20px Button's (.button-xs
+   in button.css), so the library has one 20px push button look; a test
+   holds the two rules equal. */
 .pane-strip-link {
   position: relative;
   display: inline-flex;
@@ -1434,6 +1464,45 @@ button.crumb-label > .crumb-text {
 
 .pane-strip-link:focus-visible {
   outline-offset: var(--focus-offset-flush);
+}
+
+/* Inside a column strip a 20px push button would fill the strip's inside
+   (22px less its rule, less again under a rule above), so its bezel would
+   rest on the strip's rules. There it takes its height from the strip: in
+   the strip's control cell it fills the cell's inside, which keeps
+   --space-1 above and below it, so 2px of strip stand between the bezel
+   and each rule whether the strip carries one rule (17px) or two (16px).
+   Anywhere else in a strip it is the strip less its rule and those two
+   clearances. Its hit area still reaches --hit-target. The strip is
+   pinned at the top of a scroller that clips, so its focus ring is drawn
+   inside. */
+:where(.listing-root) .pane-columns :is(.pane-strip-link, .button-xs) {
+  height: calc(var(--pane-columns-height) - var(--line) - 2 * var(--space-1));
+}
+
+/* A strip that follows a listing carries a rule above it inside its own
+   height, one line less room: there the button is one line shorter, so
+   it still stands 2px clear of both rules. */
+:where(.listing-root)
+  :is(.pane-listing, .pane-message)
+  + .pane-listing
+  > .pane-columns
+  :is(.pane-strip-link, .button-xs) {
+  height: calc(var(--pane-columns-height) - 2 * var(--line) - 2 * var(--space-1));
+}
+
+:where(.listing-root) .pane-columns > .pane-col-control {
+  box-sizing: border-box;
+  align-items: stretch;
+  padding-block: var(--space-1);
+}
+
+:where(.listing-root) .pane-columns > .pane-col-control > :is(.pane-strip-link, .button-xs) {
+  height: auto;
+}
+
+:where(.listing-root) .pane-columns :is(.pane-strip-link, .button-xs):focus-visible {
+  outline-offset: var(--focus-offset-inset);
 }
 
 /* A strip action that is on (aria-pressed="true") draws one ring: its
@@ -1640,14 +1709,17 @@ button.crumb-label > .crumb-text {
   color: var(--accent);
 }
 
-/* On a quiet cursor or marked row (no accent there), the busy ring and
-   spinner take the on-surface words' tone, as the row's actions do: the
-   accent misses 3:1 on that fill in several themes. */
+/* On a quiet row that wears the neutral fill (a quiet mark or a quiet
+   selection), the busy ring and spinner take the on-surface words' tone,
+   as the row's actions do: the accent misses 3:1 on that fill in several
+   themes, and --text-on-surface is floored on it. A quiet cursor alone
+   has no fill (only its frame), so its marks keep their own tones on the
+   list. */
 :where(
     :root[data-window-inactive] .listing-root,
     .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
   )
-  .row:is(.cursor, .marked):where(:not(.selected))
+  .row:is(.marked, .selected)
   .pane-tone-busy
   > .pane-state-dot {
   box-shadow: inset 0 0 0 var(--line-strong) var(--text-on-surface);
@@ -1657,7 +1729,7 @@ button.crumb-label > .crumb-text {
     :root[data-window-inactive] .listing-root,
     .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
   )
-  .row:is(.cursor, .marked):where(:not(.selected))
+  .row:is(.marked, .selected)
   .pane-state
   > svg.pane-state-busy {
   color: var(--text-on-surface);

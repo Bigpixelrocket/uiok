@@ -11,6 +11,7 @@ import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 <Button variant="primary" onClick={save}>Save</Button>
 <Button size="small" variant="tonal">Install</Button>
+<Button size="xs">Retry</Button>
 <Button variant="danger" onClick={remove}>Delete</Button>
 <IconButton aria-label="Refresh" {...tooltip('Refresh', { key: 'r', meta: true })}>
   <RefreshCw size={ICON_MD} />
@@ -24,7 +25,7 @@ import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 | Prop      | Type                                            | Default     | Meaning                                                                                                                                                    |
 | --------- | ----------------------------------------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `variant` | `'primary' \| 'tonal' \| 'danger' \| 'neutral'` | `'neutral'` | `primary` for a view's one main action, `tonal` for a row's routine positive action, `danger` for a button that destroys something, `neutral` for the rest |
-| `size`    | `'regular' \| 'small'`                          | `'regular'` | 28px or 24px tall                                                                                                                                          |
+| `size`    | `'regular' \| 'small' \| 'xs'`                  | `'regular'` | 28px, 24px, or 20px tall (`xs`: a push button inside a row or a strip; see Behaviour)                                                                      |
 | `type`    | button type                                     | `'button'`  | Pass `'submit'` explicitly to submit a form                                                                                                                |
 | `ref`     | `Ref<HTMLButtonElement>`                        |             |                                                                                                                                                            |
 
@@ -38,16 +39,17 @@ import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 - A danger button is outlined, never filled: a `--danger` outline and `--danger-text` label and glyph on the panel. Hover lays `--danger-wash` with `--hover-frost`; a press takes `--danger-wash-strong`. Use it for every destructive button (Delete, Remove) and for nothing else; a confirmation's destructive verb stays the red lit slot of its dialog's key legend.
 - Hover moves a fill to its hover token (`--primary-hover`, `--tonal-hover`) under `--hover-lit`, and lays `--hover-wash` with `--hover-frost` on an outline. A press sinks the face under `--shadow-pressed`: a fill steps one tone past hover (`--primary-pressed`, `--tonal-pressed`), an outline takes `--pressed-wash`, so pressed never looks like hovered or like rest. Every change eases with `--transition-control`.
 - Disabled or `aria-disabled="true"` buttons get no hover or press. A disabled primary, tonal, or danger button drops its fill or red outline and is drawn as a disabled neutral one, faded to `--disabled-opacity` like every disabled control, so its label stays readable in every theme.
-- A glyph inside takes the button's icon size whatever its `size` prop says: 14px (`--icon-md`) in a regular button, 12px (`--icon-sm`) in a small one.
-- Keyboard focus draws a 2px `--accent` ring outside the button.
+- A glyph inside takes the button's icon size whatever its `size` prop says: 14px (`--icon-md`) in a regular button, 12px (`--icon-sm`) in a small or `xs` one.
+- `size="xs"` is the 20px push button for a place where 24px would touch the rules, such as a row of a list or a panel strip: `--control-height-xs` high, `--space-3` padding, the 4px corner (`--radius-sm`) every 20px control has, and `--font-size-small` words. Its pointer target grows to `--hit-target` (24px) in the block axis through its own `::after`, so it needs no `hit-target` class and buttons side by side keep their own targets. Do not shrink a small Button by height in a host rule; use this size.
+- Keyboard focus draws a 2px `--accent` ring outside the button. Inside a scroller that clips (a list whose first or last row holds the button), the host sets `outline-offset: var(--focus-offset-inset)` on `:focus-visible`, as the library does for its own controls in scrollers.
 
 ## Styling
 
-`.button`, `.button-primary`, `.button-tonal`, `.button-danger`, `.button-neutral`, `.button-small`, `.icon-button`, `.icon-button-small`.
+`.button`, `.button-primary`, `.button-tonal`, `.button-danger`, `.button-neutral`, `.button-small`, `.button-xs`, `.icon-button`, `.icon-button-small`.
 
 A toggle (a mode, a filter, a reading of a field) is not a Button: put the base sheet's `toggle-chip` class on a plain `button` with `aria-pressed`, `toggle-chip-sm` (24px) or `toggle-chip-xs` (20px, inside a row) for a smaller place. Off is borderless words in `--text-dim`, as a scope bar's item; hover and press are the quiet control's; on is the one look every `aria-pressed="true"` button wears. The host sets only the chip's place, never its faces, so every toggle chip in an app reads the same and follows the library ([surface](surface.md)).
 
-A section a user shows or hides (Extra options, Advanced options) is not a Button either: put `disclosure` on a plain `button` with `aria-expanded` and `aria-controls`. It draws a disclosure chevron (the icon family's `ChevronRight`, the glyph trees and folds use) and the label with no bezel: the chevron points to the label's end while closed and down while open, turning at once, and the words are dim at rest and in `--text` under the pointer, with the keyboard focus, and while open. While held it takes the shared press (`--pressed-wash` and `--press-frost`) on a face that reaches back over its padding, so the words keep their edge, and its focus ring follows `--radius-sm`. Several disclosures stack as plain lines, never as an accordion of push buttons.
+A section a user shows or hides (Extra options, Advanced options) is not a Button either: put `disclosure` on a plain `button` with `aria-expanded` and `aria-controls`. It draws a disclosure chevron (the icon family's `ChevronRight`, the glyph trees and folds use) and the label with no bezel: the chevron points to the label's end while closed and down while open, turning at once, and the words are dim at rest, open or closed (the chevron alone says open), and in `--text` under the pointer and with the keyboard focus, so an open disclosure answers the pointer as a closed one does. While held it takes the shared press (`--pressed-wash` and `--press-frost`) on a face that reaches back over its padding, so the words keep their edge, and its focus ring follows `--radius-sm`. Several disclosures stack as plain lines, never as an accordion of push buttons.
 
 ## Labels read
 

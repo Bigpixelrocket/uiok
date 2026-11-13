@@ -183,7 +183,7 @@ The confirmation shown before an app quits or restarts with work running is uiok
 
 ## Load failure
 
-`space-load-failure` on the line shown in place of content that failed to load, where that content would start: one line at the pane's content inset, the failure's glyph first (`CircleAlert`, drawn at `--icon-md` in `--danger` whatever size it is given), a `strong` headline in the text colour, a dim `p` with the reason, and a small button right after the words. When the line cannot hold both, the reason gives way first, down to a few characters and an ellipsis, and only then the headline; give each `cutTooltip` with its whole text. This is the one shape for a pane or space that could not load: a pane's failure uses the same markup. A failure that blocks the whole window is an alert dialog instead.
+`space-load-failure` on the line shown in place of content that failed to load, where that content would start: one line at the pane's content inset, the failure's glyph first (`CircleAlert`, drawn at `--icon-md` in `--danger` whatever size it is given), a `strong` headline in the text colour, a dim `p` with the reason, and a small button at the line's end. The line is a grid: when it cannot hold both, the reason gives way first, down to three characters and an ellipsis, while the headline stays whole to the pixel, and only then the headline; give each `cutTooltip` with its whole text. This is the one shape for a pane or space that could not load: a pane's failure uses the same markup. A failure that blocks the whole window is an alert dialog instead.
 
 ```tsx
 <div className="space-load-failure" role="alert">

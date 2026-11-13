@@ -9,8 +9,11 @@ import type { ButtonHTMLAttributes, ReactElement, Ref } from 'react';
  */
 export type ButtonVariant = 'primary' | 'tonal' | 'danger' | 'neutral';
 
-/** The two button heights: `regular` (28px) and `small` (24px). */
-export type ButtonSize = 'regular' | 'small';
+/**
+ * The button heights: `regular` (28px), `small` (24px), and `xs` (20px, for a
+ * push button inside a row or a strip, its pointer target grown to 24px).
+ */
+export type ButtonSize = 'regular' | 'small' | 'xs';
 
 /** Props for {@link Button}: every `<button>` attribute, plus its tier and size. */
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -35,7 +38,12 @@ export function Button({
   type = 'button',
   ...rest
 }: ButtonProps): ReactElement {
-  const classes = ['button', `button-${variant}`, size === 'small' ? 'button-small' : '', className]
+  const classes = [
+    'button',
+    `button-${variant}`,
+    size === 'regular' ? '' : `button-${size}`,
+    className
+  ]
     .filter(Boolean)
     .join(' ');
 

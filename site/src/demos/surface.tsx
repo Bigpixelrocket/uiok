@@ -17,7 +17,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { CircleAlert, CircleCheck, Info, Pin, TriangleAlert } from 'lucide-react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
+import { ICON_MD, ICON_SM, Spinner } from '@bigpixelrocket/uiok/icon';
 import { cutTooltip } from '@bigpixelrocket/uiok/tooltip';
 
 import { DemoState, DemoStates } from '../DemoStates';
@@ -98,7 +98,9 @@ export function SurfaceDemo() {
         <p className="notice-text">Changes apply to new windows.</p>
       </div>
       <div className="notice" role="status">
-        <span aria-hidden className="notice-glyph spinner" />
+        <span aria-hidden className="notice-glyph">
+          <Spinner size={ICON_MD} />
+        </span>
         <p className="notice-text">
           Checking the settings file… (<code>notice-glyph</code>: a glyph that is not an svg)
         </p>

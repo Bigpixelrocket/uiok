@@ -2,8 +2,9 @@
  * Every button tier (primary, tonal, danger, neutral) at the regular size and
  * then the small one, with one disabled button (every tier fades the same
  * way); icon buttons at both sizes, with one disabled; and buttons with an
- * icon beside their label. Icon buttons are named on hover. Last, a
- * disclosure: a triangle and a label that shows or hides a section.
+ * icon beside their label. Icon buttons are named on hover. Then a
+ * disclosure: a triangle and a label that shows or hides a section, and
+ * every tier at the 20px size a row or a strip takes.
  */
 
 import { Download, Plus, RefreshCw, Settings, Trash2 } from 'lucide-react';
@@ -97,6 +98,15 @@ export function ButtonDemo() {
           Rows per page, sort order, and the columns shown.
         </p>
       ) : null}
+      {/* The 20px size a row or a strip takes, below the others so the
+          rows above keep their place. */}
+      <div className="demo-row">
+        {TIERS.map(({ variant, word }) => (
+          <Button key={variant} onClick={press(`xs ${word}`)} size="xs" variant={variant}>
+            {word}
+          </Button>
+        ))}
+      </div>
       <code className="demo-readout">pressed: {pressed}</code>
     </div>
   );

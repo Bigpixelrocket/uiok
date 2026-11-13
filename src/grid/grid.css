@@ -274,17 +274,32 @@
   cursor: default;
 }
 
+/* The cursor cell's arrow is the icon family's (lucide ArrowRight at
+   --icon-sm, the size of the grid's other marks), drawn as a mask in the
+   on-surface tone, so its weight and shape never follow the cell's font.
+   The cell keeps room for it: the arrow, and --space-2 on either side.
+   Right to left it is mirrored, read from the dir attribute (minifiers
+   rewrite the direction pseudo-class into a list of languages). */
 .data-grid-cell.cursor:has(> .data-grid-link) {
   position: relative;
-  padding-inline-end: calc(var(--space-4) + 1ch);
+  padding-inline-end: calc(2 * var(--space-2) + var(--icon-sm));
 }
 
 .data-grid-cell.cursor:not(.editing) > .data-grid-link::after {
   position: absolute;
   inset-block: 0;
   inset-inline-end: var(--space-2);
-  color: var(--text-on-surface);
-  content: '→' / '';
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  margin-block: auto;
+  background: var(--text-on-surface);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M5 12h14'/%3E%3Cpath d='m12 5 7 7-7 7'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  content: '' / '';
+}
+
+.data-grid-cell.cursor:not(.editing):where([dir='rtl'] *, [dir='rtl']) > .data-grid-link::after {
+  transform: scaleX(-1);
 }
 
 .data-grid-cell.cell-binary .data-grid-link {
@@ -330,11 +345,38 @@
   color: var(--text-on-surface);
 }
 
-/* An action under the pointer or held on a hovered or marked row keeps the
-   row's fill under its words (floored there), not the wash over it; the
-   frosted ring and the pressed hairline still answer. */
+/* An action under the pointer, held, or holding its pop-up open on a
+   hovered or marked row keeps the row's fill under its words (floored
+   there), not the wash over it; the frosted ring and the pressed hairline
+   still answer. The list is every control the base sheet's recipes wash,
+   as in listing.css; a test holds it to the recipes'. */
 :is(.data-grid.pointer .data-grid-row:hover, .data-grid-row.marked)
-  :is(.pane-act, .pane-icon-act):is(:hover, :active):enabled {
+  :is(
+    .pager-step,
+    .legend-slot,
+    .keylegend-verbs button,
+    .pane-act,
+    .pane-icon-act,
+    .path-star,
+    .page-tab,
+    .segmented-choice-option,
+    .date-picker-day,
+    .crumb-label,
+    .pane-sort.sortable,
+    .pane-strip-link,
+    .data-grid-sort,
+    .palette-level,
+    .disclosure,
+    .settings-sidebar-page,
+    .settings-sidebar-subsection,
+    .quiet-control,
+    .quiet-track-item,
+    .toggle-chip
+  ):is(
+    :hover,
+    :active,
+    [aria-expanded='true']:where([aria-haspopup]:not([aria-haspopup='false']), .crumb-label)
+  ):enabled {
   background: transparent;
 }
 

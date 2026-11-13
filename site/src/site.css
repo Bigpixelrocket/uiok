@@ -1282,6 +1282,13 @@ a {
   background: var(--ground);
 }
 
+/* A short Updates column, so its What's new list has to give way. */
+.shell-demo-updates-short {
+  max-width: 420px;
+  height: 220px;
+  padding: var(--space-6);
+}
+
 /* A host's mark for a name by its kind (PathCell's nameClassName): a
    document a weight up, in the text colour. Never the accent, which in a row
    reads as a link. A selection paints its own words, so the rule leaves a

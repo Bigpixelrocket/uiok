@@ -46,6 +46,30 @@
   font-size: var(--font-size-small);
 }
 
+/* The 20px push button, for a row or a strip where 24px would touch the
+   rules: the 4px corner every 20px control has, caption words at medium
+   weight, and the tighter glyph gap. These are the strip action's values
+   (.pane-strip-link in listing.css), so the library has one 20px push
+   button look; a test holds the two rules equal. Its pointer target grows
+   to --hit-target in the block axis only, so buttons side by side keep
+   their own targets; the default focus ring stays. */
+.button-xs {
+  position: relative;
+  gap: var(--space-2);
+  height: var(--control-height-xs);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+}
+
+.button-xs::after {
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
+  inset-inline: 0;
+  content: '';
+}
+
 .icon-button {
   width: var(--control-height);
   padding: 0;
@@ -58,14 +82,14 @@
 }
 
 /* A glyph takes the size of the control it sits in, whatever size its
-   caller passed: 14px in a regular control, 12px in a small one. */
+   caller passed: 14px in a regular control, 12px in a small or xs one. */
 :is(.button, .icon-button) > svg {
   flex: none;
   width: var(--icon-md);
   height: var(--icon-md);
 }
 
-:is(.button-small, .icon-button-small) > svg {
+:is(.button-small, .button-xs, .icon-button-small) > svg {
   width: var(--icon-sm);
   height: var(--icon-sm);
 }
@@ -191,8 +215,9 @@
    never a bezelled push button. On a native button with aria-expanded;
    the chevron is the icon family's (lucide ChevronRight, the glyph trees
    and folds use), pointing to the label's end while closed and down while
-   open, and turns at once. At rest the words are dim; under the pointer,
-   with the keyboard focus, and while open they are in the text colour.
+   open, and turns at once. At rest the words are dim, open or closed (the
+   chevron alone says open); under the pointer and with the keyboard focus
+   they are in the text colour, open or closed.
    While held it takes the base sheet's shared press (the pressed wash and
    hairline) on a face that reaches back over its own padding, so the words
    keep their edge; the same corner rounds the base sheet's focus ring. */
@@ -223,7 +248,9 @@
   content: '';
 }
 
-.disclosure:dir(rtl)::before {
+/* Mirrored right to left, read from the dir attribute (minifiers rewrite
+   the direction pseudo-class into a list of languages). */
+.disclosure:where([dir='rtl'] *, [dir='rtl'])::before {
   transform: scaleX(-1);
 }
 
@@ -231,6 +258,6 @@
   transform: rotate(90deg);
 }
 
-.disclosure:is(:hover, :focus-visible, [aria-expanded='true']):not(:disabled) {
+.disclosure:is(:hover, :focus-visible):not(:disabled) {
   color: var(--text);
 }

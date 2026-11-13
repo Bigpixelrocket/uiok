@@ -168,7 +168,10 @@
   --field-tone-bar: var(--line-strong);
 }
 
-.field[data-tone]:dir(rtl) {
+/* Right to left the bar stands on the right, the leading edge. The rule
+   reads the dir attribute, as the listing's do: bundlers' CSS minifiers
+   rewrite the direction pseudo-class into a list of languages. */
+.field[data-tone]:where([dir='rtl'] *, [dir='rtl']) {
   --field-tone-bar: calc(-1 * var(--line-strong));
 }
 

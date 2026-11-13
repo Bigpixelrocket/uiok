@@ -39,6 +39,23 @@ describe('Button', () => {
       'button button-tonal button-small wide'
     );
   });
+
+  it('draws the 20px size with the 20px corner, a 12px glyph, and a 24px pointer target', () => {
+    render(<Button size="xs">Retry</Button>);
+
+    expect(screen.getByRole('button', { name: 'Retry' }).className).toBe(
+      'button button-neutral button-xs'
+    );
+    const styles = readStylesheet('src/button/button.css');
+    const rule = /\.button-xs \{([^}]*)\}/.exec(styles)?.[1] ?? '';
+    expect(rule).toContain('height: var(--control-height-xs);');
+    expect(rule).toContain('border-radius: var(--radius-sm);');
+    expect(rule).toContain('position: relative;');
+    expect(styles).toMatch(
+      /\.button-xs::after \{[^}]*inset-block: min\(0px, calc\(\(100% - var\(--hit-target\)\) \/ 2\)\);/
+    );
+    expect(styles).toMatch(/:is\([^)]*\.button-xs[^)]*\) > svg \{\s*width: var\(--icon-sm\);/);
+  });
 });
 
 describe('the danger and pressed looks', () => {

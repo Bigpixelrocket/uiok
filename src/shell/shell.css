@@ -680,17 +680,30 @@
   min-height: 0;
 }
 
+/* The status row. Its words may take two lines (a long state or a long
+   language), so the glyph hangs on the first line, centred on a
+   one-line row's height, and the verb stays centred on the row. The
+   words take the row's padding, so a one-line row is 24px with its glyph
+   centred, and a wrapped one keeps that room under its last line. The
+   row never shrinks: under a long What's New list only the list gives
+   way, so the wrapped words never run into the row below. */
 .update-card-head {
   display: grid;
+  flex: none;
   grid-template-columns: var(--icon-md) minmax(0, 1fr) auto;
-  align-items: center;
+  align-items: start;
   column-gap: var(--space-4);
   min-height: var(--control-height-sm);
+}
+
+.update-card-head > :not(.update-card-glyph, .update-card-said) {
+  align-self: center;
 }
 
 .update-card-glyph {
   width: var(--icon-md);
   height: var(--icon-md);
+  margin-top: calc((var(--control-height-sm) - var(--icon-md)) / 2);
   color: var(--text-dim);
 }
 
@@ -717,6 +730,7 @@
   align-items: baseline;
   gap: 0 var(--space-4);
   min-width: 0;
+  padding-block: calc((var(--control-height-sm) - var(--line-height-compact)) / 2);
 }
 
 /* The state, in the text colour in every tone: the glyph carries the tone,
@@ -756,6 +770,14 @@
 .update-card .run-header-headline {
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-regular);
+  line-height: var(--line-height-compact);
+}
+
+/* A figure at the end of that line (a clock) is set on the same line: the
+   status line's size and line height, so the two share one baseline. It
+   keeps its monospace, tabular numerals, and strong weight. */
+.update-card .run-header-figure {
+  font-size: var(--font-size-small);
   line-height: var(--line-height-compact);
 }
 
@@ -1058,15 +1080,16 @@
    load, said where that content would start, as a status line: one line
    at the pane's content inset, the failure's glyph in the danger tone, the
    headline in the text colour, the reason after it in the dim tone, and a
-   small button (Try Again) right after the words. The headline and the
+   small button (Try Again) at the line's end. The headline and the
    reason end in an ellipsis when the line cannot hold them; the host puts
    their whole text in a tooltip (cutTooltip). A failure that blocks the
    whole window is an alert dialog instead. */
 .space-load-failure {
-  display: flex;
+  display: grid;
   flex: none;
+  grid-template-columns: auto minmax(0, max-content) minmax(3ch, 1fr) auto;
   align-items: center;
-  gap: var(--space-3);
+  column-gap: var(--space-3);
   min-width: 0;
   padding: var(--space-4) var(--space-6);
   color: var(--text);
@@ -1082,7 +1105,6 @@
 }
 
 .space-load-failure :is(strong, p) {
-  flex: 0 1 auto;
   min-width: 0;
   margin: 0;
   overflow: hidden;
@@ -1098,11 +1120,12 @@
 
 /* Short of room, the reason gives way first: it shrinks down to a few
    characters and an ellipsis while the headline, what failed, stays whole;
-   only then does the headline shrink. The headline's tiny shrink factor
-   leaves the room to the reason until the reason sits at its floor, where
-   flex layout freezes it and hands the rest to the headline. */
+   only then does the headline shrink. The grid does this exactly: the
+   headline's column takes its whole width before the reason's flexible
+   column gets any, and the reason's column stops at 3ch. (A flex row with
+   a tiny shrink factor still cut the headline by a fraction of a pixel,
+   enough for its ellipsis to show.) */
 .space-load-failure strong {
-  flex-shrink: 0.001;
   font-weight: var(--font-weight-medium);
 }
 
@@ -1112,6 +1135,5 @@
 }
 
 .space-load-failure > :is(button, .button) {
-  flex: none;
   margin-inline-start: var(--space-2);
 }

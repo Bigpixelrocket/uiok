@@ -54,7 +54,63 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
     };
 
     expect(size('.run-header-glyph')).toEqual(size('.update-card-glyph'));
+    // A figure on the card's status line shares its size and baseline.
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<div class="update-card"><div class="run-header"><span class="run-header-headline">About 9 seconds left</span><span class="run-header-figure">0:09</span></div></div>`
+    );
+    const line = (selector: string, property: string) =>
+      declaredValues(document.querySelectorAll(selector)[0] as Element, property).at(-1);
+    for (const property of ['font-size', 'line-height']) {
+      expect(line('.run-header-figure', property), property).toBe(
+        line('.run-header-headline', property)
+      );
+    }
     expect(size('.update-card-glyph')).toEqual(['var(--icon-md)', 'var(--icon-md)']);
+    document.body.innerHTML = '';
+  });
+
+  it("hangs the Updates card's glyph on the first line and never shrinks its status row", () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="update-card with-notes">
+      <div class="update-card-head"><svg class="update-card-glyph"></svg>
+        <div class="update-card-said"></div><button class="button">Restart</button></div>
+    </div>`;
+    const head = document.querySelector('.update-card-head') as Element;
+    const half = (size: string) => `calc((var(--control-height-sm) - ${size}) / 2)`;
+
+    // Only the notes give way when the column is short.
+    // jsdom writes `flex: none` out as its longhands.
+    expect(declaredValues(head, 'flex').at(-1)).toMatch(/^(?:none|0 0 auto)$/);
+    expect(declaredValues(head, 'align-items').at(-1)).toBe('start');
+    expect(
+      declaredValues(document.querySelector('.update-card-glyph') as Element, 'margin-top').at(-1)
+    ).toBe(half('var(--icon-md)'));
+    expect(
+      declaredValues(document.querySelector('.update-card-said') as Element, 'padding-block').at(-1)
+    ).toBe(half('var(--line-height-compact)'));
+    expect(
+      declaredValues(
+        document.querySelector('.update-card-head > button') as Element,
+        'align-self'
+      ).at(-1)
+    ).toBe('center');
+    document.body.innerHTML = '';
+  });
+
+  it("gives a load failure's headline its whole width before the reason gets any", () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="space-load-failure"><svg></svg>
+      <strong>The list could not be loaded</strong><p>permission denied</p><button>Try Again</button></div>`;
+    const line = document.querySelector('.space-load-failure') as Element;
+
+    // A grid, not a flex row: a flex row with a tiny shrink factor still cut
+    // the headline by a fraction of a pixel, enough to draw its ellipsis.
+    expect(declaredValues(line, 'display').at(-1)).toBe('grid');
+    expect(declaredValues(line, 'grid-template-columns').at(-1)).toBe(
+      'auto minmax(0, max-content) minmax(3ch, 1fr) auto'
+    );
+    expect(declaredValues(document.querySelector('strong') as Element, 'flex-shrink')).toEqual([]);
     document.body.innerHTML = '';
   });
 
@@ -432,6 +488,186 @@ describe('pointer states of the shared recipes and form controls', () => {
     expect(getComputedStyle(plain as Element).color).toBe('var(--text)');
     expect(declaredValues(danger as Element, 'border-color').at(-1)).toBe('var(--danger)');
     expect(getComputedStyle(danger as Element).color).toBe('var(--danger-text)');
+    document.body.innerHTML = '';
+  });
+
+  it('sizes a 20px push button in a column strip from the strip, its ring inside', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="listing-root"><div class="pane-listing">
+      <div class="pane-columns pane-strip"><span class="row-meta">
+        <button class="pane-strip-link">Update all</button>
+        <button class="button button-neutral button-xs">Clear</button>
+      </span></div></div>
+      <button class="pane-strip-link">Outside</button></div>`;
+    const [strip, button, outside] = [...document.querySelectorAll('button')];
+    const fromStrip = 'calc(var(--pane-columns-height) - var(--line) - 2 * var(--space-1))';
+
+    // Outside the strip's control cell (which stretches it, below): the
+    // strip less its rule and 2px at each end, 17px in a 22px strip.
+    expect(declaredValues(strip as Element, 'height').at(-1)).toBe(fromStrip);
+    expect(declaredValues(button as Element, 'height').at(-1)).toBe(fromStrip);
+    expect(declaredValues(outside as Element, 'height').at(-1)).toBe('var(--control-height-xs)');
+    // A strip after a listing holds its upper rule inside its height too.
+    document.body.insertAdjacentHTML(
+      'beforeend',
+      `<div class="listing-root"><div class="pane-listing"></div><div class="pane-listing">
+        <div class="pane-columns"><span class="row-meta"><button class="pane-strip-link">Clear</button></span></div>
+      </div></div>`
+    );
+    expect(declaredValues(document.querySelectorAll('button')[3] as Element, 'height').at(-1)).toBe(
+      'calc(var(--pane-columns-height) - 2 * var(--line) - 2 * var(--space-1))'
+    );
+    // Pinned at the top of a scroller that clips, so the ring is drawn inside.
+    for (const element of [strip, button]) {
+      (element as HTMLElement).focus();
+      expect(declaredValues(element as Element, 'outline-offset')).toContain(
+        'var(--focus-offset-inset)'
+      );
+    }
+    (outside as HTMLElement).focus();
+    expect(declaredValues(outside as Element, 'outline-offset')).not.toContain(
+      'var(--focus-offset-inset)'
+    );
+    document.body.innerHTML = '';
+  });
+
+  it('tones a quiet busy ring by the row fill, not by the cursor', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane active"></div>
+      <div class="pane"><div class="pane-list">
+        <div class="row cursor"><span class="pane-state pane-tone-busy"><span class="pane-state-dot"></span></span></div>
+        <div class="row selected"><span class="pane-state pane-tone-busy"><span class="pane-state-dot"></span></span></div>
+        <div class="row marked cursor"><span class="pane-state pane-tone-busy"><span class="pane-state-dot"></span></span></div>
+      </div></div></section>`;
+    const [cursor, selected, marked] = [...document.querySelectorAll('.pane-state-dot')];
+    const onSurface = 'inset 0 0 0 var(--line-strong) var(--text-on-surface)';
+
+    // A quiet cursor has a frame and no fill: its ring keeps the accent on the list.
+    expect(declaredValues(cursor as Element, 'box-shadow').at(-1)).toBe(
+      'inset 0 0 0 var(--line-strong) var(--accent)'
+    );
+    // A quiet selection and a quiet mark wear the neutral fill.
+    expect(declaredValues(selected as Element, 'box-shadow').at(-1)).toBe(onSurface);
+    expect(declaredValues(marked as Element, 'box-shadow').at(-1)).toBe(onSurface);
+    document.body.innerHTML = '';
+  });
+
+  it('says an open disclosure is open by its chevron alone, so it answers the pointer', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<button class="disclosure" aria-expanded="true">Less</button>`;
+    const open = document.querySelector('button') as HTMLButtonElement;
+
+    // At rest an open disclosure keeps the dim words a closed one has.
+    expect(getComputedStyle(open).color).toBe('var(--text-dim)');
+    const hover = readStylesheet('src/button/button.css').match(
+      /\.disclosure:is\(([^)]*)\):not\(:disabled\) \{\s*color: var\(--text\);/
+    );
+    expect(hover?.[1]).toBe(':hover, :focus-visible');
+    document.body.innerHTML = '';
+  });
+
+  it("keeps a strip's control 2px clear of the strip's rules, never filling the strip", () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="listing-root"><div class="pane-listing">
+      <div class="pane-columns pane-strip"><span class="row-meta pane-col-control">
+        <button class="pane-strip-link">Update all</button></span></div></div></div>`;
+    const cell = document.querySelector('.pane-col-control') as Element;
+
+    expect(declaredValues(cell, 'padding-block').at(-1)).toBe('var(--space-1)');
+    expect(declaredValues(cell, 'align-items').at(-1)).toBe('stretch');
+    expect(declaredValues(document.querySelector('button') as Element, 'height').at(-1)).toBe(
+      'auto'
+    );
+    document.body.innerHTML = '';
+  });
+
+  it('draws the 20px Button and the strip action from the same values', () => {
+    const block = (sheet: string, selector: string): string =>
+      new RegExp(`^${selector.replace('.', '\\.')} \\{([^}]*)\\}`, 'm').exec(
+        readStylesheet(sheet)
+      )?.[1] ?? '';
+    const button = block('src/button/button.css', '.button-xs');
+    const strip = block('src/listing/listing.css', '.pane-strip-link');
+
+    for (const declaration of [
+      'position: relative;',
+      'gap: var(--space-2);',
+      'height: var(--control-height-xs);',
+      'padding: 0 var(--space-3);',
+      'border-radius: var(--radius-sm);'
+    ]) {
+      expect(button).toContain(declaration);
+      expect(strip).toContain(declaration);
+    }
+    expect(button).toContain('font-size: var(--font-size-caption);');
+    expect(button).toContain('font-weight: var(--font-weight-medium);');
+    expect(strip).toMatch(/font: var\(--font-weight-medium\) var\(--font-size-caption\)/);
+  });
+
+  it('keeps the open face for a control that holds a pop-up open, not for an open fold', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="listing-root">
+      <button class="pane-strip-link" aria-expanded="true">Fold</button>
+      <button class="quiet-track-item" aria-expanded="true">Section</button>
+      <button class="pane-strip-link" aria-expanded="true" aria-haspopup="menu">More</button>
+      <button class="quiet-track-item" aria-expanded="true" aria-haspopup="listbox">Group</button>
+      <button class="crumb-label" aria-expanded="true">site</button>
+    </div>`;
+    const [fold, section, menu, listbox, crumb] = [...document.querySelectorAll('button')];
+
+    // A crumb only ever opens its menu, so an expanded one keeps the face.
+    expect(declaredValues(crumb as Element, 'background')).toContain('var(--hover-wash)');
+
+    expect(declaredValues(fold as Element, 'background')).not.toContain('var(--hover-wash)');
+    expect(declaredValues(section as Element, 'background')).not.toContain('var(--hover-wash)');
+    expect(declaredValues(menu as Element, 'background')).toContain('var(--hover-wash)');
+    expect(declaredValues(listbox as Element, 'background')).toContain('var(--hover-wash)');
+    document.body.innerHTML = '';
+  });
+
+  it("keeps a state row's fill under every control the shared recipes wash", () => {
+    // The class list of the press recipe (the widest of the three) is read
+    // from the base sheet, so a class added to a recipe must be added to the
+    // listing's and the grid's state-row rules too.
+    const classList = (selector: string): string[] =>
+      selector
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean)
+        .sort();
+    const recipe = /:where\(([^()]*)\):where\(button, a\[href\][^{]*\):active \{/.exec(
+      readStylesheet('src/styles.css')
+    )?.[1];
+    expect(recipe).toBeDefined();
+    for (const sheet of ['src/listing/listing.css', 'src/grid/grid.css']) {
+      const own =
+        /:is\(([^()]*)\):is\(\s*:hover,\s*:active,[^{]*\):enabled \{\s*background: transparent;/.exec(
+          readStylesheet(sheet)
+        )?.[1];
+      expect(own, sheet).toBeDefined();
+      expect(classList(own ?? ''), sheet).toEqual(classList(recipe ?? ''));
+    }
+
+    const rules = pressedRules();
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane active"><div class="pane-list">
+        <div class="row cursor"><button class="quiet-control">users</button></div>
+        <div class="row marked"><button class="toggle-chip" aria-pressed="false">Trace</button></div>
+      </div></div>
+      <div class="data-grid"><div class="data-grid-row marked">
+        <button class="quiet-control">42</button></div></div>
+    </section>`;
+    for (const element of document.querySelectorAll('button')) {
+      const grounds = rules
+        .filter(
+          ({ selector, rule }) =>
+            rule.style.getPropertyValue('background') !== '' && element.matches(selector)
+        )
+        .map(({ rule }) => rule.style.getPropertyValue('background'));
+
+      expect(grounds, element.className).toContain('transparent');
+    }
     document.body.innerHTML = '';
   });
 

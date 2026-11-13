@@ -27,7 +27,7 @@ import {
   ShieldQuestion,
   TriangleAlert
 } from 'lucide-react';
-import { useId, useState, type CSSProperties, type ReactElement } from 'react';
+import { useId, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
@@ -72,7 +72,7 @@ function UpdateCard({
   run = false
 }: {
   readonly tone: CardTone;
-  readonly title: string;
+  readonly title: ReactNode;
   readonly sub: string;
   readonly verb?: string;
   readonly notes?: boolean;
@@ -113,12 +113,13 @@ function UpdateCard({
           </Button>
         ) : null}
       </div>
+      {/* A download's status line says the time left; the caption under
+          the bar leads with the percent, then the size and the rate. */}
       {run === true ? (
         <RunHeader
           bar={{ fraction: 0.42, label: 'Download' }}
-          facts={['38.2 MB of 91.0 MB', '4.1 MB/s']}
-          figure="0:09"
-          headline="Downloading 2.5.0"
+          facts={['42%', '38.2 MB of 91.0 MB', '4.1 MB/s']}
+          headline="About 9 seconds left"
           state="running"
         />
       ) : null}
@@ -603,6 +604,24 @@ export function ShellDemo(): ReactElement {
           title="The update could not be installed"
           tone="error"
           verb="Try Again"
+        />
+      </div>
+
+      <h3 className="demo-subhead">Ready in a short column</h3>
+      {/* The ready state in a long sentence, over a long What's new list in
+          a short column: the status takes two lines, its glyph hangs on the
+          first, and only the list gives way to the column's height. */}
+      <div className="shell-demo-window shell-demo-updates-short">
+        <UpdateCard
+          notes
+          sub="It installs when the app next starts, or now with Restart and Update."
+          title={
+            <>
+              <strong>2.5.0-nightly.20261113</strong> is ready
+            </>
+          }
+          tone="ready"
+          verb="Restart and Update"
         />
       </div>
 
