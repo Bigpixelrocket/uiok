@@ -1,15 +1,104 @@
 /**
- * A rename dialog (Return renames, Escape cancels), a confirmation, and a
- * delete that cannot be undone, which Return never runs.
+ * Every dialog variant: a rename over the frame (Return renames, Escape
+ * cancels), the three confirmation tones, one with a choice under its
+ * message, deletes that cannot be undone with their files as a framed item
+ * list (one ending in "+N more"), a quit confirmation with two labelled
+ * groups, a long title
+ * cut on its one line, and a command editor whose legend holds a destructive
+ * secondary verb and wraps to two rows. Then one dialog on each width step:
+ * a connection form on the label column (medium), a frosted shortcuts sheet
+ * whose body scrolls (large), a wide table (extra large), and a dialog
+ * pinned at its top whose body grows downward (`pinTop`).
  */
 
-import { FilePen, LogOut, Trash2 } from 'lucide-react';
+import {
+  Cog,
+  File,
+  FilePen,
+  KeyRound,
+  Keyboard,
+  LogOut,
+  Power,
+  Server,
+  SquareTerminal,
+  Trash2
+} from 'lucide-react';
 import { useId, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
+import {
+  ConfirmDialog,
+  ModalDialog,
+  type DialogItem,
+  type DialogItemGroup
+} from '@bigpixelrocket/uiok/dialog';
+import { labelHelp } from '@bigpixelrocket/uiok/field';
+import { DataGrid, type DataGridColumn } from '@bigpixelrocket/uiok/grid';
+import { type Chord } from '@bigpixelrocket/uiok/keyboard';
+import { KeyChord } from '@bigpixelrocket/uiok/keychord';
 
-type Open = 'rename' | 'trash' | 'delete' | 'sign-out' | null;
+import { orderAt, type Order } from './data';
+
+type Open =
+  | 'rename'
+  | 'trash'
+  | 'delete'
+  | 'delete-all'
+  | 'sign-out'
+  | 'grant'
+  | 'quit'
+  | 'long-title'
+  | 'connect'
+  | 'command'
+  | 'shortcuts'
+  | 'orders'
+  | 'hosts'
+  | null;
+
+/**
+ * Paths whose folders are long, and more than the item list shows: a folder
+ * too long for its three lines loses its start and keeps the folders
+ * nearest the file.
+ */
+const LONG_PATHS = [
+  '~/projects/infrastructure-and-deployment-scripts/environments/production/terraform/main.tf',
+  '~/projects/infrastructure-and-deployment-scripts/environments/production/terraform/variables.tf',
+  '~/projects/infrastructure-and-deployment-scripts/environments/production/terraform/outputs.tf',
+  '~/projects/site/docs/deploying.md',
+  '~/projects/site/public/robots.txt',
+  '~/projects/site/tests/App.test.tsx',
+  '~/projects/site/tests/fixtures/very-long-fixture-name-for-the-snapshot-suite.json'
+];
+
+/** A path as an item: its file name, with its folder as the detail. */
+const fileItem = (path: string): DialogItem => {
+  const cut = path.lastIndexOf('/');
+  return { name: path.slice(cut + 1), detail: path.slice(0, cut) };
+};
+
+/**
+ * The quit confirmation's groups: each kind of thing the quit ends, its
+ * label and count above the same framed list as a delete's items.
+ */
+const QUIT_GROUPS: readonly DialogItemGroup[] = [
+  {
+    label: 'Running processes',
+    icon: Cog,
+    items: [
+      { name: 'npm run dev', detail: 'shop' },
+      { name: 'php artisan queue:work', detail: 'shop' },
+      { name: 'vite', detail: 'blog' }
+    ]
+  },
+  {
+    label: 'Open terminals',
+    icon: SquareTerminal,
+    items: [
+      { name: 'zsh', detail: '~/projects/shop' },
+      { name: 'psql', detail: '~/projects/blog' }
+    ]
+  }
+];
 
 /** A rename dialog over the frame. */
 function RenameDialog({
@@ -25,7 +114,6 @@ function RenameDialog({
   const [value, setValue] = useState(name);
   return (
     <ModalDialog
-      className="demo-dialog"
       icon={FilePen}
       labelId={labelId}
       legend={{
@@ -38,16 +126,328 @@ function RenameDialog({
       }}
       onCancel={onCancel}
       title="Rename"
-      titleAside="~/projects/site/docs"
     >
-      <input
-        aria-label="Name"
-        autoFocus
-        className="demo-input wide"
-        onChange={(event) => setValue(event.target.value)}
-        spellCheck={false}
-        value={value}
+      <div className="demo-stack">
+        {/* Where the dialog acts is the body's first line, never beside the title. */}
+        <p className="dialog-help">
+          In <span className="dialog-value">~/projects/site/docs</span>
+        </p>
+        {/* No width class: the column stretches the field across the body. */}
+        <input
+          aria-label="Name"
+          autoFocus
+          className="field"
+          onChange={(event) => setValue(event.target.value)}
+          spellCheck={false}
+          value={value}
+        />
+      </div>
+    </ModalDialog>
+  );
+}
+
+/**
+ * A connection form on the medium step (`.dialog-size-md`): a sentence with
+ * the host as a value, then its fields on one label column. Help that
+ * explains a field is its label's tooltip, and what Test does is its
+ * slot's tooltip, so no sentence stands under the form.
+ */
+function ConnectDialog({
+  onConnect,
+  onTest,
+  onCancel
+}: {
+  readonly onConnect: () => void;
+  readonly onTest: () => void;
+  readonly onCancel: () => void;
+}) {
+  const labelId = useId();
+  const hostId = useId();
+  const portId = useId();
+  const userId = useId();
+  const hostHelp = labelHelp('A name or an address this computer can reach.');
+  const userHelp = labelHelp('The password comes from the keychain.');
+  return (
+    <ModalDialog
+      className="dialog-size-md"
+      icon={Server}
+      labelId={labelId}
+      legend={{
+        leave: { label: 'Cancel' },
+        secondary: [
+          {
+            label: 'Test',
+            chord: { key: 'Enter', alt: true },
+            help: 'Checks the connection without saving it.',
+            onRun: onTest
+          }
+        ],
+        primary: { label: 'Connect', onRun: onConnect }
+      }}
+      onCancel={onCancel}
+      title="Connect"
+    >
+      <div className="demo-stack">
+        <p>
+          Connect to <span className="dialog-value">db.internal.example.com:3306</span> as the user
+          below.
+        </p>
+        <div className="field-grid">
+          <label className="field-label" htmlFor={hostId} {...hostHelp.label}>
+            Host
+          </label>
+          <input
+            className="field"
+            defaultValue="db.internal.example.com"
+            id={hostId}
+            spellCheck={false}
+            {...hostHelp.control}
+          />
+          <label className="field-label" htmlFor={portId}>
+            Port
+          </label>
+          <input
+            className="field field-short"
+            defaultValue="3306"
+            id={portId}
+            inputMode="numeric"
+          />
+          <label className="field-label" htmlFor={userId} {...userHelp.label}>
+            User
+          </label>
+          <input
+            autoFocus
+            className="field"
+            defaultValue="deploy"
+            id={userId}
+            spellCheck={false}
+            {...userHelp.control}
+          />
+        </div>
+      </div>
+    </ModalDialog>
+  );
+}
+
+/**
+ * A command editor whose legend carries a destructive secondary verb in the
+ * danger tone beside the primary, with verbs long enough that the legend
+ * wraps to a second row in the default width.
+ */
+function CommandDialog({
+  onSave,
+  onDelete,
+  onDuplicate,
+  onCancel
+}: {
+  readonly onSave: () => void;
+  readonly onDelete: () => void;
+  readonly onDuplicate: () => void;
+  readonly onCancel: () => void;
+}) {
+  const labelId = useId();
+  const commandId = useId();
+  return (
+    <ModalDialog
+      icon={SquareTerminal}
+      labelId={labelId}
+      legend={{
+        leave: { label: 'Keep Editing' },
+        secondary: [
+          {
+            label: 'Delete Command…',
+            chord: { key: 'Backspace', meta: true },
+            onRun: onDelete,
+            danger: true
+          },
+          { label: 'Duplicate', chord: { key: 'd', meta: true }, onRun: onDuplicate }
+        ],
+        primary: { label: 'Save Changes', onRun: onSave }
+      }}
+      onCancel={onCancel}
+      title="Edit Command"
+    >
+      {/* A labelled field is a label-column row, as in Connect: the label
+          leads and the field fills the value column. */}
+      <div className="field-grid">
+        <label className="field-label" htmlFor={commandId}>
+          Command
+        </label>
+        <input
+          autoFocus
+          className="field"
+          defaultValue="npm run build"
+          id={commandId}
+          spellCheck={false}
+        />
+      </div>
+    </ModalDialog>
+  );
+}
+
+/** Shortcuts for the large sheet, each a chord and what it does. */
+const SHORTCUTS: readonly { readonly chord: Chord; readonly does: string }[] = [
+  { chord: { key: 'n', meta: true }, does: 'New window' },
+  { chord: { key: 'n', meta: true, shift: true }, does: 'New folder in the current pane' },
+  { chord: { key: 'o', meta: true }, does: 'Open the item under the cursor' },
+  { chord: { key: 'k', meta: true }, does: 'Command palette' },
+  { chord: { key: 'f', meta: true }, does: 'Filter the current pane' },
+  { chord: { key: 'Backspace', meta: true }, does: 'Move to Trash' },
+  { chord: { key: 'Backspace', meta: true, alt: true }, does: 'Delete now' },
+  { chord: { key: 'ArrowUp', meta: true }, does: 'Go to the first row' },
+  { chord: { key: 'ArrowDown', meta: true }, does: 'Go to the last row' },
+  { chord: { key: 'PageUp' }, does: 'Up a screen of rows' },
+  { chord: { key: 'PageDown' }, does: 'Down a screen of rows' },
+  { chord: { key: 'Tab' }, does: 'Switch between the sidebar and the page' },
+  { chord: { key: 'Enter' }, does: "Open, or run the row's first action" },
+  { chord: { key: 'Enter', meta: true }, does: 'Start or stop the selected service' },
+  { chord: { key: 'Enter', meta: true, alt: true }, does: 'Restart the selected service' },
+  { chord: { key: '.' }, does: 'Reveal in Finder' },
+  { chord: { key: ',', meta: true }, does: 'Settings' },
+  { chord: { key: 'w', meta: true }, does: 'Close the window' },
+  { chord: { key: 'q', meta: true }, does: 'Quit' },
+  { chord: { key: '/', meta: true }, does: 'Show these shortcuts' }
+];
+
+/**
+ * A frosted sheet on the large step (`.dialog-size-lg`): a list of chords
+ * and what each does in two columns, whose body scrolls between the strip
+ * and the legend.
+ */
+function ShortcutsDialog({ onDone }: { readonly onDone: () => void }) {
+  const labelId = useId();
+  return (
+    <ModalDialog
+      className="dialog-size-lg"
+      frosted
+      icon={Keyboard}
+      labelId={labelId}
+      legend={{ primary: { label: 'Done', onRun: onDone } }}
+      onCancel={onDone}
+      title="Keyboard Shortcuts"
+    >
+      <div className="dialog-body scroll-fade">
+        <ul className="chord-list keycap">
+          {SHORTCUTS.map(({ chord, does }) => (
+            <li key={does}>
+              <KeyChord chord={chord} />
+              <span>{does}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </ModalDialog>
+  );
+}
+
+const ORDER_FIELDS: readonly { readonly key: keyof Order; readonly column: DataGridColumn }[] = [
+  { key: 'id', column: { id: 'id', label: 'order', align: 'right' } },
+  { key: 'customer', column: { id: 'customer', label: 'customer' } },
+  { key: 'city', column: { id: 'city', label: 'city' } },
+  { key: 'product', column: { id: 'product', label: 'product' } },
+  { key: 'id', column: { id: 'ship', label: 'ship to' } },
+  { key: 'quantity', column: { id: 'quantity', label: 'qty', align: 'right' } },
+  { key: 'total', column: { id: 'total', label: 'total', align: 'right' } },
+  { key: 'placed', column: { id: 'placed', label: 'placed' } },
+  { key: 'status', column: { id: 'status', label: 'status' } }
+];
+const RECENT_ORDERS: readonly Order[] = Array.from({ length: 40 }, (_, index) => orderAt(index));
+
+/** A cell of the wide table: the ship-to column writes an address from the order. */
+const orderText = (order: Order, column: number): string => {
+  const field = ORDER_FIELDS[column];
+  if (field === undefined) return '';
+  if (field.column.id === 'ship') {
+    return `${(order.id % 90) + 10} Harbour Road, dock ${(order.id % 7) + 1}, ${order.city}`;
+  }
+  return String(order[field.key]);
+};
+
+/** A wide table on the extra large step (`.dialog-size-xl`). */
+function OrdersDialog({ onDone }: { readonly onDone: () => void }) {
+  const labelId = useId();
+  return (
+    <ModalDialog
+      className="dialog-size-xl"
+      icon={Server}
+      labelId={labelId}
+      legend={{ primary: { label: 'Done', onRun: onDone } }}
+      onCancel={onDone}
+      title="Recent Orders"
+    >
+      <p className="dialog-help">
+        From <span className="dialog-value">db.internal.example.com / shop</span>
+      </p>
+      <DataGrid
+        cell={(row, column) => {
+          const order = RECENT_ORDERS[row];
+          return order === undefined ? null : { text: orderText(order, column) };
+        }}
+        columns={ORDER_FIELDS.map((field) => field.column)}
+        copyText={(row, column) => {
+          const order = RECENT_ORDERS[row];
+          return order === undefined ? null : orderText(order, column);
+        }}
+        label="Recent orders"
+        maxHeight={300}
+        rowCount={RECENT_ORDERS.length}
       />
+    </ModalDialog>
+  );
+}
+
+/**
+ * A dialog that keeps its top edge where it opened (`pinTop`): each host
+ * added grows the body downward instead of moving the strip.
+ */
+function AddHostsDialog({
+  onAdd,
+  onCancel
+}: {
+  readonly onAdd: (count: number) => void;
+  readonly onCancel: () => void;
+}) {
+  const labelId = useId();
+  const [hosts, setHosts] = useState<readonly string[]>(['build-1.example.com']);
+  return (
+    <ModalDialog
+      icon={Server}
+      labelId={labelId}
+      legend={{
+        leave: { label: 'Cancel' },
+        primary: { label: 'Add Hosts', onRun: () => onAdd(hosts.length) }
+      }}
+      onCancel={onCancel}
+      pinTop
+      title="Add Hosts"
+    >
+      <div className="demo-stack">
+        {hosts.map((host, index) => (
+          <input
+            aria-label={`Host ${index + 1}`}
+            autoFocus={index === hosts.length - 1}
+            className="field"
+            key={index}
+            onChange={(event) =>
+              setHosts((current) =>
+                current.map((value, at) => (at === index ? event.target.value : value))
+              )
+            }
+            spellCheck={false}
+            value={host}
+          />
+        ))}
+        <div className="demo-row">
+          <Button
+            onClick={() =>
+              setHosts((current) => [...current, `build-${current.length + 1}.example.com`])
+            }
+            size="small"
+          >
+            Add Another Host
+          </Button>
+        </div>
+      </div>
     </ModalDialog>
   );
 }
@@ -68,8 +468,37 @@ export function DialogDemo() {
           Rename…
         </Button>
         <Button onClick={() => setOpen('trash')}>Move to Trash…</Button>
-        <Button onClick={() => setOpen('delete')}>Delete Immediately…</Button>
+        <Button onClick={() => setOpen('delete')}>Delete Now…</Button>
         <Button onClick={() => setOpen('sign-out')}>Sign Out…</Button>
+        <Button onClick={() => setOpen('delete-all')}>Delete 7 Long Paths…</Button>
+        <Button onClick={() => setOpen('grant')}>Grant Access…</Button>
+        <Button onClick={() => setOpen('quit')}>Quit…</Button>
+        <Button onClick={() => setOpen('long-title')}>Long Title…</Button>
+        <Button onClick={() => setOpen('command')}>Edit Command…</Button>
+      </div>
+      <h3 className="demo-subhead">Size steps</h3>
+      <div className="demo-row">
+        <span className="demo-label">Small, 360px</span>
+        <span className="demo-readout">Rename, the confirmations, Edit Command (above)</span>
+      </div>
+      <div className="demo-row">
+        <span className="demo-label">Medium, 480px</span>
+        <Button onClick={() => setOpen('connect')}>Connect…</Button>
+      </div>
+      <div className="demo-row">
+        <span className="demo-label">Large, 640px</span>
+        <Button onClick={() => setOpen('shortcuts')}>Shortcuts…</Button>
+      </div>
+      <div className="demo-row">
+        <span className="demo-label">Extra large, 880px</span>
+        <Button onClick={() => setOpen('orders')}>Recent Orders…</Button>
+      </div>
+      <div className="demo-row">
+        <span className="demo-label">Pinned top</span>
+        <Button onClick={() => setOpen('hosts')}>Add Hosts…</Button>
+        <span className="demo-readout">
+          The box stays where it opened while hosts are added; a window resize centres it again.
+        </span>
       </div>
       <code className="demo-readout">
         file: {name}
@@ -88,44 +517,124 @@ export function DialogDemo() {
       {open === 'trash' ? (
         <ConfirmDialog
           confirmLabel="Move to Trash"
-          context="~/projects/site/docs"
           icon={Trash2}
-          message={
-            <>
-              Move <strong>{name}</strong> to the Trash?
-            </>
-          }
+          itemIcon={File}
+          items={[{ name, detail: '~/Documents' }]}
+          message="This moves 1 file to the Trash. You can put it back from there."
           onCancel={close('cancelled')}
           onConfirm={close('moved to the Trash')}
-          title="Move to Trash"
+          title="Move to Trash?"
         />
       ) : null}
       {open === 'delete' ? (
         <ConfirmDialog
           confirmLabel="Delete"
-          context="~/projects/site"
           forGood
           icon={Trash2}
-          message="Delete these 3 items immediately? This cannot be undone."
+          itemIcon={File}
+          items={[
+            // Names with spaces, which must read exactly as written, each with its folder.
+            { name: '.controller 85977', detail: '~/n1000' },
+            { name: 'Q3 budget review.xlsx', detail: '~/Documents' },
+            { name: 'deploying.md', detail: '~/projects/site/docs' },
+            { name: 'App.test.tsx', detail: '~/projects/site/tests' }
+          ]}
+          message="This deletes 4 items for good. They cannot be recovered."
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
-          paths={[
-            '~/projects/site/docs/deploying.md',
-            '~/projects/site/public/robots.txt',
-            '~/projects/site/tests/App.test.tsx'
-          ]}
-          title="Delete Immediately"
+          title="Delete Now?"
+        />
+      ) : null}
+      {open === 'delete-all' ? (
+        <ConfirmDialog
+          confirmLabel="Delete"
+          forGood
+          icon={Trash2}
+          itemIcon={File}
+          items={LONG_PATHS.map(fileItem)}
+          message={`This deletes ${LONG_PATHS.length} items for good. They cannot be recovered.`}
+          onCancel={close('cancelled')}
+          onConfirm={close('deleted for good')}
+          title="Delete Now?"
         />
       ) : null}
       {open === 'sign-out' ? (
         <ConfirmDialog
           confirmLabel="Sign Out"
           icon={LogOut}
-          message="Sign out now? Two uploads still running will stop."
+          message="This signs you out of this window. The 2 uploads still running stop."
           onCancel={close('cancelled')}
           onConfirm={close('signed out')}
-          title="Sign Out"
+          title="Sign Out?"
           tone="warning"
+        >
+          {/* A choice under the message; the caller holds its state. */}
+          <label className="field-choice">
+            <input className="check" type="checkbox" />
+            Also sign out on this computer&apos;s other windows
+          </label>
+        </ConfirmDialog>
+      ) : null}
+      {open === 'grant' ? (
+        <ConfirmDialog
+          confirmLabel="Grant"
+          icon={KeyRound}
+          message={
+            <>
+              This lets the build read files in <strong>~/projects/site</strong> until you sign out.
+            </>
+          }
+          onCancel={close('cancelled')}
+          onConfirm={close('granted')}
+          title="Grant Access?"
+          tone="primary"
+        />
+      ) : null}
+      {open === 'quit' ? (
+        <ConfirmDialog
+          cancelLabel="Keep Running"
+          confirmLabel="Quit"
+          icon={Power}
+          groups={QUIT_GROUPS}
+          message="Quitting stops 3 running processes and closes 2 open terminals. Their logs are kept."
+          onCancel={close('kept running')}
+          onConfirm={close('quit')}
+          title="Quit?"
+          tone="warning"
+        />
+      ) : null}
+      {open === 'long-title' ? (
+        <ConfirmDialog
+          confirmLabel="Delete"
+          forGood
+          icon={Trash2}
+          message="These items cannot be recovered."
+          onCancel={close('cancelled')}
+          onConfirm={close('deleted for good')}
+          title="Delete Now Without Moving Anything to the Trash"
+        />
+      ) : null}
+      {open === 'connect' ? (
+        <ConnectDialog
+          onCancel={close('cancelled')}
+          onConnect={close('connected')}
+          onTest={() => setSaid('connection works')}
+        />
+      ) : null}
+      {open === 'command' ? (
+        <CommandDialog
+          onCancel={close('kept editing')}
+          onDelete={close('deleted the command')}
+          onDuplicate={() => setSaid('duplicated')}
+          onSave={close('saved')}
+        />
+      ) : null}
+      {open === 'shortcuts' ? <ShortcutsDialog onDone={close('closed shortcuts')} /> : null}
+      {open === 'orders' ? <OrdersDialog onDone={close('closed the orders')} /> : null}
+      {open === 'hosts' ? (
+        <AddHostsDialog
+          onAdd={(count) => close(`added ${count} hosts`)()}
+          onCancel={close('cancelled')}
         />
       ) : null}
     </div>

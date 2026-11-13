@@ -173,20 +173,22 @@ export const cutLabel = (text: string, limit = 18): string =>
 
 /**
  * Where each legend entry goes: one after another on a row, each as wide
- * as its swatch, its text at about 6.5 pixels a character, and a gap,
- * wrapping to the next row where the next would pass `width`.
+ * as its 10px swatch and 4px gap, its text (`widths`, the drawn width of
+ * each, where measured; about 6.5 pixels a character where not), and a
+ * 14px gap, wrapping to the next row where the next would pass `width`.
  */
 export function legendLayout(
   texts: readonly string[],
-  width: number
-): { readonly text: string; readonly x: number; readonly row: number }[] {
+  width: number,
+  widths: readonly number[] = []
+): LegendPlace[] {
   let x = 0;
   let row = 0;
 
-  return texts.map((text) => {
-    const span = 14 + Array.from(text).length * 6.5 + 14;
+  return texts.map((text, at) => {
+    const span = legendSpan(text, widths[at]);
 
-    if (x > 0 && x + span > width) {
+    if (x > 0 && x + span - 14 > width) {
       x = 0;
       row += 1;
     }
@@ -196,4 +198,139 @@ export function legendLayout(
     x += span;
     return place;
   });
+}
+
+/** How far a legend entry reaches along its row: swatch and gap, text, and the gap after it. */
+const legendSpan = (text: string, measured: number | undefined): number =>
+  14 + (measured ?? textWidth(text)) + 14;
+
+/** A caption text's width estimated from its length, about 6.5 pixels a character. */
+const textWidth = (text: string): number => Array.from(text).length * 6.5;
+
+/** A legend entry's place: its text, its left edge, and its row from zero. */
+export interface LegendPlace {
+  readonly text: string;
+  readonly x: number;
+  readonly row: number;
+}
+
+/**
+ * A legend of `total` entries (`texts` names the first of them) held to
+ * `rows` rows: the entries it lists (a run from the first, placed as
+ * `legendLayout` places them) and, when some are left out, `more`, a count
+ * of them written `+N` after the last entry listed,
+ * with no swatch. The count's width is reserved: where it would not fit
+ * on the last row, entries step back until it does, so it never takes a
+ * row of its own past the limit.
+ */
+export function fittedLegend(
+  texts: readonly string[],
+  width: number,
+  rows: number,
+  widths: readonly number[] = [],
+  total = texts.length
+): { readonly places: LegendPlace[]; readonly more: LegendPlace | null } {
+  const places = legendLayout(texts, width, widths);
+  let listed = places.filter((place) => place.row < rows).length;
+
+  if (listed === total) return { places, more: null };
+  for (; listed > 0; listed -= 1) {
+    const last = places[listed - 1];
+    const text = `+${total - listed}`;
+    let x = last === undefined ? 0 : last.x + legendSpan(last.text, widths[listed - 1]);
+    let row = last?.row ?? 0;
+
+    if (x > 0 && x + textWidth(text) > width) {
+      x = 0;
+      row += 1;
+    }
+    if (row < rows) return { places: places.slice(0, listed), more: { text, x, row } };
+  }
+  return { places: [], more: { text: `+${total}`, x: 0, row: 0 } };
+}
+
+/** The pitch of a legend's rows, in pixels. */
+export const LEGEND_ROW = 16;
+
+/** How tall a legend row's ink stands: its 10px swatch, 1px down, and the text beside it. */
+const LEGEND_ROW_INK = 12;
+
+/** The room under a legend's last row, the same 12px (`--space-6`) whatever the row count. */
+const LEGEND_GAP = 12;
+
+/**
+ * How many rows a pie's legend may take in a drawing `height` pixels tall
+ * whose legend starts at `legendTop`: at most `most`, and no more than keep
+ * the title, the legend, and the room under it within a third of the
+ * height, so a short drawing leaves its pie room for its tags. Always one.
+ */
+export function pieLegendRows(height: number, legendTop: number, most: number): number {
+  const fit = Math.floor((height / 3 - legendTop - LEGEND_ROW_INK - LEGEND_GAP) / LEGEND_ROW) + 1;
+
+  return Math.max(1, Math.min(most, fit));
+}
+
+/**
+ * Where the plot starts under a legend whose first row is at `legendTop`
+ * and that draws `rows` rows: its last row's ink plus the same 12px gap
+ * whether the legend fits one row or wraps, so a wrapped legend never
+ * crowds the plot's top grid line and tick. With no rows, the legend's top.
+ */
+export function plotTopUnderLegend(legendTop: number, rows: number): number {
+  return rows <= 0 ? legendTop : legendTop + (rows - 1) * LEGEND_ROW + LEGEND_ROW_INK + LEGEND_GAP;
+}
+
+/** A tick's label as an axis draws it: its left edge, from the plot's start, and its text. */
+export interface PlacedTick {
+  readonly x: number;
+  readonly text: string;
+}
+
+/**
+ * Which tick labels a horizontal axis of `span` pixels draws, and where:
+ * each centred on its tick at about `charWidth` pixels a character, moved
+ * inside the plot where it would pass an edge, and left out where it would
+ * come within `gap` pixels of the one before, so no two labels touch and
+ * none hangs past the plot.
+ */
+export function spacedTicks(
+  ticks: readonly { readonly at: number; readonly text: string }[],
+  span: number,
+  charWidth = 6.5,
+  gap = 8
+): PlacedTick[] {
+  const placed: PlacedTick[] = [];
+  let end = -Infinity;
+
+  for (const tick of ticks) {
+    const width = Array.from(tick.text).length * charWidth;
+    const x = Math.min(Math.max(0, tick.at - width / 2), Math.max(0, span - width));
+
+    if (x < end + gap) continue;
+    placed.push({ x, text: tick.text });
+    end = x + width;
+  }
+  return placed;
+}
+
+/**
+ * The runs of consecutive points a line or an area draws, each at least
+ * one point long; a missing point (null) ends a run.
+ */
+export function pointRuns<Point>(
+  points: readonly (Point | null)[]
+): { readonly at: number; readonly point: Point }[][] {
+  const runs: { readonly at: number; readonly point: Point }[][] = [];
+  let run: { readonly at: number; readonly point: Point }[] = [];
+
+  points.forEach((point, at) => {
+    if (point === null) {
+      if (run.length > 0) runs.push(run);
+      run = [];
+    } else {
+      run.push({ at, point });
+    }
+  });
+  if (run.length > 0) runs.push(run);
+  return runs;
 }

@@ -12,7 +12,6 @@ function renderDialog(tone?: 'danger' | 'primary') {
   render(
     <ConfirmDialog
       confirmLabel="Move to Trash"
-      context="~/Downloads"
       icon={Trash2}
       message='Move "notes.txt" to the Trash?'
       onCancel={onCancel}
@@ -55,59 +54,116 @@ describe('ConfirmDialog', () => {
     expect(renderDialog('primary').dialog.dataset.tone).toBe('accent');
   });
 
-  it('names where it acts on the title strip', () => {
+  it('keeps its title to one line with nothing beside it, its text a tooltip only while cut', () => {
     const { dialog } = renderDialog();
+    const title = screen.getByRole('heading', { name: 'Move to Trash' });
 
-    expect(dialog.querySelector('.dialog-context')?.textContent).toBe('~/Downloads');
+    expect(title.dataset.tooltip).toBe('Move to Trash');
+    expect(title.hasAttribute('data-tooltip-cut')).toBe(true);
+    expect(dialog.querySelector('.dialog-heading')?.children).toHaveLength(2);
   });
 
-  it('keeps the affected-path list in the keyboard focus cycle, and Return still confirms from it', () => {
+  it('lists its facts as one-line rows of a label, a count, and names', () => {
+    render(
+      <ConfirmDialog
+        confirmLabel="Quit"
+        icon={TriangleAlert}
+        message="Quitting stops them; their logs are kept."
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+        facts={[
+          { label: 'Terminals', count: 6, value: 'zsh, npm run dev, vite' },
+          { label: 'Schedules', value: 'nightly backup' }
+        ]}
+        title="Quit and Stop Processes?"
+      />
+    );
+
+    const rows = [...document.querySelectorAll('.dialog-fact')];
+
+    expect(rows.map((row) => row.querySelector('dt')?.textContent)).toEqual([
+      'Terminals',
+      'Schedules'
+    ]);
+    expect(rows[0]?.querySelector('.dialog-fact-count')?.textContent).toBe('6');
+    expect(rows[0]?.querySelector('.dialog-fact-value')?.getAttribute('data-tooltip-cut')).toBe('');
+    // A row without a count draws no count cell.
+    expect(rows[1]?.querySelector('.dialog-fact-count')).toBeNull();
+  });
+
+  it('draws deprecated paths as items, the name and its folder, out of the Tab order', () => {
     const onConfirm = vi.fn();
+    const paths = Array.from({ length: 7 }, (_, index) => `~/projects/site/file-${index}.txt`);
 
     render(
       <ConfirmDialog
-        confirmLabel="Delete Permanently"
+        confirmLabel="Delete"
         icon={Trash2}
-        message="Delete 2 items permanently?"
+        message="These 7 items are deleted for good."
         onCancel={vi.fn()}
         onConfirm={onConfirm}
-        paths={['/Library/Example/a', '/Library/Example/b']}
-        title="Delete Permanently"
+        paths={paths}
+        title="Delete Now?"
       />
     );
 
     const dialog = screen.getByRole('dialog');
     const list = screen.getByRole('list', { name: 'Affected items' });
+    const items = screen.getAllByRole('listitem');
 
-    // The list is the one Tab stop: the slots are reached by their keys.
-    fireEvent.keyDown(dialog, { key: 'Tab' });
-    expect(document.activeElement).toBe(list);
-    fireEvent.keyDown(list, { key: 'Tab' });
-    expect(document.activeElement).toBe(list);
+    // Five in full, then the rest counted.
+    expect(items).toHaveLength(6);
+    expect(items[0]?.querySelector('.dialog-item-name')?.textContent).toBe('file-0.txt');
+    expect(items[0]?.querySelector('.dialog-item-detail')?.textContent).toBe('~/projects/site');
+    expect(items.at(-1)?.textContent).toBe('+2 more');
+    expect(list.hasAttribute('tabindex')).toBe(false);
 
-    fireEvent.keyDown(list, { key: 'Enter' });
+    fireEvent.keyDown(dialog, { key: 'Enter' });
     expect(onConfirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows every path when they fit its lines', () => {
+    render(
+      <ConfirmDialog
+        confirmLabel="Delete"
+        icon={Trash2}
+        message="Delete these 2 items?"
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+        paths={['/a', '/b']}
+        title="Delete?"
+      />
+    );
+
+    expect(screen.getAllByRole('listitem').map((item) => item.textContent)).toEqual(['/a', '/b']);
   });
 
   it('takes its leave verb and list name from the labels, and a cancel label over them', () => {
     const { rerender } = render(
       <UiokProvider
-        labels={{ dialog: { cancel: 'Abbrechen', affectedItems: (count) => `${count} Objekte` } }}
+        labels={{
+          dialog: {
+            cancel: 'Abbrechen',
+            affectedItems: (count) => `${count} Objekte`,
+            moreItems: (count) => `+${count} weitere`
+          }
+        }}
       >
         <ConfirmDialog
           confirmLabel="Löschen"
           icon={Trash2}
-          message="2 Objekte löschen?"
+          message="6 Objekte löschen?"
           onCancel={vi.fn()}
           onConfirm={vi.fn()}
-          paths={['/a', '/b']}
+          paths={['/a', '/b', '/c', '/d', '/e', '/f']}
           title="Löschen"
         />
       </UiokProvider>
     );
 
     expect(screen.getByRole('button', { name: 'Abbrechen' })).toBeTruthy();
-    expect(screen.getByRole('list', { name: '2 Objekte' })).toBeTruthy();
+    expect(screen.getByRole('list', { name: '6 Objekte' })).toBeTruthy();
+    expect(screen.getByText('+1 weitere')).toBeTruthy();
 
     rerender(
       <UiokProvider labels={{ dialog: { cancel: 'Abbrechen' } }}>
@@ -140,7 +196,7 @@ describe('ConfirmDialog', () => {
           onCancel={onCancel}
           onConfirm={onConfirm}
           forGood
-          title="Delete Immediately"
+          title="Delete Now?"
         />
       );
 
@@ -195,5 +251,47 @@ describe('ConfirmDialog', () => {
 
       expect(onCancel).toHaveBeenCalledTimes(2);
     });
+  });
+
+  it('draws no empty message and is described by its list instead', () => {
+    render(
+      <UiokProvider>
+        <ConfirmDialog
+          confirmLabel="Close"
+          facts={[{ label: 'Processes', count: 2 }]}
+          icon={Trash2}
+          message=""
+          onCancel={() => undefined}
+          onConfirm={() => undefined}
+          title="Close Tab?"
+        />
+      </UiokProvider>
+    );
+    const dialog = screen.getByRole('dialog');
+    const describedBy = dialog.getAttribute('aria-describedby');
+
+    expect(dialog.querySelector('.dialog-message')).toBeNull();
+    expect(describedBy).not.toBeNull();
+    // Facts describe a dialog only when it has neither a lead nor items.
+    expect(document.getElementById(describedBy ?? '')?.classList.contains('dialog-facts')).toBe(
+      true
+    );
+    cleanup();
+  });
+
+  it('has no description at all with neither a message nor a list', () => {
+    render(
+      <ConfirmDialog
+        confirmLabel="Close"
+        icon={Trash2}
+        onCancel={() => undefined}
+        onConfirm={() => undefined}
+        title="Close Tab?"
+      />
+    );
+
+    expect(screen.getByRole('dialog').hasAttribute('aria-describedby')).toBe(false);
+    expect(screen.getByRole('dialog').querySelector('.dialog-message')).toBeNull();
+    cleanup();
   });
 });

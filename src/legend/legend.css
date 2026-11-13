@@ -12,10 +12,10 @@
   position: relative;
   display: flex;
   align-items: center;
-  height: 34px;
-  flex: 0 0 34px;
-  padding: 0 8px 0 10px;
-  border-top: 1px solid var(--border);
+  height: var(--bar-height-lg);
+  flex: 0 0 var(--bar-height-lg);
+  padding: 0 var(--space-4);
+  border-top: var(--line) solid var(--border);
   background: var(--surface-header);
 }
 
@@ -29,120 +29,145 @@
 
 .keylegend-dock {
   display: inline-flex;
-  gap: 3px;
-  margin-right: 12px;
-  padding-right: 12px;
-  border-right: 1px solid var(--border-strong);
+  gap: var(--space-1);
+  margin-right: var(--space-6);
+  padding-right: var(--space-6);
+  border-right: var(--line) solid var(--border-strong);
 }
 
 /* The dock only shows what is held, so its keys are drawn as keys, not
-   buttons: no pointer, and a fixed box whatever the glyph. */
+   buttons: no pointer, and a fixed box whatever the glyph. They are the
+   shared key cap (keychord.css) in a fixed width: 18px tall with the 2px
+   foot and the 1px pad above it, so the dock and the verbs' caps are one
+   key and the glyph lands on whole pixels. */
 .keylegend-dock .keylegend-key {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
   width: 24px;
-  height: 20px;
-  padding: 0;
-  border: 1px solid var(--border-strong);
-  border-bottom-width: 2px;
-  border-radius: 4px;
-  background: var(--bg-panel);
+  height: 18px;
+  padding: 0 0 var(--line);
+  border: var(--line) solid var(--border-strong);
+  border-bottom-width: var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
   color: var(--text-dim);
   cursor: default;
 }
 
 .keylegend-dock .keylegend-key .key-icon {
-  width: 12px;
-  height: 12px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
+/* A held key fills with the accent and keeps its foot, a shade darker than
+   its face in every theme, the same shape as a dialog's lit key. */
 .keylegend-dock .keylegend-key.held {
   background: var(--accent);
   border-color: var(--accent);
+  border-bottom-color: var(--key-foot-shade);
   color: var(--on-accent);
 }
 
 /* The fn key sits first in the dock, where a laptop keyboard prints it; it
-   is wider than the modifier glyphs because it is a word. */
+   is wider than the modifier glyphs because it is a word, set as every key
+   word is (esc, space). */
 .keylegend-dock .keylegend-dock-fn {
   width: 28px;
-  font: 11px var(--font-mono);
+  font: var(--font-weight-strong) var(--font-size-key) var(--font-mono);
 }
 
-.keylegend-verbs button:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
+/* The verbs as one line of whole places. A place that does not fit wraps
+   to a second line the strip never shows, so the row always ends on a
+   complete key and verb, never on a cut cap or a key that names nothing. */
 .keylegend-verbs {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
+  align-content: flex-start;
   flex: 1;
   min-width: 0;
+  height: var(--control-height-sm);
   overflow: hidden;
 }
 
 .keylegend-verbs button {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 24px;
-  padding: 0 7px 0 4px;
+  gap: var(--space-3);
+  height: var(--control-height-sm);
+  padding: 0 var(--space-3) 0 var(--space-2);
   background: none;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
   color: var(--text);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-small);
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
 }
 
-.keylegend-verbs button:hover:enabled:not([aria-disabled='true']) {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
-}
+/* Hover (wash and frosted ring) and press come from the base sheet's quiet
+   control recipe, with the Button's transition. */
 
 /* Two directions of one action in one slot: each key cap is its own button,
    lit alone under the pointer, and the shared label is not a target. The
-   caps keep a plain slot's spacing: 4px in, 6px apart, 6px to the label. */
+   caps keep a plain slot's spacing: 4px in, 6px apart, 6px to the label,
+   each cap padded by half the 6px icon-to-label step. */
 .keylegend-pair {
   display: inline-flex;
   align-items: center;
-  height: 24px;
-  padding: 0 7px 0 1px;
+  height: var(--control-height-sm);
+  padding: 0 var(--space-3) 0 calc(var(--space-2) - var(--space-3) / 2);
   color: var(--text);
-  font-size: 12px;
+  font-size: var(--font-size-small);
   white-space: nowrap;
 }
 
 .keylegend-verbs .keylegend-cap {
   gap: 0;
-  padding: 0 3px;
+  padding: 0 calc(var(--space-3) / 2);
+}
+
+/* A cap that is its own button is opaque and covers the button whole, so
+   a wash on the button would never show: hover and press answer on the cap
+   itself, as the filter's escape key does, over the cap's own ground. A
+   press keeps the inner hairline its hover drew under the pressed shadow,
+   as the shared press recipe does, so it never reads as hover. */
+.keylegend-verbs .keylegend-cap:is(:hover, :active) {
+  background: none;
+  box-shadow: none;
+}
+
+.keylegend-verbs .keylegend-cap .keychord {
+  transition: var(--transition-control);
+}
+
+.keylegend-verbs .keylegend-cap:hover:enabled .keychord {
+  background: linear-gradient(var(--hover-wash), var(--hover-wash)) var(--surface);
+  box-shadow: var(--hover-frost);
+}
+
+.keylegend-verbs .keylegend-cap:active:enabled .keychord {
+  background: linear-gradient(var(--pressed-wash), var(--pressed-wash)) var(--surface);
+  box-shadow:
+    var(--shadow-pressed),
+    inset 0 0 0 var(--line) var(--border-strong);
 }
 
 .keylegend-pair-label {
-  margin-left: 3px;
+  margin-left: calc(var(--space-3) / 2);
 }
 
-.keylegend .keychord {
-  height: 18px;
-  min-width: 20px;
-  justify-content: center;
-  padding: 0 4px;
-  border-radius: 4px;
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-}
-
-/* At rest the caps are drawn as plain keys. A legend that shows one layer
-   at a time sets data-layer to the held modifier, and data-fn while fn is
-   held, so its caps take the accent with the layer. */
-.keylegend[data-layer='none']:not([data-fn='true']) .keychord {
-  box-sizing: border-box;
-  color: var(--text);
-  background: var(--bg-panel);
-  border: 1px solid var(--border-strong);
+/* The caps are the shared key cap (keychord.css). A legend that shows one
+   layer at a time sets data-layer to the held modifier, and data-fn while fn
+   is held, so its caps take the accent with the layer: accent words on the
+   accent wash, framed in the opaque accent ring (3:1, as the frame is the
+   cap's only edge). KeyLegendStrip lists every layer at once and leaves both
+   at rest. */
+.keylegend:is(:not([data-layer='none']), [data-fn='true']) .keychord {
+  border-color: var(--current-ring);
+  background: var(--accent-wash);
+  color: var(--accent-text);
 }

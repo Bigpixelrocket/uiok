@@ -5,13 +5,16 @@ A hover tooltip the page draws itself, so it opens on a delay you control, looks
 ## Example
 
 ```tsx
-import { chordGlyphs } from '@bigpixelrocket/uiok/keyboard';
-import { TooltipLayer, describedTooltip, tooltip } from '@bigpixelrocket/uiok/tooltip';
+import { TooltipLayer, cutTooltip, describedTooltip, tooltip } from '@bigpixelrocket/uiok/tooltip';
 
-<IconButton aria-label="New Tab" {...tooltip('New Tab', chordGlyphs({ key: 't', meta: true }))}>
+<IconButton aria-label="New Tab" {...tooltip('New Tab', { key: 't', meta: true })}>
   <Plus />
 </IconButton>
-<span {...describedTooltip('/Users/me/projects/site')}>site</span>
+<span {...describedTooltip('/Users/me/projects/site', { value: true })}>site</span>
+<span className="name" {...cutTooltip(name)}>{name}</span>
+<IconButton aria-label="Save Page" {...tooltip('Save Page', null, { side: 'end' })}>
+  <Save />
+</IconButton>
 
 // Once per window, near the root:
 <TooltipLayer />
@@ -20,10 +23,12 @@ import { TooltipLayer, describedTooltip, tooltip } from '@bigpixelrocket/uiok/to
 ## API
 
 - `TooltipLayer`: no props. Portals a `role="tooltip"` box into the body, or into `document.fullscreenElement` while one is set.
-- `tooltip(label, shortcut?)`: returns `data-tooltip` and `data-tooltip-shortcut` attributes to spread. No label means no tooltip. Never use `title` alongside.
-- `describedTooltip(text)`: the same, plus `aria-description`, for a tooltip that says more than the element's name (a full path, an error's detail).
-- `placeTooltip(anchor, tip, viewport, pointerX)`: the placement rule, exported for testing and reuse. Under the control and centred; on a control wider than the tip, centred on the pointer within the control; above when there is no room below; kept 6px inside the window.
-- `TOOLTIP_DELAY_MS` (500), `TooltipAttributes`, `TooltipAnchorBox`, `TooltipExtent`, `TooltipPosition`.
+- `tooltip(label, shortcut?, options?)`: returns the attributes to spread. `shortcut` is a `Chord` (`{ key: 't', meta: true }`), which the tooltip draws with the key glyphs every legend uses (`data-tooltip-chord`, plus the text form in `data-tooltip-shortcut`), or a chord already written as text ("⌘T"), printed as given. No label means no tooltip. Never use `title` alongside. `options` is a `TooltipOptions`: `value: true` sets the text in monospace (`data-tooltip-value`), for a path, a name, or a command, which are monospace everywhere else; `side: 'end'` or `'start'` opens it beside the control on that inline side (`data-tooltip-side`), for a tool rail where a tooltip below would cover the next tool; `side: 'above'` opens it over the control, or at its inline end where the window has no room above, for a label whose help must not cover the control under it (`labelHelp` sets it).
+- `cutTooltip(label)`: an element's own text as its tooltip, opened only while the element cuts that text (`data-tooltip-cut`). The element must be the box that clips (`overflow: hidden` with an ellipsis); the layer opens it only while `cutsItsText(element)` (content wider or taller than the box). It takes its element's face: when the element's computed font is a monospace stack (a name, a status line), the tooltip is set in monospace too.
+- `tooltipChord(data)`: reads back a chord written as data, or null.
+- `describedTooltip(text, options?)`: the same, plus `aria-description`, for a tooltip that says more than the element's name (a full path, an error's detail). Pass `{ value: true }` for a path or a name.
+- `placeTooltip(anchor, tip, viewport, pointerX, beside?, rtl?, glyph?, preferAbove?)`: the placement rule, exported for testing and reuse. Under the control. A tip wider than its control starts at the control's leading edge (its right edge when `rtl`, which the layer reads from the control's direction), so a tooltip on a short label at the start of a row does not spread back over the pane beside it; a glyph button keeps its tip centred, which the layer tells by what the control is (a button, link, tab, radio, or input no wider than it is tall; `glyph`, which defaults to the box test alone), so a label, a status line, or any other text keeps its leading edge however short it is; on a control wider than the tip, centred on the pointer within the control; above when there is no room below; kept 6px inside the window. With `beside` (`'left'` or `'right'`, which the layer resolves from `side` and the control's direction), 6px off that side and centred on the control's height; on the other side when the window ends too soon, and below as usual when neither side has room. With `preferAbove`, over the control at the same edge; at its inline end when the window has no room above; below only when neither fits.
+- `TOOLTIP_DELAY_MS` (500), `TooltipAttributes`, `TooltipOptions`, `TooltipSide`, `TooltipBeside`, `TooltipAnchorBox`, `TooltipExtent`, `TooltipPosition`.
 
 ## Behaviour
 
@@ -33,7 +38,7 @@ import { TooltipLayer, describedTooltip, tooltip } from '@bigpixelrocket/uiok/to
 
 ## Styling
 
-`.tooltip`, `.tooltip-label` (wraps, clamps at 12 lines), `.tooltip-shortcut`. Layered at `--z-tooltip`.
+`.tooltip`, `.tooltip-value` (a value: the label in `--font-mono` at regular weight), `.tooltip-label` (wraps with balanced lines, clamps at 12 lines), `.tooltip-shortcut` (a text chord in the key caps' monospace, in `--text-dim`), `.tooltip-chord` (a chord drawn as frameless key glyphs, in `--text-dim`, centred on the title's first line). Layered at `--z-tooltip`, on `--shadow-popover` under a lit top edge (`--glass-edge`), which lifts it in dark themes where a shadow barely shows.
 
 ## Labels read
 

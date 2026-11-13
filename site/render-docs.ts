@@ -41,6 +41,7 @@ const REPOSITORY = 'https://github.com/Bigpixelrocket/uiok/blob/main/';
 const DOC_ROUTES: Readonly<Record<string, string>> = {
   'docs/themes.md': '#/theming',
   'docs/labels.md': '#/labels',
+  'docs/tokens.md': '#/tokens',
   'docs/components/keyboard.md': '#/keyboard'
 };
 
@@ -51,15 +52,39 @@ function siteHref(href: string, from: string): string {
   const resolved = new URL(path, `https://repo.invalid/${from}`).pathname.slice(1);
   const route = DOC_ROUTES[resolved];
   if (route !== undefined) return route;
-  const area = /^docs\/components\/([a-z]+)\.md$/.exec(resolved)?.[1];
+  const area = /^docs\/components\/([a-z][a-z-]*)\.md$/.exec(resolved)?.[1];
   if (area !== undefined) return `#/components/${area}`;
   return `${REPOSITORY}${resolved}${anchor === undefined ? '' : `#${anchor}`}`;
 }
+
+/**
+ * An inline code run short enough to keep whole: no space and at most 28
+ * characters, such as a token or attribute name. site.css keeps it on one
+ * line, so a phone-width line does not break it after a hyphen
+ * (`--control-track` into `--` and `control-track`); a longer run still wraps.
+ */
+const CODE_WORD = /^\S{1,28}$/;
+
+const HTML_ESCAPES: Readonly<Record<string, string>> = {
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+};
 
 /** Markdown text as HTML, its links rewritten for the doc at `from`. */
 function markdownHtml(text: string, from: string): string {
   const marked = new Marked({
     gfm: true,
+    renderer: {
+      // Returning false leaves any other run to marked's own codespan.
+      codespan({ text: code }) {
+        if (!CODE_WORD.test(code)) return false;
+        const escaped = code.replace(/[&<>"']/g, (char) => HTML_ESCAPES[char] ?? char);
+        return `<code class="code-word">${escaped}</code>`;
+      }
+    },
     walkTokens: (token) => {
       if (token.type === 'link') {
         const link = token as Tokens.Link;
@@ -67,7 +92,31 @@ function markdownHtml(text: string, from: string): string {
       }
     }
   });
-  return marked.parse(text, { async: false });
+  return scrollingTables(framedCodeBlocks(marked.parse(text, { async: false })));
+}
+
+/**
+ * Each code block inside a frame of its own, so the block can scroll
+ * sideways under the library's edge fade (`scroll-fade-x`) without the mask
+ * also fading its border. Marked writes every fenced block as
+ * `<pre><code…>…</code></pre>`; a `<pre>` written in a doc's prose is escaped.
+ */
+function framedCodeBlocks(html: string): string {
+  return html
+    .replaceAll('<pre><code', '<div class="code-frame"><pre class="scroll-fade-x"><code')
+    .replaceAll('</code></pre>', '</code></pre></div>');
+}
+
+/**
+ * Each table inside a scroller of its own under the library's edge fade, so a
+ * table wider than a phone scrolls sideways with a faded edge that says so,
+ * instead of crushing its columns (site.css gives a description column a
+ * floor). The cells draw the table's border, so the scroller needs no frame.
+ */
+function scrollingTables(html: string): string {
+  return html
+    .replaceAll('<table>', '<div class="table-scroll scroll-fade-x"><table>')
+    .replaceAll('</table>', '</table></div>');
 }
 
 /** The doc's title: its first heading without the package path in parentheses. */
@@ -77,15 +126,32 @@ function docTitle(text: string, fallback: string): string {
   return heading.replace(/\s*\(`[^`]*`\)\s*$/, '').trim();
 }
 
+/** A first heading that ends with the area's package path in parentheses. */
+const IMPORT_HEADING = /^# (.+?)\s*\(`([^`<>&]*)`\)\s*$/m;
+
+/**
+ * The doc with its package path moved out of the title onto a line of its
+ * own under it, so the title reads as the page's name and the path, a value
+ * to copy, can break anywhere on a narrow screen.
+ */
+function withImportLine(text: string): string {
+  return text.replace(
+    IMPORT_HEADING,
+    (_match, title: string, path: string) =>
+      `# ${title}\n\n<p class="doc-import"><code>${path}</code></p>\n`
+  );
+}
+
 /** The markdown of the doc at `from` (a repository path), rendered for the site. */
-export function renderDoc(text: string, from: string): RenderedDoc {
+export function renderDoc(source: string, from: string): RenderedDoc {
+  const text = withImportLine(source);
   const at = text.search(/^## /m);
   const intro = at === -1 ? text : text.slice(0, at);
   const rest = at === -1 ? '' : text.slice(at);
   const name = /([^/]+)\.md$/.exec(from)?.[1] ?? from;
   return {
     from,
-    title: docTitle(text, name),
+    title: docTitle(source, name),
     intro: markdownHtml(intro, from),
     rest: markdownHtml(rest, from)
   };

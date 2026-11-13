@@ -1,0 +1,727 @@
+/**
+ * The shell's shared surfaces: a Settings dialog with its sidebar of pages
+ * (Appearance with the theme picker, Updates with the status card and its
+ * notes, Files with a file's problems), the theme picker and the update
+ * card in each tone on the page itself (a note under the ready card's head,
+ * a failed download under a ruled-off head), the alert a settings file's new
+ * mistake raises, the update pill's states, the channel tag in the accent and in a
+ * host's own hue, the About window, the sign-in prompts (a password asked
+ * again after a refusal, a new host key), the exit confirmation, and the
+ * load failure block. The Files page of the Settings dialog holds a change a
+ * file could not take, over the page.
+ */
+
+import {
+  ArrowUpDown,
+  Box,
+  CircleAlert,
+  CircleCheck,
+  Cog,
+  Download,
+  FileText,
+  Info,
+  KeyRound,
+  LoaderCircle,
+  Palette as PaletteIcon,
+  Power,
+  RefreshCw,
+  Server,
+  Settings as SettingsIcon,
+  ShieldQuestion,
+  TriangleAlert
+} from 'lucide-react';
+import { useId, useState, type CSSProperties, type ReactElement, type ReactNode } from 'react';
+
+import { Button } from '@bigpixelrocket/uiok/button';
+import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
+import { ICON_MD, ICON_XL } from '@bigpixelrocket/uiok/icon';
+import { RunHeader } from '@bigpixelrocket/uiok/run';
+import { DARK_THEME_IDS, LIGHT_THEME_IDS, type ThemeId } from '@bigpixelrocket/uiok/themes';
+import { cutTooltip } from '@bigpixelrocket/uiok/tooltip';
+
+import { ThemeChoices } from '../ThemePicker';
+
+/** The lines of a build's What's new, grouped by area. */
+const NOTES: readonly { readonly area: string; readonly lines: readonly string[] }[] = [
+  {
+    area: 'Files',
+    lines: [
+      'Copying to a server now resumes where it stopped after the connection drops',
+      'A folder with thousands of entries opens noticeably faster'
+    ]
+  },
+  {
+    area: 'Settings',
+    lines: ['Theme names that do not fit take a second line instead of losing their end']
+  },
+  {
+    area: 'App',
+    lines: [
+      'The update pill no longer moves the title bar when it appears',
+      'Dialogs keep clear of the title bar in a short window'
+    ]
+  }
+];
+
+type CardTone = 'idle' | 'busy' | 'ready' | 'ok' | 'warning' | 'error';
+
+/** The status card for one state of the updater. */
+function UpdateCard({
+  tone,
+  title,
+  sub,
+  verb,
+  note,
+  notes = false,
+  run = false
+}: {
+  readonly tone: CardTone;
+  readonly title: ReactNode;
+  readonly sub: string;
+  readonly verb?: string;
+  /** A quiet line under the head (`update-card-note`). */
+  readonly note?: string;
+  readonly notes?: boolean;
+  /** A download under the head: one running, or one that failed in a neutral card. */
+  readonly run?: boolean | 'failed';
+}): ReactElement {
+  // With a download under it, the head's glyph stays still: the RunHeader's
+  // ring is the one that turns.
+  const spins = tone === 'busy' && run === false;
+  const Glyph = spins
+    ? LoaderCircle
+    : tone === 'busy'
+      ? Download
+      : tone === 'ok'
+        ? CircleCheck
+        : tone === 'warning'
+          ? TriangleAlert
+          : tone === 'error'
+            ? CircleAlert
+            : tone === 'ready'
+              ? RefreshCw
+              : Download;
+  const headingId = useId();
+  const classes = [
+    'update-card',
+    'card',
+    notes ? 'with-notes' : '',
+    run === false ? '' : 'with-run'
+  ]
+    .filter(Boolean)
+    .join(' ');
+  return (
+    <section className={classes} data-tone={tone}>
+      <div className="update-card-head">
+        <Glyph aria-hidden className={spins ? 'update-card-glyph spinner' : 'update-card-glyph'} />
+        <div className="update-card-said">
+          <span className="update-card-title">{title}</span>
+          <span className="update-card-sub">{sub}</span>
+        </div>
+        {verb ? (
+          <Button size="small" variant={tone === 'ready' ? 'primary' : 'tonal'}>
+            {verb}
+          </Button>
+        ) : null}
+      </div>
+      {note === undefined ? null : <p className="update-card-note">{note}</p>}
+      {/* A download under its ruled-off head: the clock on the headline's
+          line, and the caption under the bar leading with the percent, then
+          the size and the rate. */}
+      {run === true ? (
+        <RunHeader
+          bar={{ fraction: 0.42, label: 'Download' }}
+          facts={['42%', '38.2 MB of 91.0 MB', '4.1 MB/s']}
+          figure="0:09"
+          headline="Downloading 2.5.0"
+          state="running"
+        />
+      ) : null}
+      {/* A download that stopped short: no empty track, the reason the
+          system returned in the code face, the time as a fact. */}
+      {run === 'failed' ? (
+        <RunHeader
+          facts={['13:58']}
+          headline="The download of 2.5.0 failed"
+          reason="ECONNRESET: updates.example.com closed the connection"
+          state="failed"
+        />
+      ) : null}
+      {notes ? (
+        <section aria-labelledby={headingId} className="update-notes">
+          <h4 className="overline" id={headingId}>
+            What&apos;s new
+          </h4>
+          <div className="update-notes-frame">
+            <div
+              aria-label="What's new"
+              className="update-notes-list update-notes-groups scroll-fade"
+              role="group"
+              style={{ '--update-note-rows': 3 } as CSSProperties}
+              tabIndex={0}
+            >
+              {NOTES.map((group) => (
+                <div className="update-notes-group" key={group.area}>
+                  <h5 className="update-notes-area">{group.area}</h5>
+                  <ul>
+                    {group.lines.map((line) => (
+                      <li key={line}>{line}</li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+    </section>
+  );
+}
+
+/** The check cadence, a card above the status card. */
+function UpdateChecks(): ReactElement {
+  const id = useId();
+  return (
+    <div className="update-checks card">
+      <label className="update-checks-label" htmlFor={id}>
+        Check for updates automatically
+      </label>
+      <select className="field field-sm" defaultValue="hour" id={id}>
+        <option value="hour">Every hour</option>
+        <option value="day">Every day</option>
+        <option value="never">Never</option>
+      </select>
+      <p className="field-note">The next check is at 14:00.</p>
+    </div>
+  );
+}
+
+type PageId = 'appearance' | 'updates' | 'files';
+
+const PAGES: readonly {
+  readonly id: PageId;
+  readonly title: string;
+  readonly icon: typeof PaletteIcon;
+  readonly subsections: readonly string[];
+}[] = [
+  {
+    id: 'appearance',
+    title: 'Appearance',
+    icon: PaletteIcon,
+    subsections: ['Appearance', 'Light theme', 'Dark theme']
+  },
+  { id: 'updates', title: 'Updates', icon: Download, subsections: [] },
+  { id: 'files', title: 'Files', icon: FileText, subsections: ['Folder', 'settings.toml'] }
+];
+
+/** The Appearance page: the appearance, then each appearance's themes. */
+function AppearancePage(): ReactElement {
+  const [light, setLight] = useState<ThemeId>('catppuccin-latte');
+  const [dark, setDark] = useState<ThemeId>('catppuccin-mocha');
+  const appearanceId = useId();
+  return (
+    <>
+      <section className="settings-subsection">
+        <h4 className="overline">Appearance</h4>
+        <div className="field-grid">
+          <label className="field-label" htmlFor={appearanceId}>
+            Appearance
+          </label>
+          <div className="field-value">
+            <select className="field field-sm" defaultValue="system" id={appearanceId}>
+              <option value="system">Follow the system</option>
+              <option value="light">Light</option>
+              <option value="dark">Dark</option>
+            </select>
+          </div>
+        </div>
+      </section>
+      <section className="settings-subsection">
+        <h4 className="overline">Light theme</h4>
+        <div className="field-grid">
+          <span className="field-label">
+            Light theme
+            <span className="settings-label-detail">In use now</span>
+          </span>
+          <div className="field-value">
+            <ThemeChoices
+              chosen={light}
+              ids={LIGHT_THEME_IDS}
+              label="Light theme"
+              onChoose={setLight}
+            />
+            <p className="field-note">Worn while the system is light.</p>
+          </div>
+        </div>
+      </section>
+      <section className="settings-subsection">
+        <h4 className="overline">Dark theme</h4>
+        <div className="field-grid">
+          <span className="field-label">Dark theme</span>
+          <div className="field-value">
+            <ThemeChoices
+              chosen={dark}
+              ids={DARK_THEME_IDS}
+              label="Dark theme"
+              onChoose={setDark}
+            />
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/** The Files page: the folder, then a file with its problems. */
+function FilesPage(): ReactElement {
+  return (
+    <>
+      <section className="settings-subsection">
+        <h4 className="overline">Folder</h4>
+        <div className="field-grid">
+          <span className="field-label">Folder</span>
+          <div className="field-option">
+            <span className="settings-file-path">~/.config/example-app</span>
+            <Button className="settings-file-action" size="small">
+              Show in Finder
+            </Button>
+          </div>
+        </div>
+      </section>
+      <section className="settings-subsection">
+        {/* A subsection may head itself with settings-subsection-title. */}
+        <h4 className="settings-subsection-title overline">settings.toml</h4>
+        <div className="field-grid">
+          <span className="field-label settings-file-name">settings.toml</span>
+          <div className="field-value">
+            <div className="field-option">
+              <span>2 problems</span>
+              <Button className="settings-file-action" size="small">
+                Open
+              </Button>
+            </div>
+            <ul className="settings-file-problems">
+              <li className="settings-file-problem notice notice-danger">
+                <CircleAlert aria-hidden size={ICON_MD} />
+                <span className="notice-text settings-file-problem-text">
+                  <span className="settings-file-problem-place">
+                    Line 12, <code>appearance.theme</code>
+                  </span>
+                  <span>Expected one of system, light, or dark.</span>
+                </span>
+              </li>
+              <li className="settings-file-problem notice">
+                <Info aria-hidden size={ICON_MD} />
+                <span className="notice-text settings-file-problem-text">
+                  <span className="settings-file-problem-place">
+                    Line 30, <code>window.zoom</code>
+                  </span>
+                  <span>This version does not know this key; it is kept as it is.</span>
+                </span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/** The Settings dialog: the sidebar of pages beside the chosen page. */
+function SettingsDialog({ onClose }: { readonly onClose: () => void }): ReactElement {
+  const labelId = useId();
+  const [page, setPage] = useState<PageId>('appearance');
+  const [subsection, setSubsection] = useState('Appearance');
+  const shown = PAGES.find((entry) => entry.id === page) ?? PAGES[0]!;
+  return (
+    <ModalDialog
+      className="settings-dialog"
+      frosted
+      icon={SettingsIcon}
+      labelId={labelId}
+      legend={{ primary: { label: 'Done', onRun: onClose } }}
+      onCancel={onClose}
+      title="Settings"
+    >
+      <div className="settings-dialog-body">
+        <nav aria-label="Settings pages" className="settings-sidebar scroll-fade">
+          <div className="settings-sidebar-group">
+            <span className="settings-sidebar-header overline">App</span>
+            {PAGES.map(({ id, title, icon: Icon, subsections }) => (
+              <div key={id}>
+                <button
+                  aria-current={id === page ? 'page' : undefined}
+                  className="settings-sidebar-page"
+                  onClick={() => {
+                    setPage(id);
+                    setSubsection(subsections[0] ?? '');
+                  }}
+                  type="button"
+                >
+                  <Icon size={ICON_MD} />
+                  <span {...cutTooltip(title)}>{title}</span>
+                  {id === 'updates' ? <span className="settings-sidebar-chip">2.5.0</span> : null}
+                </button>
+                {id === page && subsections.length > 1 ? (
+                  <div className="settings-sidebar-subsections">
+                    {subsections.map((name) => (
+                      <button
+                        aria-current={name === subsection ? 'location' : undefined}
+                        className="settings-sidebar-subsection"
+                        key={name}
+                        onClick={() => setSubsection(name)}
+                        type="button"
+                        {...cutTooltip(name)}
+                      >
+                        {name}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+          <div className="settings-sidebar-group">
+            <span className="settings-sidebar-header overline">Workspace</span>
+            <button className="settings-sidebar-page" type="button">
+              <KeyRound size={ICON_MD} />
+              <span {...cutTooltip('Keyboard shortcuts and the keys they are bound to')}>
+                Keyboard shortcuts and the keys they are bound to
+              </span>
+            </button>
+          </div>
+        </nav>
+        <div className="settings-column">
+          {page === 'files' ? (
+            <div className="settings-save-failure notice notice-danger" role="alert">
+              <CircleAlert aria-hidden size={ICON_MD} />
+              <p className="notice-text">
+                The theme could not be saved: settings.toml is read-only.
+              </p>
+            </div>
+          ) : null}
+          <div
+            className={
+              page === 'updates' ? 'settings-page fills scroll-fade' : 'settings-page scroll-fade'
+            }
+          >
+            <h3 className="settings-page-title">{shown.title}</h3>
+            {page === 'appearance' ? <AppearancePage /> : null}
+            {page === 'updates' ? (
+              <div className="updates-page">
+                <UpdateChecks />
+                <UpdateCard
+                  notes
+                  sub="Version 2.5.0 is available. You have 2.4.1."
+                  title="An update is available"
+                  tone="idle"
+                  verb="Download"
+                />
+              </div>
+            ) : null}
+            {page === 'files' ? <FilesPage /> : null}
+          </div>
+        </div>
+      </div>
+    </ModalDialog>
+  );
+}
+
+/**
+ * A password asked again after the server refused the last one: the one
+ * body every host shares. A short title, then one label column: the server
+ * and the account as fact rows (a passphrase prompt names its key file
+ * instead of the account), then the field under a one-word label and,
+ * after a refusal, its problem.
+ */
+function PasswordPrompt({ onClose }: { readonly onClose: () => void }): ReactElement {
+  const labelId = useId();
+  const fieldId = useId();
+  const problemId = useId();
+  return (
+    <ModalDialog
+      className="sign-in-dialog"
+      icon={KeyRound}
+      labelId={labelId}
+      legend={{ leave: { label: 'Cancel' }, primary: { label: 'Sign In', onRun: onClose } }}
+      onCancel={onClose}
+      title="Sign In"
+    >
+      <div className="field-grid">
+        <span className="field-label sign-in-fact">Server</span>
+        <p className="sign-in-fact-value dialog-value" {...cutTooltip('build')}>
+          build
+        </p>
+        <span className="field-label sign-in-fact">Account</span>
+        <p className="sign-in-fact-value dialog-value" {...cutTooltip('deploy@build.example.com')}>
+          deploy@build.example.com
+        </p>
+        <label className="field-label" htmlFor={fieldId}>
+          Password
+        </label>
+        <div className="field-value">
+          <input
+            aria-describedby={problemId}
+            aria-invalid
+            autoFocus
+            className="field sign-in-field"
+            id={fieldId}
+            type="password"
+          />
+          <p className="field-problem" id={problemId}>
+            That password was not accepted.
+          </p>
+        </div>
+      </div>
+    </ModalDialog>
+  );
+}
+
+/**
+ * A host key the computer has not seen before, asked as every confirmation
+ * is: the host is the one item, and the key's type and fingerprint follow
+ * it in their framed block.
+ */
+function HostKeyPrompt({ onClose }: { readonly onClose: () => void }): ReactElement {
+  return (
+    <ConfirmDialog
+      confirmLabel="Trust"
+      icon={ShieldQuestion}
+      itemIcon={Server}
+      items={[{ name: 'build.example.com', detail: 'Build server' }]}
+      message="ssh has not seen this server’s host key before. Trust it only if this fingerprint is the server’s."
+      onCancel={onClose}
+      onConfirm={onClose}
+      title="Trust Host Key?"
+      tone="primary"
+    >
+      <dl className="sign-in-fingerprint">
+        <dt>ED25519</dt>
+        <dd>
+          <code>SHA256:8b2fQx0Zr1m4V3kKpN7uYc9hT6wLsE5aJdG2oRiB4Hc</code>
+        </dd>
+      </dl>
+    </ConfirmDialog>
+  );
+}
+
+/**
+ * The confirmation shown before an app quits with work running: a title of
+ * a few words, the lead, then what is running as labelled groups of items.
+ */
+function ExitConfirmation({ onClose }: { readonly onClose: () => void }): ReactElement {
+  return (
+    <ConfirmDialog
+      cancelLabel="Keep Running"
+      className="exit-confirmation"
+      confirmLabel="Quit"
+      groups={[
+        {
+          label: 'Running processes',
+          icon: Cog,
+          items: [
+            { name: 'api', detail: 'shop' },
+            { name: 'web', detail: 'shop' },
+            { name: 'worker', detail: 'shop' }
+          ]
+        },
+        {
+          label: 'Transfers',
+          icon: ArrowUpDown,
+          items: [{ name: 'backup.tar.gz', detail: '1.2 GB' }]
+        }
+      ]}
+      icon={Power}
+      message="Quitting stops 3 processes and pauses 1 transfer. Logs are kept, and the transfer resumes at the next launch."
+      onCancel={onClose}
+      onConfirm={onClose}
+      title="Quit?"
+      tone="warning"
+    />
+  );
+}
+
+/**
+ * The alert a host raises when a settings file it reads has a new problem:
+ * a short title, one sentence on what happens meanwhile, the problem as a
+ * fact row (its place and message, then how many more), Close on Escape,
+ * and Show Problems, which opens the Settings page that lists them all.
+ */
+function SettingsAlert({ onClose }: { readonly onClose: () => void }): ReactElement {
+  return (
+    <ConfirmDialog
+      cancelLabel="Close"
+      className="settings-alert dialog-size-md"
+      confirmLabel="Show Problems"
+      facts={[
+        {
+          label: 'settings.toml line 12',
+          value: 'The theme is not one this version knows.',
+          more: 1
+        }
+      ]}
+      icon={TriangleAlert}
+      message="A setting the app cannot read keeps its last valid value until the file is fixed."
+      onCancel={onClose}
+      onConfirm={onClose}
+      title="Settings File Problem"
+      tone="warning"
+    />
+  );
+}
+
+type Open = 'settings' | 'password' | 'host-key' | 'exit' | 'settings-alert' | null;
+
+/** The shell surfaces page's demo. */
+export function ShellDemo(): ReactElement {
+  const [open, setOpen] = useState<Open>(null);
+  const [light, setLight] = useState<ThemeId>('catppuccin-latte');
+  const close = () => setOpen(null);
+  return (
+    <div className="demo-stack">
+      <h3 className="demo-subhead">Dialogs</h3>
+      <div className="demo-row">
+        <Button onClick={() => setOpen('settings')}>Open Settings</Button>
+        <Button onClick={() => setOpen('password')}>Sign In Again</Button>
+        <Button onClick={() => setOpen('host-key')}>New Host Key</Button>
+        <Button onClick={() => setOpen('exit')}>Quit…</Button>
+      </div>
+      {open === 'settings' ? <SettingsDialog onClose={close} /> : null}
+      {open === 'password' ? <PasswordPrompt onClose={close} /> : null}
+      {open === 'host-key' ? <HostKeyPrompt onClose={close} /> : null}
+      {open === 'exit' ? <ExitConfirmation onClose={close} /> : null}
+
+      <h3 className="demo-subhead">Settings notice</h3>
+      {/* A new mistake in a settings file needs the user's attention but is
+          not the outcome of what they just did, so it is an alert dialog, not
+          a line under the header: a short title, one sentence, the problem as
+          a fact row ending in "+N more", Close and Show Problems. */}
+      <div className="demo-row">
+        <Button onClick={() => setOpen('settings-alert')}>Settings File Problem…</Button>
+      </div>
+      {open === 'settings-alert' ? <SettingsAlert onClose={close} /> : null}
+
+      <h3 className="demo-subhead">Theme picker</h3>
+      <ThemeChoices chosen={light} ids={LIGHT_THEME_IDS} label="Light theme" onChoose={setLight} />
+
+      <h3 className="demo-subhead">Update card</h3>
+      <div className="updates-page">
+        <UpdateChecks />
+        <UpdateCard sub="Last checked at 13:02." title="This is the latest version" tone="ok" />
+        <UpdateCard sub="Looking for a newer build." title="Checking for updates" tone="busy" />
+        <UpdateCard
+          notes
+          sub="Version 2.5.0 is available. You have 2.4.1."
+          title="An update is available"
+          tone="idle"
+          verb="Download"
+        />
+        <UpdateCard
+          run
+          sub="Version 2.5.0, 91.0 MB."
+          title="Downloading the update"
+          tone="busy"
+          verb="Stop"
+        />
+        <UpdateCard
+          note="It also installs the next time the app opens."
+          sub="Restart to finish installing 2.5.0."
+          title="Ready to install"
+          tone="ready"
+          verb="Restart and Update"
+        />
+        <UpdateCard
+          run="failed"
+          sub="Version 2.5.0 is available. You have 2.4.1."
+          title="An update is available"
+          tone="idle"
+          verb="Try Again"
+        />
+        <UpdateCard
+          sub="The update server did not answer. Checks will try again within the hour."
+          title="Could not check for updates"
+          tone="warning"
+          verb="Try Again"
+        />
+        <UpdateCard
+          sub="The download was not signed by the expected developer."
+          title="The update could not be installed"
+          tone="error"
+          verb="Try Again"
+        />
+      </div>
+
+      <h3 className="demo-subhead">Ready in a short column</h3>
+      {/* The ready state in a long sentence, over a long What's new list in
+          a short column: the status takes two lines, its glyph hangs on the
+          first, and only the list gives way to the column's height. */}
+      <div className="shell-demo-window shell-demo-updates-short">
+        <UpdateCard
+          notes
+          sub="It installs when the app next starts, or now with Restart and Update."
+          title={
+            <>
+              <strong>2.5.0-nightly.20261113</strong> is ready
+            </>
+          }
+          tone="ready"
+          verb="Restart and Update"
+        />
+      </div>
+
+      <h3 className="demo-subhead">Update pill</h3>
+      <div className="demo-row">
+        <Button className="shell-update-pill" data-state="available" size="small" variant="tonal">
+          Update
+        </Button>
+        <Button className="shell-update-pill" data-state="ready" size="small" variant="primary">
+          Restart
+        </Button>
+        <Button className="shell-update-pill" data-state="download-failed" size="small">
+          <TriangleAlert size={ICON_MD} />
+          Update
+        </Button>
+      </div>
+
+      <h3 className="demo-subhead">Channel tag</h3>
+      <div className="demo-row">
+        <span className="channel-tag">Nightly 412</span>
+        <span className="channel-tag">Local</span>
+        {/* A host that colours its channels sets the hue and its words. */}
+        <span
+          className="channel-tag"
+          style={
+            {
+              '--channel': 'var(--success)',
+              '--channel-text': 'var(--success-text)'
+            } as CSSProperties
+          }
+        >
+          Beta 2.5
+        </span>
+      </div>
+
+      <h3 className="demo-subhead">About window</h3>
+      {/* A window of 420 by 300 in place of the whole viewport the class fills. */}
+      <div className="shell-demo-window" style={{ width: 420, maxWidth: '100%' }}>
+        <div className="about-window" style={{ height: 300 }}>
+          <Box absoluteStrokeWidth aria-hidden size={ICON_XL} />
+          <div className="about-lockup">
+            <strong>Sample App</strong>
+          </div>
+          <p className="about-version">Version 3.4.0 (412)</p>
+        </div>
+      </div>
+
+      <h3 className="demo-subhead">Load failure</h3>
+      <div className="card">
+        <div className="space-load-failure" role="alert">
+          <CircleAlert absoluteStrokeWidth aria-hidden size={ICON_XL} />
+          <strong>The list could not be loaded</strong>
+          <p>The settings folder could not be read: permission denied. Check its permissions.</p>
+          <Button size="small">Try Again</Button>
+        </div>
+      </div>
+    </div>
+  );
+}

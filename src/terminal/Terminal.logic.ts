@@ -30,6 +30,8 @@ const TERMINAL_THEME_TOKENS = {
   foreground: '--terminal-fg',
   cursor: '--terminal-cursor',
   selection: '--terminal-selection',
+  /** The one ink of selected text, floored again per cell by the renderer. */
+  selectionText: '--terminal-selection-text',
   /** `--terminal-ansi-0` through `--terminal-ansi-15`: SGR 30-37, then 90-97. */
   ansiPrefix: '--terminal-ansi-'
 } as const;
@@ -101,7 +103,8 @@ function terminalPalette(ansi: readonly GhosttyColor[]): GhosttyColor[] {
  * The theme the stylesheet's terminal tokens describe. `read` returns a
  * token's value; `parse` resolves a value to a color, or null. Missing
  * defaults fall back to Catppuccin Mocha (`FALLBACK_TERMINAL_THEME`); missing ANSI colors leave Ghostty's
- * own palette in place.
+ * own palette in place, and a missing selection ink leaves selected cells
+ * their own colours (floored on the selection all the same).
  */
 export function terminalThemeFromTokens(
   read: (token: string) => string,
@@ -114,12 +117,14 @@ export function terminalThemeFromTokens(
     parse(read(`${TERMINAL_THEME_TOKENS.ansiPrefix}${index}`))
   );
   const complete = ansi.every((entry): entry is GhosttyColor => entry !== null);
+  const selectionText = parse(read(TERMINAL_THEME_TOKENS.selectionText));
   return {
     background: color(TERMINAL_THEME_TOKENS.background, FALLBACK_TERMINAL_THEME.background),
     foreground: color(TERMINAL_THEME_TOKENS.foreground, FALLBACK_TERMINAL_THEME.foreground),
     cursor: color(TERMINAL_THEME_TOKENS.cursor, FALLBACK_TERMINAL_THEME.cursor),
     selectionBackground:
       selection.length > 0 ? selection : (FALLBACK_TERMINAL_THEME.selectionBackground ?? ''),
+    ...(selectionText !== null ? { selectionForeground: selectionText } : {}),
     ...(complete ? { palette: terminalPalette(ansi) } : {})
   };
 }
@@ -139,10 +144,10 @@ export function terminalFontFamilyFromCss(value: string): string | undefined {
 
 /**
  * How long the visual bell shows, in milliseconds: the flash's fade, or the
- * static edge tint that takes its place under reduced motion. `Terminal.css`
- * fades over the same time.
+ * static edge tint that takes its place under reduced motion. terminal.css
+ * fades over `--duration-slow`, the same 280 ms.
  */
-export const BELL_FLASH_MS = 250;
+export const BELL_FLASH_MS = 280;
 
 /**
  * The shortest time between two flashes of the visual bell, in milliseconds.

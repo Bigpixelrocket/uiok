@@ -456,6 +456,20 @@ describe('Terminal', () => {
       expect(screen.getByRole('menuitem', { name: /^Einsetzen/ })).toBeTruthy();
     });
 
+    it('opens through a portal on the body, in the menu look, so no box around the terminal clips it', async () => {
+      const { container } = render(<Terminal ariaLabel="Shell" onInput={() => {}} />);
+      const surface = await ready();
+      openMenu(surface);
+      const menu = screen.getByRole('menu');
+
+      expect(container.contains(menu)).toBe(false);
+      expect(menu.parentElement).toBe(document.body);
+      expect(menu.className).toBe('folder-menu terminal-menu');
+      expect(screen.getAllByRole('menuitem')[0]?.classList.contains('folder-menu-option')).toBe(
+        true
+      );
+    });
+
     it('shows the chords its host names beside Copy and Paste', async () => {
       render(
         <Terminal

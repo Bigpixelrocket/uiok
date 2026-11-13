@@ -320,8 +320,12 @@ describe('Palette', () => {
     ]);
     expect(declaredValues(dialog, 'background')).toEqual(['var(--surface)']);
     expect(declaredValues(dialog, 'position')).toContain('static');
-    expect(declaredValues(screen.getByRole('option', { name: 'New Tab' }), 'background')).toEqual([
-      'var(--cursor-row-bg)'
+    const cursorRow = screen.getByRole('option', { name: 'New Tab' });
+
+    expect(declaredValues(cursorRow, 'background')).toEqual(['var(--cursor-row)']);
+    // The cursor row carries the accent bar at its leading edge, as a listing's does.
+    expect(declaredValues(cursorRow, 'box-shadow')).toEqual([
+      'inset var(--line-strong) 0 0 var(--cursor-bar)'
     ]);
   });
 });

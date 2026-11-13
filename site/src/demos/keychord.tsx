@@ -1,8 +1,14 @@
-/** Chords drawn as key caps, each named in words. */
+/**
+ * Chords drawn as key caps, each named in words, one chord bare, and one cap
+ * in each tone a host can set, and the parts of a chord: its modifiers alone,
+ * and a chord with a modifier left out of the drawing.
+ */
 
 import { useLabels } from '@bigpixelrocket/uiok';
 import { chordSpoken, type Chord } from '@bigpixelrocket/uiok/keyboard';
-import { KeyChord } from '@bigpixelrocket/uiok/keychord';
+import { KeyChord, type KeyChordTone } from '@bigpixelrocket/uiok/keychord';
+
+import { DemoState, DemoStates } from '../DemoStates';
 
 const CHORDS: readonly Chord[] = [
   { key: 'n', meta: true, shift: true },
@@ -16,19 +22,72 @@ const CHORDS: readonly Chord[] = [
   { key: '/', ctrl: true }
 ];
 
+/** One cell per look: plain, each `tone`, and the recording outline. */
+const TONES: ReadonlyArray<{
+  readonly label: string;
+  readonly tone?: KeyChordTone;
+  readonly recording?: boolean;
+}> = [
+  { label: 'Plain' },
+  { label: 'accent: changed from its default', tone: 'accent' },
+  { label: 'lit: the chord Return runs', tone: 'lit' },
+  { label: 'quiet: cannot change', tone: 'quiet' },
+  { label: 'Recording', recording: true }
+];
+
 /** The key chord page's demo. */
 export function KeyChordDemo() {
   const keys = useLabels().keys;
   return (
-    <ul className="chord-list">
-      {CHORDS.map((chord) => (
-        <li key={chordSpoken(chord, keys)}>
-          <span className="chord-cap">
+    <div className="demo-stack">
+      {/* `keycap` around the chords draws each as the library's one key cap. */}
+      <ul className="chord-list keycap">
+        {CHORDS.map((chord) => (
+          <li key={chordSpoken(chord, keys)}>
             <KeyChord chord={chord} />
+            <span className="demo-readout">{chordSpoken(chord, keys)}</span>
+          </li>
+        ))}
+      </ul>
+      <p className="demo-row">
+        Bare, in running text: <KeyChord chord={{ key: 'c', meta: true }} />
+      </p>
+      {/* Each tone on a single and a multi-key cap, then the chord outside a
+          cap, where only `quiet` changes anything. */}
+      <DemoStates minCell="180px" title="Tones">
+        {TONES.map(({ label, tone, recording }) => (
+          <DemoState key={label} label={label}>
+            <span className="keycap">
+              <KeyChord chord={{ key: 'k', meta: true }} recording={recording} tone={tone} />
+            </span>{' '}
+            <span className="keycap">
+              <KeyChord
+                chord={{ key: 'Enter', meta: true, shift: true }}
+                recording={recording}
+                tone={tone}
+              />
+            </span>{' '}
+            <KeyChord chord={{ key: 'k', meta: true }} recording={recording} tone={tone} />
+          </DemoState>
+        ))}
+      </DemoStates>
+      {/* A chord with no key draws its modifiers alone (a held layer's
+          anchor); `omit` leaves out a modifier shown elsewhere, and the name
+          still says the whole chord. */}
+      <DemoStates minCell="180px" title="Parts of a chord">
+        <DemoState
+          label={`Modifiers alone: ${chordSpoken({ key: '', meta: true, shift: true }, keys)}`}
+        >
+          <span className="keycap">
+            <KeyChord chord={{ key: '', meta: true, shift: true }} />
           </span>
-          <span className="demo-readout">{chordSpoken(chord, keys)}</span>
-        </li>
-      ))}
-    </ul>
+        </DemoState>
+        <DemoState label={`omit meta, named ${chordSpoken({ key: 'k', meta: true }, keys)}`}>
+          <span className="keycap">
+            <KeyChord chord={{ key: 'k', meta: true }} omit={['meta']} />
+          </span>
+        </DemoState>
+      </DemoStates>
+    </div>
   );
 }

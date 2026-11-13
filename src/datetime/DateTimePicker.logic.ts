@@ -155,3 +155,45 @@ export function weekdayNames(firstDay: number, locale?: string): string[] {
     format.format(new Date(Date.UTC(2024, 0, firstDay + index)))
   );
 }
+
+/** A box in window coordinates, as `getBoundingClientRect` gives it. */
+export interface PanelBox {
+  readonly left: number;
+  readonly top: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/** How far the panel keeps from the window's edges, in pixels. */
+export const PANEL_INSET = 8;
+
+/** How far the panel stands off its button, in pixels (`--space-2`). */
+export const PANEL_GAP = 4;
+
+/**
+ * Where the picker's panel sits in the window (`view`), given its button
+ * and its own size: under the button, its left edge on the button's, unless the room
+ * below is short of the panel and the room above is larger, when it opens
+ * above. Either way it is moved back inside the window, `PANEL_INSET` from
+ * each edge, so no part of it (its Now and Done buttons) is ever cut.
+ */
+export function panelPlace(
+  anchor: PanelBox,
+  panel: { readonly width: number; readonly height: number },
+  view: { readonly width: number; readonly height: number }
+): { readonly left: number; readonly top: number; readonly above: boolean } {
+  const below = view.height - (anchor.top + anchor.height + PANEL_GAP) - PANEL_INSET;
+  const overhead = anchor.top - PANEL_GAP - PANEL_INSET;
+  const above = panel.height > below && overhead > below;
+  const top = above
+    ? anchor.top - PANEL_GAP - panel.height
+    : anchor.top + anchor.height + PANEL_GAP;
+  const clamp = (value: number, size: number, room: number): number =>
+    Math.max(PANEL_INSET, Math.min(value, room - size - PANEL_INSET));
+
+  return {
+    left: clamp(anchor.left, panel.width, view.width),
+    top: clamp(top, panel.height, view.height),
+    above
+  };
+}

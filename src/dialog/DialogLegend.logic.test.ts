@@ -222,6 +222,14 @@ describe('legendSignature', () => {
       })
     );
   });
+
+  it('tells a destructive secondary verb from a plain one', () => {
+    const slot = { label: 'Delete…', chord: { key: 'Backspace', meta: true }, onRun: vi.fn() };
+
+    expect(legendSignature({ secondary: [slot] })).not.toBe(
+      legendSignature({ secondary: [{ ...slot, danger: true }] })
+    );
+  });
 });
 
 describe('filterLeaveLabel', () => {

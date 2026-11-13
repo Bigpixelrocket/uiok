@@ -43,18 +43,14 @@ describe('MarkedText', () => {
     ]);
   });
 
-  it('tints behind a hit inside the listing scope, keeping the colour the name has', () => {
+  it('marks a hit with its wash and underline anywhere, keeping the colour the name has', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
-    const { container } = render(
-      <div className="listing-root">
-        <MarkedText positions={[0]} text="a" />
-      </div>
-    );
+    const { container } = render(<MarkedText positions={[0]} text="a" />);
     const hit = container.querySelector('.name-hit') as HTMLElement;
 
-    expect(declaredValues(hit, 'background')).toEqual([
-      'color-mix(in srgb, var(--accent) 22%, transparent)'
-    ]);
+    expect(declaredValues(hit, 'background')).toEqual(['var(--match-bg)']);
+    // An atomic box, so a name's ellipsis replaces a cut mark whole.
+    expect(declaredValues(hit, 'display')).toEqual(['inline-block']);
     expect(declaredValues(hit, 'color')).toEqual([]);
   });
 });

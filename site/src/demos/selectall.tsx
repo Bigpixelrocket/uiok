@@ -1,4 +1,4 @@
-/** A checked list with a select-all footer; Shift-click checks a range. */
+/** A checked list with a select-all footer; Shift-click checks a range. Under it, the bar of a list with no rows, disabled. */
 
 import { useState } from 'react';
 
@@ -23,6 +23,7 @@ export function SelectAllDemo() {
             <label>
               <input
                 checked={checked.has(file.id)}
+                className="check"
                 onChange={() => undefined}
                 onClick={(event) => {
                   setChecked(checkedAfterClick(checked, IDS, anchor, file.id, event.shiftKey));
@@ -51,11 +52,18 @@ export function SelectAllDemo() {
           disabled={checked.size === 0}
           onClick={() => setSaid(`Deleted ${checked.size}`)}
           size="small"
+          variant="danger"
         >
           Delete
         </Button>
       </SelectAllBar>
       {said === '' ? null : <code className="demo-readout">{said}</code>}
+      <h3 className="demo-subhead">No rows to check</h3>
+      <SelectAllBar checked={0} onCheckAll={() => undefined} total={0}>
+        <Button disabled size="small">
+          Archive
+        </Button>
+      </SelectAllBar>
     </div>
   );
 }

@@ -8,7 +8,7 @@ The two marks around a filter field's input: `FilterIcon` at the start and `Filt
 import { FilterEscape, FilterIcon } from '@bigpixelrocket/uiok/filter';
 
 <div className="listing-root">
-  <label>
+  <label className="filter-field">
     <FilterIcon />
     <input aria-label="Filter" value={query} onChange={(e) => setQuery(e.target.value)} />
     {query && <FilterEscape label="Clear filter" onEscape={() => setQuery('')} />}
@@ -28,7 +28,11 @@ import { FilterEscape, FilterIcon } from '@bigpixelrocket/uiok/filter';
 
 ## Styling
 
-The rules apply inside the listing scope, `.listing-root`: `.filter-icon` is 20px wide, the width of a row's icon column, so the query lines up with row names; `.filter-escape .keychord` draws as a 16px key cap that lights on hover. The field itself (the row that holds the marks and the input) is the app's to lay out; UIOK styles only the marks.
+The rules apply inside the listing scope, `.listing-root`:
+
+- `.filter-field` on the row that holds the marks and the input draws the field: as tall as the path bar (`--pane-path-height`), inset like a row, mono text, a `--border` foot that turns into a 2px `--accent` edge while the field holds the keys. A host may lay out its own row instead; the marks work in either.
+- `.filter-icon` is `--icon-column` (20px) wide, so the query lines up with row names. It rests in `--text-dim` and lights with the accent while the field has the focus or a query.
+- `.filter-escape .keychord` is the shared key cap (`docs/components/keychord.md`). It answers hover with the frosted wash and ring and a press with the pressed wash, and its hit area grows to `--hit-target`.
 
 ## Labels read
 

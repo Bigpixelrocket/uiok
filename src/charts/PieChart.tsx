@@ -1,7 +1,8 @@
-import { useState, type ReactElement } from 'react';
+import { useId, useState, type ReactElement } from 'react';
 
-import { pieArcs, type PieSlice } from './Pie.logic.js';
-import { seriesColour } from './seriesColour.js';
+import { useLabels } from '../labels/UiokProvider.js';
+import { pieArcs, pieFills, sliceFill, type PieSlice } from './Pie.logic.js';
+import { SliceHatches, slicePaint, sliceSwatch } from './PieFill.js';
 
 /** Props for {@link PieChart}. */
 export interface PieChartProps {
@@ -19,12 +20,18 @@ export interface PieChartProps {
  * A pie chart drawn in SVG from the chart tokens, in light and dark: a slice
  * per value, clockwise from twelve o'clock, and a legend beside it naming
  * each slice with its value and its share. Hovering a slice or its legend
- * row lights both.
+ * row lights both, and the other slices step back. With no slice to draw it
+ * keeps the pie's place as a dashed ring and says there is no value.
  */
 export function PieChart({ label, slices, format, size = 160 }: PieChartProps): ReactElement {
+  const labels = useLabels().charts;
   const [lit, setLit] = useState<number | null>(null);
   const r = size / 2 - 2;
   const arcs = pieArcs(slices, r);
+  // Past the eight colours, slices are hatched, then crosshatched, so no
+  // two neighbours and no two legend swatches share a fill.
+  const fills = pieFills(arcs.map((_, index) => index));
+  const prefix = `pie-${useId().replace(/[^\w-]/g, '')}`;
 
   return (
     <figure aria-label={label} className="pie-chart">
@@ -34,17 +41,20 @@ export function PieChart({ label, slices, format, size = 160 }: PieChartProps): 
         viewBox={`${-size / 2} ${-size / 2} ${size} ${size}`}
         width={size}
       >
+        <SliceHatches fills={fills} prefix={prefix} />
+        {arcs.length === 0 && <circle className="pie-empty-ring" r={r} />}
         {arcs.map((arc, index) => (
           <path
             className={lit === index ? 'pie-slice lit' : 'pie-slice'}
             d={arc.path}
-            fill={seriesColour(index)}
+            fill={slicePaint(prefix, fills[index] ?? sliceFill(index))}
             key={arc.label}
             onPointerEnter={() => setLit(index)}
             onPointerLeave={() => setLit(null)}
           />
         ))}
       </svg>
+      {arcs.length === 0 && <p className="chart-empty-text-line">{labels.noValue}</p>}
       <ul className="pie-legend">
         {arcs.map((arc, index) => (
           <li
@@ -53,7 +63,11 @@ export function PieChart({ label, slices, format, size = 160 }: PieChartProps): 
             onPointerEnter={() => setLit(index)}
             onPointerLeave={() => setLit(null)}
           >
-            <span aria-hidden className="pie-swatch" style={{ background: seriesColour(index) }} />
+            <span
+              aria-hidden
+              className="pie-swatch"
+              style={sliceSwatch(fills[index] ?? sliceFill(index))}
+            />
             <span className="pie-label">{arc.label}</span>
             <span className="pie-value">
               {format(arc.value)} ({(arc.share * 100).toFixed(1)}%)

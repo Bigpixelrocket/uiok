@@ -1,8 +1,17 @@
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from 'lucide-react';
-import { useEffect, useId, useRef, useState, type CSSProperties, type ReactElement } from 'react';
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type ReactElement
+} from 'react';
 
 import { Button } from '../button/Button.js';
 import { IconButton } from '../button/IconButton.js';
+import { ICON_MD } from '../icon/index.js';
 import type { DateTimeLabels } from '../labels/dateTime.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
@@ -10,6 +19,7 @@ import {
   formatPicker,
   monthGrid,
   nowParts,
+  panelPlace,
   parsePicker,
   stepMonth,
   utcDay,
@@ -26,9 +36,9 @@ const TIME_FIELDS = [
 ] as const;
 
 /**
- * The most fraction digits a time field's own width shows whole; a longer
- * fraction field (microseconds) widens to its digit count (`.long`, with
- * `--date-picker-digits`).
+ * The most fraction digits a millisecond field holds; a longer fraction
+ * field (microseconds) is `.long`. Every fraction field sits on a row of its
+ * own, as wide as its digits (`--date-picker-digits`).
  */
 const SHORT_FRACTION = 3;
 
@@ -60,6 +70,12 @@ export interface DateTimePickerProps {
   /** Whether the button is disabled. */
   readonly disabled?: boolean;
   /**
+   * The button's height, to match the field beside it: `small` (24px) beside
+   * a page or toolbar field (`.field-sm`), the default; `regular` (28px)
+   * beside a dialog's field (`.field`).
+   */
+  readonly size?: 'regular' | 'small';
+  /**
    * Writes picked parts as the field's value; `formatPicker` (ISO 8601,
    * date and time joined by `T`) unless given. A store that joins them with
    * a space passes `(kind, parts, fraction) => formatPicker(kind, parts, fraction, ' ')`.
@@ -84,7 +100,11 @@ export interface DateTimePickerProps {
  * `dateTime` labels' locale; the field words from the same group.
  *
  * The panel is an overlay (`data-overlay`), so a window key policy that
- * watches overlays holds its own keys while it is open.
+ * watches overlays holds its own keys while it is open. It stays beside its
+ * button in the document, so Tab reaches it next and a dialog keeps it, but
+ * is placed in the window (`position: fixed`): under the button, or above
+ * it when the room below is short, and always inside the window, so no
+ * scrolling pane or dialog cuts it. Today is marked in the month grid.
  */
 export function DateTimePicker({
   kind,
@@ -95,6 +115,7 @@ export function DateTimePicker({
   label,
   hint,
   disabled = false,
+  size = 'small',
   format = formatPicker,
   parse = parsePicker
 }: DateTimePickerProps): ReactElement {
@@ -102,8 +123,45 @@ export function DateTimePicker({
   const [open, setOpen] = useState(false);
   const [shown, setShown] = useState<PickerParts>(() => parse(value) ?? nowParts());
   const box = useRef<HTMLDivElement>(null);
+  const panel = useRef<HTMLDivElement>(null);
+  /** Where the open panel sits in the window; null until it is measured. */
+  const [place, setPlace] = useState<{ left: number; top: number } | null>(null);
   const titleId = useId();
   const picked = parse(value);
+  const today = nowParts();
+
+  // The panel follows its button as the page, a pane, or the window moves,
+  // measured before it paints, so it never shows in the wrong place.
+  useLayoutEffect(() => {
+    if (!open) return;
+
+    const measure = (): void => {
+      const anchor = box.current?.getBoundingClientRect();
+      const own = panel.current?.getBoundingClientRect();
+
+      if (anchor === undefined || own === undefined) return;
+
+      const next = panelPlace(anchor, own, {
+        width: window.innerWidth,
+        height: window.innerHeight
+      });
+
+      setPlace((held) =>
+        held?.left === next.left && held.top === next.top
+          ? held
+          : { left: next.left, top: next.top }
+      );
+    };
+
+    measure();
+    window.addEventListener('scroll', measure, true);
+    window.addEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('scroll', measure, true);
+      window.removeEventListener('resize', measure);
+      setPlace(null);
+    };
+  }, [open, shown.year, shown.month]);
 
   // A pointer outside the picker closes it.
   useEffect(() => {
@@ -140,10 +198,14 @@ export function DateTimePicker({
           setShown(parse(value) ?? nowParts());
           setOpen(!open);
         }}
-        size="small"
+        size={size}
         {...tooltip(hint ?? label)}
       >
-        {kind === 'time' ? <Clock aria-hidden size={13} /> : <CalendarDays aria-hidden size={13} />}
+        {kind === 'time' ? (
+          <Clock aria-hidden size={ICON_MD} />
+        ) : (
+          <CalendarDays aria-hidden size={ICON_MD} />
+        )}
       </IconButton>
       {open && (
         <div
@@ -157,7 +219,9 @@ export function DateTimePicker({
               close();
             }
           }}
+          ref={panel}
           role="dialog"
+          style={place ?? { visibility: 'hidden' }}
         >
           {kind !== 'time' && (
             <>
@@ -167,7 +231,7 @@ export function DateTimePicker({
                   onClick={() => setShown(stepMonth(shown, -1))}
                   size="small"
                 >
-                  <ChevronLeft aria-hidden size={13} />
+                  <ChevronLeft aria-hidden size={ICON_MD} />
                 </IconButton>
                 <strong id={titleId}>{monthName}</strong>
                 <IconButton
@@ -175,7 +239,7 @@ export function DateTimePicker({
                   onClick={() => setShown(stepMonth(shown, 1))}
                   size="small"
                 >
-                  <ChevronRight aria-hidden size={13} />
+                  <ChevronRight aria-hidden size={ICON_MD} />
                 </IconButton>
               </div>
               <div className="date-picker-days" role="grid">
@@ -194,13 +258,19 @@ export function DateTimePicker({
                         picked.year === day.year &&
                         picked.month === day.month &&
                         picked.day === day.day;
+                      const isToday =
+                        today.year === day.year &&
+                        today.month === day.month &&
+                        today.day === day.day;
 
                       return (
                         <button
+                          aria-current={isToday ? 'date' : undefined}
                           aria-selected={current}
                           className={[
                             'date-picker-day',
                             day.inMonth ? '' : 'outside',
+                            isToday ? 'today' : '',
                             current ? 'current' : ''
                           ]
                             .filter(Boolean)
@@ -228,7 +298,7 @@ export function DateTimePicker({
                 <label className="date-picker-field" key={field.part}>
                   {timeFieldLabel(labels, field.part)}
                   <input
-                    className="date-picker-input"
+                    className="field field-sm date-picker-input"
                     inputMode="numeric"
                     max={field.max}
                     min={0}
@@ -241,7 +311,8 @@ export function DateTimePicker({
                       if (Number.isFinite(next)) write({ ...base, [field.part]: next });
                     }}
                     type="number"
-                    value={base[field.part]}
+                    // Two digits, as the field's value writes them ("09").
+                    value={String(base[field.part]).padStart(2, '0')}
                   />
                 </label>
               ))}
@@ -250,7 +321,9 @@ export function DateTimePicker({
                   {fraction > 3 ? labels.microsecond : labels.millisecond}
                   <input
                     className={
-                      fraction > SHORT_FRACTION ? 'date-picker-input long' : 'date-picker-input'
+                      fraction > SHORT_FRACTION
+                        ? 'field field-sm date-picker-input long'
+                        : 'field field-sm date-picker-input'
                     }
                     inputMode="numeric"
                     onChange={(event) =>
@@ -259,11 +332,10 @@ export function DateTimePicker({
                         fraction: event.currentTarget.value.replace(/\D/gu, '').slice(0, fraction)
                       })
                     }
-                    style={
-                      fraction > SHORT_FRACTION
-                        ? ({ '--date-picker-digits': fraction } as CSSProperties)
-                        : undefined
-                    }
+                    // A text field's own width is 20 characters unless sized;
+                    // the stylesheet sets it from its digits.
+                    size={Math.max(2, fraction)}
+                    style={{ '--date-picker-digits': Math.max(2, fraction) } as CSSProperties}
                     value={base.fraction.padEnd(fraction, '0').slice(0, fraction)}
                   />
                 </label>
@@ -280,7 +352,7 @@ export function DateTimePicker({
             >
               {kind === 'date' ? labels.today : labels.now}
             </Button>
-            <Button onClick={close} size="small" variant="primary">
+            <Button onClick={close} size="small">
               {labels.done}
             </Button>
           </div>

@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { DialogLegendModel } from './DialogLegend.logic.js';
+import { DialogLayer } from './DialogLayer.js';
 import { ModalDialog } from './ModalDialog.js';
 
 /**
@@ -33,6 +34,15 @@ describe('ModalDialog', () => {
     expect(dialog.getAttribute('aria-modal')).toBe('true');
     expect(dialog.getAttribute('aria-labelledby')).toBe('test-title');
     expect(screen.getByRole('heading', { name: 'Rename' }).id).toBe('test-title');
+  });
+
+  it('gives a string title its own text as a tooltip shown only while the title is cut', () => {
+    renderFrame();
+
+    const title = screen.getByRole('heading', { name: 'Rename' });
+
+    expect(title.dataset.tooltip).toBe('Rename');
+    expect(title.hasAttribute('data-tooltip-cut')).toBe(true);
   });
 
   it('cancels on Escape and on a backdrop press, but not on a press inside the dialog', () => {
@@ -150,7 +160,7 @@ describe('ModalDialog', () => {
     render(
       <>
         <button type="button">Behind</button>
-        <ModalDialog labelId="test-title" onCancel={vi.fn()} title="Install 8.5.0">
+        <ModalDialog labelId="test-title" onCancel={vi.fn()} title="Install Update">
           <div data-testid="body" tabIndex={-1}>
             Waiting for earlier operations
           </div>
@@ -489,5 +499,62 @@ describe('ModalDialog legend', () => {
 
     expect(dialog.dataset.pinned).toBeUndefined();
     expect(dialog.style.getPropertyValue('--dialog-top')).toBe('');
+  });
+});
+
+describe('where ModalDialog mounts', () => {
+  it('mounts into the enclosing DialogLayer, after the content, and keeps its keys and focus', () => {
+    const onCancel = vi.fn();
+
+    render(
+      <section className="space">
+        <DialogLayer>
+          <div className="pane">
+            <ModalDialog labelId="layer-title" onCancel={onCancel} title="Rename">
+              <p>Body</p>
+            </ModalDialog>
+          </div>
+        </DialogLayer>
+      </section>
+    );
+
+    const dialog = screen.getByRole('dialog');
+    const layer = document.querySelector('.space > .dialog-layer');
+
+    // Outside the pane, inside the space root, so rules under the root still apply.
+    expect(dialog.closest('.pane')).toBeNull();
+    expect(backdropOf(dialog).parentElement).toBe(layer);
+    expect(document.activeElement).toBe(dialog);
+
+    fireEvent.keyDown(dialog, { key: 'Escape' });
+    expect(onCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('mounts into its own container ahead of any layer', () => {
+    const container = document.createElement('div');
+
+    document.body.append(container);
+    render(
+      <DialogLayer>
+        <ModalDialog container={container} labelId="own" onCancel={vi.fn()} title="Rename">
+          <p>Body</p>
+        </ModalDialog>
+      </DialogLayer>
+    );
+
+    expect(container.contains(screen.getByRole('dialog'))).toBe(true);
+    container.remove();
+  });
+
+  it('renders in place with neither', () => {
+    render(
+      <div className="pane">
+        <ModalDialog labelId="here" onCancel={vi.fn()} title="Rename">
+          <p>Body</p>
+        </ModalDialog>
+      </div>
+    );
+
+    expect(screen.getByRole('dialog').closest('.pane')).not.toBeNull();
   });
 });

@@ -168,9 +168,10 @@ const CATPPUCCIN_LATTE: ThemeColours = {
     // Lavender a step stronger than the primary hue itself, so the fill
     // carries white text at 4.7:1 where the hue stops at 3.2:1.
     '--primary': '#5468e4',
-    // Indigo holds 5.1:1 on the tonal tint, where the primary itself holds
-    // only 3.6:1 and lavender 2.5:1.
-    '--on-tonal': '#3f51c7',
+    // Indigo holds 4.5:1 on the tonal tint and on its hover and pressed
+    // fills, where the primary itself holds only 3.6:1 on the tint and
+    // lavender 2.5:1.
+    '--on-tonal': '#3746ad',
     // A blue hairline a step deeper than the tint, so the tonal button reads
     // as a button rather than as a highlighted row inside tables.
     '--tonal-border': '#b9c8ee'

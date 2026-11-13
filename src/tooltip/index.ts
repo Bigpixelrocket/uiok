@@ -2,12 +2,18 @@
 
 export { TooltipLayer } from './Tooltip.js';
 export {
+  cutsItsText,
+  cutTooltip,
   describedTooltip,
   placeTooltip,
   tooltip,
   TOOLTIP_DELAY_MS,
+  tooltipChord,
   type TooltipAnchorBox,
   type TooltipAttributes,
+  type TooltipBeside,
   type TooltipExtent,
-  type TooltipPosition
+  type TooltipOptions,
+  type TooltipPosition,
+  type TooltipSide
 } from './Tooltip.logic.js';

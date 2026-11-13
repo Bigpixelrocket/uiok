@@ -1,5 +1,8 @@
 import {
   memo,
+  useId,
+  useLayoutEffect,
+  useRef,
   useState,
   useSyncExternalStore,
   type PointerEvent,
@@ -8,71 +11,139 @@ import {
 } from 'react';
 
 import { useLabels } from '../labels/UiokProvider.js';
+import { VisuallyHidden } from '../VisuallyHidden.js';
 import { createValueStore, type ValueStore } from '../store/ValueStore.js';
-import { pieArcs } from './Pie.logic.js';
+import {
+  DISTINCT_SLICE_FILLS,
+  pieArcs,
+  pieFills,
+  pieTagRoom,
+  pieTags,
+  sliceFill,
+  type SliceFill
+} from './Pie.logic.js';
+import { SliceHatches, slicePaint, sliceSwatch } from './PieFill.js';
 import {
   STACKABLE_CHART_TYPES,
   cutLabel,
-  legendLayout,
+  fittedLegend,
+  LEGEND_ROW,
+  pieLegendRows,
+  plotTopUnderLegend,
+  pointRuns,
   shownLabels,
+  spacedTicks,
   splinePath,
   stackedRanges,
   valueDomain,
   type ChartSeries,
   type ResultChartType
 } from './ResultChart.logic.js';
-import { domainOf, scaled, tickLabel, ticksOf, type Domain } from './Scatter.logic.js';
-import { seriesColour as colour } from './seriesColour.js';
+import { domainOf, scaled, tickLabels, ticksOf, type Domain } from './Scatter.logic.js';
+import { SERIES_COLOURS, seriesColour as colour } from './seriesColour.js';
 
 /** A value as an axis and the read-out write it: six significant digits, no exponent for everyday sizes. */
 const valueText = (value: number): string => String(Number(value.toPrecision(6)));
 
-/** What the pointer is on: a series' value at a category, or a slice. */
+/** The room between the drawing's edge and the plot on a side with no axis. */
+const EDGE = 16;
+
+/** The most rows a legend draws. */
+const LEGEND_ROWS = 4;
+
+/** The most characters a legend entry's name shows before it is cut (its whole name in a tooltip). */
+const LEGEND_NAME_CAP = 40;
+
+/**
+ * What the pointer is on: a series' value at a category, or a slice, and
+ * where its mark sits in the figure (its left, right, and vertical centre in
+ * pixels), so the read-out can stand beside it.
+ */
 interface Hovered {
   readonly series: number;
   readonly at: number;
+  readonly left: number;
+  readonly right: number;
+  readonly middle: number;
 }
 
 /**
- * The value under the pointer, read out under the drawing: it follows the
- * hover on its own, so the pointer moving from mark to mark draws this line
+ * The value under the pointer: a floating read-out beside the hovered mark,
+ * in the look every chart's read-out has (`.line-readout`), and the same
+ * words in a hidden live line for assistive technology. It follows the
+ * hover on its own, so the pointer moving from mark to mark draws this
  * alone, never the chart's marks.
  */
 function ResultChartReadout({
   hover,
   type,
   categories,
-  series
+  series,
+  width,
+  pieFillOf
 }: {
   readonly hover: ValueStore<Hovered | null>;
+  /** A pie's fill for each category it draws, for the read-out's swatch. */
+  readonly pieFillOf: ReadonlyMap<number, SliceFill>;
   readonly type: ResultChartType;
   readonly categories: readonly string[];
   readonly series: readonly ChartSeries[];
+  readonly width: number;
 }): ReactElement {
   const labels = useLabels().charts;
   const hovered = useSyncExternalStore(hover.subscribe, hover.get);
-  const shown = (seriesIndex: number, at: number): string => {
+  const valueAt = (seriesIndex: number, at: number): string => {
     const value = series[seriesIndex]?.values[at];
 
-    return labels.seriesCategoryValue(
-      series[seriesIndex]?.name ?? '',
-      categories[at] ?? '',
-      value === null || value === undefined ? labels.noValue : valueText(value)
-    );
+    return value === null || value === undefined ? labels.noValue : valueText(value);
   };
+  const said =
+    hovered === null
+      ? null
+      : type === 'pie'
+        ? labels.seriesValue(categories[hovered.at] ?? '', valueAt(0, hovered.at))
+        : labels.seriesCategoryValue(
+            series[hovered.series]?.name ?? '',
+            categories[hovered.at] ?? '',
+            valueAt(hovered.series, hovered.at)
+          );
 
   return (
-    <p aria-live="polite" className="result-chart-readout">
-      {hovered === null
-        ? // A no-break space keeps the line's height while nothing is hovered.
-          '\u00a0'
-        : type === 'pie'
-          ? labels.seriesValue(
-              categories[hovered.at] ?? '',
-              valueText(series[0]?.values[hovered.at] ?? 0)
-            )
-          : shown(hovered.series, hovered.at)}
-    </p>
+    <>
+      {hovered !== null && (
+        <div
+          aria-hidden
+          className="line-readout result-chart-float"
+          style={{
+            top: hovered.middle,
+            ...(hovered.left > width / 2
+              ? { right: width - hovered.left + 8 }
+              : { left: hovered.right + 8 })
+          }}
+        >
+          {type !== 'pie' && <strong>{categories[hovered.at] ?? ''}</strong>}
+          <span>
+            <span
+              className="chart-swatch"
+              style={
+                type === 'pie'
+                  ? sliceSwatch(pieFillOf.get(hovered.at) ?? sliceFill(hovered.at))
+                  : { background: colour(hovered.series) }
+              }
+            />
+            {type === 'pie'
+              ? labels.seriesValue(categories[hovered.at] ?? '', valueAt(0, hovered.at))
+              : labels.seriesValue(
+                  series[hovered.series]?.name ?? '',
+                  valueAt(hovered.series, hovered.at)
+                )}
+          </span>
+        </div>
+      )}
+      <VisuallyHidden aria-live="polite" className="result-chart-readout">
+        {said ?? ''}
+      </VisuallyHidden>
+    </>
   );
 }
 
@@ -108,7 +179,7 @@ export interface ResultChartProps {
  * (a monotone curve), and area (filled to zero, or stacked); pie of one
  * series; timeline over a time axis; and scatter over a number axis. Title,
  * legend, and axis labels are drawn inside the SVG, so its picture saves
- * whole; hovering a value reads it out under the drawing. Each mark names
+ * whole; hovering a value reads it out beside its mark. Each mark names
  * its value in `data-series` and `data-at`, which one listener on the
  * drawing reads, and the hover lives in a store the read-out follows, so
  * the marks draw again only when the chart changes.
@@ -127,30 +198,88 @@ function ResultChartDrawing({
   svgRef
 }: ResultChartProps): ReactElement {
   const labels = useLabels().charts;
+  // The masks that keep unstacked area fills from mixing are named from it.
+  const maskPrefix = `result-chart-${useId().replace(/[^\w-]/g, '')}`;
   const [hover] = useState(() => createValueStore<Hovered | null>(null));
+  const figure = useRef<HTMLElement>(null);
+  const legend = useRef<SVGGElement>(null);
+  // Each legend name's drawn width, once measured; until then (and where the
+  // engine cannot measure) the layout estimates it from its length.
+  const [legendWidths, setLegendWidths] = useState<readonly number[]>([]);
   const stack = stacked && STACKABLE_CHART_TYPES.has(type);
+  // The legend names at most as many entries as a pie has fills to tell
+  // apart; the rest are counted at its end.
   const legendNames = (type === 'pie' ? categories : series.map((entry) => entry.name)).slice(
     0,
-    24
+    DISTINCT_SLICE_FILLS
   );
-  const legendPlaces = legendLayout(
-    legendNames.map((name) => cutLabel(name, 24)),
-    width - 24
-  );
-  const legendRows = legendPlaces.reduce((rows, place) => Math.max(rows, place.row + 1), 0);
-  const top = (title === '' ? 8 : 28) + Math.min(4, legendRows) * 16;
   const values = valueDomain(series, stack);
-  const valueTicks = type === 'pie' ? [] : ticksOf(values, 'number');
+  // A chart with no value to draw keeps its plot's place and says so there.
+  const empty =
+    categories.length === 0 ||
+    !series.some((entry) => entry.values.some((value) => value !== null && Number.isFinite(value)));
+  const valueTicks = type === 'pie' || empty ? [] : ticksOf(values, 'number');
   // The value axis's title sits clear of its widest tick (11px figures run about 6.5px each).
   const tickWidth = valueTicks.reduce(
     (widest, tick) => Math.max(widest, valueText(tick).length),
     0
   );
+  // A pie has no axes, so its plot sits evenly between the drawing's edges.
+  const left =
+    type === 'pie' ? EDGE : type === 'bar' ? 110 : Math.max(64, Math.ceil(tickWidth * 6.5) + 30);
+  // The legend starts at the plot's left edge and wraps inside its width.
+  // A pie whose colours repeat numbers its legend as it numbers its slices;
+  // a name that is its own number is written once.
+  // A name longer than the cap is cut before layout (the fitted legend
+  // wraps by measured width and counts what it leaves out, so the cap only
+  // stops one name taking a whole row), and its entry carries the whole name
+  // as its tooltip.
+  const legendTexts = legendNames.map((name, at) =>
+    type === 'pie' && categories.length > SERIES_COLOURS && name !== String(at + 1)
+      ? `${at + 1} ${cutLabel(name, LEGEND_NAME_CAP)}`
+      : cutLabel(name, LEGEND_NAME_CAP)
+  );
+  const legendTop = title === '' ? 8 : 28;
+  // A pie's legend keeps to a third of the drawing, so a short one leaves
+  // the pie room for its tags.
+  const legendRowCap = type === 'pie' ? pieLegendRows(height, legendTop, LEGEND_ROWS) : LEGEND_ROWS;
+  // Entries the legend leaves out, by either cut, are counted after the
+  // last one listed ("+N", a figure in the dim tone with no swatch).
+  const { places: legendPlaces, more: legendMore } = fittedLegend(
+    legendTexts,
+    width - left - EDGE,
+    legendRowCap,
+    legendWidths,
+    type === 'pie' ? categories.length : series.length
+  );
+  const legendKey = legendTexts.join('\n');
+
+  // Measure the names as drawn, so the gap after each is even whatever its glyphs.
+  useLayoutEffect(() => {
+    const texts = [
+      ...(legend.current?.querySelectorAll<SVGTextElement>('text:not(.result-chart-legend-more)') ??
+        [])
+    ];
+    const measured = texts.map((text) =>
+      typeof text.getComputedTextLength === 'function' ? Math.ceil(text.getComputedTextLength()) : 0
+    );
+
+    if (measured.length === 0 || measured.some((value) => !(value > 0))) return;
+    setLegendWidths((held) =>
+      held.length === measured.length && held.every((value, at) => value === measured[at])
+        ? held
+        : measured
+    );
+  }, [legendKey]);
+  const legendRows = [...legendPlaces, ...(legendMore === null ? [] : [legendMore])].reduce(
+    (rows, place) => Math.max(rows, place.row + 1),
+    0
+  );
   const margin = {
-    top,
-    right: 16,
-    bottom: 44,
-    left: type === 'bar' ? 110 : Math.max(64, Math.ceil(tickWidth * 6.5) + 30)
+    top: plotTopUnderLegend(legendTop, legendRows),
+    right: EDGE,
+    bottom: type === 'pie' ? EDGE : 44,
+    left
   };
   const plotWidth = Math.max(40, width - margin.left - margin.right);
   const plotHeight = Math.max(40, height - margin.top - margin.bottom);
@@ -172,10 +301,32 @@ function ResultChartDrawing({
   };
 
   const plot: ReactElement[] = [];
+  /** A pie's fill for each category it draws, by category. */
+  const pieFillOf = new Map<number, SliceFill>();
+  // Area fills go under the grid and the outlines (each series' runs, by
+  // series), with the masks that cut them.
+  const areaRuns: string[][] = [];
+  const areaFills: ReactElement[] = [];
 
-  if (type === 'pie') {
+  if (empty) {
+    plot.push(
+      <text
+        className="chart-empty-text"
+        dominantBaseline="middle"
+        key="empty"
+        textAnchor="middle"
+        x={plotWidth / 2}
+        y={plotHeight / 2}
+      >
+        {labels.noValue}
+      </text>
+    );
+  } else if (type === 'pie') {
     const first = series[0];
-    const r = Math.max(10, Math.min(plotWidth, plotHeight) / 2 - 4);
+    // Past the eight series colours, colours repeat, so each slice carries
+    // its number on a leader outside the rim, as its legend entry does.
+    const numbered = categories.length > SERIES_COLOURS;
+    const r = Math.max(10, Math.min(plotWidth, plotHeight) / 2 - 4 - (numbered ? pieTagRoom : 0));
     const slices = categories.map((label, at) => ({
       label,
       value: Math.max(0, first?.values[at] ?? 0)
@@ -185,8 +336,34 @@ function ResultChartDrawing({
     // category it came from; the legend and the read-out go by category.
     const kept = slices.flatMap((slice, at) => (slice.value > 0 ? [at] : []));
 
+    // A tag points to a legend entry, so only the slices the legend lists
+    // carry one; the rest are in its "+N".
+    const tagged = kept.flatMap((category, at) => (category < legendPlaces.length ? [at] : []));
+    const tags = numbered
+      ? pieTags(
+          tagged.flatMap((at) => (arcs[at] === undefined ? [] : [arcs[at]])),
+          r,
+          tagged.map((at) => String((kept[at] ?? at) + 1))
+        )
+      : [];
+    // Past the eight colours, slices are hatched, then crosshatched, so no
+    // two neighbours and no two legend swatches share a fill.
+    const fills = pieFills(kept);
+
+    fills.forEach((fill, at) => pieFillOf.set(kept[at] ?? at, fill));
+
     plot.push(
       <g key="pie" transform={`translate(${plotWidth / 2} ${plotHeight / 2})`}>
+        {tags.map((tag) =>
+          tag === null ? null : (
+            <g className="result-chart-slice-tag" key={`tag-${tag.text}`}>
+              <line x1={tag.fromX} x2={tag.x} y1={tag.fromY} y2={tag.y} />
+              <text dominantBaseline="middle" textAnchor={tag.anchor} x={tag.textX} y={tag.textY}>
+                {tag.text}
+              </text>
+            </g>
+          )
+        )}
         {arcs.map((arc, at) => {
           const category = kept[at] ?? at;
 
@@ -194,7 +371,7 @@ function ResultChartDrawing({
             <path
               className="result-chart-mark"
               d={arc.path}
-              fill={colour(category)}
+              fill={slicePaint(maskPrefix, fills[at] ?? sliceFill(category))}
               data-at={category}
               data-series={0}
               key={category}
@@ -255,23 +432,17 @@ function ResultChartDrawing({
           across(at),
           along(stack ? (ranges[seriesIndex]?.[at]?.from ?? 0) : Math.max(values.min, 0))
         ]);
-        const kept = points.flatMap((point, index) => (point === null ? [] : [{ point, index }]));
-
-        if (kept.length > 0) {
+        // One fill per run of values, the same runs its line draws, so a
+        // missing value breaks the fill where it breaks the outline.
+        pointRuns(points).forEach((run, runIndex) => {
           const outline = [
-            ...kept.map(({ point }) => point),
-            ...kept.map(({ index }) => base[index] ?? [0, 0]).reverse()
+            ...run.map(({ point }) => point),
+            ...run.map(({ at }) => base[at] ?? [0, 0]).reverse()
           ];
 
-          plot.push(
-            <path
-              className="result-chart-area"
-              d={`${outline.map(([x, y], at) => `${at === 0 ? 'M' : 'L'}${x} ${y}`).join(' ')} Z`}
-              fill={colour(seriesIndex)}
-              key={`area-${seriesIndex}`}
-            />
-          );
-        }
+          (areaRuns[seriesIndex] ??= [])[runIndex] =
+            `${outline.map(([x, y], at) => `${at === 0 ? 'M' : 'L'}${x} ${y}`).join(' ')} Z`;
+        });
       }
       if (type !== 'scatter') {
         plot.push(
@@ -315,22 +486,97 @@ function ResultChartDrawing({
     });
   }
 
+  // Each area's tint shows only where no series drawn after it (in front)
+  // has its own fill, so two tints never add up to a hue the legend lacks:
+  // a mask keeps the plot and cuts every fill in front. Stacked bands do
+  // not overlap and take none, so their shared edges stay seamless.
+  areaRuns.forEach((runs, seriesIndex) => {
+    const front = stack ? [] : areaRuns.slice(seriesIndex + 1).flat();
+    const mask = `${maskPrefix}-area-${seriesIndex}`;
+
+    if (front.length > 0) {
+      areaFills.push(
+        <mask
+          height={plotHeight + 2}
+          id={mask}
+          key={mask}
+          maskUnits="userSpaceOnUse"
+          width={plotWidth + 2}
+          x={-1}
+          y={-1}
+        >
+          <rect
+            className="result-chart-mask-keep"
+            height={plotHeight + 2}
+            width={plotWidth + 2}
+            x={-1}
+            y={-1}
+          />
+          {front.map((d, at) => (
+            <path className="result-chart-mask-cut" d={d} key={at} />
+          ))}
+        </mask>
+      );
+    }
+    runs.forEach((d, runIndex) => {
+      areaFills.push(
+        <path
+          className="result-chart-area"
+          d={d}
+          fill={colour(seriesIndex)}
+          key={`area-${seriesIndex}-${runIndex}`}
+          mask={front.length > 0 ? `url(#${mask})` : undefined}
+        />
+      );
+    });
+  });
+
   /** The mark the pointer came onto, read from its `data-` attributes; anything else keeps the last. */
   const onPointerOver = (event: PointerEvent<SVGSVGElement>): void => {
     const mark = event.target instanceof Element ? event.target : null;
     const at = mark?.getAttribute('data-at');
     const seriesIndex = mark?.getAttribute('data-series');
 
-    if (at === null || at === undefined || seriesIndex === null || seriesIndex === undefined) {
+    if (
+      mark === null ||
+      at === null ||
+      at === undefined ||
+      seriesIndex === null ||
+      seriesIndex === undefined
+    ) {
       return;
     }
 
     const held = hover.get();
-    const next = { series: Number(seriesIndex), at: Number(at) };
 
-    if (held === null || held.series !== next.series || held.at !== next.at) hover.set(next);
+    if (held !== null && held.series === Number(seriesIndex) && held.at === Number(at)) return;
+
+    const box = mark.getBoundingClientRect();
+    const frame = figure.current?.getBoundingClientRect();
+    const x = frame?.left ?? 0;
+    const y = frame?.top ?? 0;
+
+    hover.set({
+      series: Number(seriesIndex),
+      at: Number(at),
+      left: box.left - x,
+      right: box.right - x,
+      middle: (box.top + box.bottom) / 2 - y
+    });
   };
 
+  const xAxis = { title: xLabel, kind: type === 'timeline' ? 'time' : 'number' } as const;
+  const xTickValues = numericX
+    ? ticksOf(xDomain, xAxis.kind, Math.max(2, Math.floor(plotWidth / 90)))
+    : [];
+  const xTickTexts = tickLabels(xTickValues, xAxis, xDomain);
+  const xTicks = spacedTicks(
+    xTickValues.map((tick, at) => ({
+      at: scaled(tick, xDomain, 0, plotWidth),
+      text: xTickTexts[at] ?? ''
+    })),
+    plotWidth
+  );
   const labelled = shownLabels(
     count,
     type === 'bar' ? plotHeight : plotWidth,
@@ -338,7 +584,7 @@ function ResultChartDrawing({
   );
 
   return (
-    <figure className="result-chart">
+    <figure className="result-chart" ref={figure}>
       <svg
         aria-label={title === '' ? labels.chart : title}
         height={height}
@@ -350,23 +596,60 @@ function ResultChartDrawing({
         width={width}
       >
         {title !== '' && (
-          <text className="result-chart-title" textAnchor="middle" x={width / 2} y={18}>
+          <text
+            className="result-chart-title"
+            textAnchor="middle"
+            x={margin.left + plotWidth / 2}
+            y={18}
+          >
             {title}
           </text>
         )}
-        <g transform={`translate(12 ${title === '' ? 8 : 28})`}>
-          {legendPlaces.map((place, at) =>
-            place.row >= 4 ? null : (
-              <g key={at} transform={`translate(${place.x} ${place.row * 16})`}>
-                <rect fill={colour(at)} height={9} rx={2} width={9} y={2} />
-                <text className="result-chart-legend" x={14} y={10}>
-                  {place.text}
-                </text>
-              </g>
-            )
+        {type === 'pie' && (
+          <SliceHatches
+            fills={[...pieFillOf.values(), ...legendNames.map((_, at) => sliceFill(at))]}
+            prefix={maskPrefix}
+          />
+        )}
+        {/* Each legend entry is a 10px swatch in the series colour, as
+            every chart's legend draws it, then its name, placed one after
+            another and wrapped by their measured widths. */}
+        <g
+          className="result-chart-legend"
+          ref={legend}
+          transform={`translate(${margin.left} ${legendTop})`}
+        >
+          {legendPlaces.map((place, at) => (
+            <g key={at} transform={`translate(${place.x} ${place.row * LEGEND_ROW})`}>
+              <rect
+                className="result-chart-legend-swatch"
+                fill={type === 'pie' ? slicePaint(maskPrefix, sliceFill(at)) : colour(at)}
+                height={10}
+                rx={2}
+                width={10}
+                y={1}
+              />
+              <text x={14} y={10}>
+                {place.text}
+              </text>
+              {cutLabel(legendNames[at] ?? '', LEGEND_NAME_CAP) ===
+              (legendNames[at] ?? '') ? null : (
+                <title>{legendNames[at]}</title>
+              )}
+            </g>
+          ))}
+          {legendMore !== null && (
+            <text
+              className="result-chart-legend-more"
+              transform={`translate(${legendMore.x} ${legendMore.row * LEGEND_ROW})`}
+              y={10}
+            >
+              {legendMore.text}
+            </text>
           )}
         </g>
         <g transform={`translate(${margin.left} ${margin.top})`}>
+          {areaFills}
           {type !== 'pie' && (
             <g className="result-chart-axis">
               {valueTicks.map((tick) =>
@@ -386,47 +669,34 @@ function ResultChartDrawing({
                   </g>
                 )
               )}
-              {numericX
-                ? ticksOf(xDomain, type === 'timeline' ? 'time' : 'number').map((tick) => (
-                    <text
-                      key={tick}
-                      textAnchor="middle"
-                      x={scaled(tick, xDomain, 0, plotWidth)}
-                      y={plotHeight + 14}
-                    >
-                      {tickLabel(
-                        tick,
-                        { title: xLabel, kind: type === 'timeline' ? 'time' : 'number' },
-                        xDomain
-                      )}
-                    </text>
-                  ))
-                : categories.map((category, at) =>
-                    labelled.has(at) ? (
-                      type === 'bar' ? (
-                        <text
-                          dominantBaseline="middle"
-                          key={at}
-                          textAnchor="end"
-                          x={-6}
-                          y={across(at)}
-                        >
-                          {cutLabel(category, 16)}
-                        </text>
-                      ) : (
-                        <text key={at} textAnchor="middle" x={across(at)} y={plotHeight + 14}>
-                          {cutLabel(category, 12)}
-                        </text>
-                      )
-                    ) : null
-                  )}
-              <line
-                className="result-chart-baseline"
-                x1={0}
-                x2={plotWidth}
-                y1={plotHeight}
-                y2={plotHeight}
-              />
+              {empty
+                ? null
+                : numericX
+                  ? xTicks.map((tick) => (
+                      <text key={tick.x} textAnchor="start" x={tick.x} y={plotHeight + 14}>
+                        {tick.text}
+                      </text>
+                    ))
+                  : categories.map((category, at) =>
+                      labelled.has(at) ? (
+                        type === 'bar' ? (
+                          <text
+                            dominantBaseline="middle"
+                            key={at}
+                            textAnchor="end"
+                            x={-6}
+                            y={across(at)}
+                          >
+                            {cutLabel(category, 16)}
+                          </text>
+                        ) : (
+                          <text key={at} textAnchor="middle" x={across(at)} y={plotHeight + 14}>
+                            {cutLabel(category, 12)}
+                          </text>
+                        )
+                      ) : null
+                    )}
+              <path className="result-chart-baseline" d={`M0 0V${plotHeight}H${plotWidth}`} />
               <text
                 className="result-chart-axis-title"
                 textAnchor="middle"
@@ -447,7 +717,14 @@ function ResultChartDrawing({
           {plot}
         </g>
       </svg>
-      <ResultChartReadout categories={categories} hover={hover} series={series} type={type} />
+      <ResultChartReadout
+        categories={categories}
+        hover={hover}
+        pieFillOf={pieFillOf}
+        series={series}
+        type={type}
+        width={width}
+      />
     </figure>
   );
 }
@@ -455,7 +732,7 @@ function ResultChartDrawing({
 /**
  * A chart of a table of rows in one of eight types (`ResultChartType`),
  * drawn in SVG from the chart tokens with its title, legend, and axes inside,
- * and a read-out of the value under the pointer. It draws again only when a
+ * and a read-out beside the mark under the pointer. It draws again only when a
  * prop changes, so keep `categories`, `xValues`, and `series` stable.
  */
 export const ResultChart = memo(ResultChartDrawing);

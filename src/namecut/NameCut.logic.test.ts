@@ -34,16 +34,16 @@ describe('labelParts', () => {
     expect(
       labelParts('Copying "Better.Call.Saul.S01E01.1080p.BluRay.CtrlHD.mkv" to "Seedbox"')
     ).toEqual([
-      { kind: 'text', text: 'Copying "' },
-      { kind: 'name', head: 'Better.Call.Saul.S01E01.1080p.BluRay.', tail: 'CtrlHD.mkv"' },
+      { kind: 'text', text: 'Copying ' },
+      { kind: 'name', head: '"Better.Call.Saul.S01E01.1080p.BluRay.', tail: 'CtrlHD.mkv"' },
       { kind: 'text', text: ' to "Seedbox"' }
     ]);
   });
 
   it('keeps a closing quote with the name it ends, so the line ends on it', () => {
     expect(labelParts('Adding 2,310 items to "release-candidate-2026-10-28.zip"')).toEqual([
-      { kind: 'text', text: 'Adding 2,310 items to "' },
-      { kind: 'name', head: 'release-candidate-2026', tail: '-10-28.zip"' }
+      { kind: 'text', text: 'Adding 2,310 items to ' },
+      { kind: 'name', head: '"release-candidate-2026', tail: '-10-28.zip"' }
     ]);
   });
 
@@ -55,8 +55,12 @@ describe('labelParts', () => {
 
   it('reads curly quotes too, and a line with no name as words', () => {
     expect(
-      labelParts('“Better.Call.Saul.S01E01.1080p.BluRay.CtrlHD.mkv” already exists')[1]
-    ).toEqual({ kind: 'name', head: 'Better.Call.Saul.S01E01.1080p.BluRay.', tail: 'CtrlHD.mkv”' });
+      labelParts('“Better.Call.Saul.S01E01.1080p.BluRay.CtrlHD.mkv” already exists')[0]
+    ).toEqual({
+      kind: 'name',
+      head: '“Better.Call.Saul.S01E01.1080p.BluRay.',
+      tail: 'CtrlHD.mkv”'
+    });
     expect(labelParts('Compressing 3 items')).toEqual([
       { kind: 'text', text: 'Compressing 3 items' }
     ]);
@@ -66,20 +70,28 @@ describe('labelParts', () => {
     const name = 'Better.Call.Saul.S01E01.1080p.BluRay.CtrlHD.mkv';
 
     expect(labelParts(`„${name}“ nach „Seedbox“ kopieren`)).toEqual([
-      { kind: 'text', text: '„' },
-      { kind: 'name', head: 'Better.Call.Saul.S01E01.1080p.BluRay.', tail: 'CtrlHD.mkv“' },
+      { kind: 'name', head: '„Better.Call.Saul.S01E01.1080p.BluRay.', tail: 'CtrlHD.mkv“' },
       { kind: 'text', text: ' nach „Seedbox“ kopieren' }
     ]);
     expect(labelParts(`Copie de « ${name} »`)[1]).toEqual({
       kind: 'name',
-      head: ' Better.Call.Saul.S01E01.1080p.BluRay.',
+      head: '« Better.Call.Saul.S01E01.1080p.BluRay.',
       tail: 'CtrlHD.mkv »'
     });
     expect(labelParts(`Kopiera ”${name}”`)[1]).toEqual({
       kind: 'name',
-      head: 'Better.Call.Saul.S01E01.1080p.BluRay.',
+      head: '”Better.Call.Saul.S01E01.1080p.BluRay.',
       tail: 'CtrlHD.mkv”'
     });
+  });
+
+  it('keeps both quotes with a cut name, so cutting the words before it leaves the opening one', () => {
+    const parts = labelParts(
+      'Copying 1 of 3 items: "Better.Call.Saul.S01E01.1080p.BluRay.CtrlHD.mkv" to "Seedbox"'
+    );
+
+    expect(parts[0]).toEqual({ kind: 'text', text: 'Copying 1 of 3 items: ' });
+    expect(parts[1]).toMatchObject({ head: expect.stringMatching(/^"/u), tail: 'CtrlHD.mkv"' });
   });
 
   it('reads the whole line back for assistive technology', () => {

@@ -1,23 +1,88 @@
 import { useEffect, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 
-import { placeTooltip, TOOLTIP_DELAY_MS } from './Tooltip.logic.js';
+import type { Chord } from '../keyboard/Keyboard.logic.js';
+import { KeyChord } from '../keychord/KeyChord.js';
+import {
+  cutsItsText,
+  isMonospaceFamily,
+  placeTooltip,
+  TOOLTIP_DELAY_MS,
+  tooltipChord,
+  type TooltipBeside
+} from './Tooltip.logic.js';
 
 /** The tooltip on show: the control it belongs to and what it says. */
 interface ShownTooltip {
   readonly anchor: Element;
   readonly label: string;
   readonly shortcut: string | null;
+  /** The chord as data, drawn with key glyphs in place of the text form. */
+  readonly chord: Chord | null;
   /** Where the pointer rested, for a control wide enough to place the tooltip by it. */
   readonly pointerX: number;
+  /** The text is a value (a path, a name), set in monospace. */
+  readonly value: boolean;
+  /** The side it opens on, or null for below (or above). */
+  readonly beside: TooltipBeside | null;
+  /** It opens above its element by preference (a label's help). */
+  readonly above: boolean;
+  /** The control reads right to left, so its leading edge is its right. */
+  readonly rtl: boolean;
 }
+
+// A glyph button is told by what it is, a control, and then by its box (no
+// wider than tall): a short label in a dialog's label column is as square
+// as a glyph button but keeps its tooltip at its leading edge.
+const GLYPH_CONTROL = "button, a[href], [role='button'], [role='tab'], [role='radio'], input";
+
+const isGlyphButton = (anchor: Element): boolean => {
+  if (!anchor.matches(GLYPH_CONTROL)) {
+    return false;
+  }
+
+  const box = anchor.getBoundingClientRect();
+
+  return box.width <= box.height;
+};
+
+// The physical side a `data-tooltip-side` names, by the element's own direction.
+const besideOf = (anchor: Element, rtl: boolean): TooltipBeside | null => {
+  const side = anchor.getAttribute('data-tooltip-side');
+
+  if (side !== 'start' && side !== 'end') {
+    return null;
+  }
+
+  return (side === 'end') !== rtl ? 'right' : 'left';
+};
 
 const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
   const label = anchor.getAttribute('data-tooltip');
 
-  return label
-    ? { anchor, label, shortcut: anchor.getAttribute('data-tooltip-shortcut'), pointerX }
-    : null;
+  // A tooltip of the element's own text says nothing while that text is whole.
+  const cut = anchor.hasAttribute('data-tooltip-cut');
+
+  if (!label || (cut && !cutsItsText(anchor))) {
+    return null;
+  }
+
+  const style = getComputedStyle(anchor);
+  const rtl = style.direction === 'rtl';
+
+  return {
+    anchor,
+    label,
+    shortcut: anchor.getAttribute('data-tooltip-shortcut'),
+    chord: tooltipChord(anchor.getAttribute('data-tooltip-chord')),
+    pointerX,
+    // A cut text completes its own element, so it keeps that element's face.
+    value:
+      anchor.hasAttribute('data-tooltip-value') || (cut && isMonospaceFamily(style.fontFamily)),
+    beside: besideOf(anchor, rtl),
+    above: anchor.getAttribute('data-tooltip-side') === 'above',
+    rtl
+  };
 };
 
 /**
@@ -34,6 +99,12 @@ const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
  * The box hangs from the body, or from the element in full screen while
  * there is one: nothing outside that element is drawn, so a tooltip left on
  * the body would open behind a full-screen video.
+ *
+ * A chord given as data is drawn with the key glyphs every legend uses, set
+ * without a frame; a chord given as text is printed as given. A tooltip
+ * from `cutTooltip` opens only while its element cuts its own text, in its
+ * element's face: monospace for a name or a status line. A tooltip marked as
+ * a value is set in monospace; one given a side opens beside its element.
  *
  * The pointer alone opens it. A control keeps its own accessible name, and a
  * tooltip that says more than its element is also the element's description
@@ -121,7 +192,11 @@ export function TooltipLayer(): ReactElement | null {
       shown.anchor.getBoundingClientRect(),
       { width: tip.offsetWidth, height: tip.offsetHeight },
       { width: window.innerWidth, height: window.innerHeight },
-      shown.pointerX
+      shown.pointerX,
+      shown.beside,
+      shown.rtl,
+      isGlyphButton(shown.anchor),
+      shown.above
     );
 
     tip.style.left = `${left}px`;
@@ -133,9 +208,15 @@ export function TooltipLayer(): ReactElement | null {
   }
 
   return createPortal(
-    <div className="tooltip" ref={tipRef} role="tooltip">
+    <div className={shown.value ? 'tooltip tooltip-value' : 'tooltip'} ref={tipRef} role="tooltip">
       <span className="tooltip-label">{shown.label}</span>
-      {shown.shortcut !== null && <span className="tooltip-shortcut">{shown.shortcut}</span>}
+      {shown.chord !== null ? (
+        <span className="tooltip-shortcut tooltip-chord">
+          <KeyChord chord={shown.chord} />
+        </span>
+      ) : (
+        shown.shortcut !== null && <span className="tooltip-shortcut">{shown.shortcut}</span>
+      )}
     </div>,
     document.fullscreenElement ?? document.body
   );

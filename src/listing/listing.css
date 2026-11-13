@@ -9,17 +9,21 @@
    class. Every rule is scoped by :where(.listing-root), so it weighs one
    class less than an app's own `.my-view .row` and the app adjusts one with
    a single scoped selector whatever order the stylesheets load in. The
-   class names carry no prefix. */
+   compact controls (crumbs, the path star, QuietAction, RowIconAction, sort
+   headers, strip links) are the exception: their look is their own class's,
+   so a control drawn outside a listing scope looks the same. Their hover
+   and pressed looks are the base sheet's shared recipes. The class names
+   carry no prefix. */
 
 /* The current one in a list (CurrentDot): one character after its label,
    neutral so it never reads as a status dot. */
 .current-dot {
   display: inline-block;
   flex: none;
-  width: 6px;
-  height: 6px;
+  width: var(--dot);
+  height: var(--dot);
   margin-left: 1ch;
-  border-radius: 50%;
+  border-radius: var(--radius-pill);
   background: var(--text-dim);
   vertical-align: middle;
 }
@@ -27,10 +31,10 @@
 .listing-root {
   /* Sticky column-header height; a row's scroll-margin-top must match it so
      scrollIntoView targets clear the header instead of hiding under it. */
-  --pane-columns-height: 22px;
+  --pane-columns-height: var(--row-height-dense);
 
   /* Height of the path bar's row, the first inside the frame. */
-  --pane-path-height: 26px;
+  --pane-path-height: var(--bar-height);
 
   /* The gutter before every listing column after the name, in the listing's
      own characters; the column strip's rules stand in its middle. */
@@ -38,7 +42,19 @@
 
   /* The space a row and the column strip keep clear at either edge of the
      listing; the strip's first and last headers reach across it. */
-  --pane-row-inset: 8px;
+  --pane-row-inset: var(--space-4);
+
+  /* How far a glyph-only control (a 20px box round a 14px glyph) at a
+     pane's end reaches back over the row inset, so its glyph, not its box,
+     ends on the inset: the path bar's last tool, each row's last action,
+     and the status line's tools stand in one column of glyphs. */
+  --pane-glyph-reach: calc((var(--control-height-xs) - var(--icon-md)) / 2);
+
+  /* The least a name column gives way to in a narrow pane, in the listing's
+     own characters, so a name keeps enough to be told apart; past it the
+     list scrolls sideways (the default grid, WellColumn, and the documented
+     name track `minmax(min(var(--pane-name-floor), 100%), 1fr)`). */
+  --pane-name-floor: 14ch;
 }
 
 /* A pane is a frame on the window ground: ::before draws the hairline and
@@ -61,11 +77,11 @@
   content: '';
   position: absolute;
   inset: 0;
-  z-index: -1;
+  z-index: var(--z-below);
   box-sizing: border-box;
   background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
 }
 
 /* The active pane wears the accent on its frame. */
@@ -74,235 +90,653 @@
 }
 
 /* The listing's face: the path bar, the list, and the status line are set
-   in the monospace face, whatever the space around them uses. */
+   in the monospace face, whatever the space around them uses. An empty
+   pane's block is sentences, in the interface face. */
 :where(.listing-root) :is(.pane-path-row, .pane-list, .pane-status) {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: var(--font-size-body);
 }
 
-/* The path bar's row: the first inside the frame, on the pane's own surface. */
+/* The path bar's row: the first inside the frame, on the pane's own surface.
+   It holds the trail and the tools (facts and compact controls) on one
+   line, and they give way in one order (docs/components/pane.md, "How a
+   narrow bar gives way"): the crumbs before the last, to one character
+   each; the last crumb, to a stem of eight; a fact's words, to one; the
+   crumbs before the last, out of view at the trail's start; the last
+   crumb, to one character. The trail's floor (`--pane-crumb-room`: every
+   crumb at its least, the slashes, a root's mark, the current dot) is what
+   the tools may not take while they can still give, and only what the
+   tools cannot give at all goes below it. */
 :where(.listing-root) .pane-path-row {
+  --pane-crumb-room: calc(
+    min(1, var(--pane-crumb-count)) *
+      (
+        var(--pane-row-inset) - var(--space-2) + var(--space-1) + (var(--pane-crumb-count) - 1) *
+          (3ch + var(--space-4) + 2 * var(--space-1)) + var(--pane-crumb-here-room, 9ch) +
+          var(--space-4) + var(--pane-crumb-mark-room, 0px)
+      ) +
+      (1 - min(1, var(--pane-crumb-count))) * (var(--pane-row-inset) + 10ch)
+  );
+
   flex: 0 0 var(--pane-path-height);
   display: flex;
   align-items: center;
   box-sizing: border-box;
   min-width: 0;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--line) solid var(--border);
+}
+
+/* How many crumbs a trail draws after its root. PanePathBar sets it on its
+   row; a host that writes its own trail sets it on `.pane-path-row`, so the
+   tools beside the trail read it too. Without it the floor holds two cut
+   crumbs. `--pane-crumb-here-room` is the last crumb's stem, the shorter
+   of its name and eight characters, and its ellipsis (`9ch` without it). */
+@property --pane-crumb-count {
+  syntax: '<integer>';
+  inherits: true;
+  initial-value: 0;
+}
+
+/* The floor's room for a root's mark (an icon and its crumb's padding) and
+   for the current dot after the last crumb's words. */
+:where(.listing-root) .pane-path-row:has(> .pane-crumbs > .crumb.root) {
+  --pane-crumb-mark-room: calc(var(--icon-md) + var(--space-4));
+}
+
+:where(.listing-root) .pane-path-row:has(> .pane-crumbs > .crumb.here > .current-dot) {
+  --pane-crumb-mark-room: calc(1ch + var(--dot) + var(--space-2));
+}
+
+:where(.listing-root)
+  .pane-path-row:has(> .pane-crumbs > .crumb.root):has(
+    > .pane-crumbs > .crumb.here > .current-dot
+  ) {
+  --pane-crumb-mark-room: calc(var(--icon-md) + var(--space-4) + 1ch + var(--dot) + var(--space-2));
 }
 
 /* The trail fills its row, root first; the slashes between crumbs only
-   separate them. */
+   separate them. The first crumb's words start on the row inset, the line
+   the column strip's first label and the rows' icons start on, so the
+   pane's three bands share one left edge. Its shrink factor is a million
+   times the tools', so the tools give less than a layout unit while it
+   gives way, and a fact shows no ellipsis early.
+   A trail its row cannot hold whole scrolls sideways, its scrollbar
+   hidden: what is out of view is a scroll away, a crumb the keyboard
+   focuses scrolls into view clear of the fade, and nothing is drawn past
+   the trail's box, so it never runs under the tools. PanePathBar rests a
+   trail that scrolls on its end, a slash first (`data-cramped`). The side that hides crumbs fades over its padding and that
+   slash, so no glyph shows cut. */
 :where(.listing-root) .pane-crumbs {
-  flex: 1;
+  --scroll-fade-size: calc(var(--pane-row-inset) - var(--space-2) + 1ch + 2 * var(--space-1));
+
+  flex: 1 1000000 auto;
   display: flex;
   align-items: center;
+  box-sizing: border-box;
   min-width: 0;
   height: 100%;
-  padding: 0 2px 0 8px;
+  padding: 0 var(--space-1) 0 calc(var(--pane-row-inset) - var(--space-2));
+  scroll-padding-inline: var(--scroll-fade-size);
+  scrollbar-width: none;
+}
+
+/* A trail at rest on a slash is pinned to what it shows (PanePathBar's
+   `data-cramped="pinned"` and `--pane-crumb-fit`), so the room a crumb out of view leaves goes to the
+   tools instead of standing empty after the last crumb. */
+:where(.listing-root) .pane-crumbs[data-cramped='pinned'] {
+  flex: none;
+  width: var(--pane-crumb-fit);
+}
+
+/* A crumb's menu opens inside its crumb, so the trail clips nothing while
+   one is open: the menu stays whole past the trail's box. */
+:where(.listing-root) .pane-crumbs:not(:has([aria-expanded='true'])) {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+@supports (animation-timeline: scroll()) {
+  :where(.listing-root) .pane-crumbs:not(:has([aria-expanded='true'])) {
+    mask-image: linear-gradient(
+      to right,
+      transparent,
+      var(--ground) var(--scroll-fade-inline-start),
+      var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+      transparent
+    );
+    animation: uiok-scroll-fade-inline linear both;
+    animation-timeline: scroll(self inline);
+  }
 }
 
 /* A crumb's menu anchors under it. A crumb that shrinks keeps room for one
-   character and its ellipsis. */
+   character and its ellipsis. The crumbs before the last give way first:
+   their shrink factor dwarfs the last crumb's, so the place the pane shows
+   is cut only once the trail before it has gone as far as it goes. */
 :where(.listing-root) .crumb {
   position: relative;
-  flex: 0 1 auto;
-  min-width: calc(2ch + 8px);
+  flex: 0 1000 auto;
+  min-width: calc(2ch + var(--space-4));
   display: inline-flex;
   align-items: center;
-  height: 24px;
+  height: var(--control-height-sm);
 }
 
-/* The ends of the trail never shrink, and a one-character name has nothing to
-   give an ellipsis. These keep their own width: the shrinking floor is wider
-   than the root's mark or a single character, and would pad the crumb and open
-   a gap before the next slash. A home crumb and a brief one (a short fixed
-   name) keep their width too. */
-:where(.listing-root) .crumb:is(.root, .home, .here, .brief) {
+/* The root never shrinks, and a one-character name has nothing to give an
+   ellipsis. These keep their own width: the shrinking floor is wider than the
+   root's mark or a single character, and would pad the crumb and open a gap
+   before the next slash. A home crumb and a brief one (a short fixed name)
+   keep their width too. */
+:where(.listing-root) .crumb:is(.root, .home, .brief) {
   flex-shrink: 0;
   min-width: 0;
 }
 
-:where(.listing-root) .crumb-label {
+/* The last crumb gives way last (the trail before it shrinks a thousand
+   times faster), and in two steps: to a stem of eight characters and its
+   ellipsis while a fact still has words to give, and below that only
+   once the crumbs before it are out of view, down to one character, in
+   a trail of one crumb all its box, else its box less a leading slash and
+   less the half of the padding before it that a trail at rest shows.
+   A name shorter than its floor keeps its own width. */
+:where(.listing-root) .crumb.here {
+  flex-shrink: 1;
+  min-width: calc-size(
+    max-content,
+    min(size, max(2ch + var(--space-4), min(9ch + var(--space-4), 100%)))
+  );
+}
+
+:where(.listing-root) .crumb-separator ~ .crumb.here {
+  min-width: calc-size(
+    max-content,
+    min(size, max(2ch + var(--space-4), min(9ch + var(--space-4), 100% - 1ch - var(--space-1))))
+  );
+}
+
+/* The current dot sits inside the last crumb, after its words, so its
+   floors keep room for the dot as well, and the dot keeps the label's own
+   padding after it, so it stands as far from what follows as a crumb's
+   words do. */
+:where(.listing-root) .crumb.here:has(> .current-dot) {
+  min-width: calc-size(
+    max-content,
+    min(
+      size,
+      max(
+        3ch + var(--space-4) + var(--dot) + var(--space-2),
+        min(10ch + var(--space-4) + var(--dot) + var(--space-2), 100%)
+      )
+    )
+  );
+}
+
+:where(.listing-root) .crumb-separator ~ .crumb.here:has(> .current-dot) {
+  min-width: calc-size(
+    max-content,
+    min(
+      size,
+      max(
+        3ch + var(--space-4) + var(--dot) + var(--space-2),
+        min(10ch + var(--space-4) + var(--dot) + var(--space-2), 100% - 1ch - var(--space-1))
+      )
+    )
+  );
+}
+
+:where(.listing-root) .crumb.here > .current-dot {
+  margin-inline-end: var(--space-2);
+}
+
+.crumb-label {
   min-width: 0;
-  height: 20px;
+  height: var(--control-height-xs);
   margin: 0;
-  padding: 0 4px;
+  padding: 0 var(--space-2);
   overflow: hidden;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-dim);
   font: inherit;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
 }
 
-:where(.listing-root) .crumb.root .crumb-label {
+/* A crumb that is a control cuts its words in that inner box, not in
+   itself, so its hit area can reach past its 20px to --hit-target in the
+   block axis, inside the 26px bar. */
+button.crumb-label {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: visible;
+  isolation: isolate;
+}
+
+button.crumb-label::after {
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
+  inset-inline: 0;
+  content: '';
+}
+
+/* The hit area paints over the words, so the pointer would land on the
+   button and never reach the tooltip on the words' own box, which opens only
+   while they are cut. The box sits above the hit area, inside the stacking
+   context the button keeps to itself; a press still reaches the button. */
+button.crumb-label > .crumb-text {
+  position: relative;
+  z-index: var(--z-raised);
+}
+
+.crumb-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crumb.root .crumb-label {
   display: inline-flex;
   align-items: center;
 }
 
-/* Only a crumb that is a control reacts to the pointer. */
-:where(.listing-root) button.crumb-label:hover {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
-  color: var(--text);
-}
+/* Only a crumb that is a control reacts to the pointer: its hover and
+   pressed looks are the base sheet's shared quiet recipes, which weigh the
+   same, so a press shows over the hover. */
 
 /* The trail's last crumb is where the pane is. */
-:where(.listing-root) .crumb.here .crumb-label {
+.crumb.here .crumb-label {
   color: var(--text);
 }
 
-:where(.listing-root) .crumb-separator {
+/* A slash is a separator, never words: the faint tone. */
+.crumb-separator {
   flex: none;
-  padding: 0 1px;
-  /* Catppuccin overlay2. */
-  color: var(--syntax-overlay2);
+  /* Clear of a crumb's hover box and focus ring on either side. */
+  padding: 0 var(--space-1);
+  color: var(--text-faint);
 }
 
-:where(.listing-root) .crumb-label:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+/* Compact controls in a bar or a row have room for the ring: it sits on
+   their edge and keeps their corners. */
+:is(.crumb-label, .path-star, .pane-act, .pane-icon-act):focus-visible {
+  outline-offset: var(--focus-offset-flush);
 }
 
 /* A compact icon control at the path bar's end (`.path-star`: a favourite's
    star, a sidebar's Refresh), drawn as a crumb is. */
-:where(.listing-root) .path-star {
+.path-star {
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 20px;
-  margin-right: 4px;
+  position: relative;
+  width: var(--control-height-xs);
+  height: var(--control-height-xs);
+  margin-right: var(--space-2);
   padding: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-dim);
-  cursor: pointer;
-}
-
-:where(.listing-root) .path-star:hover:enabled {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
-  color: var(--text);
-}
-
-:where(.listing-root) .path-star:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  cursor: default;
 }
 
 /* A crumb is mostly no control (PanePathBar), so a label crumb centres its
-   text as a button would and takes no pointer. */
-:where(.listing-root) .crumb-label:not(button) {
+   text as a button would and takes no pointer. Its words are cut in an
+   inner block box (`.crumb-text`), as a button crumb's are: words laid
+   straight into this flex box would sit in an anonymous item, where
+   text-overflow draws no ellipsis. */
+.crumb-label:not(button) {
   display: inline-flex;
   align-items: center;
   cursor: default;
 }
 
-/* A page's facts and compact controls at its path bar's end. */
+/* A page's facts and compact controls at its path bar's end. The last
+   item's words or glyph end on the row inset, over the rows' actions: facts
+   end there as they are, and a padded control reaches back over the inset
+   by its own padding (a quiet action's --space-3 after its words, a star's
+   --space-2 either side of its glyph).
+   Beside a trail, the tools take no more than the row less the trail's
+   floor while they can still give (a fact's words), and never less than
+   they need at their least (`min-content`: every control whole, a fact
+   down to its mark and one character and its ellipsis), which wins over
+   that cap: so the trail goes below its floor only for what the tools
+   cannot give, and no control is pushed out of the row. That least is
+   never more than the row: past it, a host's own box that cuts itself
+   (`min-width: 0` and its own ellipsis) gives way inside the tools. A row
+   a host lets wrap (PanePathBar's `data-wraps`) puts no cap on its tools,
+   which then sit on a line of their own. */
 :where(.listing-root) .path-tools {
   display: flex;
   flex: 0 1 auto;
   align-items: center;
-  gap: 8px;
-  min-width: 0;
-  padding-right: 4px;
+  gap: var(--space-4);
+  box-sizing: border-box;
+  min-width: calc-size(min-content, min(size, 100%));
+  padding-right: var(--pane-row-inset);
 }
 
-/* A page's state at the path bar's end: its dot and words; a failure reads
-   red, a change waiting for the user amber. */
+:where(.listing-root) .pane-path-row:has(> .pane-crumbs):not([data-wraps]) > .path-tools {
+  max-width: calc(100% - var(--pane-crumb-room));
+}
+
+/* A fact that opens the tools stands a mark's gap and the label padding
+   clear of the trail: twice the gap between its own mark and words. */
+/* Beside a pinned trail, the tools still end on the row inset: spare room
+   stands between the trail and the tools, never after the last tool. */
+:where(.listing-root) .pane-path-row:has(> .pane-crumbs[data-cramped='pinned']) > .path-tools {
+  max-width: none;
+  margin-inline-start: auto;
+}
+
+:where(.listing-root) .path-tools:has(> .path-facts:first-child) {
+  padding-left: var(--space-3);
+}
+
+:where(.listing-root) .path-tools > .pane-act:last-child {
+  margin-right: calc(-1 * var(--space-3));
+}
+
+:where(.listing-root) .path-tools > .path-star:last-child {
+  margin-right: calc(-1 * var(--pane-glyph-reach));
+}
+
+/* Where even the last crumb's stem would not fit, a bar's quiet actions
+   say their verbs with their icons alone (PanePathBar's `data-tight`), as
+   a row's actions do where values need the room. A toolbar fitted by
+   useToolbarFit (`data-tool-fit`) steps its tools the same way when their
+   words do not fit its line, a tool marked `data-keep-word` only at its
+   last step (`data-tight="all"`); it is drawn outside the listing look
+   too. The word leaves the drawing as the base sheet's .visually-hidden
+   does, so the button keeps its name. */
+:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act:not(.wordless),
+[data-tool-fit][data-tight] .pane-act:not(.wordless, [data-keep-word]),
+[data-tool-fit][data-tight='all'] .pane-act[data-keep-word]:not(.wordless) {
+  gap: 0;
+  padding: 0 var(--space-2);
+}
+
+:where(.listing-root)
+  .pane-path-row[data-tight]
+  > .path-tools
+  > .pane-act:not(.wordless):last-child {
+  margin-right: calc(-1 * var(--space-2));
+}
+
+:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act > .pane-act-word,
+[data-tool-fit][data-tight] .pane-act:not([data-keep-word]) > .pane-act-word,
+[data-tool-fit][data-tight='all'] .pane-act[data-keep-word] > .pane-act-word {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* A page's state at the path bar's end: its mark and words. A failure or a
+   change waiting for the user says so with its mark in the tone's colour
+   (a square, a diamond) and its words in the text colour, a step up from a
+   plain fact's dim words; the words are never red or amber. Once the trail has given
+   its floor, a fact cuts its words with an ellipsis, down to one
+   character. The mark stands --space-3 from its words in every form, as a
+   listing row's does. A fact built of other boxes (a link, a chip, a
+   control) is the host's: it keeps its width, and the trail gives way
+   for it instead. */
 :where(.listing-root) .path-facts {
   display: inline-flex;
   flex: 0 1 auto;
   align-items: center;
-  gap: 6px;
-  min-width: 0;
+  gap: var(--space-3);
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: var(--font-size-small);
   white-space: nowrap;
 }
 
-:where(.listing-root) .path-facts.danger {
-  color: var(--danger);
+/* The mark keeps its width while the words cut, so they never crowd it. */
+:where(.listing-root) .path-facts > .pane-state {
+  flex: none;
 }
 
-:where(.listing-root) .path-facts.warning {
-  color: var(--warning-text, var(--warning));
+/* Words that cut (PathFact's `.path-fact-text`, and a fact of bare words
+   below) are one clamped line that may break between any two characters:
+   it shows what fits and an ellipsis, and the least it asks of its row is
+   one character and that ellipsis, so the tools' `min-content` is what
+   they need at their least. Words in `.path-fact-text` carry `cutTooltip`,
+   so the whole fact opens as a tooltip only while it is cut. */
+:where(.listing-root)
+  :is(.path-fact-text, .path-facts:not(:has(> :not(.pane-state, svg, :empty)))) {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+  white-space: normal;
+  word-break: break-all;
+}
+
+:where(.listing-root) .path-fact-text {
+  min-width: calc-size(max-content, min(size, 2ch + var(--line)));
+}
+
+/* Words laid straight into the fact, alone or after a mark (a StateMark,
+   a host's own empty mark, an icon), sit in an anonymous flex item, where
+   nothing cuts, so such a fact is the clamped line itself, its marks set
+   in the line where the gap stood. Its floor is a mark, the gap, one
+   character and the ellipsis, or those two without a mark, and a
+   hairline, without which the clamp's rounding can drop the character. */
+:where(.listing-root) .path-facts:not(:has(> :not(.pane-state, svg, :empty))) {
+  min-width: calc-size(max-content, min(size, 2ch + var(--line)));
+}
+
+:where(.listing-root) .path-facts:not(:has(> :not(.pane-state, svg, :empty))):has(> *) {
+  min-width: calc-size(max-content, min(size, var(--dot) + var(--space-3) + 2ch + var(--line)));
+}
+
+:where(.listing-root .path-facts:not(:has(> :not(.pane-state, svg, :empty)))) > * {
+  display: inline-block;
+  margin-inline-end: var(--space-3);
+  vertical-align: middle;
+}
+
+:where(.listing-root) .path-facts:not(:has(> :not(.pane-state, svg, :empty))) > .pane-state {
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+:where(.listing-root) .path-facts:is(.danger, .warning) {
+  color: var(--text);
 }
 
 /* One quiet action per row, and a path bar's compact verbs (QuietAction):
-   an icon and a verb at the path bar's control
-   size, dim until the row is the cursor row or the verb leads its bar. */
-:where(.listing-root) .pane-act {
+   an icon and a verb at the path bar's control size, dim until the row is
+   the cursor row or the verb leads its bar. In a row or a bar it is a
+   glyph alone by default (`.wordless`, below). */
+.pane-act {
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 4px;
-  height: 20px;
-  padding: 0 6px 0 4px;
+  position: relative;
+  gap: var(--space-2);
+  height: var(--control-height-xs);
+  padding: 0 var(--space-3) 0 var(--space-2);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-dim);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-small);
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
 }
 
 :where(.listing-root) .row-meta .pane-act {
-  margin-right: -6px;
+  margin-right: calc(-1 * var(--space-3));
+}
+
+/* The glyph alone (`.wordless`): a square of the control's height, as a
+   compact icon control is, its word kept for assistive technology as the
+   base sheet's .visually-hidden keeps text, and said in its tooltip. */
+.pane-act.wordless {
+  justify-content: center;
+  width: var(--control-height-xs);
+  padding: 0;
+  gap: 0;
+}
+
+.pane-act.wordless > .pane-act-word {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+:where(.listing-root) :is(.row-meta, .path-tools) > .pane-act.wordless:last-child,
+:where(.listing-root) .row-meta .pane-act.wordless,
+:where(.listing-root) .row-meta > .pane-icon-act:last-child {
+  margin-right: calc(-1 * var(--pane-glyph-reach));
 }
 
 /* A compact icon control (RowIconAction): a row's hover icon, or Reveal and
    Copy at a status line's end. */
-:where(.listing-root) .pane-icon-act {
+.pane-icon-act {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 20px;
+  position: relative;
+  width: var(--control-height-xs);
+  height: var(--control-height-xs);
   padding: 0;
   border: none;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text-dim);
-  cursor: pointer;
+  cursor: default;
+}
+
+/* The compact controls of a bar or a row are drawn 20px high; their hit
+   area grows to --hit-target in the block axis, inside the 24px row or 26px
+   bar. Not sideways: neighbours sit closer than the growth. */
+:is(.path-star, .pane-act, .pane-icon-act)::after {
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
+  inset-inline: 0;
+  content: '';
 }
 
 /* A row link drawn in words, alone or after its icon (RowLinkLookContext). */
-:where(.listing-root) .pane-icon-act.worded {
+.pane-icon-act.worded {
   width: auto;
-  gap: 4px;
-  padding: 0 5px;
+  gap: var(--space-2);
+  padding: 0 var(--space-2);
   font: inherit;
-  font-size: 12px;
+  font-size: var(--font-size-small);
   white-space: nowrap;
 }
 
-:where(.listing-root) :is(.pane-act, .pane-icon-act):hover:enabled:not([aria-disabled='true']) {
-  background: var(--hover-wash);
-  box-shadow: var(--hover-frost);
+/* The cursor row's actions, and a bar's lead action, are lit: full words
+   in the text tone, never the accent, so an action reads as a control and
+   not as a link. An icon action drawn with its word lights as a worded
+   action does: its glyph alone would pass at 3:1 in the rest tone, its
+   word does not. A bar's lead action also stands a weight up, and its
+   glyph alone keeps the accent. */
+:where(.listing-root) .row.cursor:where(:not(.selected)) .pane-act,
+:where(.listing-root) .row.cursor:where(:not(.selected)) .pane-icon-act:where(.worded),
+.pane-act.lit,
+.pane-act.lit:hover:enabled {
   color: var(--text);
 }
 
-:where(.listing-root) :is(.row.cursor .pane-act, .pane-act.lit, .pane-act.lit:hover:enabled) {
+.pane-act.lit {
+  font-weight: var(--font-weight-medium);
+}
+
+.pane-act.lit > svg {
   color: var(--accent);
 }
 
-/* The ring sits inside the control, which a row or a bar would clip. It
-   keeps .listing-root's weight, which the rest of the look drops in
-   :where(), so a host's own button ring (two classes and an element, such
-   as `.my-view button:focus-visible`) never replaces it. */
-.listing-root :is(.pane-act, .pane-icon-act):focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+/* A destructive action (`danger`: Remove, Drop, Delete) stays quiet at rest,
+   so a list is no wall of red, and says what it is in the danger tone where
+   it is about to run: under the pointer, with the keyboard focus, and on the
+   cursor row, whose keys run it. */
+:is(.pane-act, .pane-icon-act).danger:hover:enabled,
+:is(.pane-act, .pane-icon-act).danger:focus-visible,
+:where(.listing-root) .row.cursor:where(:not(.selected)) :is(.pane-act, .pane-icon-act).danger {
+  color: var(--danger-text);
+}
+
+/* On a row that wears a state fill (the cursor, a mark, the pointer's row
+   hover, a quiet selection), an action under the pointer, held, or holding
+   its pop-up open keeps the row's own fill under its words: the tones are
+   floored on that fill, and the translucent wash over it would make a
+   ground nothing is floored on. The frosted ring (hover) and the pressed
+   hairline and shadow (press) still say it answers. Every control the
+   base sheet's hover and press recipes wash is listed, the classes a host
+   joins them by (.quiet-control, .toggle-chip, .quiet-track-item)
+   included; a test holds this list to the recipes'. */
+:where(.listing-root)
+  :is(
+    .row:is(.cursor, .marked):where(:not(.selected)),
+    .pane-list.pointer .row:hover:where(:not(.selected)),
+    :where(
+        :root[data-window-inactive] .listing-root,
+        .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+      )
+      .row.selected
+  )
+  :is(
+    .pager-step,
+    .legend-slot,
+    .keylegend-verbs button,
+    .pane-act,
+    .pane-icon-act,
+    .path-star,
+    .page-tab,
+    .segmented-choice-option,
+    .date-picker-day,
+    .crumb-label,
+    .pane-sort.sortable,
+    .pane-strip-link,
+    .data-grid-sort,
+    .palette-level,
+    .disclosure,
+    .settings-sidebar-page,
+    .settings-sidebar-subsection,
+    .quiet-control,
+    .quiet-track-item,
+    .toggle-chip
+  ):is(
+    :hover,
+    :active,
+    [aria-expanded='true']:where([aria-haspopup]:not([aria-haspopup='false']), .crumb-label)
+  ):enabled {
+  background: transparent;
+}
+
+/* A quiet cursor row (a pane that does not hold the keys, a window behind;
+   see the quiet rows below) runs nothing, so its actions are neither lit
+   nor red: the on-surface words that keep 4.5:1 on the list and on a
+   quiet fill. The
+   pointer still lights one it is over. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.cursor:where(:not(.selected))
+  :is(.pane-act, .pane-icon-act):not(:hover, :focus-visible) {
+  color: var(--text-on-surface);
 }
 
 /* The list takes programmatic focus after a keyboard sort; it is not in the
@@ -316,6 +750,67 @@
   min-height: 0;
   overflow-y: auto;
   background: var(--file-list-bg);
+  /* What a pinned action column (`.pane-pin-end`) paints under its cells. */
+  --pane-pin-ground: linear-gradient(var(--file-list-bg), var(--file-list-bg)), var(--surface);
+}
+
+/* A list cut at its foot, or at its end side, fades over the last
+   --scroll-fade-size there, so a sliced row or column reads as "more", as
+   every other scroller does. Its head never fades: the column strip pinned
+   there stays whole. Its start side fades row by row (each row's edge,
+   above), so the bar a row draws on that edge stays solid. The lengths are the base sheet's scroll-fade lengths
+   on its timelines; an edge with nothing past it stays sharp, and a list
+   that does not scroll never fades. */
+@supports (animation-timeline: scroll()) {
+  :where(.listing-root) .pane-list {
+    --scroll-fade-size: var(--space-6);
+
+    mask-image:
+      linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
+      linear-gradient(
+        to right,
+        var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+        transparent
+      );
+    mask-composite: intersect;
+    animation:
+      uiok-scroll-fade-block linear both,
+      uiok-scroll-fade-inline linear both;
+    animation-timeline: scroll(self block), scroll(self inline);
+  }
+
+  /* A list whose listing pins its actions at the end fades its foot alone,
+     never its end: the pinned column stands where the end fade would fall,
+     and its own hairline and fade say columns run on under it. */
+  :where(.listing-root) .pane-list:has(.pane-pin-end) {
+    mask-image: linear-gradient(
+      to bottom,
+      var(--ground) calc(100% - var(--scroll-fade-end)),
+      transparent
+    );
+  }
+
+  /* Right to left (a dir="rtl" host), a list's inline start is its right
+     edge, so each side fade runs the other way. Every right-to-left rule
+     here reads the dir attribute: bundlers' CSS minifiers rewrite the
+     direction pseudo-class into a list of languages. */
+  :where([dir='rtl'] .listing-root, .listing-root[dir='rtl']) .pane-list {
+    mask-image:
+      linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
+      linear-gradient(
+        to left,
+        var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+        transparent
+      );
+  }
+
+  :where([dir='rtl'] .listing-root, .listing-root[dir='rtl']) .pane-list:has(.pane-pin-end) {
+    mask-image: linear-gradient(
+      to bottom,
+      var(--ground) calc(100% - var(--scroll-fade-end)),
+      transparent
+    );
+  }
 }
 
 :where(.listing-root) :is(.row, .pane-columns) {
@@ -324,20 +819,53 @@
      wide as its widest cell plus the gutter before it. A listing sets the
      template on itself; the column strip shares it so every label sits over
      its column. */
-  grid-template-columns: var(--pane-grid, 20px minmax(0, 1fr));
+  grid-template-columns: var(
+    --pane-grid,
+    var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr)
+  );
   align-items: center;
   box-sizing: border-box;
   padding: 0 var(--pane-row-inset);
 }
 
+/* A listing with rows (Listing's table) is the one grid its strip and rows
+   lay out on: each is a subgrid across all its tracks, so a track sized by
+   content (`auto`, `max-content`) takes its widest cell in any row or the
+   strip, and a label always stands over its values. The listing keeps the
+   row inset as its own padding; each child reaches back over it, so its
+   ground, its cursor fill, and its rules still run edge to edge, and pads
+   it again, which a subgrid adds to its edge cells as margin: the two
+   cancel, so the cells sit exactly on the listing's tracks. Anything else
+   in the listing (a message, an app's own block) spans every track. */
+:where(.listing-root) .pane-listing:where([role='table']) {
+  display: grid;
+  grid-template-columns: var(
+    --pane-grid,
+    var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr)
+  );
+  align-content: start;
+  padding: 0 var(--pane-row-inset);
+}
+
+:where(.listing-root .pane-listing[role='table']) > * {
+  grid-column: 1 / -1;
+  margin-inline: calc(-1 * var(--pane-row-inset));
+}
+
+:where(.listing-root .pane-listing[role='table']) > :is(.row, .pane-columns) {
+  grid-template-columns: subgrid;
+}
+
 :where(.listing-root) .row {
-  height: 24px;
+  height: var(--row-height);
   /* Keeps a row scrolled into view clear of the band pinned over the list.
      The room is the row's to ask for, not the list's to pad: scroll padding
      would count a filter field standing in that band as out of view, and the
      list would scroll toward its caret on focus and on every keystroke. */
   scroll-margin-top: var(--pane-columns-height);
   cursor: default;
+  /* Holds its edge (below), placed out of its grid. */
+  position: relative;
 }
 
 /* The column strip, pinned over the scrolling listing: a band a shade under
@@ -346,10 +874,10 @@
 :where(.listing-root) .pane-columns {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-raised);
   height: var(--pane-columns-height);
-  background: color-mix(in srgb, var(--surface-header) 40%, var(--surface));
-  border-bottom: 1px solid var(--border);
+  background: var(--strip);
+  border-bottom: var(--line) solid var(--border);
 }
 
 /* A header fills the strip's height, so the whole cell is the handle a drag
@@ -368,20 +896,21 @@
 
 :where(.listing-root) .pane-columns > .row-meta {
   position: relative;
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   touch-action: none;
 }
 
 /* The rule stands in the middle of the gutter, as far from the label before
-   it as from the one after. */
+   it as from the one after, snapped to a whole pixel so a 1x display draws
+   it crisp. It is a line inside the strip, so it takes --border. */
 :where(.listing-root) .pane-columns > .row-meta::before {
   content: '';
   position: absolute;
   top: 5px;
   bottom: 5px;
-  left: calc(var(--pane-column-gap) / 2 - 0.5px);
-  width: 1px;
-  background: var(--border-strong);
+  inset-inline-start: round(down, calc(var(--pane-column-gap) / 2), 1px);
+  width: var(--line);
+  background: var(--border);
 }
 
 /* A header's sort control is the whole surface of its column in the strip,
@@ -395,11 +924,11 @@
    with nothing between them; the label alone is set in the interface font. */
 :where(.listing-root) .pane-sort {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-raised);
   flex: 1;
   display: flex;
   align-items: center;
-  gap: 3px;
+  gap: var(--space-2);
   min-width: 0;
   margin: 0 calc(var(--pane-column-gap) / -2);
   padding: 0 calc(var(--pane-column-gap) / 2);
@@ -409,7 +938,7 @@
   color: var(--text-dim);
   font: inherit;
   white-space: pre;
-  cursor: pointer;
+  cursor: default;
 }
 
 /* A label wider than its column ends in an ellipsis on the column's edge,
@@ -419,8 +948,8 @@
   overflow: hidden;
   text-overflow: ellipsis;
   font-family: var(--font-ui);
-  font-size: 11.5px;
-  font-weight: 500;
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
 }
 
 /* Numbers line up on their column's right edge, and so does their label. */
@@ -430,22 +959,31 @@
 
 /* The first and the last control reach the strip's own edges. */
 :where(.listing-root) .pane-columns > .row-name .pane-sort {
-  margin-left: calc(-1 * var(--pane-row-inset));
-  padding-left: var(--pane-row-inset);
+  margin-inline-start: calc(-1 * var(--pane-row-inset));
+  padding-inline-start: var(--pane-row-inset);
 }
 
 :where(.listing-root) .pane-columns > :last-child .pane-sort {
-  margin-right: calc(-1 * var(--pane-row-inset));
-  padding-right: var(--pane-row-inset);
+  margin-inline-end: calc(-1 * var(--pane-row-inset));
+  padding-inline-end: var(--pane-row-inset);
 }
 
 /* The strip is the top of a scrolling list, which would clip a ring drawn
    outside a control as tall as the strip. */
 :where(.listing-root) .pane-sort:focus-visible {
-  outline-offset: -2px;
+  outline-offset: var(--focus-offset-inset);
 }
 
-:where(.listing-root) :is(.pane-sort:hover, .pane-sort.active) {
+/* A label that sorts is a control, with rounded corners like the frame's
+   other compact controls: its hover (the wash, full words) and pressed looks
+   are the base sheet's shared track recipes, which weigh the same, so a
+   press shows over the hover. The column it sorts by keeps full words. A
+   label that only names its column takes no pointer state. */
+:where(.listing-root) .pane-sort.sortable {
+  border-radius: var(--radius-sm);
+}
+
+:where(.listing-root) .pane-sort.active {
   color: var(--text);
 }
 
@@ -453,20 +991,316 @@
   flex: none;
 }
 
+/* A listing whose rows draw no icon starts its first label over the names,
+   past the empty icon column, as the rows' values start. A section's
+   heading (`Strip` `heading`) is no column label and keeps the strip's
+   edge, as the headings of the sections around it do. The listing's part
+   weighs nothing, so the rule weighs what the label's default above does,
+   and an app's own placement of the label wins. */
+:where(.listing-root .pane-listing:has(> .row):not(:has(> .row > .row-icon:not(:empty))))
+  > .pane-columns
+  > .row-name:where(:not(:has(h3))) {
+  grid-column: 2;
+}
+
+/* The keyboard cursor: the cursor fill and a 2px accent bar on the row's
+   leading edge (`--row-bar`, drawn by the row's edge below), the block
+   cursor of a terminal, so the row is found at a glance whatever the
+   fill's contrast with the list. */
 :where(.listing-root) .row.cursor {
-  background: var(--cursor-row-bg);
+  --row-fill: var(--cursor-row);
+  --row-bar: var(--cursor-bar);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
+}
+
+/* The quiet rows. Whatever marks a row (the cursor, a mark, a checked box,
+   a selection) goes quiet where the keys are not: in a pane beside the one
+   that holds them, and in a window that is not in front (the host sets
+   `data-window-inactive` on the root from its window's focus events). A
+   quiet selection or mark takes the neutral fill (--fill) and the words a
+   row on it wears: full words for its name, the on-surface tone for its
+   quiet words and actions; a quiet mark keeps a bar in the neutral edge
+   tone; a checked box on a quiet row turns grey. A quiet cursor is
+   another thing: no fill and no bar, a hairline frame in the
+   neutral edge tone (--control-border-strong, 3:1 on the list and on the
+   quiet fill), so a cursor on a plain row, a quiet selection, and the
+   cursor inside a quiet selection (fill and frame) stay three looks. A
+   pinned action cell repeats three sides of the frame from
+   `--pane-pin-ring`. A lone pane, or a set of panes none of which is
+   active, in a window in front keeps its rows as they are. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.cursor {
+  --row-fill: transparent;
+  --row-bar: transparent;
+  --pane-pin-ring:
+    inset 0 var(--line) 0 var(--control-border-strong),
+    inset 0 calc(-1 * var(--line)) 0 var(--control-border-strong),
+    inset calc(-1 * var(--pane-pin-edge)) 0 0 var(--control-border-strong);
+  /* A checkbox on the row keeps 3:1 on the list. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
+  box-shadow: inset 0 0 0 var(--line) var(--control-border-strong);
+}
+
+/* A marked row (`.marked`), in a listing whose rows carry a checkbox: the
+   accent tint and a 2px bar on its leading edge in the marked tone, as a
+   marked grid row. Under the cursor the tint steps up and the row keeps
+   both marks: the cursor's bar, and a hairline ring in the cursor's tone,
+   so the cursor shows on a marked row whatever the two tints' distance in
+   a theme. A pane that does not hold the keys draws its marked cursor row
+   with the stronger tint and the marked bar alone. */
+:where(.listing-root) .row.marked {
+  --row-fill: var(--marked-bg);
+  --row-bar: var(--marked-bar);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
+}
+
+/* The ring is the row's own inset shadow; a pinned action cell, which
+   paints over the row's end, draws its three sides of it again from
+   `--pane-pin-ring` (below), so the frame closes across the cell. */
+:where(.listing-root) .row.marked.cursor {
+  --row-fill: var(--marked-cursor-bg);
+  --row-bar: var(--cursor-bar);
+  --pane-pin-ring:
+    inset 0 var(--line) 0 var(--cursor-bar), inset 0 calc(-1 * var(--line)) 0 var(--cursor-bar),
+    inset calc(-1 * var(--pane-pin-edge)) 0 0 var(--cursor-bar);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
+  box-shadow: inset 0 0 0 var(--line) var(--cursor-bar);
+}
+
+/* A quiet mark: the neutral fill and a bar in
+   the edge tone, which keeps 3:1 on that fill. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.marked {
+  --row-fill: var(--fill);
+  --row-bar: var(--control-border-strong);
+  --pane-pin-ring: 0 0 transparent;
+
+  background: var(--row-fill);
+  box-shadow: none;
+}
+
+/* The quiet cursor on a quiet mark: the mark's fill and bar inside the
+   quiet cursor's frame. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.marked.cursor {
+  --row-fill: var(--fill);
+  --row-bar: var(--control-border-strong);
+  --pane-pin-ring:
+    inset 0 var(--line) 0 var(--control-border-strong),
+    inset 0 calc(-1 * var(--line)) 0 var(--control-border-strong),
+    inset calc(-1 * var(--pane-pin-edge)) 0 0 var(--control-border-strong);
+
+  background: var(--row-fill);
+  box-shadow: inset 0 0 0 var(--line) var(--control-border-strong);
+}
+
+/* A checked box on a quiet row: the box in the edge tone, its mark cut out
+   in the row's neutral fill, as a list's boxes grey in a window behind. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row
+  :is(.check, input[type='checkbox']) {
+  --check-on: var(--control-border-strong);
+  --check-on-pressed: var(--control-border-strong);
+  --check-mark: var(--fill);
+}
+
+/* A row's edge: the bar of its state (`--row-bar`: the cursor's, a mark's,
+   a selected cursor's) on its leading edge, and, once the list has
+   scrolled sideways, a fade over the words sliding out at that edge. Both
+   stand on the scroller's start edge, not on the row's, so a row scrolled
+   sideways keeps its bar in view, and its words ease out under the row's
+   own fill rather than a cut. Each is a box of its own, placed out of the
+   row's grid (so no cell moves) and carried along by the distance the
+   list has scrolled (`--pane-edge-shift`, below); not an inset shadow,
+   which scrolls away with the row, and not a mask on the list, which
+   would clip a popover opened from a row. Neither takes the pointer. The
+   strip fades from its own band, over its labels. */
+:where(.listing-root) .row::before,
+:where(.listing-root) :is(.row, .pane-columns)::after {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  pointer-events: none;
+}
+
+/* The bar: the state's tone, the width of the old inset bar. A row in no
+   state draws none. */
+:where(.listing-root) .row:is(.cursor, .marked)::after {
+  content: '';
+  width: var(--line-strong);
+  background: var(--row-bar, transparent);
+}
+
+/* The distance the nearest scroller has moved sideways, as a length: an
+   animation on its inline scroll timeline whose range is that many pixels
+   long, so its progress times the range is the offset itself. A list that
+   does not scroll sideways has no timeline, and the edge stays put. */
+@property --pane-edge-shift {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@keyframes uiok-pane-edge-shift {
+  from {
+    --pane-edge-shift: 0px;
+  }
+
+  to {
+    --pane-edge-shift: 100000px;
+  }
+}
+
+/* The fade: the row's fill over the ground it stands on, as a pinned
+   action cell paints them, masked from solid at the edge to clear, as wide
+   as the base sheet's inline start fade at this scroll (none at the
+   start, --scroll-fade-size once scrolled). */
+@supports (animation-timeline: scroll()) {
+  :where(.listing-root) .row::before,
+  :where(.listing-root) :is(.row, .pane-columns)::after {
+    translate: var(--pane-edge-shift) 0;
+    animation: uiok-pane-edge-shift linear both;
+    animation-timeline: scroll(nearest inline);
+    animation-range: 0px 100000px;
+  }
+
+  :where(.listing-root) .row::before,
+  :where(.listing-root) .pane-columns::after {
+    --scroll-fade-size: var(--space-6);
+
+    content: '';
+    width: var(--scroll-fade-inline-start);
+    background:
+      linear-gradient(var(--row-fill, transparent), var(--row-fill, transparent)),
+      var(--pane-pin-ground);
+    mask-image: linear-gradient(to right, var(--ground), transparent);
+    animation:
+      uiok-pane-edge-shift linear both,
+      uiok-scroll-fade-inline linear both;
+    animation-timeline: scroll(nearest inline), scroll(nearest inline);
+    animation-range:
+      0px 100000px,
+      normal;
+  }
+
+  :where(.listing-root) .pane-columns::after {
+    z-index: var(--z-raised);
+    background: var(--strip);
+  }
+
+  /* Right to left the start edge is the right one, and the list scrolls
+     toward the left. */
+  :where([dir='rtl'] .listing-root, .listing-root[dir='rtl']) .row::before,
+  :where([dir='rtl'] .listing-root, .listing-root[dir='rtl']) :is(.row, .pane-columns)::after {
+    translate: calc(-1 * var(--pane-edge-shift)) 0;
+  }
+
+  :where([dir='rtl'] .listing-root, .listing-root[dir='rtl']) .row::before,
+  :where([dir='rtl'] .listing-root, .listing-root[dir='rtl']) .pane-columns::after {
+    mask-image: linear-gradient(to left, var(--ground), transparent);
+  }
+}
+
+/* Under the pointer, in a list whose rows act on a click (`.pane-list.pointer`),
+   a row other than the cursor takes the row hover wash, which moves away
+   from the list's ground in either appearance. Where the pointer
+   moves the cursor itself, leave the class off: the cursor is the hover. */
+:where(.listing-root) .pane-list.pointer .row:hover:not(.cursor, .selected, .marked) {
+  --row-fill: var(--row-hover);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
+}
+
+/* A focusable row (`Row` `focusable`) rings inside its edges: the list
+   around it scrolls, and would clip a ring drawn outside. */
+:where(.listing-root) .row:focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset-inset);
+}
+
+/* A row drawn as a button (a tree's row) wears the row's look, not the
+   button's. */
+:where(.listing-root) button.row {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
 }
 
 /* A sidebar row whose page the main pane shows, while the cursor is on
    another. */
 :where(.listing-root) .row.pane-open-row > .row-name {
-  font-weight: 600;
+  font-weight: var(--font-weight-strong);
 }
 
-/* Dim row text switches to the on-surface tone over the cursor highlight;
-   --text-dim misses 4.5:1 contrast on the cursor row in the light flavor. */
-:where(.listing-root) .row.cursor :is(.row-icon, .row-meta) {
+/* Quiet row words (the icon, the cells, an idle or busy state's word, a
+   row action at rest) switch to the on-surface tone over a state fill, the
+   cursor's (either pane's), a mark's, or the row hover wash: the quiet tone
+   misses 4.5:1 on those fills in several themes, and --text-on-surface is
+   floored on each. The cursor row lights its actions instead (above); a lit
+   action, a red one, and one under the pointer keep their own tones.
+
+   A selection paints its own words (below), and outranks the cursor, a
+   mark, and the pointer: no rule here may recolour a word on a selected
+   row, whatever it weighs. The selection is left out with a :where(), so
+   each rule keeps the weight an app's own rule is measured against. */
+:where(.listing-root) .row:is(.cursor, .marked):where(:not(.selected)) :is(.row-icon, .row-meta),
+:where(.listing-root)
+  .row:is(.cursor, .marked):where(:not(.selected))
+  .pane-state:is(.pane-tone-muted, .pane-tone-busy),
+:where(.listing-root)
+  .row.marked:where(:not(.cursor, .selected))
+  :is(.pane-act, .pane-icon-act):where(:not(.lit, :hover, .danger:focus-visible)),
+:where(.listing-root .pane-list.pointer)
+  .row:hover:not(.selected)
+  :is(.row-icon, .row-meta, .pane-state:is(.pane-tone-muted, .pane-tone-busy)),
+:where(.listing-root .pane-list.pointer)
+  .row:hover:where(:not(.cursor, .marked, .selected))
+  :is(.pane-act, .pane-icon-act):where(:not(.lit, :hover, .danger:focus-visible)) {
   color: var(--text-on-surface);
+}
+
+/* A row at a listing's foot that adds one (`.pane-add`: "Add service…"):
+   quiet dim words after an accent plus, which turn to full words under
+   the pointer, with the focus, and on the cursor row, as a control's do. */
+:where(.listing-root) .row.pane-add {
+  color: var(--text-dim);
+}
+
+:where(.listing-root) .row.pane-add > .row-icon {
+  color: var(--accent);
+}
+
+:where(.listing-root) .row.pane-add:where(:not(.selected)):hover > .row-name,
+:where(.listing-root) .row.pane-add:where(:not(.selected)):is(:focus-visible, .cursor) > .row-name {
+  color: var(--text);
 }
 
 :where(.listing-root) .row-icon {
@@ -481,12 +1315,39 @@
   white-space: nowrap;
 }
 
+/* A listing selects rows, not text, as a file manager does: a drag, a
+   Shift-click, or a double-click on a row never starts a text selection,
+   in its name and values included, and a row copies through the host's
+   own Copy. This holds inside a region a host opts into selection
+   (`.selectable`) and over a `code` in a cell, so it is said here and not
+   left to the base sheet's default. The column strip is chrome (decision
+   47 names headings), so it refuses selection the same way: a sweep or
+   Select All never lights the headings of a list whose rows stay plain. A
+   field in a row (an inline rename) keeps its own text. */
+:where(.listing-root)
+  :is(
+    .pane-strip,
+    .pane-strip *,
+    .row,
+    .row
+      :not(
+        input:not([type='checkbox'], [type='radio'], [type='range']),
+        textarea,
+        [contenteditable]:not([contenteditable='false'])
+      )
+  ) {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
 /* Metadata cells read like columns of a terminal listing: the gap character
    sits in the padding, numbers right-align, and whitespace is kept so a value
-   padded with spaces ("Aug  1") keeps its alignment. */
+   padded with spaces ("Aug  1") keeps its alignment. A value wider than
+   its column ends in an ellipsis, never cut through a glyph. */
 :where(.listing-root) .row-meta {
-  padding-left: var(--pane-column-gap);
+  padding-inline-start: var(--pane-column-gap);
   overflow: hidden;
+  text-overflow: ellipsis;
   white-space: pre;
   color: var(--row-meta-text);
   font-variant-numeric: tabular-nums;
@@ -497,21 +1358,29 @@
   text-align: right;
 }
 
-/* The status line closes the pane: a summary of what the pane lists. */
+/* The status line closes the pane: a summary of what the pane lists. Its
+   words start, and its last control's glyph ends, on the row inset, the
+   edges the path bar and the rows keep. */
 :where(.listing-root) .pane-status {
-  height: 26px;
-  flex: 0 0 26px;
+  height: var(--bar-height);
+  flex: 0 0 var(--bar-height);
   display: flex;
   align-items: center;
   box-sizing: border-box;
-  padding: 0 10px;
-  border-top: 1px solid var(--border);
+  padding: 0 var(--pane-row-inset);
+  border-top: var(--line) solid var(--border);
   color: var(--text-dim);
-  font-size: 12px;
+  font-size: var(--font-size-small);
 }
 
 :where(.listing-root) .pane-summary {
-  flex: none;
+  flex: 0 1 auto;
+  min-width: 0;
+  /* A read-out of the pane's contents, so content a user may copy. */
+  -webkit-user-select: text;
+  user-select: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -521,16 +1390,9 @@
   display: inline-flex;
   flex: none;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   margin-left: auto;
-  margin-right: -4px;
-}
-
-:where(.listing-root) .pane-summary:has(+ .pane-status-tools) {
-  flex: 0 1 auto;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-right: calc(-1 * var(--pane-glyph-reach));
 }
 
 /* ---- Page listings (Listing) ----
@@ -542,7 +1404,7 @@
 /* Each section is a listing of its own, so its strip pins only while the
    listing is in view; a rule sets a listing off from the one above. */
 :where(.listing-root) :is(.pane-listing, .pane-message) + .pane-listing > .pane-columns {
-  border-top: 1px solid var(--border);
+  border-top: var(--line) solid var(--border);
 }
 
 /* A strip label is text, with no pointer and no hover, but where it sorts
@@ -566,179 +1428,374 @@
   content: none;
 }
 
-/* A control at a strip's right end: a quiet link (`.pane-strip-link`,
-   Update all, Clear). */
+/* A control at a strip's right end: a strip action, a small push button
+   (`.pane-strip-link`, Update all, Clear). */
 :where(.listing-root) .pane-columns > .pane-col-control {
   align-items: center;
   justify-content: flex-end;
 }
 
-:where(.listing-root) .pane-strip-link {
+/* A strip action is a small push button, never a link and never a bare
+   word: words in the text colour inside a --control-border
+   bezel 20px high, so it cannot be read as the dim column labels beside
+   it. It takes the base sheet's shared quiet hover (the frosted box) and
+   press. Its edge stands on the column's right edge. Its hit area grows to
+   --hit-target in the block axis. Its look is its own class's, so it draws
+   the same outside a strip. Its values are the 20px Button's (.button-xs
+   in button.css), so the library has one 20px push button look; a test
+   holds the two rules equal. */
+.pane-strip-link {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--accent);
-  font: 500 11.5px var(--font-ui);
+  gap: var(--space-2);
+  box-sizing: border-box;
+  height: var(--control-height-xs);
+  margin: 0;
+  padding: 0 var(--space-3);
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font: var(--font-weight-medium) var(--font-size-caption) var(--font-ui);
   white-space: nowrap;
-  cursor: pointer;
+  cursor: default;
 }
 
-:where(.listing-root) .pane-strip-link:hover:enabled {
-  text-decoration: underline;
+.pane-strip-link::after {
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
+  inset-inline: 0;
+  content: '';
 }
 
-:where(.listing-root) .pane-strip-link.danger {
-  color: var(--danger);
+.pane-strip-link:focus-visible {
+  outline-offset: var(--focus-offset-flush);
+}
+
+/* Inside a column strip a 20px push button would fill the strip's inside
+   (22px less its rule, less again under a rule above), so its bezel would
+   rest on the strip's rules. There it takes its height from the strip: in
+   the strip's control cell it fills the cell's inside, which keeps
+   --space-1 above and below it, so 2px of strip stand between the bezel
+   and each rule whether the strip carries one rule (17px) or two (16px).
+   Anywhere else in a strip it is the strip less its rule and those two
+   clearances. Its hit area still reaches --hit-target. The strip is
+   pinned at the top of a scroller that clips, so its focus ring is drawn
+   inside. */
+:where(.listing-root) .pane-columns :is(.pane-strip-link, .button-xs) {
+  height: calc(var(--pane-columns-height) - var(--line) - 2 * var(--space-1));
+}
+
+/* A strip that follows a listing carries a rule above it inside its own
+   height, one line less room: there the button is one line shorter, so
+   it still stands 2px clear of both rules. */
+:where(.listing-root)
+  :is(.pane-listing, .pane-message)
+  + .pane-listing
+  > .pane-columns
+  :is(.pane-strip-link, .button-xs) {
+  height: calc(var(--pane-columns-height) - 2 * var(--line) - 2 * var(--space-1));
+}
+
+/* Only a cell that holds such a button makes that room: a control cell
+   around a label (a sort, a word with a tooltip) stays as tall as a plain
+   label's, so its strip matches a strip of labels beside it. */
+:where(.listing-root) .pane-columns > .pane-col-control:has(> :is(.pane-strip-link, .button-xs)) {
+  box-sizing: border-box;
+  align-items: stretch;
+  padding-block: var(--space-1);
+}
+
+:where(.listing-root) .pane-columns > .pane-col-control > :is(.pane-strip-link, .button-xs) {
+  height: auto;
+}
+
+:where(.listing-root) .pane-columns :is(.pane-strip-link, .button-xs):focus-visible {
+  outline-offset: var(--focus-offset-inset);
+}
+
+/* A strip action that is on (aria-pressed="true") draws one ring: its
+   bezel takes the current item's ring in place of the base sheet's inset
+   ring. Held, it sinks inside that one bezel. */
+.pane-strip-link[aria-pressed='true'] {
+  border-color: var(--current-ring);
+  box-shadow: none;
+}
+
+.pane-strip-link[aria-pressed='true']:active:enabled:not([aria-disabled='true']) {
+  box-shadow: var(--shadow-pressed);
+}
+
+/* A destructive strip action (Clear history) is the danger button in
+   small: a --danger bezel and --danger-text words in every state, the
+   danger wash under the pointer and the stronger danger wash while held. */
+.pane-strip-link.danger {
+  border-color: var(--danger);
+  color: var(--danger-text);
+}
+
+.pane-strip-link.danger:hover:enabled:not([aria-pressed='true']) {
+  background: var(--danger-wash);
+  color: var(--danger-text);
+}
+
+.pane-strip-link.danger:active:enabled:not([aria-pressed='true']) {
+  background: var(--danger-wash-strong);
+  color: var(--danger-text);
+}
+
+.pane-strip-link.danger:is(:disabled, [aria-disabled='true']) {
+  border-color: var(--control-border);
+  color: var(--text);
 }
 
 /* A line that says something about a listing, or stands in for its rows:
-   a quiet "Nothing here yet", a hint, a refusal (`danger`). */
+   a quiet "No history", a hint, a refusal (`danger`). Its words
+   start on the row inset, where a row's icon, the column strip's first
+   label, and the path bar's first crumb start, so the pane keeps one left
+   edge and no line reads as indented. Its words are content: a user may
+   select and copy them. */
 :where(.listing-root) .pane-message {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0 8px;
-  min-height: 24px;
-  margin: 0;
-  padding: 3px var(--pane-row-inset) 3px calc(var(--pane-row-inset) + 20px);
+  gap: 0 var(--space-4);
+  min-height: var(--row-height);
+  /* The block margins only: inside a table listing the message reaches
+     back over the listing's inset as a row does, so its rule runs edge to
+     edge and its words start where the rows' icons do. */
+  margin-block: 0;
+  padding: var(--space-1) var(--pane-row-inset);
   box-sizing: border-box;
   color: var(--row-meta-text);
-  font-size: 12px;
+  /* A hint or a refusal is a sentence, so the interface font, though the
+     list around it is set in the listing's monospace; a name or a value
+     inside it (`code`) keeps the monospace. */
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+  -webkit-user-select: text;
+  user-select: text;
 }
 
+/* A refusal is a status line: the danger glyph (surface.css) before the
+   words, which take --text, as every inline message does. */
 :where(.listing-root) .pane-message.danger {
-  color: var(--danger);
+  color: var(--text);
+}
+
+/* A line that says a listing has no rows (`.empty`, Listing's `empty`)
+   reads as a quiet row in the rows' place: it starts where a row's icon
+   starts, in the rows' own typeface and size (the host's, as the rows'
+   are), dim, one row high. */
+:where(.listing-root) .pane-message.empty {
+  padding-block: 0;
+  font: inherit;
+  line-height: var(--line-height-compact);
 }
 
 :where(.listing-root) .pane-message code {
   font-family: var(--font-mono);
 }
 
-/* A pane with nothing in it yet: one quiet block centred in it, its glyph,
-   its title, a sentence on what the pane is for, and its ways on, a lone
-   button or a row of them (.pane-empty-actions). */
+/* A pane with nothing in it yet, or one that could not load: one block
+   centred in it, its glyph, its heading, a sentence on what the pane is
+   for or what went wrong, and its ways on, a lone button or a row of them
+   (.pane-empty-actions), with the error the system returned under them
+   where there is one (.pane-empty-detail). The pane keeps its path bar and
+   status line around it. A list that is merely empty (a folder with no
+   entries, a filter that matches nothing) says so with the quiet line
+   `.pane-message.empty` instead. */
 :where(.listing-root) .pane-empty {
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
-  padding: 32px;
+  gap: var(--space-2);
+  padding: var(--space-16);
   color: var(--text-dim);
   font-family: var(--font-ui);
   text-align: center;
 }
 
+/* Its words are content a user may copy, an error above all. */
+:where(.listing-root) .pane-empty :is(strong, h2, p) {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 :where(.listing-root) .pane-empty > svg {
-  margin-bottom: 8px;
+  margin-bottom: var(--space-4);
+  color: var(--text-faint);
 }
 
 :where(.listing-root) .pane-empty :is(strong, h2) {
   margin: 0;
   color: var(--text);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-strong);
+  overflow-wrap: anywhere;
 }
 
 :where(.listing-root) .pane-empty p {
   max-width: 420px;
   margin: 0;
-  font-size: 12.5px;
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-prose);
+  text-wrap: balance;
 }
 
 :where(.listing-root) .pane-empty > .button,
 :where(.listing-root) .pane-empty-actions {
-  margin-top: 14px;
+  margin-top: var(--space-6);
 }
 
 :where(.listing-root) .pane-empty-actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 8px;
+  gap: var(--space-4);
   max-width: 620px;
 }
 
-:where(.listing-root) .pane-empty-actions .button {
-  gap: 8px;
+/* What the system returned (an error code and a path) is a line a user
+   pastes into a report, so it is set in the code face under the actions. */
+:where(.listing-root) .pane-empty p.pane-empty-detail {
+  margin-top: var(--space-4);
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
 }
 
-/* A state (StateMark): its dot, or its spinner for a transition, and its
-   word, in the state's tone. The dot takes the tone everywhere; the word
-   inside a row only. A warning's words read in --warning-text where an app
-   sets a more legible warning tone for text, --warning otherwise. */
+/* A state (StateMark): its mark, or its spinner for a transition, and its
+   word, in the state's tone. The mark takes the tone everywhere, the word
+   inside a row only, in the text-safe tone of its state. Each mark has its
+   own shape as well as its hue, so two states whose hues meet in a theme
+   (a green accent, a red and an amber under a colour-vision deficiency)
+   and a busy mark held still still differ: ready a dot, warning a diamond,
+   failure a square, busy a heavy accent ring, quiet a thin grey ring. The
+   word gives way with an ellipsis; its tooltip holds it whole. */
 :where(.listing-root) .pane-state {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-3);
+  min-width: 0;
+  max-width: 100%;
+  vertical-align: top;
 }
 
+:where(.listing-root) .pane-state-word {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A mark with no word (`word=""`, as a path fact's mark) is the mark
+   alone: its empty word box keeps no gap after it. */
+:where(.listing-root) .pane-state-word:empty {
+  display: none;
+}
+
+/* A quiet ring draws in the edge tone a state row sets for its marks
+   (`--check-edge`, the checkbox's: 3:1 on the cursor, marked, and hover
+   fills), and in the idle mark's tone on a row at rest. */
 :where(.listing-root) .pane-state-dot {
   flex: none;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--border-strong);
+  box-sizing: border-box;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--line) var(--check-edge, var(--idle-mark));
 }
 
 :where(.listing-root) .pane-tone-ready > .pane-state-dot {
   background: var(--success);
+  box-shadow: none;
 }
 
+/* In a listing that shows a busy spinner, each mark stands in a slot as
+   wide as the spinner (--icon-sm), so the words read from one edge: the
+   mark is --dot wide, and its margins take up the rest (a turned diamond
+   is about as wide). A listing with no spinner keeps the room. */
+:where(.listing-root) .pane-listing:has(.pane-state-busy) .pane-state-dot {
+  margin-inline: calc((var(--icon-sm) - var(--dot)) / 2);
+}
+
+/* A 5px square turned on its corner spans the dot's height (--dot, 6px)
+   and a little more, so the diamond weighs what the dot does. */
 :where(.listing-root) .pane-tone-warning > .pane-state-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: var(--radius-xs);
   background: var(--warning);
+  box-shadow: none;
+  transform: rotate(45deg);
 }
 
 :where(.listing-root) .pane-tone-danger > .pane-state-dot {
+  border-radius: var(--radius-xs);
   background: var(--danger);
+  box-shadow: none;
 }
 
 :where(.listing-root) .pane-tone-busy > .pane-state-dot {
-  background: var(--accent);
-  animation: pane-state-pulse 1s ease-in-out infinite;
+  box-shadow: inset 0 0 0 var(--line-strong) var(--accent);
 }
 
-@keyframes pane-state-pulse {
-  50% {
-    opacity: 0.35;
-  }
-}
-
-:where(.listing-root) .pane-state-busy {
-  flex: none;
+/* The busy spinner is the shared Spinner (it turns and stands still under
+   reduced motion on its own); the state only colours it. */
+:where(.listing-root) .pane-state > svg.pane-state-busy {
   color: var(--accent);
-  animation: pane-state-spin 1s linear infinite;
 }
 
-@keyframes pane-state-spin {
-  to {
-    transform: rotate(360deg);
-  }
+/* On a quiet row that wears the neutral fill (a quiet mark or a quiet
+   selection), the busy ring and spinner take the on-surface words' tone,
+   as the row's actions do: the accent misses 3:1 on that fill in several
+   themes, and --text-on-surface is floored on it. A quiet cursor alone
+   has no fill (only its frame), so its marks keep their own tones on the
+   list. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row:is(.marked, .selected)
+  .pane-tone-busy
+  > .pane-state-dot {
+  box-shadow: inset 0 0 0 var(--line-strong) var(--text-on-surface);
 }
 
-/* Reduced motion: a busy mark stands still, and its accent and word still say
-   the work is running. */
-@media (prefers-reduced-motion: reduce) {
-  :where(.listing-root) .pane-tone-busy > .pane-state-dot,
-  :where(.listing-root) .pane-state-busy {
-    animation: none;
-  }
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row:is(.marked, .selected)
+  .pane-state
+  > svg.pane-state-busy {
+  color: var(--text-on-surface);
+}
+
+/* On a marked row a filled mark wears a hairline in the on-surface words'
+   tone, as one on a selection wears the selection's, so its shape holds
+   on the accent tint whatever its hue. */
+:where(.listing-root)
+  .row.marked:where(:not(.selected))
+  :is(.pane-tone-ready, .pane-tone-warning, .pane-tone-danger)
+  > .pane-state-dot {
+  box-shadow: 0 0 0 var(--line) var(--text-on-surface);
 }
 
 :where(.listing-root) .row .pane-state.pane-tone-ready {
-  color: var(--success);
+  color: var(--success-text);
 }
 
 :where(.listing-root) .row .pane-state.pane-tone-danger {
-  color: var(--danger);
+  color: var(--danger-text);
 }
 
 :where(.listing-root) .row .pane-state.pane-tone-warning {
-  color: var(--warning-text, var(--warning));
+  color: var(--warning-text);
 }
 
 :where(.listing-root) .row .pane-state:is(.pane-tone-muted, .pane-tone-busy) {
@@ -760,9 +1817,9 @@
   white-space: nowrap;
 }
 
+/* The name cuts its overflow, which would clip a ring drawn outside it. */
 :where(.listing-root) .pane-row-open:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  outline-offset: var(--focus-offset-inset);
 }
 
 /* The action column and the hover icons before it hold controls, which
@@ -774,11 +1831,145 @@
   overflow: visible;
 }
 
-/* A row's secondary controls show on its hover, its keyboard focus, and the
-   cursor, whose keys run them. They fade rather than hide, so a pointer
-   finds them where they stand. */
-:where(.listing-root) .row:not(:hover, :focus-within, .cursor) .pane-hover-cell .pane-icon-act {
-  opacity: 0;
+/* A listing that may be wider than what scrolls it (`.pane-pin-end` on the
+   `Listing`) keeps its last column, the actions, in view at the scroller's
+   end: those cells, and the strip's over them, stick there while the
+   columns before them scroll under. They paint the row's state fill
+   (`--row-fill`, set by each state rule above) over the ground they stand
+   on (`--pane-pin-ground`: the list's inside a `.pane-list`, the surface
+   elsewhere; a host on another ground sets it), and a hairline on their
+   leading edge says columns run on under them while any do. Every side is
+   logical, so a right-to-left listing pins its actions at its left. */
+:where(.listing-root) {
+  --pane-pin-ground: var(--surface);
+  /* The ring a row's state draws, which its pinned cell repeats over the
+     row's end (a marked cursor row's sets it); none by default. */
+  --pane-pin-ring: 0 0 transparent;
+  /* Which way the hairline's inset shadow falls: onto the cell's leading
+     edge, its left left to right and its right right to left. */
+  --pane-pin-edge: var(--line);
+}
+
+:where([dir='rtl'] .listing-root, .listing-root[dir='rtl']) {
+  --pane-pin-edge: calc(-1 * var(--line));
+}
+
+/* Each pinned cell fills its row's height, so its ground and its hairline
+   run unbroken from the strip to the foot, and holds its controls at its
+   end, centred in the row. */
+:where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
+  position: sticky;
+  inset-inline-end: 0;
+  z-index: var(--z-raised);
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  margin-inline-end: calc(-1 * var(--pane-row-inset));
+  padding-inline-end: var(--pane-row-inset);
+  /* Room for the fade it casts over the columns before it (below). */
+  overflow: visible;
+  background:
+    linear-gradient(var(--row-fill, transparent), var(--row-fill, transparent)),
+    var(--pane-pin-ground);
+  box-shadow: var(--pane-pin-ring);
+}
+
+/* The strip's pinned cell is a square band of the strip, not a sort
+   control's rounded box. */
+:where(.listing-root .pane-listing.pane-pin-end) > .pane-columns > :last-child {
+  border-radius: 0;
+  background: var(--strip);
+}
+
+/* A sticky box stops at its scroller's padding, and a pinned cell cannot
+   tell which box scrolls it: the listing itself, a `.pane-list`, or a
+   host's own scroller with no padding. So a pinned listing pads its end
+   with no padding at all: it ends its grid with an empty track as wide as
+   the row inset instead, which every row and the strip span. The tracks
+   before it keep their places, each row still runs to the listing's end,
+   and the pinned cells (`inset-inline-end: 0` above) reach over that track
+   to end with their row, then stop at the scroller's edge, its end inset
+   inside the scrollport, whichever box scrolls them. */
+:where(.listing-root) .pane-listing.pane-pin-end:where([role='table']) {
+  grid-template-columns:
+    var(--pane-grid, var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr))
+    var(--pane-row-inset);
+  padding-inline-end: 0;
+}
+
+:where(.listing-root .pane-listing.pane-pin-end[role='table']) > * {
+  margin-inline-end: 0;
+}
+
+:where(.listing-root .pane-listing.pane-pin-end[role='table']) > :is(.row, .pane-columns) {
+  padding-inline-end: 0;
+}
+
+/* While columns run on under the pinned cells, a hairline on their leading
+   edge says so, and the words sliding under them fade over --space-6
+   before it, as a list's edge fades: the fade is the cell's own ground,
+   masked from clear to solid. Both show only while something lies under
+   the cells, so a listing that fits, or one scrolled to its end, keeps its
+   last column whole. */
+@supports (animation-timeline: scroll()) {
+  :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
+    animation: uiok-pane-pin-edge linear both;
+    animation-timeline: scroll(nearest inline);
+  }
+
+  :where(.listing-root .pane-listing.pane-pin-end)
+    > :is(.row, .pane-columns)
+    > :last-child::before {
+    content: '';
+    position: absolute;
+    /* Over a strip cell's own ::before, the rule in its gutter. */
+    inset-block: 0;
+    inset-inline: auto 100%;
+    width: var(--space-6);
+    background: inherit;
+    opacity: 0;
+    pointer-events: none;
+    mask-image: linear-gradient(to right, transparent, var(--ground));
+    animation: uiok-pane-pin-fade linear both;
+    animation-timeline: scroll(nearest inline);
+  }
+
+  /* Right to left the columns before the cell lie on its right. */
+  :where(
+      [dir='rtl'] .listing-root .pane-listing.pane-pin-end,
+      .listing-root[dir='rtl'] .pane-listing.pane-pin-end
+    )
+    > :is(.row, .pane-columns)
+    > :last-child::before {
+    mask-image: linear-gradient(to left, transparent, var(--ground));
+  }
+}
+
+@keyframes uiok-pane-pin-edge {
+  0%,
+  95% {
+    box-shadow:
+      inset var(--pane-pin-edge) 0 0 var(--border-strong),
+      var(--pane-pin-ring);
+  }
+
+  100% {
+    box-shadow:
+      inset 0 0 0 var(--border-strong),
+      var(--pane-pin-ring);
+  }
+}
+
+@keyframes uiok-pane-pin-fade {
+  0%,
+  95% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
 }
 
 /* A path (PathCell): its folders in the row-meta tone, giving way in order:
@@ -793,6 +1984,16 @@
 :where(.listing-root) .row .row-meta.pane-path {
   display: flex;
   min-width: 0;
+  /* Its words a whole number of characters wide (the gutter is its
+     padding, inside the width), so a cut head's ellipsis meets the next
+     folder with no sliver of a character between them; the slack falls
+     past the name, at the column's end. Half a pixel more keeps the engine,
+     which lays boxes out in fractions of a pixel, from rounding the last
+     whole character out. */
+  box-sizing: border-box;
+  width: calc(
+    round(down, calc(100% - var(--pane-column-gap)), 1ch) + var(--pane-column-gap) + 0.5px
+  );
 }
 
 :where(.listing-root) .pane-path-head {
@@ -825,7 +2026,9 @@
 /* A terminal well under its strip (WellColumn): the terminal theme's
    colours, filling what the column leaves. Its strip's grid is the
    component's, a column for each of its labels. Plain text sits as the
-   terminal's does, 13px on 19px lines, 12px from every edge; a well that
+   terminal's does, 13px on 19px lines (the terminal's cell height, kept
+   as a literal: it is the terminal's metric, not a type scale step), 12px
+   from every edge; a well that
    holds the terminal itself pads 8px, since the terminal adds its own 4px. */
 :where(.listing-root) .pane-well-column {
   display: flex;
@@ -838,19 +2041,39 @@
   flex: 1;
   min-height: 0;
   margin: 0;
-  padding: 12px;
+  padding: var(--space-6);
   overflow: auto;
   background: var(--terminal-bg);
   color: var(--terminal-fg);
-  font: 13px/19px var(--font-mono);
+  font: var(--font-size-body)/19px var(--font-mono);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  /* Output is content: a user selects and copies it. */
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* What an empty well says until output takes its place ("Output shows
+   here as processes print."): a line of the well itself, in the terminal's
+   font, size, and line height (inherited from the well) and dim, starting
+   where the well's text starts. A well that holds a terminal pads 8px and
+   the terminal adds its own 4px, so the note there takes that 4px too
+   (`.pane-well-note.beside-terminal`). */
+:where(.listing-root) .pane-well-note {
+  display: block;
+  margin: 0;
+  color: var(--text-dim);
+  font: inherit;
+  white-space: pre-wrap;
+}
+
+:where(.listing-root) .pane-well-note.beside-terminal {
+  padding: var(--space-2) var(--space-2) 0;
 }
 
 /* A well is a Tab stop of its own, where the keys scroll it. */
 :where(.listing-root) .pane-well:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
+  outline-offset: var(--focus-offset-inset);
 }
 
 /* A filter field's far end (`.pane-filter-summary`): the count, or the
@@ -861,7 +2084,212 @@
   padding-left: 1ch;
   color: var(--text-dim);
   font-family: var(--font-ui);
-  font-size: 11px;
+  font-size: var(--font-size-caption);
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* A selected row (`.selected`), where nothing else on the row shows the
+   state: the solid accent fill with on-accent words, its quiet words in the
+   on-selection dim tone, every tone a cell would wear (a state, a path's
+   name, a lit action) on the selection's own. The cursor on a selected row
+   is the selection's cursor fill and a bar in the on-selection tone.
+
+   Only the selection that holds the keys wears the accent. In a pane that
+   does not hold them, and in a window that is not in front (the host sets
+   `data-window-inactive` on the root from its window's focus events), a
+   selection greys, as a desktop list's does: the neutral fill and the
+   words of a row on it (below). The on-selection words are scoped to the
+   selection that holds the keys with a :where(), so each rule keeps its
+   weight. */
+:where(.listing-root) .row.selected {
+  --row-fill: var(--selected-bg);
+  /* The selection's words, for a host's own parts of a row (a coloured
+     name, a link's target) to take: the on-selection tones while the
+     selection holds the keys, the text tones once it greys (below). */
+  --row-selected-text: var(--on-selected);
+  --row-selected-text-dim: var(--on-selected-dim);
+
+  background: var(--row-fill);
+  color: var(--on-selected);
+}
+
+:where(.listing-root) .row.cursor.selected {
+  --row-fill: var(--selected-cursor-bg);
+  --row-bar: var(--on-selected);
+
+  background: var(--row-fill);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  :is(.row-icon, .row-name, .pane-path-name, .pane-act, .pane-icon-act, .pane-state) {
+  color: var(--on-selected);
+}
+
+/* A lit or red action under the pointer or the focus keeps the selection's
+   words too: their own rules weigh more than the one above, and their tones
+   are not floored on the accent. */
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  :is(.pane-act, .pane-icon-act):is(.lit, .danger, :hover, :focus-visible) {
+  color: var(--on-selected);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  :is(.row-meta, .pane-path-head, .pane-path-tail) {
+  color: var(--on-selected-dim);
+}
+
+/* On the accent fill the ringed marks (a quiet state's thin ring, a busy
+   state's heavy one) and the busy spinner draw in the selection's words'
+   tone, as the word beside them does: in their own tones they would be the
+   accent, or a grey, on the accent. */
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .pane-state-dot {
+  box-shadow: inset 0 0 0 var(--line) var(--on-selected);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .pane-tone-busy
+  > .pane-state-dot {
+  box-shadow: inset 0 0 0 var(--line-strong) var(--on-selected);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .pane-state
+  > svg.pane-state-busy {
+  color: var(--on-selected);
+}
+
+/* On the accent fill a filled mark wears a hairline in the selection's
+   words' tone, so its shape holds whatever its hue. */
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  :is(.pane-tone-ready, .pane-tone-warning, .pane-tone-danger)
+  > .pane-state-dot {
+  box-shadow: 0 0 0 var(--line) var(--on-selected);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .name-hit {
+  background: var(--selection-hit);
+  box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--on-selected);
+}
+
+/* A lit action's accent glyph would vanish on the accent fill: on a
+   selection it takes the selection's words. */
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .pane-act.lit
+  > svg {
+  color: inherit;
+}
+
+/* The grey selection: in a pane that does not hold the keys, or in a
+   window that is not in front, a selected row takes the neutral fill and
+   the words a row on that fill wears: full words for its name, the
+   on-surface tone (floored on the fill) for its quiet words and its
+   actions at rest, and its states in their own tones. Under the cursor it
+   keeps the fill and has no bar; the quiet cursor's frame (above) shows
+   on it. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.selected {
+  --row-fill: var(--fill);
+  --row-selected-text: var(--text);
+  --row-selected-text-dim: var(--text-on-surface);
+  /* A checkbox on the row keeps 3:1 on its fill. */
+  --check-edge: var(--control-border-strong);
+
+  background: var(--row-fill);
+  color: var(--text);
+}
+
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.cursor.selected {
+  --row-fill: var(--fill);
+  --row-bar: transparent;
+
+  background: var(--row-fill);
+}
+
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.selected
+  :is(
+    .row-icon,
+    .row-meta,
+    .pane-path-head,
+    .pane-path-tail,
+    .pane-state:is(.pane-tone-muted, .pane-tone-busy),
+    :is(.pane-act, .pane-icon-act):not(:hover, :focus-visible)
+  ) {
+  color: var(--text-on-surface);
+}
+
+/* In a window that is not in front the pane that holds the keys lets go
+   of the accent on its frame too, and wears the strong hairline every
+   other pane wears. */
+:where(:root[data-window-inactive] .listing-root) .pane.active::before {
+  border-color: var(--border-strong);
 }

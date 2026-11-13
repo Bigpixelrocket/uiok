@@ -1,0 +1,1073 @@
+/* The shell's shared surfaces: what an app's window draws around its own
+   pages and every app of the family draws the same way. A Settings dialog
+   (its frame, the sidebar of pages, a page's subsections, the theme picker,
+   a file's problems, the update cards and their notes), the update pill's
+   failed state, the release channel tag, the About window's layout, the
+   sign-in prompts, and the line a part of the window shows when it fails
+   to load. None is a component: the app writes the markup with these
+   classes (docs/components/shell.md). The header, the brand
+   wordmark, the app's icon, window drag regions, and the startup screens
+   stay the app's. */
+
+/* ---- Settings dialog ---- */
+
+/* A fixed frame on uiok's dialog, so switching pages never moves it, that
+   fits the smallest window under the title bar (--dialog-inset-top). */
+.dialog.settings-dialog {
+  width: min(900px, 100%);
+  height: min(620px, 100%);
+}
+
+/* The sidebar and the page reach the frame's edges, from the title strip's
+   rule down to the legend's hairline. */
+.settings-dialog-body {
+  display: grid;
+  grid-template-columns: 196px minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: calc(-1 * var(--space-6));
+}
+
+/* The sidebar of pages, a shade over the frosted frame. It fades at an edge
+   while more pages lie past it (.scroll-fade), and the fade would mask a
+   border of its own, so the hairline beside it is the page column's. */
+.settings-sidebar {
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-4);
+  background: var(--scrim-strong);
+}
+
+.settings-sidebar-group + .settings-sidebar-group {
+  margin-top: var(--space-6);
+}
+
+/* A group's name is uiok's .overline; the sidebar sets only its place. */
+.settings-sidebar-header {
+  display: block;
+  margin-bottom: var(--space-1);
+  padding: 0 var(--space-4);
+}
+
+/* A page's row: its glyph and its title, the chosen one on the current
+   item's tint and ring. Its subsections unfold under it on a rail, the one
+   in view in the text colour with the rail lit beside it. A name too long
+   for the sidebar wraps onto a second compact line rather than losing its
+   end, between words, and inside a word only when the word alone cannot
+   fit (never with a hyphen the browser guessed). Hover and press are the
+   quiet control's shared recipe (styles.css); the chosen row takes
+   neither. The focus ring is the base sheet's, drawn inside the row. */
+.settings-sidebar-page,
+.settings-sidebar-subsection {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  width: 100%;
+  min-height: var(--bar-height);
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text);
+  cursor: default;
+  font: inherit;
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-compact);
+  text-align: start;
+  overflow-wrap: break-word;
+  hyphens: manual;
+  transition: var(--transition-control);
+}
+
+/* A page's row hangs its parts from the first line, so a name that wraps
+   keeps its glyph and chip beside its first line and the glyph column
+   stays straight. The block padding centres that one line in the bar. */
+.settings-sidebar-page {
+  align-items: flex-start;
+  padding-block: calc((var(--bar-height) - var(--line-height-compact)) / 2);
+}
+
+.settings-sidebar-page > span {
+  min-width: 0;
+}
+
+.settings-sidebar-page:focus-visible,
+.settings-sidebar-subsection:focus-visible {
+  outline-offset: var(--focus-offset-inset);
+}
+
+.settings-sidebar-page[aria-current='page'] {
+  background: var(--current-bg);
+  box-shadow: inset 0 0 0 var(--line) var(--current-ring);
+}
+
+/* A row's glyph is quiet, as every row icon is, and full on the current
+   page; the primary colour stays for the dialog's main action. */
+.settings-sidebar-page svg {
+  flex: none;
+  margin-block: calc((var(--line-height-compact) - var(--icon-md)) / 2);
+  color: var(--text-dim);
+}
+
+.settings-sidebar-page[aria-current='page'] svg {
+  color: var(--text);
+}
+
+/* A page's trailing label (the Updates row's offered build) as a warning
+   chip. On the current page's tint a second tint would sink its words, so
+   there it keeps the outline alone. */
+.settings-sidebar-page > .settings-sidebar-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  height: calc(var(--line-height-compact) + 2 * var(--line));
+  margin-block: calc(-1 * var(--line));
+  margin-inline-start: auto;
+  padding: 0 var(--space-3);
+  overflow: visible;
+  border: var(--line) solid var(--warning-line);
+  border-radius: var(--radius-pill);
+  background: var(--warning-wash-strong);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-strong);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.settings-sidebar-page[aria-current='page'] > .settings-sidebar-chip {
+  background: none;
+}
+
+.settings-sidebar-page .settings-sidebar-chip svg {
+  margin-block: 0;
+  color: inherit;
+}
+
+.settings-sidebar-subsections {
+  margin: var(--space-1) 0 var(--space-2) var(--space-8);
+  padding-inline-start: var(--space-4);
+  border-inline-start: var(--line) solid var(--border-strong);
+}
+
+.settings-sidebar-subsection {
+  position: relative;
+  min-height: var(--row-height-dense);
+  padding-block: var(--space-1);
+  color: var(--text-dim);
+}
+
+.settings-sidebar-subsection[aria-current='location'] {
+  color: var(--text);
+  font-weight: var(--font-weight-strong);
+}
+
+/* The lit rail sits on the hairline: a 2px mark over the 1px line. */
+.settings-sidebar-subsection[aria-current='location']::before {
+  content: '';
+  position: absolute;
+  inset-block: var(--space-2);
+  inset-inline-start: calc(-1 * (var(--space-4) + var(--line-strong)));
+  width: var(--line-strong);
+  border-radius: var(--radius-xs);
+  background: var(--accent);
+}
+
+/* The page's column: the failed-save alert, which never scrolls, over the
+   page, which does, fading at an edge while more lies past it
+   (.scroll-fade). */
+.settings-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-inline-start: var(--line) solid var(--border);
+}
+
+.settings-page {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-8) var(--space-8);
+}
+
+/* A page whose body takes the column's height (Updates), so a part of it
+   can scroll in its own box while the rest stays put; the column still
+   scrolls once that part reaches its least height. */
+.settings-page.fills {
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-page-title {
+  margin: 0 0 var(--space-6);
+  color: var(--text);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-strong);
+  line-height: var(--line-height-body);
+}
+
+/* A page's subsections, each a group under its overline with a hairline
+   between them. */
+.settings-subsection {
+  padding: var(--space-6) 0;
+}
+
+.settings-subsection:first-of-type {
+  padding-top: 0;
+}
+
+.settings-subsection + .settings-subsection {
+  border-top: var(--line) solid var(--border);
+}
+
+/* The subsection's name is uiok's .overline; only its place is set here. */
+.settings-subsection > .overline,
+.settings-subsection-title {
+  margin: 0 0 var(--space-4);
+}
+
+/* A page's rows are uiok's .field-grid at the small size the labels are,
+   every page on the one 136px label column, so the controls start at the
+   same place as the window moves between pages (a lone form sizes its
+   column to its labels instead). */
+.settings-page {
+  --field-label-width: 136px;
+}
+
+.settings-page .field-grid {
+  font-size: var(--font-size-small);
+}
+
+/* A label's second line, quieter (which band of an appearance is in use). */
+.settings-label-detail {
+  display: block;
+  color: var(--text-dim);
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-compact);
+}
+
+/* The status line over every page while a change a settings file could
+   not take stands: uiok's danger notice, a plain line set in the page
+   column's margins. */
+.settings-save-failure {
+  flex: none;
+  margin: var(--space-6) var(--space-8) 0;
+}
+
+/* ---- Settings files ---- */
+
+/* A file's name and the folder's path in the code face, the button at its
+   line's end, and a file's problems as uiok's notices under its summary
+   (danger, or plain for a note), each with where it is above what is
+   wrong. */
+.settings-file-name {
+  font-family: var(--font-mono);
+}
+
+/* The folder's path is content a user copies (into a terminal, or Go to
+   Folder), so it selects as text. */
+.settings-file-path {
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.settings-file-action {
+  gap: var(--space-2);
+}
+
+.settings-file-problems {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* A problem is the notice's row: its tone glyph, then this text, where it
+   is over what is wrong. */
+.settings-file-problem-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+/* A problem's place and words are what a user copies to find the line. */
+.settings-file-problem-text {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.settings-file-problem.notice:not(.notice-danger) {
+  color: var(--text-dim);
+}
+
+.settings-file-problem-place {
+  color: var(--text-dim);
+  font-size: var(--font-size-caption);
+}
+
+.settings-file-problem-place code {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-caption);
+}
+
+/* ---- Theme picker ---- */
+
+/* An appearance's themes: a grid of miniatures, each with its name under
+   it, as wide as the value column allows. The chosen one wears the accent
+   ring round its miniature and its name in the text colour and weight; the
+   keyboard's focus adds the focus ring outside the frame, so a focused
+   choice that is not chosen never reads as chosen. Under the pointer the
+   frame's hairline darkens to --text-dim and the name lifts to --text;
+   held, the ring goes to a 2px --text ring over the pressed wash and
+   shadow, so rest, hover, and press are three distinct pictures on any
+   ground, and nothing grows or moves. A choice scrolled into view keeps room for its
+   rings. */
+.theme-choices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: var(--space-5) var(--space-6);
+  padding-top: var(--space-2);
+}
+
+/* The note under the grid keeps clear of the last row, so it reads as the
+   band's, not as the last miniature's caption. */
+.theme-choices + .field-note {
+  margin-top: var(--space-2);
+}
+
+.theme-choice {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  cursor: default;
+  font-family: var(--font-ui);
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-compact);
+  text-align: center;
+  scroll-margin-block: var(--space-8);
+}
+
+.theme-choice:focus-visible {
+  outline: none;
+}
+
+.theme-choice-frame {
+  display: block;
+  padding: var(--space-1);
+  border-radius: var(--radius-lg);
+  box-shadow: inset 0 0 0 var(--line) var(--border-strong);
+  transition: var(--transition-control);
+}
+
+.theme-choice:hover .theme-choice-frame {
+  box-shadow: inset 0 0 0 var(--line) var(--text-dim);
+}
+
+.theme-choice[aria-checked='true'] .theme-choice-frame {
+  box-shadow: inset 0 0 0 var(--line-strong) var(--accent);
+}
+
+.theme-choice:active .theme-choice-frame {
+  background: var(--pressed-wash);
+  box-shadow:
+    inset 0 0 0 var(--line-strong) var(--text),
+    var(--shadow-pressed);
+}
+
+.theme-choice[aria-checked='true']:active .theme-choice-frame {
+  box-shadow:
+    inset 0 0 0 var(--line-strong) var(--accent),
+    var(--shadow-pressed);
+}
+
+.theme-choice:focus-visible .theme-choice-frame {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset);
+}
+
+.theme-choice:hover,
+.theme-choice[aria-checked='true'] {
+  color: var(--text);
+}
+
+.theme-choice[aria-checked='true'] .theme-choice-name {
+  font-weight: var(--font-weight-strong);
+}
+
+/* A long name takes a second line rather than losing its end. The name
+   reserves the room its strong weight takes: the host repeats the name in
+   data-name, and a hidden copy in that weight floats at the name's start
+   with no width of its own, so the visible name sets over it and the name
+   is as tall as the taller of the two. Choosing a theme then never wraps
+   its name or moves the grid. The copy is not read aloud. The name may
+   use half the gap to each neighbouring card (cards stand --space-6
+   apart), so the longest catalog name sets on one line in either weight
+   on the narrowest card. */
+.theme-choice-name {
+  display: flow-root;
+  margin-inline: calc(var(--space-6) / -2);
+  overflow-wrap: break-word;
+  text-wrap: balance;
+}
+
+.theme-choice-name::before {
+  float: inline-start;
+  width: 100%;
+  margin-inline-end: -100%;
+  visibility: hidden;
+  font-weight: var(--font-weight-strong);
+  content: attr(data-name) / '';
+  pointer-events: none;
+  user-select: none;
+}
+
+/* A theme's miniature window, on an element that wears data-theme-preview,
+   so it paints only with the tokens that scope sets (PREVIEW_TOKENS): the
+   header strip with three lights, a sidebar on the window's ground with a
+   lit row, and a panel holding a line of text, a quieter line, a primary
+   chip beside an accent mark, and six of the theme's terminal colours. It
+   reads the palette's ground names on purpose: the role aliases resolve on
+   the root, so inside a preview scope they would show the worn theme. Its
+   parts are a miniature's geometry, in pixels and shares of its size. */
+.theme-preview {
+  display: flex;
+  flex-direction: column;
+  aspect-ratio: 8 / 5;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--bg);
+  box-shadow: inset 0 0 0 var(--line) var(--border);
+}
+
+.theme-preview-header {
+  display: flex;
+  flex: none;
+  align-items: center;
+  height: 12%;
+  padding: 0 6%;
+  background: var(--bg-header);
+  box-shadow: inset 0 calc(-1 * var(--line)) 0 var(--border);
+}
+
+.theme-preview-lights {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.theme-preview-lights > span {
+  width: 4px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+}
+
+.theme-preview-lights > span:nth-child(1) {
+  background: var(--terminal-ansi-1);
+}
+
+.theme-preview-lights > span:nth-child(2) {
+  background: var(--terminal-ansi-3);
+}
+
+.theme-preview-lights > span:nth-child(3) {
+  background: var(--terminal-ansi-2);
+}
+
+.theme-preview-body {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.theme-preview-sidebar {
+  display: flex;
+  flex: 0 0 30%;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: 8% 5%;
+}
+
+.theme-preview-row {
+  height: 5px;
+  border-radius: var(--radius-xs);
+  background: var(--border);
+}
+
+.theme-preview-row.lit {
+  background: var(--accent);
+}
+
+.theme-preview-panel {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 7% 8%;
+  background: var(--bg-panel);
+  box-shadow: inset var(--line) 0 0 var(--border);
+}
+
+.theme-preview-line {
+  height: 3px;
+  border-radius: var(--radius-xs);
+}
+
+.theme-preview-line.text {
+  width: 78%;
+  background: var(--text);
+}
+
+.theme-preview-line.dim {
+  width: 54%;
+  background: var(--text-dim);
+}
+
+.theme-preview-chips {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.theme-preview-chip {
+  height: 7px;
+  border-radius: var(--radius-sm);
+}
+
+.theme-preview-chip.primary {
+  width: 34%;
+  background: var(--primary);
+}
+
+.theme-preview-chip.accent {
+  width: 14%;
+  background: var(--accent);
+}
+
+.theme-preview-swatches {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.theme-preview-swatch {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+}
+
+.theme-preview-swatch.ansi-1 {
+  background: var(--terminal-ansi-1);
+}
+
+.theme-preview-swatch.ansi-2 {
+  background: var(--terminal-ansi-2);
+}
+
+.theme-preview-swatch.ansi-3 {
+  background: var(--terminal-ansi-3);
+}
+
+.theme-preview-swatch.ansi-4 {
+  background: var(--terminal-ansi-4);
+}
+
+.theme-preview-swatch.ansi-5 {
+  background: var(--terminal-ansi-5);
+}
+
+.theme-preview-swatch.ansi-6 {
+  background: var(--terminal-ansi-6);
+}
+
+/* ---- Updates ---- */
+
+/* The Updates page: the check cadence over the status card, both uiok's
+   .card; the rules here lay out what is inside them. */
+.updates-page {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-8);
+  min-height: 0;
+}
+
+/* The check cadence: its label on the left at a Settings row's size, the
+   select at the end where the card's verb sits, and the note that follows
+   the choice under both. */
+.update-checks {
+  display: grid;
+  flex: none;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2) var(--space-6);
+}
+
+.update-checks-label {
+  color: var(--text);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-medium);
+}
+
+.update-checks .field-note {
+  grid-column: 1 / -1;
+}
+
+/* The status card: a glyph in the state's tone, the headline and what it
+   means, and the one verb at the end. The head never shrinks: under a long
+   What's new list only the list gives way, so a headline or a fact that
+   takes two lines never runs into the part below it. The glyph hangs on
+   the headline's first line. */
+.update-card {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* With notes at its foot the card fits them, and grows only to the bottom
+   of the column, where the list scrolls inside it. */
+.update-card.with-notes {
+  flex: 0 1 auto;
+  min-height: 0;
+}
+
+.update-card-head {
+  display: grid;
+  flex: none;
+  grid-template-columns: var(--icon-lg) minmax(0, 1fr) auto;
+  align-items: start;
+  column-gap: var(--space-4);
+}
+
+.update-card-head > .button {
+  margin-top: calc(-1 * var(--space-1));
+}
+
+.update-card-glyph {
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  margin-top: 1px;
+  color: var(--text-dim);
+}
+
+.update-card[data-tone='busy'] .update-card-glyph,
+.update-card[data-tone='ready'] .update-card-glyph {
+  color: var(--accent);
+}
+
+.update-card[data-tone='ok'] .update-card-glyph {
+  color: var(--success);
+}
+
+.update-card[data-tone='warning'] .update-card-glyph {
+  color: var(--warning);
+}
+
+.update-card[data-tone='error'] .update-card-glyph {
+  color: var(--danger);
+}
+
+/* A failure is told as RunHeader tells it: the headline in the danger's
+   text tone, the reason under it in the body's quiet colour. */
+.update-card[data-tone='error'] .update-card-title {
+  color: var(--danger-text);
+}
+
+.update-card-said {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.update-card-title {
+  color: var(--text);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-strong);
+  line-height: var(--line-height-body);
+}
+
+.update-card-title strong {
+  font-weight: var(--font-weight-strong);
+}
+
+.update-card-sub {
+  min-width: 0;
+  color: var(--text-dim);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-compact);
+  overflow-wrap: anywhere;
+}
+
+/* The fact may be what the system said (a host that closed the
+   connection), which a user copies into a report. */
+.update-card-sub {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.update-card-note {
+  margin: 0;
+  color: var(--text-dim);
+  font-size: var(--font-size-small);
+}
+
+/* With a download under it (uiok's RunHeader), the head is the card's
+   title: quieter, ruled off, its glyph a size down, centred in the full
+   glyph's column so the title starts where it always does. */
+.update-card.with-run .update-card-head {
+  padding-bottom: var(--space-5);
+  border-bottom: var(--line) solid var(--border);
+}
+
+.update-card.with-run .update-card-title {
+  font-size: var(--font-size-body);
+}
+
+.update-card.with-run .update-card-glyph {
+  justify-self: center;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  margin-top: var(--space-1);
+}
+
+/* A download under the head, told as the card's failure is: a failed
+   download's headline in the danger's text tone, the reason under it in
+   the text colour. A clock at the end of the headline shares its size and
+   line, so the two sit on one baseline. */
+.update-card .run-header[data-state='failed'] .run-header-headline {
+  color: var(--danger-text);
+}
+
+.update-card .run-header-reason {
+  color: var(--text);
+}
+
+.update-card .run-header-figure {
+  font-size: var(--font-size-heading);
+  line-height: var(--line-height-body);
+}
+
+/* What the system returned for a failed download (an error code, a host
+   and its port) is a line a user could copy, so it is set in the code face
+   at the small size, as every printed system line is. */
+.update-card .run-header-reason {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+}
+
+/* A download that stopped short shows no empty track, which would read as
+   a stalled download; its headline and reason say what happened, and the
+   size stays under them. */
+.update-card .run-header[data-state='failed'] .activity-bar {
+  display: none;
+}
+
+/* What's new, the card's foot under a hairline: it gives up height to the
+   column's bottom edge, and its list scrolls. Its heading is uiok's
+   .overline. */
+.update-notes {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  padding-top: var(--space-6);
+  border-top: var(--line) solid var(--border);
+}
+
+.update-notes > .overline {
+  margin: 0;
+}
+
+/* One sentence per change. A list longer than its box fades at the edge
+   where more lies (.scroll-fade) and shows the theme's scrollbar in the
+   card's padding; a short list shows neither. A squeezed list keeps its
+   first few rows (`--update-note-rows`, three unless the page says fewer),
+   so a short one ends at its last. Notes that name areas list each area's
+   lines under its heading. */
+.update-notes-list {
+  display: grid;
+  flex: 1 1 auto;
+  align-content: start;
+  gap: var(--space-2);
+  min-height: calc(
+    var(--update-note-rows, 3) * (var(--line-height-compact) + var(--space-2)) - var(--space-2) +
+      var(--line)
+  );
+  margin: 0 calc(-1 * var(--space-3)) 0 0;
+  padding: 0 var(--space-3) 0 0;
+  overflow-y: auto;
+  color: var(--text);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-compact);
+  list-style: none;
+  outline: none;
+}
+
+/* A read-only text view that takes focus to scroll by the arrow keys. It
+   is a Tab stop, so focus a user moved there with the keyboard shows: the
+   frame around it (below) draws the ring, out of the scroll fade's mask,
+   which would cut a ring drawn by the list itself. */
+.update-notes-list:focus-visible {
+  outline: none;
+}
+
+/* The frame a host may wrap the list in (.update-notes-frame) stands out
+   by the list's small inset on every side, so the bullets and the last
+   line's descenders clear the scroll fade while the text column keeps the
+   card's width. It draws the list's focus ring, following its corner. */
+.update-notes-frame {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+  margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-3));
+  border-radius: var(--radius-sm);
+}
+
+.update-notes-frame:has(> .update-notes-list:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset-inset);
+}
+
+.update-notes-frame > .update-notes-list {
+  margin: 0;
+  padding: var(--space-1) var(--space-3);
+}
+
+.update-notes-list li {
+  position: relative;
+  padding-inline-start: var(--space-6);
+}
+
+.update-notes-list li::before {
+  position: absolute;
+  inset-inline-start: var(--space-1);
+  color: var(--text-dim);
+  content: '•';
+}
+
+.update-notes-list.update-notes-groups {
+  gap: var(--space-5);
+}
+
+/* An area's plain heading over its own lines, bulleted as the flat list is. */
+.update-notes-group {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.update-notes-group ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.update-notes-area {
+  margin: 0;
+  color: var(--text);
+  font-size: var(--font-size-small);
+  font-weight: var(--font-weight-strong);
+  line-height: var(--line-height-compact);
+}
+
+/* The update pill in a header: uiok's Button, tonal while a build is
+   offered, primary once it is ready, neutral after a failed download. It
+   never reports progress. It appears at once, as every control does,
+   keeps its words on one line, and after a failed download wears a warning outline (the button's own
+   border, so hover and press keep it) and its glyph in the warning mark,
+   never its words, which a light theme's amber could not hold at 4.5:1. */
+.shell-update-pill {
+  white-space: nowrap;
+}
+
+.shell-update-pill[data-state='download-failed'] {
+  border-color: var(--warning);
+}
+
+.shell-update-pill[data-state='download-failed'] svg {
+  color: var(--warning);
+}
+
+/* ---- Channel tag ---- */
+
+/* The release channel beside a lockup (an About window, a splash) on a
+   build that is not the release: small caps on a pill of the channel's
+   colour, so a screenshot always says which build it shows. An app that
+   colours its channels sets --channel (the hue) and --channel-text (its
+   words at 4.5:1 on the pill); without them the tag wears the accent. */
+.channel-tag {
+  --channel-tag-bg: color-mix(in srgb, var(--channel, var(--accent)) 14%, transparent);
+
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: 1px var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--channel-tag-bg);
+  color: var(--channel-text, var(--accent-text));
+  font: var(--font-weight-strong) var(--font-size-caption) / var(--line-height-compact)
+    var(--font-ui);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ---- About window ---- */
+
+/* An About window: a fixed frame the size of the window that never scrolls,
+   its content centred in it: the app's icon (sized by the app), its
+   lockup, and the version under it in the code face, the one line a reader
+   may select and copy. The app adds its window's drag regions. */
+.about-window {
+  display: grid;
+  box-sizing: border-box;
+  height: 100vh;
+  overflow: hidden;
+  align-content: center;
+  justify-items: center;
+  gap: var(--space-4);
+  padding: var(--space-6);
+  font-family: var(--font-ui);
+  text-align: center;
+}
+
+.about-lockup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text);
+}
+
+.about-version {
+  margin: 0;
+  color: var(--text-dim);
+  font: var(--font-weight-regular) var(--font-size-caption) / var(--line-height-compact)
+    var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  cursor: text;
+  user-select: text;
+}
+
+/* ---- Sign-in prompts ---- */
+
+/* What a connection asks while it signs in: a secret as one row of the
+   label column (.field-grid: the label at the leading edge, the field
+   beside it, a problem or a choice under the field), or a new host key's
+   type and fingerprint in the code face under the question, the
+   fingerprint whole on one line where it fits. */
+.dialog.sign-in-dialog {
+  width: 420px;
+}
+
+/* The label column holds the label whole (the label column's own
+   default); each label's line is centred on the dialog's 28px field. */
+.sign-in-dialog .field-grid > .field-label {
+  padding-block: calc((var(--control-height) - var(--line-height-compact)) / 2);
+}
+
+/* Where and who the prompt signs in to (Server, then Account or Key file)
+   stand as rows of the same label column, before the secret's row, so
+   they share the field's label edge and label look. A fact's label sits
+   on its one line of value, not on a 28px field; the value is dim, one
+   line, cut with an ellipsis (the host gives it cutTooltip). */
+.sign-in-dialog .field-grid > .field-label.sign-in-fact {
+  padding-block: 0;
+}
+
+.sign-in-dialog .sign-in-fact-value {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-compact);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A block of its own, so no line box adds room under it. */
+.sign-in-field {
+  display: block;
+  width: 100%;
+}
+
+.sign-in-fingerprint {
+  display: flex;
+  gap: var(--space-5);
+  margin: var(--space-5) 0 0;
+  padding: var(--space-3) var(--space-6);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-small);
+}
+
+.sign-in-fingerprint dt {
+  flex: none;
+  color: var(--text-dim);
+}
+
+.sign-in-fingerprint dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+
+/* ---- Load failure ---- */
+
+/* The block a part of the window shows in place of its content when that
+   content failed to load: the failure's glyph (an icon of --icon-xl, as
+   every failure over an empty space has) in the danger tone, a headline,
+   the reason under it, centred. */
+.space-load-failure {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-16);
+  text-align: center;
+}
+
+.space-load-failure > svg {
+  flex: none;
+  color: var(--danger);
+}
+
+.space-load-failure strong {
+  font-size: var(--font-size-heading);
+}
+
+.space-load-failure p {
+  max-width: 420px;
+  margin: 0;
+  color: var(--text-dim);
+}
+
+/* The failure's words, an error a user pastes into a report. */
+.space-load-failure :is(strong, p) {
+  -webkit-user-select: text;
+  user-select: text;
+}

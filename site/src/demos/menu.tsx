@@ -2,14 +2,21 @@
  * A filtered folder menu built from the menu parts: type to filter (try
  * `src`, `!test`, `^doc`, or `.tsx$`), ↑ ↓ move, Return picks, Escape clears
  * then closes. A keystroke that would empty the list is refused with the
- * visual bell.
+ * visual bell. Folders and files sit under their own headings, two folders
+ * show the chord that opens them, and one folder is disabled (the cursor
+ * passes over it; its tooltip says why). Beside it, a compact menu of a
+ * row's short commands, as a tool opens one (`.folder-menu-compact`), with
+ * the desktop menu's other looks: a row that opens a submenu, a checked
+ * setting, a disabled command, and plain separators.
  */
 
-import { Folder } from 'lucide-react';
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { ClipboardPaste, Copy, Eye, File, Folder, FolderOpen, PenLine, Trash2 } from 'lucide-react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { FilterIcon } from '@bigpixelrocket/uiok/filter';
+import { ICON_MD } from '@bigpixelrocket/uiok/icon';
+import { KeyChord } from '@bigpixelrocket/uiok/keychord';
 import {
   matchQuery,
   menuQueryRefused,
@@ -20,16 +27,37 @@ import { MarkedText } from '@bigpixelrocket/uiok/text';
 
 import { FILES } from './data';
 
-const ITEMS = FILES.map((file) => ({
-  id: file.id,
-  name: file.path.replace('~/projects/site/', '')
-}));
+/** An entry of the menu: a folder or a file, a chord for some, and one folder that cannot be opened. */
+interface Entry {
+  readonly id: string;
+  readonly name: string;
+  readonly folder: boolean;
+  readonly chord?: { readonly key: string; readonly meta?: boolean; readonly shift?: boolean };
+  readonly disabled?: boolean;
+}
+
+const FOLDERS: readonly Entry[] = [
+  { id: 'd-src', name: 'src', folder: true, chord: { key: '1', meta: true } },
+  { id: 'd-docs', name: 'docs', folder: true, chord: { key: '2', meta: true } },
+  { id: 'd-public', name: 'public', folder: true },
+  { id: 'd-private', name: 'private (no access)', folder: true, disabled: true },
+  { id: 'd-tests', name: 'tests', folder: true }
+];
+
+const ENTRIES: readonly Entry[] = [
+  ...FOLDERS,
+  ...FILES.map((file) => ({
+    id: file.id,
+    name: file.path.replace('~/projects/site/', ''),
+    folder: false
+  }))
+];
 
 const rowsFor = (query: string) =>
-  ITEMS.flatMap((item) => {
-    const match = matchQuery(item.name, query);
-    return match === null ? [] : [{ item, positions: match.positions, score: match.score }];
-  }).sort((a, b) => b.score - a.score);
+  ENTRIES.flatMap((entry) => {
+    const match = matchQuery(entry.name, query);
+    return match === null ? [] : [{ entry, positions: match.positions, score: match.score }];
+  }).sort((a, b) => Number(b.entry.folder) - Number(a.entry.folder) || b.score - a.score);
 
 /** The menu itself, open under its button. */
 function FolderMenu({
@@ -40,20 +68,25 @@ function FolderMenu({
   readonly onClose: () => void;
 }) {
   const [query, setQuery] = useState('');
+  // The cursor counts pickable rows only, so it passes over the disabled one.
   const [cursor, setCursor] = useState<number | null>(0);
   const [bell, setBell] = useState(0);
   const beat = useBellBeat(bell);
   const input = useRef<HTMLInputElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const rows = rowsFor(query);
+  const pickable = rows.flatMap((row, index) => (row.entry.disabled === true ? [] : [index]));
+  const cursorRow = cursor === null ? null : (pickable[cursor] ?? null);
 
   useEffect(() => input.current?.focus(), []);
 
   // The cursor's row stays in view as the arrows move it past the list's edge.
   useLayoutEffect(() => {
-    if (cursor === null) return;
-    list.current?.children[cursor]?.scrollIntoView?.({ block: 'nearest' });
-  }, [cursor, query]);
+    if (cursorRow === null) return;
+    list.current
+      ?.querySelector(`[data-row="${cursorRow}"]`)
+      ?.scrollIntoView?.({ block: 'nearest' });
+  }, [cursorRow, query]);
 
   return (
     <div
@@ -80,15 +113,15 @@ function FolderMenu({
             if (event.nativeEvent.isComposing || event.nativeEvent.keyCode === 229) return;
             if (event.key === 'ArrowDown') {
               event.preventDefault();
-              setCursor(moveMenuCursor(cursor, 1, rows.length));
+              setCursor(moveMenuCursor(cursor, 1, pickable.length));
             }
             if (event.key === 'ArrowUp') {
               event.preventDefault();
-              setCursor(moveMenuCursor(cursor, -1, rows.length));
+              setCursor(moveMenuCursor(cursor, -1, pickable.length));
             }
-            if (event.key === 'Enter' && cursor !== null) {
-              const row = rows[cursor];
-              if (row !== undefined) onPick(row.item.name);
+            if (event.key === 'Enter' && cursorRow !== null) {
+              const row = rows[cursorRow];
+              if (row !== undefined) onPick(row.entry.name);
             }
             if (event.key === 'Escape') {
               event.preventDefault();
@@ -99,31 +132,143 @@ function FolderMenu({
               }
             }
           }}
+          placeholder="type to filter"
           ref={input}
           spellCheck={false}
           value={query}
         />
         <span className="folder-menu-count">
-          {rows.length}/{ITEMS.length}
+          {rows.length} of {ENTRIES.length}
         </span>
       </div>
       <div className="folder-menu-options" ref={list} role="listbox" aria-label="Files">
-        {rows.map((row, index) => (
-          <div
-            aria-selected={index === cursor}
-            className={index === cursor ? 'folder-menu-option cursor' : 'folder-menu-option'}
-            key={row.item.id}
-            onClick={() => onPick(row.item.name)}
-            onMouseMove={() => setCursor(index)}
-            role="option"
-          >
-            <span className="row-icon">
-              <Folder size={14} />
-            </span>
-            <span className="row-name">
-              <MarkedText positions={row.positions} text={row.item.name} />
-            </span>
-          </div>
+        {rows.map((row, index) => {
+          const heading =
+            index === 0 || rows[index - 1]?.entry.folder !== row.entry.folder
+              ? row.entry.folder
+                ? 'Folders'
+                : 'Files'
+              : null;
+          const disabled = row.entry.disabled === true;
+          return (
+            <Fragment key={row.entry.id}>
+              {heading === null ? null : (
+                <div className="entry-menu-heading" role="presentation">
+                  {heading}
+                </div>
+              )}
+              <div
+                aria-disabled={disabled || undefined}
+                aria-selected={index === cursorRow}
+                className={index === cursorRow ? 'folder-menu-option cursor' : 'folder-menu-option'}
+                data-row={index}
+                title={disabled ? 'You cannot read this folder' : undefined}
+                onClick={() => !disabled && onPick(row.entry.name)}
+                onMouseMove={() => !disabled && setCursor(pickable.indexOf(index))}
+                role="option"
+              >
+                <span className="row-icon">
+                  {row.entry.folder ? <Folder size={ICON_MD} /> : <File size={ICON_MD} />}
+                </span>
+                <span className="row-name">
+                  <MarkedText positions={row.positions} text={row.entry.name} />
+                </span>
+                {row.entry.chord === undefined ? null : <KeyChord chord={row.entry.chord} />}
+              </div>
+            </Fragment>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** A row's short commands, each with the chord that runs it or the look a desktop menu gives it. */
+const COMMANDS: readonly {
+  readonly name: string;
+  readonly icon: typeof File;
+  readonly chord?: { readonly key: string; readonly meta?: boolean; readonly alt?: boolean };
+  /** Opens a submenu: the row ends in a chevron instead of a chord. */
+  readonly submenu?: boolean;
+  /** A setting the row turns on and off, shown by a check mark while on. */
+  readonly checked?: boolean;
+  readonly disabled?: boolean;
+  /** A separator above the row. */
+  readonly group?: boolean;
+}[] = [
+  { name: 'Open', icon: FolderOpen, chord: { key: 'o', meta: true } },
+  { name: 'Open With', icon: FolderOpen, submenu: true },
+  { name: 'Rename', icon: PenLine, chord: { key: 'Enter' }, group: true },
+  { name: 'Duplicate', icon: Copy, chord: { key: 'd', meta: true } },
+  { name: 'Paste', icon: ClipboardPaste, chord: { key: 'v', meta: true }, disabled: true },
+  { name: 'Show Hidden Files', icon: Eye, checked: true, group: true },
+  { name: 'Move to Trash', icon: Trash2, chord: { key: 'Backspace', meta: true }, group: true }
+];
+
+/** The commands the cursor can stand on, in order. */
+const PICKABLE = COMMANDS.flatMap((command, index) => (command.disabled === true ? [] : [index]));
+
+/**
+ * A compact menu of short commands opened from a tool: the same parts at the
+ * small size (`.folder-menu-compact`), with no query row. ↑ ↓ move (over the
+ * disabled row), Return runs, Escape closes.
+ */
+function CommandMenu({
+  onPick,
+  onClose
+}: {
+  readonly onPick: (name: string) => void;
+  readonly onClose: () => void;
+}) {
+  const [cursor, setCursor] = useState(0);
+  const cursorRow = PICKABLE[cursor] ?? 0;
+  const list = useRef<HTMLDivElement>(null);
+  useEffect(() => list.current?.focus(), []);
+  return (
+    <div
+      className="folder-menu folder-menu-compact demo-menu"
+      data-overlay
+      onKeyDown={(event) => {
+        if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+          event.preventDefault();
+          setCursor(
+            (current) =>
+              moveMenuCursor(current, event.key === 'ArrowDown' ? 1 : -1, PICKABLE.length) ?? 0
+          );
+        }
+        if (event.key === 'Enter') onPick(COMMANDS[cursorRow]?.name ?? '');
+        if (event.key === 'Escape') onClose();
+      }}
+    >
+      <div
+        aria-activedescendant={`demo-command-${cursorRow}`}
+        aria-label="Row commands"
+        className="folder-menu-options"
+        ref={list}
+        role="listbox"
+        tabIndex={-1}
+      >
+        {COMMANDS.map(({ name, icon: Icon, chord, submenu, checked, disabled, group }, index) => (
+          <Fragment key={name}>
+            {group === true ? <div className="folder-menu-separator" role="presentation" /> : null}
+            <div
+              aria-checked={checked}
+              aria-disabled={disabled}
+              aria-haspopup={submenu === true ? 'menu' : undefined}
+              aria-selected={index === cursorRow}
+              className={index === cursorRow ? 'folder-menu-option cursor' : 'folder-menu-option'}
+              id={`demo-command-${index}`}
+              onClick={() => disabled !== true && onPick(name)}
+              onMouseMove={() => disabled !== true && setCursor(PICKABLE.indexOf(index))}
+              role="option"
+            >
+              <span className="row-icon">
+                <Icon size={ICON_MD} />
+              </span>
+              <span className="row-name">{name}</span>
+              {chord === undefined ? null : <KeyChord chord={chord} />}
+            </div>
+          </Fragment>
         ))}
       </div>
     </div>
@@ -132,23 +277,33 @@ function FolderMenu({
 
 /** The menu page's demo. */
 export function MenuDemo() {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState<'files' | 'commands' | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
+  const pick = (name: string) => {
+    setPicked(name);
+    setOpen(null);
+  };
   return (
     <div className="demo-stack listing-root menu-demo">
-      <div className="demo-anchor">
-        <Button onClick={() => setOpen((value) => !value)} size="small">
-          {open ? 'Close the menu' : 'Open the menu'}
-        </Button>
-        {open ? (
-          <FolderMenu
-            onClose={() => setOpen(false)}
-            onPick={(name) => {
-              setPicked(name);
-              setOpen(false);
-            }}
-          />
-        ) : null}
+      <div className="demo-row">
+        <div className="demo-anchor">
+          <Button
+            onClick={() => setOpen((value) => (value === 'files' ? null : 'files'))}
+            size="small"
+          >
+            {open === 'files' ? 'Close the menu' : 'Open the menu'}
+          </Button>
+          {open === 'files' ? <FolderMenu onClose={() => setOpen(null)} onPick={pick} /> : null}
+        </div>
+        <div className="demo-anchor end">
+          <Button
+            onClick={() => setOpen((value) => (value === 'commands' ? null : 'commands'))}
+            size="small"
+          >
+            {open === 'commands' ? 'Close the compact menu' : 'Open the compact menu'}
+          </Button>
+          {open === 'commands' ? <CommandMenu onClose={() => setOpen(null)} onPick={pick} /> : null}
+        </div>
       </div>
       <code className="demo-readout">picked: {picked ?? 'nothing yet'}</code>
     </div>

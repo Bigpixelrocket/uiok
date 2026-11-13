@@ -68,7 +68,7 @@ function FolderMenu() {
 }
 ```
 
-Draw it inside the listing scope (`.listing-root`), positioned relative to what opened it.
+Draw it anywhere, positioned relative to what opened it; the menu look needs no scope.
 
 ## API
 
@@ -95,13 +95,17 @@ The caller maps keys. The usual mapping: ↑ and ↓ move the cursor (`moveMenuC
 
 ## Styling
 
-Under `.listing-root`:
+The rules weigh one class and need no scope, so a menu reads the same in a listing, a dialog, or a terminal; an app adjusts a piece with one scoped selector (`.listing-root .folder-menu`).
 
-- `.folder-menu`: the floating surface, absolutely placed 5px below its offset parent, 300px wide by default.
+- `.folder-menu`: the floating surface, absolutely placed 4px below its offset parent on `--z-menu`, 300px wide by default, in monospace at `--menu-font-size` (13px, the body size), with the lit top edge and `--shadow-popover`. Add `.folder-menu-compact` for a menu of short commands opened from a tool (a column chooser, a row's actions, a legend's overflow): it sets `--menu-font-size` to the small size. Size a menu by that class, never by restating its face or size.
 - `.folder-menu-query`: the query row, with `.filter-icon`, an `input`, and `.folder-menu-count`; `bell-0` / `bell-1` ring it.
-- `.folder-menu-options`: the scrolling list (216px tall at most), with `.folder-menu-option` rows on a 20px icon column, the name, and an end column; `.cursor` marks the cursor row.
-- `.entry-menu-heading`: a group's name with a hairline after it.
-- `.folder-menu-note`: a dim line of text, for an empty or loading list.
+- `.folder-menu-options`: the scrolling list, nine whole rows tall at most, with a thin scrollbar; it fades the edge that has more rows on its own (the base sheet's scroll fade, one row deep, so the last whole row fades through its words), so a caller adds nothing. Its `.folder-menu-option` rows sit on the icon column (`--icon-column`), the name, and an end column (a `KeyChord`, drawn as key caps, or a count). `.cursor` marks the cursor row with the cursor fill and a 2px accent bar at its leading edge; a row with `aria-disabled="true"` is faded and never takes the cursor's look. The cursor row is the menu's focus mark: the menu and a list focused to take the keys draw no focus ring.
+- `.entry-menu-heading`: a group's name in the small uppercase heading (the base sheet writes `.overline` and this class as one recipe) with a hairline after it, one row tall, so a list with headings still ends on a whole row.
+- Desktop menu looks, all from attributes the row already carries: `aria-checked="true"` draws a check mark in the row's icon column (in place of its icon) for a setting that is on or the one chosen of a group; `aria-haspopup="menu"` ends the row in a chevron at its trailing edge for a row that opens a submenu (give it no chord); `aria-disabled="true"` fades the row, and the reason it cannot act goes in its tooltip (`title`).
+- `.folder-menu-separator`: a plain hairline between groups that need no name, with a small space above and below (`role="presentation"`).
+- `.folder-menu-note`: a dim note in the interface face, its text over the rows' names, for an empty or loading list or what a key does. It explains a state, so it wraps to two lines before it is cut; past two lines it is cut with an ellipsis, so pass its whole text as a tooltip too. Say why one row cannot be picked in that row's tooltip.
+- Nothing animates: a menu is there on the frame it opens and gone on the frame it closes, and its rows change at once. Only the visual bell moves, because it reports something.
+- The typed query is `--accent-text`, the caret `--accent`; the placeholder is the base sheet's.
 - `.name-hit` ([text](text.md)) tints a matched character.
 
 The keyframes `row-nudge-a`, `row-nudge-b`, `query-refused-a`, and `query-refused-b` are global, so an app's own filter field or cursor row can ring on them too.

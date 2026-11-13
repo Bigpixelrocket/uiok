@@ -11,10 +11,12 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react';
+import { createPortal } from 'react-dom';
 
 import { isKeyKept } from '../keyboard/BrowserKeys.js';
 import { isTextEditingTarget } from '../keyboard/Keyboard.logic.js';
-import { tooltip } from '../tooltip/Tooltip.logic.js';
+import { cutTooltip } from '../tooltip/Tooltip.logic.js';
+import { DialogLayerContext } from './DialogLayer.js';
 import { DialogLegend } from './DialogLegend.js';
 import { legendKeyAction, type DialogLegendModel } from './DialogLegend.logic.js';
 
@@ -106,9 +108,11 @@ const NestedFocusContext = createContext<((claim: boolean) => void) | null>(null
 /** Props for {@link ModalDialog}; content renders below the title strip. */
 export interface ModalDialogProps {
   /**
-   * What the dialog does: words, or a line that names a file cut so the
-   * name keeps its end, so a long name's extension and the words after it
-   * stay in the strip. A string title is also its own tooltip.
+   * What the dialog does, in at most five words ("Delete Now?"), never a
+   * sentence, and no count, name, or path the body shows: those go in
+   * the body. Always one line: a title too long for the strip is cut with
+   * an ellipsis, and a string title shows its full text in a tooltip while
+   * it is cut.
    */
   readonly title: ReactNode;
   /** Heading element id, unique per dialog, wired to `aria-labelledby`. */
@@ -125,13 +129,6 @@ export interface ModalDialogProps {
   readonly icon?: LucideIcon;
   /** The title strip's colour; `accent` unless given. */
   readonly tone?: DialogTone;
-  /**
-   * The strip's context, pushed to its right edge and cut short with an
-   * ellipsis: where the dialog acts (`~/Developer/app`, with the home
-   * folder as `~`), or the item it asks about. Left out when the dialog has
-   * nothing to say there. A string context is also its own tooltip.
-   */
-  readonly titleAside?: ReactNode;
   /**
    * Frost the window behind the dialog. Off by default: a dialog that asks
    * about what is on screen (renaming a file, adding a record) is part of
@@ -163,6 +160,14 @@ export interface ModalDialogProps {
   readonly onOutsidePress?: () => void;
   /** The body, between the title strip and the legend. */
   readonly children: ReactNode;
+  /**
+   * The element the dialog mounts into, for a dialog that must paint above
+   * something it is drawn inside (a pane that isolates its layers). Left
+   * out, the dialog mounts into the enclosing `DialogLayer`, or in place
+   * when there is none. Rules scoped under an element reach the dialog only
+   * when the container is inside it.
+   */
+  readonly container?: Element;
 }
 
 /**
@@ -170,35 +175,54 @@ export interface ModalDialogProps {
  * that swallows clicks and cancels on an outside press (or runs
  * `onOutsidePress`), Escape-cancels (with or without an esc slot drawn, so
  * a dialog whose primary already does what Escape would still leaves on
- * it), dialog ARIA semantics, Tab focus containment, the title strip (icon,
- * title, context), and the key legend footer with its keys. The backdrop is
+ * it), dialog ARIA semantics, Tab focus containment, the title strip (the
+ * icon and a one-line title, with nothing beside it: context goes in the
+ * body's first line), and the key legend footer with its keys. The backdrop is
  * clear unless `frosted` is set, so the page stays in view behind the
  * dialog. Its `aria-modal="true"` is the overlay contract's modal cue
  * (`MODAL_SELECTOR`), which an app shell reads to mute its own chords while
  * the dialog is open. The dialog itself takes focus when it opens with
  * nothing inside focused, so its keys work before any control is chosen.
- * With `pinTop` the box keeps the top edge it opened at. Dialogs supply
- * only their content and verbs.
+ * With `pinTop` the box keeps the top edge it opened at. It mounts into
+ * `container` when given, else into the enclosing `DialogLayer`, else in
+ * place. Dialogs supply only their content and verbs.
  *
  * Styled by the `.dialog-backdrop` and `.dialog` rules in `@bigpixelrocket/uiok/styles.css`
  * (`docs/components/dialog.md`); a caller sets only a dialog's size and its
  * body's layout, through `className`.
  */
-export function ModalDialog({
+export function ModalDialog({ container, ...frame }: ModalDialogProps): ReactElement | null {
+  const layer = useContext(DialogLayerContext);
+  const target = container ?? layer;
+
+  // A layer whose element is not in the document yet: the dialog waits one
+  // commit for it rather than open in place and move.
+  if (target === null) {
+    return null;
+  }
+
+  return target === undefined ? (
+    <DialogFrame {...frame} />
+  ) : (
+    createPortal(<DialogFrame {...frame} />, target)
+  );
+}
+
+/** The dialog itself, wherever `ModalDialog` mounts it. */
+function DialogFrame({
   title,
   labelId,
   describedBy,
   className,
   icon: Icon,
   tone = 'accent',
-  titleAside,
   frosted = false,
   pinTop = false,
   legend,
   onCancel,
   onOutsidePress = onCancel,
   children
-}: ModalDialogProps): ReactElement {
+}: Omit<ModalDialogProps, 'container'>): ReactElement {
   const dialogRef = useRef<HTMLDivElement>(null);
   const claimEnclosingFocus = useContext(NestedFocusContext);
   // How many dialogs nested inside this one hold the focus; a count, since
@@ -334,17 +358,9 @@ export function ModalDialog({
       >
         <div className="dialog-heading">
           {Icon && <Icon aria-hidden className="dialog-icon" />}
-          <h2 id={labelId} {...(typeof title === 'string' ? tooltip(title) : {})}>
+          <h2 id={labelId} {...(typeof title === 'string' ? cutTooltip(title) : {})}>
             {title}
           </h2>
-          {titleAside ? (
-            <span
-              className="dialog-context"
-              {...(typeof titleAside === 'string' ? tooltip(titleAside) : {})}
-            >
-              {titleAside}
-            </span>
-          ) : null}
         </div>
         <NestedFocusContext value={claimNestedFocus}>{children}</NestedFocusContext>
         {legend && <DialogLegend legend={legend} onLeave={onCancel} />}

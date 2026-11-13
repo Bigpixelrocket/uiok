@@ -152,10 +152,17 @@ const layout = { clientWidth: 300, scrollWidth: 412, scrollLeft: 0 };
 /** The strip's box in the stubbed layout. */
 const STRIP = { left: 0, right: 300 };
 
-/** A tab's box: 80px wide from the strip's 6px padding, moved by the strip's scroll. */
+/** Tab widths that differ from 80px, set by a test and cleared before each. */
+const widths: Partial<Record<string, number>> = {};
+
+/** A tab's box: 80px wide (or its `widths` entry) from the strip's 6px padding, moved by the strip's scroll. */
 function tabBox(id: string): { left: number; right: number } {
-  const left = 6 + WIDE_TABS.findIndex((tab) => tab.id === id) * 80 - layout.scrollLeft;
-  return { left, right: left + 80 };
+  const before = WIDE_TABS.slice(
+    0,
+    WIDE_TABS.findIndex((tab) => tab.id === id)
+  ).reduce((sum, tab) => sum + (widths[tab.id] ?? 80), 0);
+  const left = 6 + before - layout.scrollLeft;
+  return { left, right: left + (widths[id] ?? 80) };
 }
 
 function WideStrip({ initial }: { readonly initial: Wide }) {
@@ -171,6 +178,7 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     layout.clientWidth = 300;
     layout.scrollWidth = 412;
     layout.scrollLeft = 0;
+    for (const id of Object.keys(widths)) delete widths[id];
     for (const key of ['clientWidth', 'scrollWidth', 'scrollLeft'] as const) {
       vi.spyOn(HTMLElement.prototype, key, 'get').mockImplementation(function (this: HTMLElement) {
         return this.getAttribute('role') === 'tablist' ? layout[key] : 0;
@@ -213,19 +221,51 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     expect(screen.getByRole('tablist').hasAttribute('data-overflow')).toBe(false);
   });
 
-  it('fades only the marked edges', () => {
+  it('draws whole tabs only, leaving out a tab the chevrons would cut', () => {
     applyStylesheets(readStylesheet('src/tabs/tabs.css'));
     render(<WideStrip initial="overview" />);
     const strip = screen.getByRole('tablist');
-    const fade = (side: 'start' | 'end'): string | undefined =>
-      declaredValues(strip, `--page-tabs-fade-${side}`).at(-1);
+    const drawn = (): string[] =>
+      screen
+        .getAllByRole('tab')
+        .filter((tab) => !tab.hasAttribute('data-clipped'))
+        .map((tab) => tab.dataset.pageTab ?? '');
 
-    expect([fade('start'), fade('end')]).toEqual(['0px', '24px']);
+    // At rest the end chevron takes 276 to 300: Alerts (246 to 326) is not drawn.
+    expect(drawn()).toEqual(['overview', 'members', 'settings']);
+    const alerts = screen.getByRole('tab', { name: 'Alerts' });
+    expect(declaredValues(alerts, 'opacity').at(-1)).toBe('0');
+    expect(declaredValues(alerts, 'pointer-events').at(-1)).toBe('none');
+    // A tab not drawn stays a tab, in the tab order's reach and the tree.
+    expect(alerts.getAttribute('role')).toBe('tab');
+
+    // Scrolled 50px, both chevrons show: Overview (-44 to 36) and Search leave.
     layout.scrollLeft = 50;
     fireEvent.scroll(strip);
-    expect([fade('start'), fade('end')]).toEqual(['24px', '24px']);
-    strip.removeAttribute('data-overflow');
-    expect([fade('start'), fade('end')]).toEqual([undefined, undefined]);
+    expect(drawn()).toEqual(['members', 'settings', 'alerts']);
+
+    // At the end of the scroll only the start chevron takes room.
+    layout.scrollLeft = 112;
+    fireEvent.scroll(strip);
+    expect(drawn()).toEqual(['settings', 'alerts', 'search']);
+    expect(declaredValues(screen.getByRole('tab', { name: 'Settings' }), 'opacity')).toEqual([]);
+  });
+
+  it('draws every tab when every tab fits', () => {
+    // Three tabs end at 246 of 300.
+    layout.scrollWidth = 300;
+    render(
+      <PageTabs
+        current="overview"
+        label="Pages"
+        onSelect={() => undefined}
+        tabs={WIDE_TABS.slice(0, 3)}
+      />
+    );
+
+    expect(screen.getAllByRole('tab').filter((tab) => tab.hasAttribute('data-clipped'))).toEqual(
+      []
+    );
   });
 
   it('shows the current tab at once when it mounts past the edge', () => {
@@ -242,17 +282,7 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     expect(scrollBy).not.toHaveBeenCalled();
   });
 
-  it('scrolls smoothly to a tab that becomes current past the edge', () => {
-    render(<WideStrip initial="members" />);
-    fireEvent.click(screen.getByRole('tab', { name: 'Search' }));
-
-    expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ left: 112, behavior: 'smooth' });
-  });
-
-  it('scrolls without motion when the reader prefers reduced motion', () => {
-    vi.stubGlobal('matchMedia', (query: string) => ({
-      matches: query === '(prefers-reduced-motion: reduce)'
-    }));
+  it('scrolls at once, never smoothly, to a tab that becomes current past the edge', () => {
     render(<WideStrip initial="members" />);
     fireEvent.click(screen.getByRole('tab', { name: 'Search' }));
 
@@ -291,6 +321,128 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     fireEvent.click(screen.getByRole('tab', { name: 'Members' }));
 
     // Scrolled to the end, Members starts at -26: 50px short of the clear span.
-    expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ left: -50, behavior: 'smooth' });
+    expect(scrollBy).toHaveBeenCalledExactlyOnceWith({ left: -50, behavior: 'instant' });
+  });
+
+  it('shows a chevron at each edge that hides tabs, which pages the strip toward it', () => {
+    applyStylesheets(readStylesheet('src/tabs/tabs.css'));
+    const { container } = render(<WideStrip initial="overview" />);
+    const strip = screen.getByRole('tablist');
+    const more = (side: 'start' | 'end'): HTMLElement =>
+      container.querySelector(`.page-tabs-more.${side}`) as HTMLElement;
+    const shown = (side: 'start' | 'end'): string | undefined =>
+      declaredValues(more(side), 'display').at(-1);
+
+    expect([shown('start'), shown('end')]).toEqual(['none', 'flex']);
+    // Kept from the tab order and the accessibility tree; the arrows reach every tab.
+    expect(more('end').tabIndex).toBe(-1);
+    expect(more('end').getAttribute('aria-hidden')).toBe('true');
+    expect(screen.queryAllByRole('button')).toEqual([]);
+
+    // Pages by whole tabs: Alerts, the first tab not drawn, comes to rest at
+    // the start chevron's inner edge (246 less 24).
+    layout.scrollWidth = 600;
+    fireEvent.click(more('end'));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 222, behavior: 'instant' });
+
+    layout.scrollWidth = 412;
+    layout.scrollLeft = 112;
+    fireEvent.scroll(strip);
+    expect([shown('start'), shown('end')]).toEqual(['flex', 'none']);
+    // Members (-26 to 54) is the last tab not drawn at the start; the earliest
+    // tab start that keeps it whole is Overview's, the strip's own start.
+    fireEvent.click(more('start'));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -112, behavior: 'instant' });
+  });
+
+  it('pages back so the tab before the drawn ones ends the strip whole', () => {
+    layout.scrollWidth = 900;
+    layout.scrollLeft = 340;
+    render(<WideStrip initial="search" />);
+    const strip = screen.getByRole('tablist');
+
+    fireEvent.scroll(strip);
+    scrollBy.mockClear();
+    // Tabs start at -334, -254, -174, -94, -14: Search (-14 to 66) is cut by
+    // the start chevron. The clear span is 252px, so Settings' start (-174) is
+    // the earliest that keeps Search whole: Settings rests at 24, Search ends at 264.
+    fireEvent.click(strip.parentElement?.querySelector('.page-tabs-more.start') as HTMLElement);
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -198, behavior: 'instant' });
+  });
+
+  it('brings in a tab past the end edge by a tab start, where the strip’s snap keeps it', () => {
+    layout.scrollWidth = 600;
+    render(<WideStrip initial="overview" />);
+    fireEvent.click(screen.getByRole('tab', { name: 'Alerts' }));
+
+    // Alerts ends 50px past the clear span; Members' start, 62px on, is the
+    // first tab start that clears it, so the strip rests there, not at 50.
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 62, behavior: 'instant' });
+  });
+
+  it('draws a tab wider than the clear span cut, and pages past it', () => {
+    // Members is 400px: it can never lie whole in the 252px between the
+    // chevrons. Tabs: Overview 6 to 86, Members 86 to 486, Settings 486 to 566.
+    widths.members = 400;
+    layout.scrollWidth = 732;
+    const { container } = render(<WideStrip initial="overview" />);
+    const strip = screen.getByRole('tablist');
+    const members = screen.getByRole('tab', { name: 'Members' });
+    const more = (side: 'start' | 'end'): HTMLElement =>
+      container.querySelector(`.page-tabs-more.${side}`) as HTMLElement;
+
+    expect(members.hasAttribute('data-clipped')).toBe(false);
+    expect(screen.getByRole('tab', { name: 'Settings' }).hasAttribute('data-clipped')).toBe(true);
+
+    // Paging toward the end brings Members' start to the chevron's inner edge.
+    fireEvent.click(more('end'));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 62, behavior: 'instant' });
+
+    // With Members' start there, the next page passes it for Settings,
+    // as far as the scroll goes (732 less 300, from 62).
+    layout.scrollLeft = 62;
+    fireEvent.scroll(strip);
+    expect(members.hasAttribute('data-clipped')).toBe(false);
+    fireEvent.click(more('end'));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 370, behavior: 'instant' });
+
+    // At the end Members (-346 to 54) still crosses the clear span, so it is
+    // drawn; paging back rests on its start, not on Settings' after it.
+    layout.scrollLeft = 432;
+    fireEvent.scroll(strip);
+    expect(members.hasAttribute('data-clipped')).toBe(false);
+    fireEvent.click(more('start'));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -370, behavior: 'instant' });
+  });
+
+  it('draws a tab too wide for the span beside one chevron, where it rests at the start', () => {
+    // Overview is 272px: wider than the 252px between both chevrons, and too
+    // wide to lie whole beside one (6 to 278 at rest, past the chevron at 276).
+    widths.overview = 272;
+    layout.scrollWidth = 604;
+    render(<WideStrip initial="overview" />);
+    const strip = screen.getByRole('tablist');
+    const overview = screen.getByRole('tab', { name: 'Overview' });
+
+    expect(overview.hasAttribute('data-clipped')).toBe(false);
+
+    // At the end of the scroll (304), Overview (-298 to -26) is out of the
+    // span and is not drawn; the tabs after it that fit stay whole.
+    layout.scrollLeft = 304;
+    fireEvent.scroll(strip);
+    expect(overview.hasAttribute('data-clipped')).toBe(true);
+    expect(screen.getByRole('tab', { name: 'Search' }).hasAttribute('data-clipped')).toBe(false);
+  });
+
+  it('always comes to rest on a snap position, so no tab rests cut in the clear span', () => {
+    applyStylesheets(readStylesheet('src/tabs/tabs.css'));
+    render(<WideStrip initial="overview" />);
+
+    expect(declaredValues(screen.getByRole('tablist'), 'scroll-snap-type')).toEqual([
+      'x mandatory'
+    ]);
+    expect(declaredValues(screen.getAllByRole('tab')[0] as Element, 'scroll-snap-align')).toEqual([
+      'start'
+    ]);
   });
 });

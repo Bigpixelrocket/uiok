@@ -4,18 +4,18 @@ import {
   CircleSlash,
   CircleX,
   Hourglass,
-  LoaderCircle,
   type LucideIcon
 } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 
 import { ActivityBar } from '../activity/ActivityBar.js';
+import { ICON_LG, Spinner } from '../icon/index.js';
+import { cutTooltip } from '../tooltip/Tooltip.logic.js';
 import type { RunState } from './RunProgress.logic.js';
 
-/** Each run state's glyph; the running one spins unless motion is reduced. */
-const STATE_ICONS: Readonly<Record<RunState, LucideIcon>> = {
+/** Each still state's glyph; a running header draws the shared Spinner. */
+const STATE_ICONS: Readonly<Record<Exclude<RunState, 'running'>, LucideIcon>> = {
   waiting: Hourglass,
-  running: LoaderCircle,
   paused: CirclePause,
   done: CircleCheck,
   failed: CircleX,
@@ -67,9 +67,11 @@ export interface RunHeaderProps {
  * The sentence (and a failure's reason) is a status region, or an alert
  * once the run failed, so each change of state is announced once; the
  * figure sits outside it, so a ticking clock is never read out, and so does
- * a sentence that ticks too, given an `announcement` to say instead. Styled
- * by the `.run-header` rules in `@bigpixelrocket/uiok/styles.css`; the type family is the
- * surrounding dialog's own, like the frame around it.
+ * a sentence that ticks too, given an `announcement` to say instead. A
+ * sentence cut short by a narrow view is its own tooltip. Styled by the
+ * `.run-header` rules in `@bigpixelrocket/uiok/styles.css`, which set its
+ * type: sentences in the interface font, the figure in monospace. Format an
+ * elapsed-time figure with `runClock`.
  */
 export function RunHeader({
   state,
@@ -80,20 +82,30 @@ export function RunHeader({
   bar,
   facts = []
 }: RunHeaderProps): ReactElement {
-  const Icon = STATE_ICONS[state];
+  const Icon = state === 'running' ? null : STATE_ICONS[state];
   const failed = state === 'failed';
   const role = failed ? 'alert' : 'status';
 
   return (
     <div className="run-header" data-state={state}>
       <div className="run-header-top">
-        <Icon aria-hidden className="run-header-glyph" />
+        {Icon === null ? (
+          <Spinner className="run-header-glyph" size={ICON_LG} />
+        ) : (
+          <Icon aria-hidden className="run-header-glyph" />
+        )}
         <div className="run-header-said">
-          {announcement !== undefined && <span className="run-header-headline">{headline}</span>}
+          {announcement !== undefined && (
+            <span className="run-header-headline" {...cutTooltip(headline)}>
+              {headline}
+            </span>
+          )}
           {/* A new alert element is announced; a role flipped in place may not be. */}
           <div key={role} role={role}>
             {announcement === undefined ? (
-              <span className="run-header-headline">{headline}</span>
+              <span className="run-header-headline" {...cutTooltip(headline)}>
+                {headline}
+              </span>
             ) : (
               <span className="visually-hidden">{announcement}</span>
             )}

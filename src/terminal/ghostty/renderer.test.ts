@@ -187,6 +187,69 @@ describe('renderGhosttySnapshot', () => {
     ]);
   });
 
+  it.each([
+    ['draws no cursor on an unfocused screen with nothing on it', ['', ' ', ''], 0],
+    [
+      'draws a quiet text-coloured outline cursor on an unfocused screen with text',
+      ['a', 'b', ''],
+      1
+    ]
+  ])('%s', (_name, texts, outlines) => {
+    const strokes: { style: string; alpha: number }[] = [];
+    let strokeStyle = '';
+    const context = {
+      canvas: { width: 100, height: 40 },
+      globalAlpha: 1,
+      beginPath: () => {},
+      clip: () => {},
+      fillRect: () => {},
+      fillText: () => {},
+      rect: () => {},
+      resetTransform: () => {},
+      restore: () => {},
+      save: () => {},
+      strokeRect(this: { globalAlpha: number }) {
+        strokes.push({ style: strokeStyle, alpha: this.globalAlpha });
+      },
+      set fillStyle(_value: string) {},
+      set font(_value: string) {},
+      set strokeStyle(value: string) {
+        strokeStyle = value;
+      },
+      set textBaseline(_value: string) {}
+    } as unknown as CanvasRenderingContext2D;
+    const cells = texts.map((text) => cell(text));
+    const snapshot: GhosttySnapshot = {
+      cols: 3,
+      rows: 1,
+      foreground: { r: 200, g: 200, b: 200 },
+      background: { r: 0, g: 0, b: 0 },
+      cursor: { r: 255, g: 120, b: 0 },
+      cursorX: 2,
+      cursorY: 0,
+      cursorVisible: true,
+      cursorBlinking: false,
+      cursorStyle: 1,
+      dirtyRows: new Set([0]),
+      rowData: [{ cells, text: texts.join(''), isWrapContinuation: false, wrapsToNext: false }]
+    };
+
+    renderGhosttySnapshot({
+      context,
+      snapshot,
+      metrics: { width: 10, height: 20, baseline: 15 },
+      fontSize: 12,
+      fontFamily: 'monospace',
+      padding: 4,
+      forceFull: true,
+      cursorOn: true,
+      focused: false
+    });
+
+    // The text at half strength over the black ground, drawn solid.
+    expect(strokes).toEqual(outlines === 0 ? [] : [{ style: 'rgb(100, 100, 100)', alpha: 1 }]);
+  });
+
   it('batches text around block glyphs and paints the glyphs as shapes that share edges', () => {
     const fillTextCalls: unknown[][] = [];
     const foregroundRects: number[][] = [];
@@ -658,7 +721,7 @@ describe('GhosttyTextInkCache', () => {
 describe('renderGhosttySnapshot with measured ink', () => {
   const colored = (text: string, r: number): GhosttyCell => ({
     ...cell(text),
-    foreground: { r, g: 0, b: 0 }
+    foreground: { r, g: 255, b: 0 }
   });
 
   /** A context that records clips, the rectangles each clip is built from, and text draws. */
@@ -746,17 +809,17 @@ describe('renderGhosttySnapshot with measured ink', () => {
         [24, 4, 10, 20],
         [4, 24, 10, 20]
       ])}`,
-      'text rgb(1, 0, 0) a 4 19 10',
-      'text rgb(1, 0, 0) c 24 19 10',
-      'text rgb(1, 0, 0) d 4 39 10',
+      'text rgb(1, 255, 0) a 4 19 10',
+      'text rgb(1, 255, 0) c 24 19 10',
+      'text rgb(1, 255, 0) d 4 39 10',
       'restore',
       'save',
       `clip ${JSON.stringify([
         [14, 4, 10, 20],
         [14, 24, 20, 20]
       ])}`,
-      'text rgb(2, 0, 0) b 14 19 10',
-      'text rgb(2, 0, 0) ef 14 39 20',
+      'text rgb(2, 255, 0) b 14 19 10',
+      'text rgb(2, 255, 0) ef 14 39 20',
       'restore'
     ]);
   });
@@ -822,6 +885,50 @@ describe('renderGhosttySnapshot with measured ink', () => {
     expect(clipCount(events)).toBe(5);
   });
 
+  it('draws text near its own background at the minimum contrast, and the background as asked', () => {
+    const { context, events } = recordingContext(() => ({ ascent: 9, descent: 3 }));
+    const near: GhosttyCell = { ...cell('n'), foreground: { r: 10, g: 10, b: 10 } };
+    const onWhite: GhosttyCell = {
+      ...cell('w'),
+      foreground: { r: 250, g: 250, b: 250 },
+      background: { r: 255, g: 255, b: 255 }
+    };
+    render(context, snapshotOf([[near, onWhite, colored('k', 1)]]));
+    const texts = events.filter((event) => event.startsWith('text '));
+
+    // Near-black on the black ground lifts toward the terminal's text colour;
+    // near-white on a white cell darkens, since that text colour fails there.
+    expect(texts).toEqual([
+      'text rgb(117, 117, 117) n 4 19 10',
+      'text rgb(118, 118, 118) w 14 19 10',
+      'text rgb(1, 255, 0) k 24 19 10'
+    ]);
+  });
+
+  it('draws selected text in the selection ink, floored on the selection over its cell', () => {
+    const { context, events } = recordingContext(() => ({ ascent: 9, descent: 3 }));
+    const plain: GhosttyCell = { ...cell('p'), foreground: { r: 90, g: 90, b: 90 } };
+    const picked: GhosttyCell = { ...plain, text: 's', selected: true };
+    renderGhosttySnapshot({
+      context,
+      snapshot: snapshotOf([[plain, picked]]),
+      metrics: { width: 10, height: 20, baseline: 15 },
+      fontSize: 12,
+      fontFamily: 'monospace',
+      padding: 4,
+      forceFull: false,
+      cursorOn: false,
+      selectionBackground: 'rgb(255 255 255 / 50%)',
+      selectionForeground: { r: 128, g: 128, b: 128 },
+      textInk: new GhosttyTextInkCache()
+    });
+    const texts = events.filter((event) => event.startsWith('text '));
+
+    // The plain cell lifts on the black ground; the selected one starts from
+    // the selection ink and darkens to read on the mid-grey selection.
+    expect(texts).toEqual(['text rgb(117, 117, 117) p 4 19 10', 'text rgb(23, 23, 23) s 14 19 10']);
+  });
+
   it('gives a run whose ink leaves its row a clip of its own', () => {
     const { context, events } = recordingContext((text) =>
       text === 'g' ? { ascent: 9, descent: 6 } : { ascent: 9, descent: 3 }
@@ -831,15 +938,15 @@ describe('renderGhosttySnapshot with measured ink', () => {
     expect(events).toEqual([
       'save',
       `clip ${JSON.stringify([[4, 4, 10, 20]])}`,
-      'text rgb(1, 0, 0) g 4 19 10',
+      'text rgb(1, 255, 0) g 4 19 10',
       'restore',
       'save',
       `clip ${JSON.stringify([[14, 4, 10, 20]])}`,
-      'text rgb(2, 0, 0) h 14 19 10',
+      'text rgb(2, 255, 0) h 14 19 10',
       'restore',
       'save',
       `clip ${JSON.stringify([[24, 4, 10, 20]])}`,
-      'text rgb(1, 0, 0) i 24 19 10',
+      'text rgb(1, 255, 0) i 24 19 10',
       'restore'
     ]);
   });

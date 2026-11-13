@@ -1,6 +1,8 @@
 import { ClipboardPaste, Copy, type LucideIcon } from 'lucide-react';
 import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactElement } from 'react';
+import { createPortal } from 'react-dom';
 
+import { ICON_MD } from '../icon/index.js';
 import { KeyChord } from '../keychord/KeyChord.js';
 import { movedPickableCursor, pickableCursor } from '../menu/MenuQuery.logic.js';
 import {
@@ -39,7 +41,10 @@ export interface TerminalMenuProps {
 
 /**
  * The terminal's menu: Copy and Paste with their chords, in the menu look,
- * opened at the point a secondary click landed.
+ * opened at the point a secondary click landed. It is the menu look
+ * (`.folder-menu`, `.folder-menu-option`) drawn through a portal on the
+ * document's body (or the element shown full screen), so no scrolling pane
+ * or dialog clips it; React still carries its events to the terminal.
  *
  * It holds the keys while open (↑ ↓, Return and Space, Escape;
  * `terminalMenuKeyAction`), which travel no further, so neither a dialog
@@ -98,11 +103,11 @@ export function TerminalMenu({
     if (item?.enabled === true) onRun(item.verb);
   };
 
-  return (
+  return createPortal(
     <div
       aria-activedescendant={cursor === null ? undefined : `${itemId}-${cursor}`}
       aria-label={label}
-      className="terminal-menu"
+      className="folder-menu terminal-menu"
       data-native-keyboard
       data-overlay
       // The focus left for somewhere else: another control, or another window.
@@ -137,7 +142,11 @@ export function TerminalMenu({
         return (
           <div
             aria-disabled={!item.enabled}
-            className={index === cursor ? 'terminal-menu-item cursor' : 'terminal-menu-item'}
+            className={
+              index === cursor
+                ? 'folder-menu-option terminal-menu-item cursor'
+                : 'folder-menu-option terminal-menu-item'
+            }
             id={`${itemId}-${index}`}
             key={item.verb}
             onClick={() => run(item)}
@@ -147,13 +156,14 @@ export function TerminalMenu({
             role="menuitem"
           >
             <span className="terminal-menu-icon">
-              <Icon aria-hidden size={13} />
+              <Icon aria-hidden size={ICON_MD} />
             </span>
             <span className="terminal-menu-label">{item.label}</span>
             <KeyChord chord={item.chord} />
           </div>
         );
       })}
-    </div>
+    </div>,
+    document.fullscreenElement ?? document.body
   );
 }

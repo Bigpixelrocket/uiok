@@ -7,6 +7,7 @@ A command palette's frame: `Palette`, the modal box over a backdrop, and `Palett
 ```tsx
 import { Palette, PaletteQuery } from '@bigpixelrocket/uiok/palette';
 import { matchQuery, menuQueryRefused, moveMenuCursor } from '@bigpixelrocket/uiok/menu';
+import { KeyChord } from '@bigpixelrocket/uiok/keychord';
 import { MarkedText } from '@bigpixelrocket/uiok/text';
 
 const rowsFor = (query: string) =>
@@ -77,7 +78,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
               <span className="palette-context palette-sentence">{row.command.hint}</span>
             </span>
             <span className="palette-trail">
-              <span className="palette-meta">{row.command.chord}</span>
+              <KeyChord chord={row.command.chord} />
             </span>
           </div>
         ))}
@@ -87,7 +88,7 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
 }
 ```
 
-Render it inside the listing scope (`.listing-root`); the backdrop is `position: fixed` on `--z-dialog`.
+The backdrop is `position: fixed` on `--z-dialog`; the palette needs no scope.
 
 ## Props
 
@@ -120,14 +121,15 @@ Render it inside the listing scope (`.listing-root`); the backdrop is `position:
 
 ## Styling
 
-Under `.listing-root`, on top of the menu look:
+On top of the menu look ([menu](menu.md)):
 
-- `.palette-backdrop`: the full-window backdrop, a 45% wash of `--bg`, the box anchored 104px from the top.
-- `.folder-menu.palette`: 600px wide, monospace 13px, `--shadow-dialog`; the options list grows to 420px.
-- `.palette-text` holds a row's `.row-name` and `.palette-context`, which gives way at its start (a path) or, with `.palette-sentence`, at its end (a sentence). Wrap a path's text in `<bdi>`.
-- `.palette-trail` and `.palette-meta`: a row's end, in the meta tone.
-- `.palette-notes` with `.folder-menu-note` lines under the list; `.palette-failure` in the danger colour.
-- `.palette-refused` and `.palette-level`: the refusal and the level chip in the query row.
+- `.palette-backdrop`: the full-window backdrop, `--scrim` frosted with `--frost` (a palette replaces the page for a moment, as a frosted dialog does), the box anchored 104px from the top.
+- `.folder-menu.palette`: 600px wide, with the lit top edge and `--shadow-modal`; the options list grows to seventeen whole rows and fades the edge that has more rows on its own.
+- `.palette-text` holds a row's `.row-name` and `.palette-context`, which gives way at its start (a path) or, with `.palette-sentence`, at its end (a sentence, in the interface face), or with `.palette-command` at its end in the monospace face (a command line). Wrap a path's text in `<bdi>`.
+- `.palette-trail` and `.palette-meta`: a row's end; `.palette-meta` is in the meta tone, and on the cursor row it and `.palette-context` take `--text-on-surface`. Put a `KeyChord` in `.palette-trail` for a command's chord; it is drawn as key caps.
+- `.palette-notes` with `.folder-menu-note` lines under the list; `.palette-failure` a status line: the danger glyph in the icon column, then words in the text colour.
+- `.palette-refused`: the refusal where the count stands, in the count's own `--text-dim`; the bell beat says it was refused, so the words take no tone. The notes under the list (`.folder-menu-note`, `.palette-failure`) can be selected and copied.
+- `.palette-level`: the level chip, an accent wash with an accent line, deeper on hover; while held it takes the base sheet's pressed look, which outranks hover.
 - A dialog's key legend (`.dialog-legend`) placed last in the box runs its hairline to the box's edges.
 
 ## Labels read

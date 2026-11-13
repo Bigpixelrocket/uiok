@@ -1,6 +1,7 @@
 /**
  * Canvas 2D drawing of a Ghostty render snapshot: backgrounds and selection
- * in runs, text in same-style runs clipped to their cells, block elements and
+ * in runs, text in same-style runs clipped to their cells and drawn at the
+ * terminal's minimum contrast against each cell's own background, block elements and
  * box drawing as shapes snapped to device pixels, decorations, and the cursor.
  * Only dirty rows are repainted unless a full frame is forced.
  */
@@ -12,6 +13,13 @@ import {
   type GhosttyColor,
   type GhosttySnapshot
 } from './core.js';
+import {
+  legibleForeground,
+  parseTranslucentColor,
+  quietMark,
+  selectedForeground,
+  type TranslucentColor
+} from './contrast.logic.js';
 import { DEFAULT_SELECTION_BACKGROUND } from './fallbackColors.js';
 import {
   ghosttySpriteCodepoint,
@@ -45,10 +53,64 @@ function cssColor(color: GhosttyColor): string {
   return text;
 }
 
+// By a cell's background, then its foreground: the colour its text is
+// drawn in. The engine hands out one object per color, so each pair is
+// floored once and keeps one CSS text.
+const inks = new WeakMap<GhosttyColor, WeakMap<GhosttyColor, GhosttyColor>>();
+
+/**
+ * The colour a cell's text is drawn in: its foreground, moved only as far
+ * as the terminal's minimum contrast against the cell's own background
+ * needs (`legibleForeground`). A background stays as the program asked.
+ */
+function cellInk(cell: GhosttyCell): GhosttyColor {
+  let byForeground = inks.get(cell.background);
+  if (byForeground === undefined) {
+    byForeground = new WeakMap();
+    inks.set(cell.background, byForeground);
+  }
+  let ink = byForeground.get(cell.foreground);
+  if (ink === undefined) {
+    ink = legibleForeground(cell.foreground, cell.background);
+    byForeground.set(cell.foreground, ink);
+  }
+  return ink;
+}
+
+// Selected cells' inks, by selection fill, selection ink, background, and
+// foreground, so each combination is floored once and keeps one object (and
+// so one CSS text). Dropped wholesale if a run of themes ever fills it.
+const SELECTED_INK_LIMIT = 4096;
+const selectedInks = new Map<string, GhosttyColor>();
+
+const colorKey = (color: GhosttyColor | undefined): string =>
+  color === undefined ? '' : `${color.r},${color.g},${color.b}`;
+
+/**
+ * The colour a selected cell's text is drawn in (`selectedForeground`): the
+ * selection ink, or the cell's own foreground, at the minimum contrast on
+ * the selection fill over the cell's background.
+ */
+function selectedCellInk(
+  cell: GhosttyCell,
+  selectionBackground: string,
+  selection: TranslucentColor | null,
+  selectionText: GhosttyColor | undefined
+): GhosttyColor {
+  const key = `${selectionBackground}|${colorKey(selectionText)}|${colorKey(cell.background)}|${colorKey(cell.foreground)}`;
+  let ink = selectedInks.get(key);
+  if (ink === undefined) {
+    ink = selectedForeground(cell.foreground, cell.background, selection, selectionText);
+    if (selectedInks.size >= SELECTED_INK_LIMIT) selectedInks.clear();
+    selectedInks.set(key, ink);
+  }
+  return ink;
+}
+
 function sameTextStyle(left: GhosttyCell, right: GhosttyCell): boolean {
-  // Selection deliberately does not participate: it only tints the background
-  // overlay, and splitting a text run at a selection boundary visibly shifts
-  // glyph spacing whenever the face's true advance differs from the cell width.
+  // Selection does not participate: it tints the background overlay, and a
+  // run splits at a selection boundary only where the selected text takes
+  // another ink (the run's ink is compared beside this).
   return (
     ghosttyColorsEqual(left.foreground, right.foreground) &&
     left.bold === right.bold &&
@@ -368,6 +430,16 @@ export function terminalGridSize(
   };
 }
 
+/** How strongly an unfocused terminal's hollow cursor is drawn: the text colour at half strength, at least 3:1 on the ground. */
+const UNFOCUSED_CURSOR_SHARE = 0.5;
+
+/** Whether no cell of the snapshot's screen shows a glyph. */
+function screenIsBlank(snapshot: GhosttySnapshot): boolean {
+  return snapshot.rowData.every((row) =>
+    row.cells.every((cell) => cell.text === '' || cell.text === ' ')
+  );
+}
+
 /** Paints a snapshot onto the canvas context. */
 export function renderGhosttySnapshot(options: {
   readonly context: CanvasRenderingContext2D;
@@ -381,6 +453,12 @@ export function renderGhosttySnapshot(options: {
   readonly previousCursorY?: number | null;
   readonly focused?: boolean;
   readonly selectionBackground?: string;
+  /**
+   * The one ink of selected text (the theme's selection foreground); each
+   * selected cell's own foreground when omitted. Either way it is floored
+   * against the selection over the cell's background.
+   */
+  readonly selectionForeground?: GhosttyColor;
   readonly hoveredLinkRange?: GhosttyCellRange | null;
   /** The device pixels per CSS pixel the context's transform scales by; 1 when omitted. */
   readonly pixelRatio?: number;
@@ -405,6 +483,13 @@ export function renderGhosttySnapshot(options: {
   } = options;
   const focused = options.focused ?? true;
   const selectionBackground = options.selectionBackground ?? DEFAULT_SELECTION_BACKGROUND;
+  const selectionFill = parseTranslucentColor(selectionBackground);
+  const selectionForeground = options.selectionForeground;
+  // A cell's text colour: on the selection, the selection's ink against it.
+  const inkOf = (cell: GhosttyCell): GhosttyColor =>
+    cell.selected
+      ? selectedCellInk(cell, selectionBackground, selectionFill, selectionForeground)
+      : cellInk(cell);
   const hoveredLinkRange = options.hoveredLinkRange ?? null;
   const pixelRatio = options.pixelRatio ?? 1;
   // A clip of several rectangles turns Chromium's GPU canvas to multisampling
@@ -520,6 +605,8 @@ export function renderGhosttySnapshot(options: {
           if (!next || ghosttySpriteCodepoint(next.text) < 0 || !sameTextStyle(next, first)) break;
           runEnd += 1;
         }
+        // Block and box shapes keep the program's colour: they draw a
+        // picture or a frame, whose colour is the point, not text to read.
         if (!first.invisible) {
           const color = cssColor(first.foreground);
           context.fillStyle = color;
@@ -541,10 +628,16 @@ export function renderGhosttySnapshot(options: {
         runStart = runEnd;
         continue;
       }
+      const firstInk = inkOf(first);
+      // A run splits where the floor draws its text in another colour, so
+      // each cell's text keeps the contrast of its own background.
       const runEnd = ghosttyTextRunEnd(
         row.cells,
         runStart,
-        (cell) => ghosttySpriteCodepoint(cell.text) < 0 && sameTextStyle(cell, first)
+        (cell) =>
+          ghosttySpriteCodepoint(cell.text) < 0 &&
+          sameTextStyle(cell, first) &&
+          ghosttyColorsEqual(inkOf(cell), firstInk)
       );
       const text =
         runEnd === runStart + 1
@@ -555,7 +648,7 @@ export function renderGhosttySnapshot(options: {
               .join('');
       if (!first.invisible && text.trim().length > 0) {
         const font = fonts[(first.bold ? 2 : 0) + (first.italic ? 1 : 0)]!;
-        const color = cssColor(first.foreground);
+        const color = cssColor(firstInk);
         const x = padding + runStart * metrics.width;
         const y = top + metrics.baseline;
         const maxWidth = (runEnd - runStart) * metrics.width;
@@ -658,7 +751,7 @@ export function renderGhosttySnapshot(options: {
       if (!cell || (!cell.underline && !cell.strikethrough && !cell.overline && !hoveredLink)) {
         continue;
       }
-      context.fillStyle = cssColor(cell.foreground);
+      context.fillStyle = cssColor(inkOf(cell));
       // Decorations span the cell's device edges so a decorated run is unbroken.
       const left = columnEdge(column) / pixelRatio;
       const width = (columnEdge(column + 1) - columnEdge(column)) / pixelRatio;
@@ -672,7 +765,15 @@ export function renderGhosttySnapshot(options: {
     }
   }
 
-  if (cursorOn && snapshot.cursorVisible && snapshot.cursorX >= 0 && snapshot.cursorY >= 0) {
+  if (
+    cursorOn &&
+    snapshot.cursorVisible &&
+    snapshot.cursorX >= 0 &&
+    snapshot.cursorY >= 0 &&
+    // An unfocused screen with nothing on it shows no cursor: a lone box in
+    // an empty output well reads as an error mark, not as a place to type.
+    (focused || !screenIsBlank(snapshot))
+  ) {
     const left = padding + snapshot.cursorX * metrics.width;
     const top = padding + snapshot.cursorY * metrics.height;
     const deviceLeft = deviceGridEdge(snapshot.cursorX, metrics.width, padding, pixelRatio);
@@ -681,8 +782,13 @@ export function renderGhosttySnapshot(options: {
     const deviceBottom = deviceGridEdge(snapshot.cursorY + 1, metrics.height, padding, pixelRatio);
     context.fillStyle = cssColor(snapshot.cursor);
     if (!focused) {
-      // An unfocused terminal draws a hollow cursor so the active pane is obvious.
-      context.strokeStyle = cssColor(snapshot.cursor);
+      // An unfocused terminal draws a quiet hollow cursor, a 1px outline in
+      // the text colour at half strength, so the active pane is obvious and
+      // the resting one keeps its place without the cursor colour's alarm;
+      // never fainter than a mark's 3:1 on the ground.
+      context.strokeStyle = cssColor(
+        quietMark(snapshot.foreground, snapshot.background, UNFOCUSED_CURSOR_SHARE)
+      );
       context.strokeRect(left + 0.5, top + 0.5, metrics.width - 1, metrics.height - 1);
     } else if (snapshot.cursorStyle === 0) {
       context.fillRect(left, top, 2, metrics.height);
@@ -699,9 +805,12 @@ export function renderGhosttySnapshot(options: {
       const cell = snapshot.rowData[snapshot.cursorY]?.cells[snapshot.cursorX];
       const shown = cell !== undefined && !cell.invisible;
       const spriteCodepoint = shown ? ghosttySpriteCodepoint(cell.text) : -1;
+      // The cell under the block is drawn in the ground's colour, floored at
+      // the per-cell text contrast against the block, which as a mark only
+      // keeps 3:1 from the ground.
+      const ink = cssColor(legibleForeground(snapshot.background, snapshot.cursor));
       if (spriteCodepoint >= 0) {
-        const background = cssColor(snapshot.background);
-        context.fillStyle = background;
+        context.fillStyle = ink;
         paintSpriteCell(
           context,
           spriteCodepoint,
@@ -712,11 +821,11 @@ export function renderGhosttySnapshot(options: {
           metrics.width,
           pixelRatio,
           spriteThickness,
-          background
+          ink
         );
       } else if (shown && cell.text) {
         context.font = fontForCell(cell, fontSize, fontFamily);
-        context.fillStyle = cssColor(snapshot.background);
+        context.fillStyle = ink;
         context.fillText(cell.text, left, top + metrics.baseline, metrics.width);
       }
     }

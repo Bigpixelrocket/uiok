@@ -1,0 +1,812 @@
+/* ---- Form controls (docs/components/field.md) ----
+
+   One look for everything a user types in or toggles, drawn on the native
+   elements by class so a form keeps its own markup, keyboard, and screen
+   reader behaviour:
+
+   - .field on an input, select, or textarea: a well in the window ground,
+     outlined in --control-border, its contents in the code face (what a
+     user types is a value). The height follows the place, in every app:
+     28px (.field) in a dialog or a single prompt, 24px (.field-sm) in a
+     page form or a toolbar, 20px (.field-xs) inside a row or a path bar.
+   - .check on a checkbox or radio: a 14px box (a disc for a radio), filled
+     with the accent when on, with the tick, the dash (indeterminate), or
+     the dot drawn in --on-accent. A checkbox or radio with no class at all
+     takes the same look; one with a class of its own is the host's.
+   - .field-box on a container: the field's frame round a leading glyph and
+     a bare input (a filter box), with the field's heights, hover, and
+     focus edge.
+   - .switch on a checkbox with role="switch": a pill track and its knob.
+   - .range on an input of type range: a thin trough, its filled part, a knob.
+   - .field-label, .field-note, .field-problem: the words around a field,
+     in the interface face; .field-group stacks them, .field-choice puts a
+     check or switch beside its words, .field-grid lays label and value
+     rows on one label column.
+
+   Every state reads tokens: hover lifts the outline to --text, a step in
+   light and dark themes alike; focus draws the 2px accent edge without
+   growing (border plus a 1px ring on the edge), round a slider's knob
+   rather than its box; aria-invalid="true" outlines in --danger,
+   data-tone="warning" in --warning, and data-tone="accent" (a value
+   changed from its default) in --accent; a press sinks the control
+   and, on a switch, stretches its knob. Disabled fades once, never twice:
+   a field or switch by the base rule, a label with its control as one; an
+   empty check box on its own is not faded but drawn flat in its outline,
+   so a column of disabled boxes still reads. A check or switch that is on
+   takes the accent, the one "on" colour of every toggle; a check may take
+   data-tone="danger" or "warning" for a choice in that tone, and an
+   invalid check (aria-invalid="true") takes the danger tone. The drawn
+   marks are borders and gradients, not images, so no content policy
+   blocks them. */
+
+/* -- Text field, textarea, select, and the field box -- */
+
+.field,
+.field-box {
+  box-sizing: border-box;
+  min-width: 0;
+  height: var(--control-height);
+  margin: 0;
+  padding: 0 var(--space-4);
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-md);
+  /* A well: the field sits a touch below the surface, the opposite of a
+     button's lit edge. */
+  box-shadow: inset 0 1px 0 var(--well-shade);
+  background: var(--ground);
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / 1 var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  vertical-align: middle;
+  transition:
+    border-color var(--duration-fast),
+    outline-color var(--duration-fast);
+}
+
+/* A field box: the frame holds a leading glyph (an icon of --icon-sm, in
+   --text-dim) and a bare input that fills the rest; the frame draws hover
+   and focus for it. Before the height classes, so .field-sm and .field-xs
+   size it as they size a field. */
+.field-box {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text-dim);
+  cursor: text;
+}
+
+.field-box > svg {
+  flex: none;
+}
+
+.field-box > input {
+  flex: 1 1 auto;
+  box-sizing: border-box;
+  min-width: 0;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+}
+
+.field-sm {
+  height: var(--control-height-sm);
+}
+
+/* Inline: inside a 24 to 26 px row or bar, so corners follow the smaller
+   height and the inset tightens to the inline icon-to-label step. */
+.field-xs {
+  height: var(--control-height-xs);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
+.field:hover:not(
+    :disabled,
+    :focus-visible,
+    [aria-invalid='true'],
+    [data-tone],
+    :read-only:not(select)
+  ),
+.field-box:hover:not(:has(:disabled), :focus-within, [aria-invalid='true']) {
+  border-color: var(--text);
+}
+
+/* The field's focus edge, over the base ring: 2px of accent on the field's
+   own edge, so focusing it moves nothing beside it. */
+.field:focus-visible,
+.field-box:has(> input:focus-visible) {
+  border-color: var(--accent);
+  outline: var(--line) solid var(--accent);
+  outline-offset: var(--focus-offset-flush);
+}
+
+.field[aria-invalid='true'],
+.field-box[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.field[aria-invalid='true']:focus-visible {
+  outline-color: var(--danger);
+}
+
+/* A toned field is told from a plain one by more than the hue of its 1px
+   outline, which some light themes leave a shade from the plain outline:
+   a 2px bar in the tone inside the field's leading edge goes with it. The
+   well's top shade stays. Logical, so a right-to-left field bars its
+   right. */
+
+/* A value that works but needs a second look (overridden, out of date):
+   the outline in the warning tone, and the bar. Invalid wins over it. */
+.field[data-tone='warning']:not([aria-invalid='true']) {
+  border-color: var(--warning);
+  box-shadow:
+    inset var(--field-tone-bar) 0 0 0 var(--warning),
+    inset 0 1px 0 var(--well-shade);
+}
+
+.field[data-tone='warning']:not([aria-invalid='true']):focus-visible {
+  outline-color: var(--warning);
+}
+
+/* A value changed from its default (an override): a 1px outline in the
+   accent, floored at 3:1 on every ground a field sits on, so the marked
+   field is never fainter than a plain one; it stays apart from the focus
+   edge by weight (focus is the border plus a 1px ring). */
+.field[data-tone='accent']:not([aria-invalid='true']) {
+  border-color: var(--accent);
+  box-shadow:
+    inset var(--field-tone-bar) 0 0 0 var(--accent),
+    inset 0 1px 0 var(--well-shade);
+}
+
+.field[data-tone] {
+  --field-tone-bar: var(--line-strong);
+}
+
+/* Right to left the bar stands on the right, the leading edge. The rule
+   reads the dir attribute, as the listing's do: bundlers' CSS minifiers
+   rewrite the direction pseudo-class into a list of languages. */
+.field[data-tone]:where([dir='rtl'] *, [dir='rtl']) {
+  --field-tone-bar: calc(-1 * var(--line-strong));
+}
+
+/* Read-only: the value is there to copy, not to change; the well loses its
+   depth and sits on the surface it is drawn on, and its outline drops to
+   the divider grade (a value, not a control), which hover does not lift. */
+.field:read-only:not(select, :disabled) {
+  border-color: var(--border-strong);
+  box-shadow: none;
+  background: transparent;
+}
+
+textarea.field {
+  height: auto;
+  min-height: calc(var(--control-height) * 2);
+  padding: var(--space-2) var(--space-4);
+  line-height: var(--line-height-prose);
+  /* A text view has no corner grip: its pane or dialog sizes it. */
+  resize: none;
+}
+
+/* A list box (multiple, or a size) is as tall as the rows it shows, not one
+   field. At the class's own weight, so a host's height still wins. */
+.field:where(select:is([multiple], [size]:not([size='1']))) {
+  height: auto;
+  padding-block: var(--space-1);
+}
+
+/* A number field carries a stepper at its end, as a desktop number field
+   does: a cap of its own, divided from the value by a --control-border
+   hairline the field's full height, with an up arrow centred in its top
+   half and a down arrow in its bottom half (in --text-dim), so the end
+   reads as two buttons and not as a pop-up's chevron pair. The platform's
+   spin buttons fill the cap and stay the hit area (the top half steps up,
+   the bottom half down) but draw nothing, since their platform drawing is
+   the one part the theme cannot reach. The keyboard's arrows step as
+   before. Each arrow is two 4px squares, each half filled by a diagonal
+   gradient, as the pop-up's chevrons are. */
+input.field[type='number'] {
+  /* A 16px cap; its 8px arrows sit 4px in from each side. */
+  --field-stepper-width: var(--space-8);
+  --field-chevron-end: var(--space-2);
+
+  padding-inline-end: 0;
+  background-image:
+    linear-gradient(135deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(-135deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(-45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(var(--control-border), var(--control-border));
+  background-position:
+    right calc(var(--field-chevron-end) + 4px) top 25%,
+    right var(--field-chevron-end) top 25%,
+    right calc(var(--field-chevron-end) + 4px) top 75%,
+    right var(--field-chevron-end) top 75%,
+    right var(--field-stepper-width) top 0;
+  background-repeat: no-repeat;
+  background-size:
+    4px 4px,
+    4px 4px,
+    4px 4px,
+    4px 4px,
+    var(--line) 100%;
+}
+
+input.field[type='number']::-webkit-inner-spin-button {
+  width: var(--field-stepper-width);
+  height: 100%;
+  margin: 0 0 0 var(--space-3);
+  opacity: 0;
+}
+
+input.field[type='number']::-webkit-outer-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+/* A pop-up menu: the platform's arrow is replaced by the up and down
+   chevron pair a desktop pop-up button shows, two 8 by 4 triangles in
+   --text-dim with 2px between them, at the end of the field, with no
+   divider (a number field's stepper has one, above). Each triangle is two
+   4px squares, each half filled by a diagonal gradient. A list box
+   (multiple, or a size) shows its rows, so it takes no chevrons. */
+select.field:not([multiple], [size]) {
+  --field-chevron-end: var(--space-4);
+
+  padding-inline-end: calc(var(--field-chevron-end) + var(--space-6));
+  appearance: none;
+  background-image:
+    linear-gradient(135deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(-135deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(45deg, transparent 50%, var(--text-dim) 50%),
+    linear-gradient(-45deg, transparent 50%, var(--text-dim) 50%);
+  background-position:
+    right calc(var(--field-chevron-end) + 4px) bottom calc(50% + 3px),
+    right var(--field-chevron-end) bottom calc(50% + 3px),
+    right calc(var(--field-chevron-end) + 4px) top calc(50% + 3px),
+    right var(--field-chevron-end) top calc(50% + 3px);
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: default;
+}
+
+select.field-xs:not([multiple], [size]) {
+  --field-chevron-end: var(--space-3);
+}
+
+/* The menu's own rows are drawn by the platform; give them the theme's
+   ground and text where the platform lets a page. */
+select.field option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* -- Checkbox and radio -- */
+
+/* The on fill and the mark drawn on it: the accent, or a tone's. A mixed
+   state belongs to a checkbox only: a radio of a group with nothing chosen
+   also matches :indeterminate, and must stay empty. */
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))) {
+  --check-on: var(--accent);
+  --check-on-pressed: var(--accent-pressed);
+  --check-mark: var(--on-accent);
+
+  /* 14px: the box sits on a 13px label's x-height the way an icon of
+     --icon-md does. */
+  display: inline-grid;
+  flex: none;
+  place-content: center;
+  box-sizing: border-box;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  margin: 0;
+  /* A row on a tinted ground (hovered, cursor, marked) sets --check-edge
+     to --control-border-strong on itself; the box inherits it. */
+  border: var(--line) solid var(--check-edge, var(--control-border));
+  border-radius: var(--radius-xs);
+  box-shadow: inset 0 1px 0 var(--well-shade);
+  background: var(--ground);
+  vertical-align: middle;
+  cursor: default;
+  appearance: none;
+  transition:
+    background-color var(--duration-fast),
+    border-color var(--duration-fast),
+    box-shadow var(--duration-fast);
+}
+
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class])))[type='radio'] {
+  border-radius: var(--radius-pill);
+}
+
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):hover:not(:disabled) {
+  border-color: var(--text);
+}
+
+/* A press on an empty box sinks it; a filled box keeps its fill (below). */
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):active:not(
+    :disabled,
+    :checked,
+    [type='checkbox']:indeterminate
+  ) {
+  background-color: var(--pressed-wash);
+}
+
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):is(
+  :checked,
+  [type='checkbox']:indeterminate
+) {
+  border-color: var(--check-on);
+  box-shadow: none;
+  background: var(--check-on);
+}
+
+/* On, the fill takes the lit edge a filled button takes on hover; held,
+   it takes the tone's pressed fill, a step of at least 1.12:1 from the
+   rest fill that the token rules derive as a button's press is (darker in
+   light themes, lighter on near-black grounds). On a 14px box an inset
+   shadow would cover most of the face and cancel a lighter step, so the
+   fill alone says "held". The edge keeps the rest fill, which holds 3:1
+   on every ground where a held fill may not. */
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):is(
+    :checked,
+    [type='checkbox']:indeterminate
+  ):hover:not(:disabled) {
+  border-color: var(--check-on);
+  box-shadow: var(--hover-lit);
+}
+
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):is(
+    :checked,
+    [type='checkbox']:indeterminate
+  ):active:not(:disabled) {
+  box-shadow: none;
+  background-color: var(--check-on-pressed);
+}
+
+/* Tones: a choice whose effect is destructive (danger) or needs a second
+   look (warning) outlines in the tone when off and fills in it when on. An
+   invalid choice takes the danger tone whether it is off or on, so a box
+   that is on still says it is wrong; invalid wins over a warning tone. */
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class])))[data-tone='warning'] {
+  --check-on: var(--warning);
+  --check-on-pressed: var(--warning-pressed);
+  --check-mark: var(--on-warning);
+}
+
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):is(
+  [data-tone='danger'],
+  [aria-invalid='true']
+) {
+  --check-on: var(--danger);
+  --check-on-pressed: var(--danger-pressed);
+  --check-mark: var(--on-danger);
+}
+
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):is(
+    [data-tone],
+    [aria-invalid='true']
+  ):not(:checked, [type='checkbox']:indeterminate) {
+  border-color: var(--check-on);
+}
+
+/* In a window that is not in front a box that is on greys, as the
+   platform's does: the fill in the neutral edge tone a quiet row's marks
+   take (--control-border-strong), the mark cut out in the ground; a row
+   that draws itself quiet cuts it in its own fill. A switch that is on
+   greys the same way. A toned or invalid box keeps its tone, since it
+   reports a state rather than a selection. */
+:where(:root[data-window-inactive])
+  :is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):not(
+    [data-tone],
+    [aria-invalid='true']
+  ) {
+  --check-on: var(--control-border-strong);
+  --check-on-pressed: var(--control-border-strong);
+  --check-mark: var(--ground);
+}
+
+/* Disabled, one fade and never two. The base rule leaves a check box out:
+   an empty box on its own keeps its full --control-border outline (3:1)
+   and flattens its well to the track, so a column of boxes that cannot be
+   ticked still reads as boxes, flat ones; a box that is on fades its fill
+   and mark once. In a disabled label the label fades with the box in it,
+   so the box there fades no further and an empty one outlines in --text,
+   which the fade brings down to about the outline's usual strength. */
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):disabled {
+  cursor: default;
+}
+
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):disabled:not(
+    :checked,
+    [type='checkbox']:indeterminate
+  ) {
+  border-color: var(--control-border);
+  box-shadow: none;
+  background: var(--control-track);
+}
+
+:is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):disabled:is(
+    :checked,
+    [type='checkbox']:indeterminate
+  ):not(:where(label:is([data-disabled], :has(> :is(input, select, textarea):disabled))) *) {
+  opacity: var(--disabled-opacity);
+}
+
+:where(label:is([data-disabled], :has(> :is(input, select, textarea):disabled)))
+  :is(.check, :where(input:is([type='checkbox'], [type='radio']):not([class]))):disabled:not(
+    :checked,
+    [type='checkbox']:indeterminate
+  ) {
+  border-color: var(--text);
+}
+
+/* The tick: two sides of a 4 by 8 box, turned, so its strokes are 2px
+   lines like the rest of the interface's marks. */
+:is(
+    .check,
+    :where(input:is([type='checkbox'], [type='radio']):not([class]))
+  )[type='checkbox']:checked::before {
+  box-sizing: border-box;
+  width: 5px;
+  height: 9px;
+  margin-top: calc(-1 * var(--space-1));
+  border: solid var(--check-mark);
+  border-width: 0 var(--line-strong) var(--line-strong) 0;
+  transform: rotate(45deg);
+  content: '';
+}
+
+/* Some but not all: the dash wins over the tick, as the platform draws it. */
+:is(
+    .check,
+    :where(input:is([type='checkbox'], [type='radio']):not([class]))
+  )[type='checkbox']:indeterminate::before {
+  width: 8px;
+  height: var(--line-strong);
+  margin-top: 0;
+  border: 0;
+  background: var(--check-mark);
+  transform: none;
+  content: '';
+}
+
+:is(
+    .check,
+    :where(input:is([type='checkbox'], [type='radio']):not([class]))
+  )[type='radio']:checked::before {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--check-mark);
+  content: '';
+}
+
+/* -- Switch -- */
+
+/* A checkbox drawn as a track with a knob, for one case only: a running
+   thing turned on or off at once (a service, a sharing). A setting a form
+   writes is a check box (.check). The input itself, so it keeps the
+   checkbox's keyboard and screen reader behaviour and fades as a whole
+   under the disabled rule. The track is as tall as a check box
+   (--icon-md), so a switch and a check share a line. Off: the knob at the
+   start on the control outline's track; on: at the end on the accent, the
+   same "on" colour a checked box takes. The knob moves at once; only the
+   colours change at the feedback step. */
+.switch {
+  position: relative;
+  flex: none;
+  box-sizing: border-box;
+  width: 24px;
+  height: var(--icon-md);
+  margin: 0;
+  border: 0;
+  border-radius: var(--radius-pill);
+  /* On a tinted row the off track takes the row's stronger edge, as a
+     check box's outline does (--check-edge). */
+  background: var(--check-edge, var(--control-border));
+  vertical-align: middle;
+  cursor: default;
+  appearance: none;
+  transition:
+    background-color var(--duration-fast),
+    box-shadow var(--duration-fast);
+}
+
+.switch::before {
+  position: absolute;
+  top: var(--space-1);
+  left: var(--space-1);
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-raised);
+  background: var(--surface);
+  transition: background-color var(--duration-fast);
+  content: '';
+}
+
+.switch:checked {
+  background: var(--accent);
+}
+
+.switch:checked::before {
+  background: var(--on-accent);
+  transform: translateX(10px);
+}
+
+/* In a window that is not in front an on switch goes quiet, as a checked box
+   does. After the on rules above, which weigh the same. */
+:where(:root[data-window-inactive]) .switch:checked {
+  background: var(--control-border-strong);
+}
+
+:where(:root[data-window-inactive]) .switch:checked::before {
+  background: var(--ground);
+}
+
+.switch:hover:not(:disabled) {
+  box-shadow: var(--hover-lit);
+}
+
+/* A press sinks the track inside the shared hairline, so a held switch
+   reads apart from a hovered one; the knob stays where it is. */
+.switch:active:not(:disabled) {
+  box-shadow: var(--press-frost);
+}
+
+/* -- Range -- */
+
+/* A slider (seek, volume): a 4px trough on --control-track inside a
+   --control-border hairline (the trough every track in the library uses),
+   the part up to the value in the accent, and a 12px knob on the surface. The
+   platform fills no part of the track by itself, so the host sets
+   --range-fill to the value's share (style="--range-fill: 40%"); without
+   it the whole trough is plain. */
+.range {
+  --range-fill: 0%;
+
+  flex: none;
+  height: var(--control-height-sm);
+  margin: 0;
+  background: transparent;
+  vertical-align: middle;
+  cursor: default;
+  appearance: none;
+}
+
+.range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 var(--line) var(--control-border);
+  background:
+    linear-gradient(var(--accent), var(--accent)) 0 0 / var(--range-fill) 100% no-repeat,
+    var(--control-track);
+}
+
+.range::-webkit-slider-thumb {
+  box-sizing: border-box;
+  width: 12px;
+  height: 12px;
+  margin-top: calc(-1 * var(--space-2));
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-raised);
+  background: var(--surface);
+  appearance: none;
+  transition:
+    border-color var(--duration-fast),
+    background-color var(--duration-fast),
+    box-shadow var(--duration-fast);
+}
+
+/* Hover lifts the knob's outline a step; a press takes it to full text. */
+.range:hover:not(:disabled)::-webkit-slider-thumb {
+  border-color: var(--text-dim);
+}
+
+/* Held, the knob sinks on the pressed wash inside the shared hairline. */
+.range:active:not(:disabled)::-webkit-slider-thumb {
+  border-color: var(--text);
+  box-shadow: var(--shadow-pressed);
+  background: linear-gradient(var(--pressed-wash), var(--pressed-wash)), var(--surface);
+}
+
+/* The focus ring rings the knob, as a desktop slider's does, not the
+   input's square box. */
+.range:focus-visible {
+  outline: none;
+}
+
+.range:focus-visible::-webkit-slider-thumb {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset);
+}
+
+/* -- The words around a field -- */
+
+/* What the field is for: the interface face, dim, on the compact line. */
+.field-label {
+  display: block;
+  margin: 0;
+  color: var(--text-dim);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+  overflow-wrap: anywhere;
+}
+
+/* A label that holds help (labelHelp's data-label-help) shows a cue: the
+   dashed underline every word that holds a tooltip wears, in a faint tone,
+   so a label with help reads apart from one without. The help opens above
+   the label, never over the control it explains. */
+[data-label-help] {
+  text-decoration: underline dashed var(--text-faint);
+  text-decoration-thickness: var(--line);
+  text-underline-offset: var(--space-1);
+}
+
+/* A line under a control that says what the current choice does ("Worn
+   while the system is light."), so it changes with the choice. Help that
+   explains the control itself is its label's tooltip (labelHelp), not a
+   sentence under the field. */
+.field-note {
+  margin: 0;
+  color: var(--text-dim);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+  overflow-wrap: anywhere;
+}
+
+/* What is wrong with the value, as a status line under its field: the
+   danger glyph (surface.css) hung before the first line, the words in
+   --text, so it reads as the application's message, not a red web form
+   error. Pair it with aria-invalid="true" on the field and
+   aria-describedby naming it. */
+.field-problem {
+  position: relative;
+  margin: 0;
+  padding-inline-start: calc(var(--icon-md) + var(--space-3));
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+  overflow-wrap: anywhere;
+}
+
+/* A problem's words are a message a user copies into a report. */
+.field-problem {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.field-problem:not(:has(> svg:first-child))::before {
+  position: absolute;
+  inset-block-start: calc((var(--line-height-compact) - var(--icon-md)) / 2);
+  inset-inline-start: 0;
+}
+
+/* A group of choices under its legend, on a fieldset: the legend, then
+   the choices and any note, 4px apart. A field with its label is a row of
+   the label column (.field-grid), never a label stacked over a field. */
+.field-group {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.field-group > legend {
+  float: left;
+  width: 100%;
+  margin: 0 0 var(--space-2);
+  padding: 0;
+  color: var(--text-dim);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+}
+
+/* A check, radio, or switch with its words beside it; the whole label is
+   the target. The words wrap rather than run out of the column. */
+.field-choice {
+  display: inline-flex;
+  align-items: center;
+  /* In running text the choice centres on the line rather than hanging
+     from its box's baseline, which moves as a tick, dash, or dot is drawn. */
+  vertical-align: middle;
+  gap: var(--space-3);
+  min-width: 0;
+  min-height: var(--control-height-sm);
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+  cursor: default;
+}
+
+/* Rows of a form or a settings page on one label column: the label, then
+   its value (a field, choices, a note). As a desktop form sizes it, the
+   column is as wide as the longest label and the rest goes to the
+   controls, capped at 40% of the form so one long label cannot starve
+   the fields; a label past the cap wraps on the compact line. Each
+   label's first line is centred on a 24px control. A host sets
+   --field-label-width for a column of its own (a fixed width every page
+   of a Settings window shares). */
+.field-grid {
+  display: grid;
+  grid-template-columns: var(--field-label-width, fit-content(40%)) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-4) var(--space-6);
+  margin: 0;
+}
+
+.field-grid > .field-label {
+  padding-block: var(--space-2);
+}
+
+/* A label centres its first line on the control beside it wherever the
+   label column stands (a dialog, a settings page, a page form). The grid
+   pads a label for a 24px control; beside a 28px field (.field), or a 20px
+   one (.field-xs), the padding follows the height of the field that leads
+   the row: the label's next sibling, or the first child of its
+   .field-value. Rows of 24px controls, checks, and notes keep the grid's
+   own padding. */
+.field-grid
+  > .field-label:has(
+    + :is(.field, .field-box):not(.field-sm, .field-xs),
+    + .field-value > :is(.field, .field-box):first-child:not(.field-sm, .field-xs)
+  ) {
+  padding-block: calc((var(--control-height) - var(--line-height-compact)) / 2);
+}
+
+.field-grid > .field-label:has(+ .field-xs, + .field-value > .field-xs:first-child) {
+  padding-block: calc((var(--control-height-xs) - var(--line-height-compact)) / 2);
+}
+
+/* A value of several lines: options, then the note under them. */
+.field-value {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+/* A pop-up button is as wide as its longest item, as a desktop pop-up is,
+   not stretched across the value column; it starts at the column's edge
+   and is cut by the column only when its items are wider. A text field
+   keeps the column's width, as a desktop form's does. */
+.field-value > select.field:not([multiple], [size]) {
+  justify-self: start;
+  width: auto;
+  max-width: 100%;
+}
+
+/* A field for a short value (a port, a count, a code) is a few characters
+   wide, as a desktop form sizes a field to what it holds, wherever it
+   stands: in a label column, a dialog's form grid, or a line of options.
+   Room for eight characters of the field's own code face. */
+.field.field-short {
+  flex: none;
+  justify-self: start;
+  width: calc(8ch + 2 * var(--space-4) + 2 * var(--line));
+  max-width: 100%;
+}
+
+/* One line of a value: a choice, a field, a status, with anything trailing
+   (a key chord) pushed to the line's end. */
+.field-option {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-5);
+  min-width: 0;
+  min-height: var(--control-height-sm);
+}
+
+/* A note that is the whole value starts on the label's line. */
+.field-grid > .field-note {
+  padding-block-start: var(--space-2);
+}

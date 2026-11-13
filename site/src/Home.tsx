@@ -7,6 +7,7 @@ import { Copy, Download, Play, RefreshCw, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
 import { Button, IconButton } from '@bigpixelrocket/uiok/button';
+import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 import { KeyChord } from '@bigpixelrocket/uiok/keychord';
 import {
   Cell,
@@ -71,7 +72,7 @@ function CopyButton({ text }: { readonly text: string }) {
       size="small"
       {...tooltip(copied ? 'Copied' : 'Copy')}
     >
-      <Copy size={13} />
+      <Copy size={ICON_SM} />
     </IconButton>
   );
 }
@@ -98,12 +99,15 @@ export function Home() {
           <Button onClick={() => (window.location.hash = '/theming')} variant="tonal">
             Try the themes
           </Button>
-          <a className="hero-link" href="https://github.com/Bigpixelrocket/uiok">
-            GitHub
-          </a>
-          <a className="hero-link" href="https://www.npmjs.com/package/@bigpixelrocket/uiok">
-            npm
-          </a>
+          {/* The two links wrap as one, so neither is left alone on a row. */}
+          <span className="hero-links">
+            <a className="hero-link" href="https://github.com/Bigpixelrocket/uiok">
+              GitHub
+            </a>
+            <a className="hero-link" href="https://www.npmjs.com/package/@bigpixelrocket/uiok">
+              npm
+            </a>
+          </span>
         </div>
       </section>
 
@@ -141,14 +145,14 @@ export function Home() {
                         size="small"
                         {...tooltip('Restart')}
                       >
-                        <RefreshCw size={12} />
+                        <RefreshCw size={ICON_SM} />
                       </IconButton>
                       <IconButton
                         aria-label={`Remove ${service.name}`}
                         size="small"
                         {...tooltip('Remove')}
                       >
-                        <Trash2 size={12} />
+                        <Trash2 size={ICON_SM} />
                       </IconButton>
                     </span>
                   </Cell>
@@ -157,7 +161,7 @@ export function Home() {
             </Listing>
           </div>
         </div>
-        <p className="showcase-keys">
+        <p className="showcase-keys keycap">
           <KeyChord chord={{ key: 'ArrowUp' }} />
           <KeyChord chord={{ key: 'ArrowDown' }} /> move
           <KeyChord chord={{ key: 'Enter', meta: true }} /> start
@@ -169,7 +173,7 @@ export function Home() {
       <section className="home-section">
         <h2>Install</h2>
         <div className="code-block">
-          <pre>
+          <pre className="scroll-fade-x">
             <code>{INSTALL}</code>
           </pre>
           <CopyButton text={INSTALL} />
@@ -189,7 +193,7 @@ export function Home() {
           <code>TooltipLayer</code> near the root, then use the components:
         </p>
         <div className="code-block">
-          <pre>
+          <pre className="scroll-fade-x">
             <code>{QUICK_START}</code>
           </pre>
           <CopyButton text={QUICK_START} />
@@ -200,20 +204,21 @@ export function Home() {
         <h2>What you get</h2>
         <ul className="feature-list">
           <li>
-            <Play aria-hidden="true" size={13} /> <a href="#/theming">Themes</a>: 18 light and dark
-            palettes turned into one token set, worn through two attributes on the root.
+            <Play aria-hidden="true" size={ICON_MD} /> <a href="#/theming">Themes</a>: 18 light and
+            dark palettes turned into one token set, worn through two attributes on the root.
           </li>
           <li>
-            <Play aria-hidden="true" size={13} /> <a href="#/keyboard">Keyboard</a>: an overlay
+            <Play aria-hidden="true" size={ICON_MD} /> <a href="#/keyboard">Keyboard</a>: an overlay
             contract, a browser-key guard, chords printed as glyphs and spoken as words.
           </li>
           <li>
-            <Play aria-hidden="true" size={13} /> <a href="#/labels">Labels</a>: shared chrome
+            <Play aria-hidden="true" size={ICON_MD} /> <a href="#/labels">Labels</a>: shared chrome
             strings, English by default, replaced through one provider.
           </li>
           <li>
-            <Download aria-hidden="true" size={13} /> Components: listings and panes, a virtualised
-            data grid, dialogs with key legends, a command palette, charts, a date picker, and more.
+            <Download aria-hidden="true" size={ICON_MD} /> Components: listings and panes, a
+            virtualised data grid, dialogs with key legends, a command palette, charts, a date
+            picker, and more.
           </li>
         </ul>
       </section>

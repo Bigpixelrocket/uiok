@@ -1,14 +1,14 @@
 /* ---- Key chord (KeyChord) ----
 
    A chord as a row of keys, drawn in key legends, menus, settings, and a
-   dialog's legend. One grid for every key: an 11px icon or a 10px letter in
+   dialog's legend. One grid for every key: a 12px icon or a 10px letter in
    the same 12px box, so a modifier sits at the cap height of the mono text
-   beside it. The chord itself has no frame; a surface that draws it as a key
-   cap adds the border and ground around .keychord. */
+   beside it. The chord itself has no frame; where it is drawn as a key cap,
+   the one cap below frames it. */
 .keychord {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
+  gap: var(--space-1);
   font: inherit;
 }
 
@@ -21,21 +21,99 @@
 }
 
 .key-icon {
-  width: 11px;
-  height: 11px;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
   display: block;
 }
 
+/* Key caps are glyph-sized, never a pointer target by themselves: their 12px
+   box and line are the key's own geometry, not a type scale step. */
+
 /* Mono capitals sit above the optical centre of their em box; nudge them onto the icon centre. */
 .key-letter {
-  font: 600 10px/12px var(--font-mono);
+  font: var(--font-weight-strong) var(--font-size-key)/12px var(--font-mono);
   padding-top: 1px;
   box-sizing: border-box;
 }
 
+/* Key words (esc, space) take the letters' size, so no key is printed
+   smaller than the others. */
 .key-word {
   width: auto;
   padding: 0 1px;
-  font: 600 9px/12px var(--font-mono);
-  letter-spacing: 0.02em;
+  font: var(--font-weight-strong) var(--font-size-key)/12px var(--font-mono);
+  letter-spacing: 0;
+}
+
+/* ---- The key cap ----
+
+   The one picture of a key, for every surface that draws a chord as a key:
+   18px tall, at least 20px wide, a --border-strong frame with a 2px foot (the
+   retro key's thicker bottom edge), on the panel ground. A 1px pad above the
+   foot leaves an even 14px face, so the 12px glyph box sits on whole pixels
+   1px under the top edge at every display scale, not across two pixel rows
+   at 1x. A host puts .keycap on any element around its chords (a row, a
+   settings list); the library's own legends, menu and palette rows, the
+   terminal's menu, and the filter's escape key are listed here. Key caps
+   are identified by their glyph, not their outline, so they keep
+   --border-strong rather than the control outline. Written at the weight of
+   one class, so a host's state rule (a held layer's accent, a danger slot)
+   changes a colour without restating the cap. */
+:where(.keycap, .keylegend, .legend-slot, .filter-escape, .folder-menu-option, .terminal-menu-item)
+  .keychord {
+  box-sizing: border-box;
+  height: 18px;
+  min-width: 20px;
+  justify-content: center;
+  padding: 0 var(--space-2) var(--line);
+  border: var(--line) solid var(--border-strong);
+  border-bottom-width: var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text);
+}
+
+/* A cap's tones (KeyChord's `tone` and `recording`), so a host sets an
+   attribute instead of restating the cap. Each weighs two classes, over the
+   plain cap and under a legend's hover and press. A chord changed from its
+   default: the opaque accent ring (3:1, as it is the cap's only edge) on an
+   accent wash, its foot kept. The chord Return runs: the solid accent face
+   of a dialog legend's lit cap, its foot in the shade every lit cap uses. A
+   chord that cannot change: glyphs a tone down. A chord being recorded: a
+   1px accent outline 1px outside the frame, thinner than the focus ring so
+   the two never read as one, and the foot keeps its shape. Without a cap
+   around it a tone changes only the glyph colour. */
+:where(.keycap, .keylegend, .legend-slot, .filter-escape, .folder-menu-option, .terminal-menu-item)
+  .keychord[data-tone='accent'] {
+  border-color: var(--current-ring);
+  background: linear-gradient(var(--accent-wash), var(--accent-wash)) var(--surface);
+}
+
+:where(.keycap, .keylegend, .legend-slot, .filter-escape, .folder-menu-option, .terminal-menu-item)
+  .keychord[data-tone='lit'] {
+  border-color: var(--accent);
+  border-bottom-color: var(--key-foot-shade);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+/* A chord that cannot change, on a cap, is also a key with no travel: the
+   divider-grade frame and no 2px foot (its height kept by the padding),
+   so the tone shows by shape where a theme leaves the dim glyphs a shade
+   from the plain ones. */
+.keychord[data-tone='quiet'] {
+  color: var(--text-dim);
+}
+
+:where(.keycap, .keylegend, .legend-slot, .filter-escape, .folder-menu-option, .terminal-menu-item)
+  .keychord[data-tone='quiet'] {
+  border-color: var(--border);
+  border-bottom-width: var(--line);
+  padding-bottom: calc(2 * var(--line));
+}
+
+:where(.keycap, .keylegend, .legend-slot, .filter-escape, .folder-menu-option, .terminal-menu-item)
+  .keychord[data-state='recording'] {
+  outline: var(--line) solid var(--accent);
+  outline-offset: var(--line);
 }

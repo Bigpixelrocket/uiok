@@ -12,6 +12,12 @@ export interface DialogLegendVerb {
   readonly label: string;
   /** True while the verb cannot run; its slot stays drawn, dimmed, and its key runs nothing. */
   readonly disabled?: boolean;
+  /**
+   * What the verb does, when its label does not say it all ("Test checks
+   * the connection without saving it"): the slot's tooltip and accessible
+   * description, so the dialog's body needs no sentence about its verbs.
+   */
+  readonly help?: string;
 }
 
 /**
@@ -37,6 +43,12 @@ export interface LegendSecondary extends DialogLegendVerb {
   readonly chord: Chord;
   /** What the slot and its chord run. */
   readonly onRun: () => void;
+  /**
+   * True for a verb that destroys (Delete…): the slot reads in the danger
+   * colour so it never passes for a harmless one. The primary takes its
+   * colour from the dialog's tone instead.
+   */
+  readonly danger?: boolean;
 }
 
 /** The forward verb at the right edge, on Return unless it names another chord. */
@@ -45,7 +57,7 @@ export interface LegendPrimary extends DialogLegendVerb {
   readonly onRun: () => void;
   /**
    * The primary's key when it is not Return: a delete for good stands on
-   * ⌥⌘⌫, Finder's Delete Immediately chord, and Return then runs nothing,
+   * ⌥⌘⌫, the Delete Now chord, and Return then runs nothing,
    * so a Return pressed out of habit never deletes anything for good.
    */
   readonly chord?: Chord;
@@ -197,18 +209,22 @@ const chordText = (chord: Chord): string =>
   `${chord.ctrl ? '⌃' : ''}${chord.alt ? '⌥' : ''}${chord.shift ? '⇧' : ''}${chord.meta ? '⌘' : ''}${chord.key}`;
 
 /**
- * What a legend draws, as a string: each slot's label, chord, and whether it
- * can run, so two models that draw the same footer compare equal whatever
+ * What a legend draws, as a string: each slot's label, chord, whether it
+ * can run, and whether it reads as destructive, so two models that draw the same footer compare equal whatever
  * functions they run. A holder that rebuilds its model on every render
  * passes a new one on only when this changes.
  */
 export function legendSignature(legend: DialogLegendModel): string {
-  const verb = (slot: DialogLegendVerb | undefined): readonly [string, boolean] | null =>
-    slot === undefined ? null : [slot.label, slot.disabled === true];
+  const verb = (slot: DialogLegendVerb | undefined): readonly [string, boolean, string] | null =>
+    slot === undefined ? null : [slot.label, slot.disabled === true, slot.help ?? ''];
 
   return JSON.stringify([
     verb(legend.leave),
-    (legend.secondary ?? []).map((slot) => [...(verb(slot) ?? []), chordText(slot.chord)]),
+    (legend.secondary ?? []).map((slot) => [
+      ...(verb(slot) ?? []),
+      chordText(slot.chord),
+      slot.danger === true
+    ]),
     legend.primary === undefined
       ? null
       : [...(verb(legend.primary) ?? []), chordText(legend.primary.chord ?? PLAIN_RETURN)]

@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { domainOf, scaled, tickLabel, ticksOf, unscaled, zoomedTo } from './Scatter.logic.js';
+import {
+  domainOf,
+  scaled,
+  tickLabel,
+  tickLabels,
+  ticksOf,
+  unscaled,
+  zoomedTo
+} from './Scatter.logic.js';
 
 describe('the scatter chart’s geometry', () => {
   it('spares a twentieth of the span around the values, half a step around categories', () => {
@@ -13,7 +21,11 @@ describe('the scatter chart’s geometry', () => {
   it('ticks on round numbers, each category, and round times', () => {
     expect(ticksOf({ min: -5, max: 105 }, 'number')).toEqual([0, 20, 40, 60, 80, 100]);
     expect(ticksOf({ min: -0.5, max: 2.5 }, 'category')).toEqual([0, 1, 2]);
-    expect(ticksOf({ min: 0, max: 10 * 86_400_000 }, 'time')).toEqual([0, 7 * 86_400_000]);
+    const day = 86_400_000;
+
+    expect(ticksOf({ min: 0, max: 10 * day }, 'time')).toEqual(
+      [0, 2, 4, 6, 8, 10].map((n) => n * day)
+    );
     expect(
       tickLabel(
         Date.UTC(2026, 0, 2),
@@ -38,6 +50,13 @@ describe('the scatter chart’s geometry', () => {
     expect(zoomedTo({ x: 5, y: 5 }, { x: 6, y: 6 }, { x: domain, y: domain }, 200, 100)).toBeNull();
   });
 
+  it('shows at least three ticks on a number or time axis, however few are asked for', () => {
+    // Ten minutes on a narrow plot: start, middle, and end, not one tick at the end.
+    expect(ticksOf({ min: 0, max: 600_000 }, 'time', 2)).toEqual([0, 300_000, 600_000]);
+    expect(ticksOf({ min: 0, max: 7.5 * 86_400_000 }, 'time', 2).length).toBeGreaterThanOrEqual(3);
+    expect(ticksOf({ min: 0, max: 10 }, 'number', 1).length).toBeGreaterThanOrEqual(3);
+  });
+
   it('ends its ticks where a step is finer than a double tells apart, and refuses such a zoom', () => {
     const near = ticksOf(domainOf([9007199254740992, 9007199254740996], 'number'), 'number');
 
@@ -51,5 +70,15 @@ describe('the scatter chart’s geometry', () => {
     const tiny = { min: 1e6, max: 1e6 + 1e-9 };
 
     expect(zoomedTo({ x: 0, y: 0 }, { x: 10, y: 10 }, { x: tiny, y: tiny }, 200, 100)).toBeNull();
+  });
+
+  it('labels ticks close together for their size by their offset from the first', () => {
+    const axis = { title: '', kind: 'number' } as const;
+    const domain = { min: 1_793_550_000_000, max: 1_794_150_000_000 };
+    const ticks = ticksOf(domain, 'number', 6);
+    const labels = tickLabels(ticks, axis, domain);
+
+    expect(labels.slice(1)).toEqual(ticks.slice(1).map((_tick, at) => `+${(at + 1) * 100}M`));
+    expect(tickLabels([0, 50, 100], axis, { min: 0, max: 100 })).toEqual(['0', '50', '100']);
   });
 });

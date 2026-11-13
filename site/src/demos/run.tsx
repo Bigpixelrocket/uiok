@@ -1,4 +1,7 @@
-/** A simulated transfer: start it, pause it, let it finish, or make it fail. */
+/**
+ * A simulated transfer (start it, pause it, let it finish, or make it fail),
+ * then every state side by side, with and without a fraction.
+ */
 
 import { useEffect, useState } from 'react';
 
@@ -14,6 +17,26 @@ import {
 
 const FILES = 412;
 const MB = 175;
+
+/** One still header per state, each with the clock `runClock` writes. */
+const GALLERY: readonly {
+  readonly state: RunState;
+  readonly headline: string;
+  readonly done: number | null;
+  readonly reason?: string;
+}[] = [
+  { state: 'waiting', headline: `Waiting to copy ${FILES} files`, done: null },
+  { state: 'running', headline: `Copying ${FILES} files to backup`, done: 167 },
+  { state: 'paused', headline: 'Paused', done: 230 },
+  { state: 'done', headline: `Copied ${FILES} files`, done: FILES },
+  {
+    state: 'failed',
+    headline: 'Copy failed',
+    done: 301,
+    reason: 'The backup disk was disconnected.'
+  },
+  { state: 'stopped', headline: 'Copy stopped', done: 96 }
+];
 
 /** The run page's demo. */
 export function RunDemo() {
@@ -101,6 +124,44 @@ export function RunDemo() {
           </>
         ) : null}
       </div>
+      <p className="demo-subhead">Every state</p>
+      {GALLERY.map((still) => (
+        <div className="run-frame" key={still.state}>
+          <RunHeader
+            bar={{
+              fraction: still.done === null ? null : still.done / FILES,
+              label: 'Whole transfer'
+            }}
+            facts={[
+              `${(((still.done ?? 0) / FILES) * MB).toFixed(1)} MB of ${MB} MB`,
+              `${still.done ?? 0} of ${FILES} files`
+            ]}
+            figure={still.state === 'waiting' ? null : runClock(83_000)}
+            headline={still.headline}
+            reason={still.reason ?? null}
+            state={still.state}
+          />
+        </div>
+      ))}
+      <p className="demo-subhead">Without a fraction</p>
+      {(['running', 'paused', 'failed'] as const).map((still) => (
+        <div className="run-frame" key={still}>
+          <RunHeader
+            bar={{ fraction: null, label: 'Compressing' }}
+            facts={['3 items', '1.2 GB']}
+            figure={runClock(3_723_000)}
+            headline={
+              {
+                running: 'Compressing 3 items',
+                paused: 'Paused',
+                failed: 'Compression failed'
+              }[still]
+            }
+            reason={still === 'failed' ? 'The disk is full.' : null}
+            state={still}
+          />
+        </div>
+      ))}
     </div>
   );
 }

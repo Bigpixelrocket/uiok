@@ -22,10 +22,17 @@
   white-space: pre;
 }
 
-/* A head that has to give way keeps room for a character and its ellipsis. */
+/* A head that has to give way keeps room for a character and its ellipsis,
+   in whatever face the line is set: a character is about 1ch, and the
+   ellipsis about 1em in a proportional face. That floor is the widest the
+   two can be; NameCut narrows a cut box (this head, and the words around
+   the name) to what it shows, so no blank stands after its ellipsis. A
+   head shorter than that floor ("~/" of "~/n1000/.controller 85977") keeps
+   its own width, so a name that fits reads exactly as written, with no
+   blank between its head and its tail. */
 .name-cut-head {
   flex: 0 10000000000 auto;
-  min-width: 2ch;
+  min-width: calc-size(max-content, min(size, 1ch + 1em));
   overflow: hidden;
   text-overflow: ellipsis;
 }
@@ -56,12 +63,25 @@
   text-overflow: ellipsis;
 }
 
+/* A right-to-left name is seen tail first. Its head runs right to left, so
+   its ellipsis falls on its left, at its logical end; its tail's box runs
+   left to right around the right-to-left name, so the tail's ellipsis falls
+   on its right, at its front, and its end stays in view. */
+.name-cut-head.rtl {
+  direction: rtl;
+}
+
+.name-cut-tail.rtl {
+  direction: ltr;
+}
+
+/* The quotes of a right-to-left name: its opening quote before its tail,
+   its closing quote after its head. */
+.name-cut-quote {
+  flex: none;
+}
+
 /* The spoken copy of the line is not selected twice with the drawn one. */
 .name-cut > .visually-hidden {
   user-select: none;
-}
-
-/* In a title strip's context, the line sits at the strip's right edge. */
-.dialog-context > .name-cut {
-  justify-content: flex-end;
 }

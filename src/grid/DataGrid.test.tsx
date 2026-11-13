@@ -1,11 +1,19 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
+import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { DataGrid } from './DataGrid.js';
 
 /** Gives every element the viewport's height, which jsdom never lays out. */
 const viewportHeight = (height: number): void => {
   vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(height);
+};
+
+/** Makes the grid's columns overflow its well by `by` pixels, which jsdom never lays out. */
+const overflowBy = (by: number): void => {
+  vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(400);
+  vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockReturnValue(400 + by);
 };
 
 /** Scrolls the grid as the wheel would, firing its scroll event. */
@@ -92,6 +100,35 @@ describe('the data grid', () => {
     }
   });
 
+  it('says what its empty well holds only when it has no rows', () => {
+    const columns = [{ label: 'name' }, { label: 'size' }];
+    const { rerender } = render(
+      <DataGrid
+        cell={() => ({ text: 'a' })}
+        columns={columns}
+        copyText={() => null}
+        empty="No rows match"
+        label="Files"
+        rowCount={0}
+      />
+    );
+    const said = screen.getByRole('gridcell', { name: 'No rows match' });
+    expect(said.getAttribute('aria-colspan')).toBe('2');
+    expect(said.closest('.data-grid-body')?.classList.contains('empty')).toBe(true);
+
+    rerender(
+      <DataGrid
+        cell={() => ({ text: 'a' })}
+        columns={columns}
+        copyText={() => null}
+        empty="No rows match"
+        label="Files"
+        rowCount={3}
+      />
+    );
+    expect(screen.queryByText('No rows match')).toBeNull();
+  });
+
   it('keeps where it stood while out of layout, as in a hidden pane', () => {
     viewportHeight(400);
     render(
@@ -174,7 +211,9 @@ describe('the data grid’s cursor, sort, and edit', () => {
     expect(
       screen.getAllByRole('columnheader').map((header) => header.getAttribute('aria-sort'))
     ).toEqual(['ascending', 'descending']);
-    expect(size.textContent).toBe('size▼2');
+    // The mark is the listing's chevron (descending points down) and the sort's place.
+    expect(size.textContent).toBe('size2');
+    expect(size.querySelector('.data-grid-arrow svg.lucide-chevron-down')).not.toBeNull();
   });
 
   it('draws a cell’s class and content, and runs its link on Return', () => {
@@ -294,5 +333,235 @@ describe('the data grid’s cursor, sort, and edit', () => {
 
     expect(field.closest('.data-grid-editor')?.parentElement).toBe(host);
     host.remove();
+  });
+
+  it('frames a scrolling well, and keeps its header one height and its right edge single', () => {
+    applyStylesheets(readStylesheet('src/grid/grid.css'));
+    overflowBy(40);
+    render(
+      <DataGrid
+        cell={(row, column) => ({ text: `${row}-${column}` })}
+        columns={[{ label: 'name' }, { label: 'size' }]}
+        copyText={() => null}
+        label="Files"
+        onSort={() => undefined}
+        rowCount={1}
+        sort={{ column: 1, direction: 'ascending' }}
+      />
+    );
+    const well = screen.getByRole('grid');
+    const frame = well.parentElement as HTMLElement;
+
+    // The fade masks the well; the frame, which draws the border, has none.
+    expect(well.classList.contains('scroll-fade-x')).toBe(true);
+    expect(frame.classList.contains('data-grid')).toBe(true);
+    expect(frame.classList.contains('scroll-fade-x')).toBe(false);
+    expect(declaredValues(frame, 'border')).toHaveLength(1);
+    expect(declaredValues(well, 'border')).toEqual([]);
+
+    // A sort label is a box of the row's height off the baseline, so a mark
+    // never grows the header.
+    const sorted = screen.getByRole('button', { name: 'size' });
+
+    expect(sorted.querySelector('.data-grid-arrow')).not.toBeNull();
+    expect(declaredValues(sorted, 'display')).toEqual(['flex']);
+    expect(declaredValues(sorted, 'height')).toEqual(['var(--row-height-dense)']);
+
+    // The last cell leaves the right edge to the frame.
+    const cells = screen.getAllByRole('gridcell');
+
+    expect(declaredValues(cells.at(-1) as Element, 'border-right-style').at(-1)).toBe('none');
+    expect(declaredValues(cells[0] as Element, 'border-right-style')).toEqual([]);
+  });
+
+  it('fades its inline edges only while the columns overflow the well by the fade’s width', () => {
+    const grid = (): void => {
+      render(
+        <DataGrid
+          cell={(row, column) => ({ text: `${row}-${column}` })}
+          columns={[{ label: 'name' }, { label: 'note' }]}
+          copyText={() => null}
+          label="Files"
+          rowCount={1}
+        />
+      );
+    };
+
+    // A sliver of overflow scrolls without a fade, so no column's edge dims.
+    overflowBy(5);
+    grid();
+    expect(screen.getByRole('grid').classList.contains('scroll-fade-x')).toBe(false);
+    cleanup();
+
+    overflowBy(12);
+    grid();
+    expect(screen.getByRole('grid').classList.contains('scroll-fade-x')).toBe(true);
+  });
+
+  it('stands an editor that holds buttons on a panel, and a bare field on the cell alone', () => {
+    applyStylesheets(readStylesheet('src/grid/grid.css'));
+    const grid = (node: ReactElement): HTMLElement => {
+      render(
+        <DataGrid
+          cell={(row, column) => ({ text: `${row}-${column}` })}
+          columns={[{ label: 'name' }]}
+          copyText={() => null}
+          editor={{ row: 0, column: 0, node }}
+          label="Files"
+          rowCount={1}
+        />
+      );
+      return screen.getByRole('textbox', { name: 'Edit' });
+    };
+
+    const bare = grid(<input aria-label="Edit" />);
+
+    expect(declaredValues(bare.parentElement as Element, 'background')).toEqual([]);
+    // The layer starts a hairline before the cell and the field's border
+    // fills it, so the field's start padding is the cell's: the text stands
+    // where the cell had it.
+    expect(declaredValues(bare, 'padding-inline').at(-1)).toBe(
+      'var(--space-4) calc(var(--space-4) - var(--line))'
+    );
+    cleanup();
+
+    // The field sits in the caller's wrapper beside Save and Cancel.
+    const wrapped = grid(
+      <span>
+        <input aria-label="Edit" />
+        <button type="button">Save</button>
+        <button type="button">Cancel</button>
+      </span>
+    );
+    const layer = wrapped.closest('.data-grid-editor') as Element;
+
+    expect(declaredValues(layer, 'background')).toEqual(['var(--surface)']);
+    expect(declaredValues(wrapped, 'border').at(-1)).toBe('var(--line) solid var(--accent)');
+  });
+
+  it('quiets its marks, cursor cell, and checked boxes where the keys are not', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="data-grid"><div class="data-grid-scroll">
+      <div class="data-grid-header"><div class="data-grid-heading marked">id</div></div>
+      <div class="data-grid-body">
+        <div class="data-grid-row marked">
+          <div class="data-grid-lead"><input class="check" type="checkbox" checked></div>
+          <div class="data-grid-cell cursor">1</div><div class="data-grid-cell marked">a</div>
+        </div>
+      </div></div></div>`;
+    const read = (selector: string, property: string): string =>
+      getComputedStyle(document.querySelector(selector) as Element)
+        .getPropertyValue(property)
+        .trim();
+    const looks = () => ({
+      row: read('.data-grid-row', 'background'),
+      column: read('.data-grid-cell.marked', 'background'),
+      cursor: read('.data-grid-cell.cursor', 'box-shadow'),
+      heading: read('.data-grid-heading', 'box-shadow'),
+      check: read('input', '--check-on'),
+      mark: read('input', '--check-mark')
+    });
+
+    const held = looks();
+    expect(held.row).toBe('var(--marked-bg)');
+    expect(held.check).toBe('var(--accent)');
+    expect(held.cursor).toContain('var(--accent)');
+
+    document.documentElement.setAttribute('data-window-inactive', '');
+    try {
+      expect(looks()).toEqual({
+        row: 'var(--fill)',
+        column: 'none',
+        // The quiet cursor cell is a hairline frame, not a fill, so it shows
+        // inside a quiet mark.
+        cursor: 'inset 0 0 0 var(--line) var(--control-border-strong)',
+        heading: 'inset 0 calc(-1 * var(--line-strong)) 0 var(--control-border-strong)',
+        check: 'var(--control-border-strong)',
+        mark: 'var(--fill)'
+      });
+    } finally {
+      document.documentElement.removeAttribute('data-window-inactive');
+      document.body.innerHTML = '';
+    }
+  });
+
+  it('draws no cursor fill, ring, or words on the cell under an open editor', () => {
+    applyStylesheets(readStylesheet('src/grid/grid.css'));
+    render(
+      <DataGrid
+        cell={(row, column) => ({ text: `${row}-${column}` })}
+        columns={[{ label: 'name' }]}
+        copyText={() => null}
+        editor={{ row: 0, column: 0, node: <input aria-label="Edit" /> }}
+        label="Files"
+        onMarkRow={() => undefined}
+        rowCount={1}
+      />
+    );
+    const cell = screen.getByText('0-0');
+
+    fireEvent.pointerDown(cell);
+    expect(cell.className).toContain('cursor');
+    expect(cell.className).toContain('editing');
+    // declaredValues lists rules in source order; the editing rule is last and outweighs the cursor's.
+    expect(declaredValues(cell, 'box-shadow').at(-1)).toBe('none');
+    expect(declaredValues(cell, 'background').at(-1)).toBe('none');
+    expect(declaredValues(cell, 'color').at(-1)).toBe('transparent');
+    // On a marked row too, whose cursor cell paints its own tint.
+    cell.parentElement?.classList.add('marked');
+    expect(declaredValues(cell, 'background').at(-1)).toBe('none');
+  });
+
+  it('names a heading cut by its column in a tooltip, unless the caller gives a tip', () => {
+    const { rerender } = render(
+      <DataGrid
+        cell={() => ({ text: '' })}
+        columns={[{ label: 'status' }, { label: 'size', tip: 'Bytes on disk' }]}
+        copyText={() => null}
+        label="Files"
+        onSort={() => undefined}
+        rowCount={0}
+        sorts={[{ column: 0, direction: 'ascending', position: 1 }]}
+      />
+    );
+    const name = (label: string): Element =>
+      screen.getByText(label, { selector: '.data-grid-sort-name' });
+
+    expect(name('status').getAttribute('data-tooltip')).toBe('status');
+    expect(name('status').hasAttribute('data-tooltip-cut')).toBe(true);
+    expect(name('size').hasAttribute('data-tooltip')).toBe(false);
+
+    rerender(
+      <DataGrid
+        cell={() => ({ text: '' })}
+        columns={[{ label: 'status' }]}
+        copyText={() => null}
+        label="Files"
+        rowCount={0}
+      />
+    );
+    const heading = screen.getByRole('columnheader');
+
+    expect(heading.getAttribute('data-tooltip')).toBe('status');
+    expect(heading.hasAttribute('data-tooltip-cut')).toBe(true);
+  });
+});
+
+describe('the data grid’s selection', () => {
+  it('selects cells, not text, even inside a region a host opts in; its empty line stays selectable', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="selectable"><div class="data-grid">
+      <div class="data-grid-row"><div class="data-grid-cell"><code>42</code></div>
+        <button class="data-grid-link">10001</button></div>
+      <div class="data-grid-body empty"><div class="data-grid-empty">No rows.</div></div>
+    </div></div>`;
+    const select = (selector: string): string =>
+      getComputedStyle(document.querySelector(selector) as Element).getPropertyValue('user-select');
+
+    for (const selector of ['.data-grid-row', '.data-grid-cell', 'code', '.data-grid-link']) {
+      expect(select(selector), selector).toBe('none');
+    }
+    expect(select('.data-grid-empty')).toBe('text');
+    document.body.innerHTML = '';
   });
 });

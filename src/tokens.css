@@ -1,0 +1,239 @@
+/* The tokens no theme changes: every size, space, corner, line, timing,
+   height, layer, and focus geometry the library draws with. Themes change
+   colour only (themes.generated.css); everything here holds in every theme.
+   Component sheets read these instead of writing a number, and
+   test/tokenValues.test.ts fails on a raw value where a token exists.
+   docs/tokens.md says what each step is for and how they relate. */
+
+:root {
+  /* Faces. Monospace for what a user could type or copy (names, paths,
+     values, commands, field contents, key caps, listing rows, title-strip
+     titles, the terminal); the interface face for sentences and for labels
+     that head data (column labels, group headings, button and form labels). */
+  --font-mono: 'SF Mono', ui-monospace, Menlo, monospace;
+  --font-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* Type sizes, one per role:
+     - key: a letter or a word inside a key cap;
+     - caption: column and group labels, counts, pill tabs, chart labels,
+       uppercase headings;
+     - small: compact control labels, status lines, help text, dialog
+       titles, grid cells, tooltips;
+     - body: listing rows, regular Button labels, body text, the terminal;
+     - heading: a run headline and its clock, a Settings page title, a
+       card title, an empty or failed pane's heading;
+     - display: a startup or splash title. */
+  --font-size-key: 10px;
+  --font-size-caption: 11px;
+  --font-size-small: 12px;
+  --font-size-body: 13px;
+  --font-size-heading: 14px;
+  --font-size-display: 20px;
+
+  /* Line heights. compact sets 11 and 12 px text in one-line chrome; body
+     sets 13 and 14 px lines; prose is wrapped sentences; heading is titles.
+     A single-line control whose height the control sets uses 1. */
+  --line-height-compact: 16px;
+  --line-height-body: 20px;
+  --line-height-prose: 1.5;
+  --line-height-heading: 1.25;
+
+  /* Weights. medium heads data (column labels, strip links, tooltips);
+     strong marks control labels, titles, and the current item. */
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-strong: 600;
+
+  /* Letter-spacing of small uppercase headings. Key glyphs keep their own
+     spacing, which belongs to the glyph, not to a heading. */
+  --tracking-caps: 0.04em;
+
+  /* Spacing on a 2px grid: the step number times 2 is the pixel value.
+     Relationships: icon to label 6px (4px in 20px-high inline controls);
+     control to control 8px (2px inside one cluster); label or help to its
+     field 4px; form row to row 8px; section to section 16px; surface inset
+     12px (4px for a menu, 16px for a page block). A 1px line or nudge stays
+     a literal: it is a line, not a space. Listing columns space in ch. */
+  --space-1: 2px;
+  --space-2: 4px;
+  --space-3: 6px;
+  --space-4: 8px;
+  --space-5: 10px;
+  --space-6: 12px;
+  --space-8: 16px;
+  --space-10: 20px;
+  --space-12: 24px;
+  --space-16: 32px;
+
+  /* Corners follow height: xs for marks and highlights; sm for parts and
+     controls up to 22px high and rows inside a menu; md for controls from
+     24px, panes, cards, tooltips; lg for overlays (menus, dialogs, palettes,
+     popover panels); pill for pills, dots, and switch tracks. A corner
+     nested inside another is calc(var(--radius-x) - inset), so the two
+     stay concentric. */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-pill: 999px;
+
+  /* Line weights. line for every hairline, divider, and outline;
+     line-strong for state marks: the current tab's underline, a key cap's
+     foot, status bars, drop marks, and the focus ring. */
+  --line: 1px;
+  --line-strong: 2px;
+
+  /* Motion. Nothing animates in: a dialog, menu, palette, tooltip, or pill
+     appears at once, and a state change stays under 150ms. fast: hover,
+     focus, and press feedback, progress fills. base: a state change that
+     moves something (a width, a split), the longest a state change takes.
+     slow: a signal only, never a state change: a refusal's shake and red, a
+     bell. spin: one turn of a spinner, a cursor blink. ease-out eases a
+     signal; ease-in-out shakes; progress and spinners run linear. Under
+     reduced motion the one-shot durations are zero (the rule below), so a
+     transition written with them needs no query of its own; a loop still stops itself with animation: none. signal: a
+     change that carries meaning by colour alone (a refusal's red without its
+     shake); reduced motion keeps it, since nothing moves. loop: one sweep
+     of a slow loop that shows work without a figure (a loading shimmer).
+     notice: one beat of a flash that must be seen before it ends (a key
+     that just changed). */
+  --duration-fast: 120ms;
+  --duration-base: 120ms;
+  --duration-slow: 280ms;
+  --duration-signal: 280ms;
+  --duration-spin: 1s;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-in-out: ease-in-out;
+
+  /* The feedback transition of every control (Button, quiet actions, tabs,
+     segments, fields): its fills, outlines, rings, and words change at the
+     fast step together. */
+  --transition-control:
+    background-color var(--duration-fast), border-color var(--duration-fast),
+    box-shadow var(--duration-fast), color var(--duration-fast), filter var(--duration-fast);
+
+  /* Heights. Controls that share a row share a height:
+     - control-height: Button, IconButton, text field, select;
+     - control-height-sm: small Button, a dense form's field and select,
+       the segmented choice, legend slots, day cells, page tabs;
+     - control-height-xs: inline controls in a 24 to 26 px row or bar
+       (crumbs, quiet actions, row icon actions, pager steps, in-row
+       editors, the second strip's page tabs).
+     Rows and bars: row-height for a listing row or menu option;
+     row-height-dense for a grid row or column strip; bar-height for a path
+     bar, status line, or query row; bar-height-lg for a title
+     strip, key legend, or dialog legend. hit-target is the smallest pointer
+     target, whatever the drawn size (the .hit-target utility). */
+  --control-height: 28px;
+  --control-height-sm: 24px;
+  --control-height-xs: 20px;
+  --row-height: 24px;
+  --row-height-dense: 22px;
+  --bar-height: 26px;
+  --bar-height-lg: 34px;
+  --hit-target: 24px;
+
+  /* Focus. One ring for everything focusable: a 2px accent line outside the
+     control at focus-offset, so it follows the control's corner one pixel
+     out. focus-offset-flush puts it on the control's edge, for a compact
+     control in a bar with room around it, which keeps its corners;
+     focus-offset-inset draws it inside, only where a parent clips (a tab in
+     a scrolling strip, a segment in its track, a grid, a well). A text
+     field draws the same 2px edge without growing: its border plus a 1px
+     ring at flush offset. The ring's colour is always var(--accent), written
+     where the outline is drawn: a token holding it would resolve the accent
+     on :root and miss a theme preview scope's own. */
+  --focus-ring-width: var(--line-strong);
+  --focus-offset: 1px;
+  --focus-offset-flush: 0px;
+  --focus-offset-inset: -2px;
+
+  /* Icon sizes (lucide's size prop, and icons sized in CSS): sm beside 11
+     and 12 px text and in 20px inline controls; md beside 13px text in rows,
+     tabs, and buttons; lg for a dialog's title icon, empty-state actions,
+     and a row's product mark; xl for a picture-sized mark (an About
+     window, a splash), never over an empty state or a failure.
+     icon-column is the leading icon column of a row or menu
+     option. */
+  --icon-sm: 12px;
+  --icon-md: 14px;
+  --icon-lg: 16px;
+  --icon-xl: 28px;
+  --icon-column: var(--space-10);
+
+  /* A status or presence dot beside a name (a state mark, a running
+     marker): one diameter everywhere. A group's colour swatch, which must
+     read as a colour rather than a state, is larger: --space-4. */
+  --dot: 6px;
+
+  /* Layers. Overlay layering is decided here once, not with per-component
+     numbers. Inside a pane (its own stacking context):
+     - z-below: a backdrop drawn under its own box's content;
+     - z-raised: a sticky strip, a part lifted over its siblings;
+     - z-local-overlay: an overlay inside a pane;
+     - z-menu: a menu or popover anchored in a pane;
+     - z-drag: an item in the hand.
+     On the page:
+     - z-panel: floating panels inside a page;
+     - z-overlay: a page-level surface (a drop target, a full-screen page),
+       under dialogs and tooltips;
+     - z-dialog: modal dialogs and their backdrops, above every panel;
+     - z-dialog-popover: a popover opened from inside a dialog (the grid's
+       inline editor, a menu in a dialog);
+     - z-tooltip: the hover tooltip, above a dialog whose controls it names. */
+  --z-below: -1;
+  --z-raised: 1;
+  --z-local-overlay: 2;
+  --z-menu: 3;
+  --z-drag: 4;
+  --z-panel: 10;
+  --z-overlay: 15;
+  --z-dialog: 20;
+  --z-dialog-popover: 25;
+  --z-tooltip: 30;
+
+  /* Surfaces that float over other content (sticky headers, cards,
+     overlays) add --frost as a backdrop-filter so what scrolls under a
+     translucent layer blurs; the .frost utility in styles.css applies it.
+     One recipe for every frosted layer, the full-window backdrop of a
+     dialog included; its wash is --scrim. */
+  --frost: blur(24px) saturate(160%);
+}
+
+/* Reduced motion: every one-shot transition and animation written with the
+   duration tokens ends at once, except --duration-signal, which moves
+   nothing. Loops (spinners, stripes, blinks)
+   stop in their own component's query with animation: none. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+    --duration-base: 0ms;
+    --duration-slow: 0ms;
+  }
+}
+
+/* The edges .scroll-fade (styles.css) fades, typed so they animate along
+   the scroll position: lengths, 0 when nothing lies past an edge. */
+@property --scroll-fade-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --scroll-fade-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --scroll-fade-inline-start {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --scroll-fade-inline-end {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}

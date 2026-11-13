@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp, Loader } from 'lucide-react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 import {
   createContext,
   useContext,
@@ -12,10 +12,16 @@ import {
   type RefObject
 } from 'react';
 
+import { ICON_SM, Spinner } from '../icon/index.js';
 import type { SortDirection } from '../labels/listing.js';
 import { useLabels } from '../labels/UiokProvider.js';
-import { InRowContext, RowLinkLookContext, type LinkLook } from '../pane/PaneActions.js';
-import { describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
+import {
+  InListingRowContext,
+  InRowContext,
+  RowLinkLookContext,
+  type LinkLook
+} from '../pane/PaneActions.js';
+import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
 import { pathParts } from './PathParts.logic.js';
 
 /**
@@ -106,9 +112,9 @@ function SortLabel({
   const { sortBy } = useLabels().listing;
   const mark =
     sort.direction === null ? null : sort.direction === 'asc' ? (
-      <ChevronUp aria-hidden size={12} />
+      <ChevronUp aria-hidden size={ICON_SM} />
     ) : (
-      <ChevronDown aria-hidden size={12} />
+      <ChevronDown aria-hidden size={ICON_SM} />
     );
 
   return (
@@ -119,7 +125,7 @@ function SortLabel({
       type="button"
     >
       {align === 'right' && mark}
-      <span className="pane-sort-label" {...tooltip(label)}>
+      <span className="pane-sort-label" {...cutTooltip(label)}>
         {label}
       </span>
       {align !== 'right' && mark}
@@ -153,8 +159,8 @@ export interface StripProps {
  * its listing (`sort`, and `titleSort` for the name's column), whose label is
  * the control that sorts it, named by `listing.sortBy` from the labels. In a
  * table (`table`) it is the header row; `heading` makes the name the
- * section's heading. Every visible label carries its whole text as its
- * tooltip, since a narrow column cuts it with an ellipsis.
+ * section's heading. A visible label that a narrow column cuts with an
+ * ellipsis carries its whole text as its tooltip.
  */
 export function Strip({
   title,
@@ -181,7 +187,7 @@ export function Strip({
       >
         {titleSort === undefined ? (
           <span className="pane-sort">
-            <Title className="pane-sort-label" {...tooltip(titleLabel ?? title)}>
+            <Title className="pane-sort-label" {...cutTooltip(titleLabel ?? title)}>
               {titleLabel ?? title}
             </Title>
           </span>
@@ -210,7 +216,7 @@ export function Strip({
             : entry.control === undefined &&
               (entry.sort === undefined ? (
                 <span className="pane-sort">
-                  <span className="pane-sort-label" {...tooltip(entry.label)}>
+                  <span className="pane-sort-label" {...cutTooltip(entry.label)}>
                     {entry.label}
                   </span>
                 </span>
@@ -391,9 +397,10 @@ export interface ListingProps {
  * `--pane-grid`, shared by the strip and every row, so each label sits over
  * its column; a listing whose row links take words gives it as the grid for
  * a look (`linksColumn`), and its rows take the richest look that keeps it
- * inside its pane. A listing with no rows says so in `empty`: a plain line
- * under the strip instead of a table, so no column headers stand over a row
- * that is not one.
+ * inside its pane. A listing with no rows says so in `empty`: a quiet row
+ * under the strip instead of a table (`.pane-message.empty`, starting where
+ * a row's icon starts, in the rows' type, dim), its column labels left out, so no
+ * header stands over a row that is not one.
  */
 export function Listing({
   title,
@@ -421,8 +428,15 @@ export function Listing({
   if (empty !== null) {
     return (
       <section aria-label={label} className={classes} ref={listing} style={style}>
-        <Strip columns={columns} title={title} />
-        <p className="pane-message">{empty}</p>
+        {/* No label stands over a column with no values under it; a control
+            in the strip (Clear, Update all) keeps its place. */}
+        <Strip
+          columns={columns.map((entry) =>
+            entry.control === undefined ? { ...entry, hidden: true } : entry
+          )}
+          title={title}
+        />
+        <p className="pane-message empty">{empty}</p>
       </section>
     );
   }
@@ -521,33 +535,38 @@ export function Row({
   }, [cursor, rowKey]);
 
   return (
-    <InRowContext.Provider value={!tabbable}>
-      <div
-        aria-current={current ? 'true' : undefined}
-        className={['row', current ? 'cursor' : '', className ?? ''].filter(Boolean).join(' ')}
-        data-row-key={rowKey}
-        onClick={onOpen}
-        onFocus={() => cursor.point(rowKey)}
-        // Movement, not entry: a row scrolled under a still pointer as the
-        // keys move the cursor must not take the cursor back.
-        onPointerMove={() => {
-          if (!current) cursor.point(rowKey);
-        }}
-        role="row"
-        tabIndex={focusable ? (current || entry ? 0 : -1) : undefined}
-      >
-        <span aria-hidden className="row-icon">
-          {mark}
-        </span>
-        <span
-          className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
-          role="cell"
+    <InListingRowContext.Provider value>
+      <InRowContext.Provider value={!tabbable}>
+        <div
+          aria-current={current ? 'true' : undefined}
+          className={['row', current ? 'cursor' : '', className ?? ''].filter(Boolean).join(' ')}
+          data-row-key={rowKey}
+          onClick={onOpen}
+          onFocus={() => cursor.point(rowKey)}
+          // Movement, not entry: a row scrolled under a still pointer as the
+          // keys move the cursor must not take the cursor back.
+          onPointerMove={() => {
+            if (!current) cursor.point(rowKey);
+          }}
+          role="row"
+          tabIndex={focusable ? (current || entry ? 0 : -1) : undefined}
         >
-          {name}
-        </span>
-        {children}
-      </div>
-    </InRowContext.Provider>
+          <span aria-hidden className="row-icon">
+            {mark}
+          </span>
+          <span
+            className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
+            role="cell"
+            // A name in words carries itself whole as its tooltip while a
+            // narrow name column cuts it with an ellipsis.
+            {...(typeof name === 'string' ? cutTooltip(name) : {})}
+          >
+            {name}
+          </span>
+          {children}
+        </div>
+      </InRowContext.Provider>
+    </InListingRowContext.Provider>
   );
 }
 
@@ -589,19 +608,25 @@ export interface StateMarkProps {
 }
 
 /**
- * A state as a State column says it: a dot in the state's tone and its word
- * ("running", "error"), or a spinner for a transition. Inside a row the word
- * takes the tone too, so a failure reads red and a stopped line dim.
+ * A state as a State column says it: a mark in the state's tone and its word
+ * ("running", "error"), or a spinner for a transition (the shared
+ * `Spinner`, as `RunHeader` turns). Each tone's mark has its own shape too, so it reads
+ * without its hue. Inside a row the word takes the tone too, so a failure
+ * reads red and a stopped line dim. A word wider than its column ends in an
+ * ellipsis and carries itself whole as its tooltip, which a word shown
+ * whole does not open.
  */
 export function StateMark({ tone, word, busy = false }: StateMarkProps): ReactElement {
   return (
     <span className={`pane-state pane-tone-${tone}`}>
       {busy ? (
-        <Loader aria-hidden className="pane-state-busy" size={11} />
+        <Spinner className="pane-state-busy" />
       ) : (
         <span aria-hidden className="pane-state-dot" />
       )}
-      {word}
+      <span className="pane-state-word" {...cutTooltip(word)}>
+        {word}
+      </span>
     </span>
   );
 }
@@ -611,8 +636,10 @@ export interface PathCellProps {
   /** The whole path, slash-separated ("/opt/homebrew/var/mysql"). */
   readonly path: string;
   /**
-   * The name's own class, which colours it by its kind (a folder as a
-   * folder); the text tone without one. `pathParts(path).base` is the name.
+   * The name's own class, which marks it by its kind (a folder as a
+   * folder); the text tone without one. A kind's colour is never the
+   * accent, which in a row reads as a link. `pathParts(path).base` is the
+   * name.
    */
   readonly nameClassName?: string;
 }
@@ -669,9 +696,10 @@ export function WellColumn({
 }: WellColumnProps): ReactElement {
   const classes = className === undefined ? 'pane-well-column' : `pane-well-column ${className}`;
   const strip = <Strip columns={columns} title={title} />;
-  // The strip's name, then each of its columns at its own width.
+  // The strip's name, down to the listing's name floor, then each of its
+  // columns at its own width.
   const style = {
-    '--pane-grid': `20px minmax(0, 1fr) ${columns.map(() => 'auto').join(' ')}`
+    '--pane-grid': `var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr) ${columns.map(() => 'auto').join(' ')}`
   } as CSSProperties;
 
   return label === undefined ? (

@@ -2,14 +2,18 @@ import type { ButtonHTMLAttributes, ReactElement, Ref } from 'react';
 
 /**
  * The action tiers: `primary` for the one main action of a view, `tonal` for
- * a row's routine positive action (Install), `neutral` for everything else,
- * destructive triggers included. A confirmation's destructive verb is the
- * red lit primary of its dialog's key legend, not a button tier.
+ * a row's routine positive action (Install), `danger` for a button that
+ * destroys something (Delete, Remove), drawn red-outlined, and `neutral` for
+ * everything else. A confirmation's destructive verb is the red lit primary
+ * of its dialog's key legend, not a button tier.
  */
-export type ButtonVariant = 'primary' | 'tonal' | 'neutral';
+export type ButtonVariant = 'primary' | 'tonal' | 'danger' | 'neutral';
 
-/** The two button heights: `regular` (28px) and `small` (24px). */
-export type ButtonSize = 'regular' | 'small';
+/**
+ * The button heights: `regular` (28px), `small` (24px), and `xs` (20px, for a
+ * push button inside a row or a strip, its pointer target grown to 24px).
+ */
+export type ButtonSize = 'regular' | 'small' | 'xs';
 
 /** Props for {@link Button}: every `<button>` attribute, plus its tier and size. */
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -34,7 +38,12 @@ export function Button({
   type = 'button',
   ...rest
 }: ButtonProps): ReactElement {
-  const classes = ['button', `button-${variant}`, size === 'small' ? 'button-small' : '', className]
+  const classes = [
+    'button',
+    `button-${variant}`,
+    size === 'regular' ? '' : `button-${size}`,
+    className
+  ]
     .filter(Boolean)
     .join(' ');
 

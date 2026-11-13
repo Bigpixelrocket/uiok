@@ -158,6 +158,12 @@ export interface GhosttyTheme {
   readonly cursor: GhosttyColor;
   /** CSS color the renderer overlays on selected cells; not sent to Ghostty. */
   readonly selectionBackground?: string;
+  /**
+   * The one colour selected text is drawn in, floored by the renderer against
+   * the selection over each cell; each cell's own foreground when absent. Not
+   * sent to Ghostty.
+   */
+  readonly selectionForeground?: GhosttyColor;
   /** The full 256-color palette (16 ANSI colors, color cube, gray ramp); Ghostty's own when absent. */
   readonly palette?: readonly GhosttyColor[];
 }

@@ -10,6 +10,7 @@ import {
 import { useLabels } from '../labels/UiokProvider.js';
 import {
   linePath,
+  lonePoints,
   nearestMoment,
   timeTickLabels,
   valueDomain,
@@ -105,7 +106,14 @@ export function LineChart({
   const timeTicks = ticksOf(time, 'time', Math.max(2, Math.floor(plotWidth / 90)));
   const timeLabels = timeTickLabels(timeTicks, timeText, px, plotWidth, widthOf);
   const labelKey = JSON.stringify([...timeTicks.map(timeText), ...valueTicks.map(format)]);
+  // A value to draw: one that is not missing, inside the time axis.
+  const drawable = series.some((entry) =>
+    entry.points.some(
+      (point) => point.value !== null && point.at >= time.min && point.at <= time.max
+    )
+  );
 
+  // Measured again when the plot mounts, since the empty state draws no labels.
   useLayoutEffect(() => {
     const measured: Record<string, number> = {};
 
@@ -118,7 +126,7 @@ export function LineChart({
     setLabelWidths((known) =>
       Object.entries(measured).some(([text, width]) => known[text] !== width) ? measured : known
     );
-  }, [labelKey]);
+  }, [labelKey, drawable]);
 
   const moments = [
     ...new Set(series.flatMap((entry) => entry.points.map((point) => point.at)))
@@ -136,96 +144,132 @@ export function LineChart({
   return (
     <figure aria-label={label} className="line-chart">
       <div className="line-frame" ref={frame}>
-        <svg aria-hidden className="line-svg" height={height} ref={svg} width={width}>
-          <g className="line-tick line-measure" visibility="hidden">
-            {[...new Set([...timeTicks.map(timeText), ...valueTicks.map(format)])].map((text) => (
-              <text key={text}>{text}</text>
-            ))}
-          </g>
-          <g transform={`translate(${left} ${MARGIN.top})`}>
-            {timeTicks.map((tick) => (
-              <line
-                className="line-grid"
-                key={`grid${tick}`}
-                x1={px(tick)}
-                x2={px(tick)}
-                y1={0}
-                y2={plotHeight}
-              />
-            ))}
-            {timeLabels.map((tick) => (
-              <g className="line-tick" key={`x${tick.at}`}>
-                <text dy="1.1em" textAnchor="start" x={tick.left} y={plotHeight + 4}>
-                  {tick.text}
-                </text>
-              </g>
-            ))}
-            {valueTicks.map((tick) => (
-              <g className="line-tick" key={`y${tick}`} transform={`translate(0 ${py(tick)})`}>
-                <line className="line-grid" x1={0} x2={plotWidth} />
-                <text dy="0.32em" textAnchor="end" x={-6}>
-                  {format(tick)}
-                </text>
-              </g>
-            ))}
-            <rect className="line-axes" height={plotHeight} width={plotWidth} />
-            {series.map((entry, index) => (
-              <path
-                className="line-series"
-                d={linePath(
-                  entry.points.filter((point) => point.at >= time.min && point.at <= time.max),
-                  px,
-                  py
-                )}
-                key={`${index}:${entry.label}`}
-                stroke={seriesColour(index)}
-              />
-            ))}
-            {shown !== null && (
-              <line className="line-guide" x1={px(shown)} x2={px(shown)} y1={0} y2={plotHeight} />
-            )}
-            {drag !== null && (
+        {/* With no value to draw, the plot keeps its place and says so there. */}
+        {!drawable ? (
+          <div className="chart-empty" style={{ height }}>
+            {labels.noValue}
+          </div>
+        ) : (
+          <svg aria-hidden className="line-svg" height={height} ref={svg} width={width}>
+            <g className="line-tick line-measure" visibility="hidden">
+              {[...new Set([...timeTicks.map(timeText), ...valueTicks.map(format)])].map((text) => (
+                <text key={text}>{text}</text>
+              ))}
+            </g>
+            <g transform={`translate(${left} ${MARGIN.top})`}>
+              {timeTicks.map((tick) => (
+                <line
+                  className="line-grid"
+                  key={`grid${tick}`}
+                  x1={px(tick)}
+                  x2={px(tick)}
+                  y1={0}
+                  y2={plotHeight}
+                />
+              ))}
+              {timeLabels.map((tick) => (
+                <g className="line-tick" key={`x${tick.at}`}>
+                  <text dy="1.1em" textAnchor="start" x={tick.left} y={plotHeight + 4}>
+                    {tick.text}
+                  </text>
+                </g>
+              ))}
+              {valueTicks.map((tick) => (
+                <g className="line-tick" key={`y${tick}`} transform={`translate(0 ${py(tick)})`}>
+                  <line className="line-grid" x1={0} x2={plotWidth} />
+                  <text dy="0.32em" textAnchor="end" x={-6}>
+                    {format(tick)}
+                  </text>
+                </g>
+              ))}
+              <path className="line-axes" d={`M0 0V${plotHeight}H${plotWidth}`} />
+              {series.map((entry, index) => (
+                <path
+                  className="line-series"
+                  d={linePath(
+                    entry.points.filter((point) => point.at >= time.min && point.at <= time.max),
+                    px,
+                    py
+                  )}
+                  key={`${index}:${entry.label}`}
+                  stroke={seriesColour(index)}
+                />
+              ))}
+              {series.map((entry, index) =>
+                lonePoints(
+                  entry.points.filter((point) => point.at >= time.min && point.at <= time.max)
+                ).map((point) => (
+                  <circle
+                    className="line-dot"
+                    cx={px(point.at)}
+                    cy={py(point.value ?? 0)}
+                    fill={seriesColour(index)}
+                    key={`lone${index}:${entry.label}:${point.at}`}
+                    r={3}
+                  />
+                ))
+              )}
+              {shown !== null && (
+                <line className="line-guide" x1={px(shown)} x2={px(shown)} y1={0} y2={plotHeight} />
+              )}
+              {shown !== null &&
+                series.map((entry, index) => {
+                  const value = entry.points.find((point) => point.at === shown)?.value ?? null;
+
+                  return value === null ? null : (
+                    <circle
+                      className="line-dot"
+                      cx={px(shown)}
+                      cy={py(value)}
+                      fill={seriesColour(index)}
+                      key={`dot${index}:${entry.label}`}
+                      r={3}
+                    />
+                  );
+                })}
+              {drag !== null && (
+                <rect
+                  className="line-selection"
+                  height={plotHeight}
+                  width={Math.abs(px(drag.to) - px(drag.from))}
+                  x={Math.min(px(drag.from), px(drag.to))}
+                />
+              )}
               <rect
-                className="line-selection"
+                className={onSelect === undefined ? 'line-plot' : 'line-plot selectable'}
+                data-testid="line-plot"
                 height={plotHeight}
-                width={Math.abs(px(drag.to) - px(drag.from))}
-                x={Math.min(px(drag.from), px(drag.to))}
+                onPointerDown={(event) => {
+                  if (onSelect === undefined || event.button !== 0) return;
+                  event.currentTarget.setPointerCapture?.(event.pointerId);
+
+                  const at = momentOf(event);
+
+                  setDrag({ from: at, to: at });
+                }}
+                onPointerLeave={() => setHover(null)}
+                onPointerMove={(event) => {
+                  const at = momentOf(event);
+
+                  setHover(at);
+                  if (drag !== null) setDrag({ from: drag.from, to: at });
+                }}
+                onPointerUp={(event) => {
+                  if (drag === null) return;
+
+                  const end = momentOf(event);
+
+                  setDrag(null);
+                  // A click, or a drag of less than a pixel, picks no range.
+                  if (onSelect !== undefined && Math.abs(px(end) - px(drag.from)) >= 2) {
+                    onSelect(Math.min(drag.from, end), Math.max(drag.from, end));
+                  }
+                }}
+                width={plotWidth}
               />
-            )}
-            <rect
-              className={onSelect === undefined ? 'line-plot' : 'line-plot selectable'}
-              data-testid="line-plot"
-              height={plotHeight}
-              onPointerDown={(event) => {
-                if (onSelect === undefined || event.button !== 0) return;
-                event.currentTarget.setPointerCapture?.(event.pointerId);
-
-                const at = momentOf(event);
-
-                setDrag({ from: at, to: at });
-              }}
-              onPointerLeave={() => setHover(null)}
-              onPointerMove={(event) => {
-                const at = momentOf(event);
-
-                setHover(at);
-                if (drag !== null) setDrag({ from: drag.from, to: at });
-              }}
-              onPointerUp={(event) => {
-                if (drag === null) return;
-
-                const end = momentOf(event);
-
-                setDrag(null);
-                // A click, or a drag of less than a pixel, picks no range.
-                if (onSelect !== undefined && Math.abs(px(end) - px(drag.from)) >= 2) {
-                  onSelect(Math.min(drag.from, end), Math.max(drag.from, end));
-                }
-              }}
-              width={plotWidth}
-            />
-          </g>
-        </svg>
+            </g>
+          </svg>
+        )}
         {shown !== null && (
           <div
             className="line-readout"

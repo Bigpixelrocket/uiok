@@ -1,8 +1,10 @@
-/* UIOK's base stylesheet: the theme tokens, the tokens no theme changes, and
+/* UIOK's base stylesheet: the theme tokens, the tokens no theme changes
+   (tokens.css: sizes, spaces, corners, timings, heights, layers, focus), and
    the utilities every component may rely on. It names no colour itself;
    colours are theme tokens, which themes.generated.css defines (docs/themes.md).
    Import it once, before any stylesheet of the app's own. */
 @import './themes/themes.generated.css';
+@import './tokens.css';
 
 /* Component stylesheets, each beside its component. */
 @import './button/button.css';
@@ -27,22 +29,607 @@
 @import './charts/charts.css';
 @import './terminal/terminal.css';
 
-:root {
-  /* Surfaces that float over other content (sticky headers, cards,
-     overlays) add --frost as a backdrop-filter so what scrolls under a
-     translucent layer blurs. */
-  --frost: blur(24px) saturate(160%);
-  --font-mono: 'SF Mono', ui-monospace, Menlo, monospace;
-  --font-ui: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+/* Shared looks a page puts on its own markup: form controls, notices, cards. */
+@import './field/field.css';
+@import './surface/surface.css';
 
-  /* Z-index scale. Overlay layering is decided here once, not with
-     per-component magic numbers:
-     - --z-panel: floating panels inside a page;
-     - --z-dialog: modal dialogs and their backdrops, above every panel;
-     - --z-tooltip: the hover tooltip, above a dialog whose controls it names. */
-  --z-panel: 10;
-  --z-dialog: 20;
-  --z-tooltip: 30;
+/* The shell's shared surfaces: Settings dialog, theme picker, update card,
+   channel tag, sign-in prompts, load failure (docs/components/shell.md). */
+@import './shell/shell.css';
+
+/* ---- What the browser would otherwise draw in its own colours ---- */
+
+/* Selected text, a field's placeholder, its caret, a native check or
+   slider, and every scrollbar take the theme's colours. On the root and on
+   a theme preview, so a preview scope's accent and grounds reach its own
+   scrollbars and fields. */
+:where(:root, [data-theme-preview]) {
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+:where(input, textarea, [contenteditable]:not([contenteditable='false'])) {
+  caret-color: var(--accent);
+}
+
+:where(input, progress, meter) {
+  accent-color: var(--accent);
+}
+
+/* A text input, textarea, or select that carries no class of its own still
+   takes the theme: an outline in --control-border on the window ground,
+   the theme's text, the page's face. It weighs nothing, so .field and any
+   host rule win over every part of it. A checkbox or radio with no class
+   takes the .check look (field.css); a slider, or a box with a class of
+   its own, keeps the platform's drawing in the accent (above). */
+:where(
+  input:not([type]),
+  input:is(
+    [type='text'],
+    [type='search'],
+    [type='number'],
+    [type='email'],
+    [type='url'],
+    [type='password'],
+    [type='tel']
+  ),
+  textarea,
+  select
+) {
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-sm);
+  background: var(--ground);
+  color: var(--text);
+  font-family: inherit;
+}
+
+/* A meter (a password's strength, a quota): the slider's trough, a crisp
+   bar on --control-track inside the --control-border hairline, filled in
+   the tone of its value: success at the optimum, warning below it, danger
+   at the least good. */
+meter {
+  height: var(--space-2);
+  appearance: none;
+}
+
+meter::-webkit-meter-bar {
+  height: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-pill);
+  box-shadow: inset 0 0 0 var(--line) var(--control-border);
+  background: var(--control-track);
+}
+
+meter::-webkit-meter-optimum-value {
+  border-radius: var(--radius-pill);
+  background: var(--success);
+}
+
+meter::-webkit-meter-suboptimum-value {
+  border-radius: var(--radius-pill);
+  background: var(--warning);
+}
+
+meter::-webkit-meter-even-less-good-value {
+  border-radius: var(--radius-pill);
+  background: var(--danger);
+}
+
+::placeholder {
+  color: var(--text-placeholder);
+  opacity: 1;
+}
+
+/* Selected text takes the one colour the selection tint is floored for,
+   so dim, meta, and toned words stay legible while selected. */
+::selection {
+  background: var(--text-selection-bg);
+  color: var(--text);
+}
+
+/* In a window that is not in front, selected text greys to the quiet fill,
+   as the platform greys it. The host sets data-window-inactive on the root
+   from its window's blur and focus events; the listing reads the same
+   attribute for its selected rows and its active pane (docs/themes.md). */
+:root[data-window-inactive] ::selection {
+  background: var(--fill);
+}
+
+/* ---- Chrome is not selectable ---- */
+
+/* An application's chrome (labels, buttons, tabs, headings, menu items, a
+   row's parts) cannot be swept or double-clicked into a selection, so a
+   drag never smears a highlight across the window. Content opts back in:
+   what a user types, and what a user would copy (a value, a name, a path,
+   output). A host marks its own content with .selectable; a component's
+   content class sets user-select: text in its own rule. A code, pre, or
+   samp element is not content by its tag: a command named in a label or a
+   token in a menu is chrome, so a copyable value takes .selectable. Both weigh
+   nothing, so a host rule wins. Inside selectable content the cursor is the
+   I-beam, which the browser draws only over text that can be selected. */
+:where(body) {
+  user-select: none;
+}
+
+:where(
+  input:not(
+    [type='checkbox'],
+    [type='radio'],
+    [type='range'],
+    [type='button'],
+    [type='submit'],
+    [type='reset']
+  ),
+  textarea,
+  [contenteditable]:not([contenteditable='false']),
+  .selectable
+) {
+  user-select: text;
+}
+
+/* The arrow over every control, a link included, as a desktop
+   application draws it: no hand anywhere. Zero weight, so a host's own
+   control takes it with no class, and a resize or text cursor of its own
+   still wins. */
+:where(
+  a[href],
+  button,
+  select,
+  summary,
+  label,
+  [role='button'],
+  [role='link'],
+  [role='tab'],
+  [role='radio'],
+  [role='switch'],
+  input:is([type='checkbox'], [type='radio'], [type='range'])
+) {
+  cursor: default;
+}
+
+/* ---- Shared recipes ---- */
+
+/* The small uppercase heading over a group (a menu's section, a settings
+   group, a sidebar's set of pages). A menu's group heading wears it too. */
+.overline,
+.entry-menu-heading {
+  margin: 0;
+  color: var(--text-dim);
+  font: var(--font-weight-strong) var(--font-size-caption) / var(--line-height-compact)
+    var(--font-ui);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
+}
+
+/* A translucent layer over content that scrolls under it: the one frost
+   recipe (--frost), with the layer's own translucent fill. */
+.frost {
+  -webkit-backdrop-filter: var(--frost);
+  backdrop-filter: var(--frost);
+}
+
+/* A scrolling box whose content runs past an edge fades over the last
+   --scroll-fade-size at that edge, so a clipped row reads as "more", not
+   as a cut. On the scrolling element itself: .scroll-fade for the block
+   edges, .scroll-fade-end for the block end only (a scroller whose sticky
+   strip sits at its start), .scroll-fade-x for the inline edges; combine
+   one block class with .scroll-fade-x for both axes. The lengths follow
+   the scroll position (a scroll-driven animation), so an edge with nothing
+   past it stays sharp, and a box that does not scroll never fades.
+
+   The fade covers the padding box only: the scroller's own border, corners,
+   and scrollbar stay solid, so a framed scroller keeps its frame (two
+   opaque layers cut the border ring out of the mask and the fade is added
+   back inside it). What scrolls inside fades, the box's own background
+   included, so a scroller whose ground differs from what is behind it
+   paints that ground on a wrapper. A sticky strip at a faded edge fades
+   too: use .scroll-fade-end under a sticky header. Engines without scroll
+   timelines draw no fade.
+
+   --scroll-fade-size is the fade's depth, 12px by default (enough for a
+   line of prose); a list of whole rows sets it to its row height
+   (var(--row-height)) on the scroller, so the last whole row fades through
+   its words instead of losing a sliver.
+
+   Hazard: a mask clips everything painted inside the masked box, a
+   position: fixed child included (a full-screen surface, a date picker's
+   or menu's panel), because the mask makes the box their containing block
+   for painting. A scroller that can hold a popover or a fixed surface
+   drops its fade class while one is open, or mounts the popover outside
+   the scroller. */
+@supports (animation-timeline: scroll()) {
+  .scroll-fade,
+  .scroll-fade-end,
+  .scroll-fade-x {
+    --scroll-fade-size: var(--space-6);
+
+    mask-clip: padding-box, border-box, padding-box;
+    mask-origin: padding-box, border-box, padding-box;
+    mask-repeat: no-repeat;
+    mask-composite: exclude, exclude, add;
+  }
+
+  .scroll-fade {
+    mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
+      linear-gradient(
+        to bottom,
+        transparent,
+        var(--ground) var(--scroll-fade-start),
+        var(--ground) calc(100% - var(--scroll-fade-end)),
+        transparent
+      );
+    animation: uiok-scroll-fade-block linear both;
+    animation-timeline: scroll(self block);
+  }
+
+  .scroll-fade-end {
+    mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
+      linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent);
+    animation: uiok-scroll-fade-block linear both;
+    animation-timeline: scroll(self block);
+  }
+
+  .scroll-fade-x {
+    mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
+      linear-gradient(
+        to right,
+        transparent,
+        var(--ground) var(--scroll-fade-inline-start),
+        var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+        transparent
+      );
+    animation: uiok-scroll-fade-inline linear both;
+    animation-timeline: scroll(self inline);
+  }
+
+  /* Both axes: the two fades intersect inside the frame. */
+  :is(.scroll-fade, .scroll-fade-end).scroll-fade-x {
+    mask-clip: padding-box, border-box, padding-box, padding-box;
+    mask-origin: padding-box, border-box, padding-box, padding-box;
+    mask-composite: exclude, exclude, intersect, add;
+    animation:
+      uiok-scroll-fade-block linear both,
+      uiok-scroll-fade-inline linear both;
+    animation-timeline: scroll(self block), scroll(self inline);
+  }
+
+  .scroll-fade.scroll-fade-x {
+    mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
+      linear-gradient(
+        to bottom,
+        transparent,
+        var(--ground) var(--scroll-fade-start),
+        var(--ground) calc(100% - var(--scroll-fade-end)),
+        transparent
+      ),
+      linear-gradient(
+        to right,
+        transparent,
+        var(--ground) var(--scroll-fade-inline-start),
+        var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+        transparent
+      );
+  }
+
+  .scroll-fade-end.scroll-fade-x {
+    mask-image:
+      linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
+      linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
+      linear-gradient(
+        to right,
+        transparent,
+        var(--ground) var(--scroll-fade-inline-start),
+        var(--ground) calc(100% - var(--scroll-fade-inline-end)),
+        transparent
+      );
+  }
+}
+
+/* The fade grows in over the first tenth of the scroll and out over the
+   last, so it is full whenever there is more past that edge. */
+@keyframes uiok-scroll-fade-block {
+  0% {
+    --scroll-fade-start: 0px;
+    --scroll-fade-end: var(--scroll-fade-size);
+  }
+
+  10% {
+    --scroll-fade-start: var(--scroll-fade-size);
+  }
+
+  90% {
+    --scroll-fade-end: var(--scroll-fade-size);
+  }
+
+  100% {
+    --scroll-fade-start: var(--scroll-fade-size);
+    --scroll-fade-end: 0px;
+  }
+}
+
+@keyframes uiok-scroll-fade-inline {
+  0% {
+    --scroll-fade-inline-start: 0px;
+    --scroll-fade-inline-end: var(--scroll-fade-size);
+  }
+
+  10% {
+    --scroll-fade-inline-start: var(--scroll-fade-size);
+  }
+
+  90% {
+    --scroll-fade-inline-end: var(--scroll-fade-size);
+  }
+
+  100% {
+    --scroll-fade-inline-start: var(--scroll-fade-size);
+    --scroll-fade-inline-end: 0px;
+  }
+}
+
+/* Hover and press for every quiet control: one look per kind, written once
+   here so no component restates it. Each rule weighs one pseudo-class
+   (every other part sits in :where()), so hover and press weigh the same
+   and press, written last, wins while the pointer is down; a component's
+   own state rule (current, checked, lit, the cursor row) still wins over
+   both, and they win over a component's rest rule by coming after it. A
+   component must not give its hover more weight than this, or its press
+   shows the hover look. Only a control that can act takes them: a button,
+   a link, or a role a control has, not disabled, and not the chosen item
+   (the selected tab, the checked segment, the current page), which a
+   press would not change. A control whose pop-up is up (aria-expanded
+   with aria-haspopup: a menu or listbox trigger, or an expanded crumb,
+   which only ever opens its menu) keeps its hovered face while the pop-up
+   is open. A fold or disclosure that is open is not
+   holding anything up; its glyph says it is open, so it keeps its rest
+   face.
+
+   - Quiet control (an outlined-on-hover action, a crumb, a
+     strip's action): the frosted wash
+     and ring, words to full text, as the neutral Button.
+   - Tab, segment, or sort label in a track or strip, and a source list's
+     row (the Settings sidebar): the wash alone, words to full text; no
+     ring, since the track or the list already draws the frame.
+   - Pressed (both kinds, and the text-like controls: grid sort
+     labels, palette levels): the face sinks, as Button's does, inside a
+     hairline in --border-strong (--press-frost), so the press holds by
+     shape where the wash is faint, with words in full text.
+
+   A host's own control joins a recipe by class instead of restating it,
+   so it follows every later change to the look: .quiet-control takes the
+   quiet control's hover and press, .quiet-track-item the track item's
+   (wash, then press), and .toggle-chip (below) both for an outlined toggle.
+   The class carries states only, never a rest face, so the host keeps its
+   own size and shape (docs/components/surface.md). */
+
+/* An outlined toggle chip (a mode, a filter, a reading of a field): off, a
+   --control-border outline on a clear ground with words in --text-dim, so
+   an unpressed toggle still reads as a control; on (aria-pressed="true"),
+   the one look of "on" below, a filled segment inside its ring. Hover and
+   press are the quiet control's (above). Heights follow the place, as a field's do:
+   28px, .toggle-chip-sm 24px, .toggle-chip-xs 20px inside a row; the corner
+   follows the height. Before the recipes, so each of them wins over it. */
+.toggle-chip {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  height: var(--control-height);
+  margin: 0;
+  padding: 0 var(--space-4);
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--text-dim);
+  font: var(--font-weight-regular) var(--font-size-small) / 1 var(--font-ui);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.toggle-chip-sm {
+  height: var(--control-height-sm);
+}
+
+.toggle-chip-xs {
+  height: var(--control-height-xs);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+}
+
+:where(
+  .pager-step,
+  .legend-slot,
+  .keylegend-verbs button,
+  .pane-act,
+  .pane-icon-act,
+  .path-star,
+  .page-tab,
+  .segmented-choice-option,
+  .date-picker-day,
+  .crumb-label,
+  .pane-sort.sortable,
+  .pane-strip-link,
+  .data-grid-sort,
+  .palette-level,
+  .settings-sidebar-page,
+  .settings-sidebar-subsection,
+  .quiet-control,
+  .quiet-track-item,
+  .toggle-chip
+):where(button, a[href], [role='button'], [role='tab'], [role='radio']) {
+  transition: var(--transition-control);
+}
+
+:where(
+    .pager-step,
+    .legend-slot,
+    .keylegend-verbs button,
+    .pane-act,
+    .pane-icon-act,
+    .path-star,
+    .crumb-label,
+    .pane-strip-link,
+    .settings-sidebar-page,
+    .settings-sidebar-subsection,
+    .quiet-control,
+    .toggle-chip
+  ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
+    :not(
+      :disabled,
+      [aria-disabled='true'],
+      [aria-selected='true'],
+      [aria-checked='true'],
+      [aria-pressed='true'],
+      [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
+    )
+  ):is(
+    :hover,
+    [aria-expanded='true']:where([aria-haspopup]:not([aria-haspopup='false']), .crumb-label)
+  ) {
+  box-shadow: var(--hover-frost);
+  background: var(--hover-wash);
+  color: var(--text);
+}
+
+:where(
+    .page-tab,
+    .segmented-choice-option,
+    .date-picker-day,
+    .pane-sort.sortable,
+    .quiet-track-item
+  ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
+    :not(
+      :disabled,
+      [aria-disabled='true'],
+      [aria-selected='true'],
+      [aria-checked='true'],
+      [aria-pressed='true'],
+      [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
+    )
+  ):is(
+    :hover,
+    [aria-expanded='true']:where([aria-haspopup]:not([aria-haspopup='false']), .crumb-label)
+  ) {
+  background: var(--hover-wash);
+  color: var(--text);
+}
+
+:where(
+    .pager-step,
+    .legend-slot,
+    .keylegend-verbs button,
+    .pane-act,
+    .pane-icon-act,
+    .path-star,
+    .page-tab,
+    .segmented-choice-option,
+    .date-picker-day,
+    .crumb-label,
+    .pane-sort.sortable,
+    .pane-strip-link,
+    .data-grid-sort,
+    .palette-level,
+    .disclosure,
+    .settings-sidebar-page,
+    .settings-sidebar-subsection,
+    .quiet-control,
+    .quiet-track-item,
+    .toggle-chip
+  ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
+    :not(
+      :disabled,
+      [aria-disabled='true'],
+      [aria-selected='true'],
+      [aria-checked='true'],
+      [aria-pressed='true'],
+      [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
+    )
+  ):active {
+  box-shadow: var(--press-frost);
+  background: var(--pressed-wash);
+  color: var(--text);
+}
+
+/* A toggle that is on (a button with aria-pressed="true": a mode, a
+   filter chip, an open menu's chip): the current item's tint, ring, and
+   words, the one look of "on" for a button. The hover and press recipes,
+   the shared ones above and each component's own, leave an on toggle out,
+   so it keeps its look under the pointer; a host rule that paints the
+   button's rest face with more weight leaves the on state to this rule
+   (:not([aria-pressed='true'])). A toggle that mirrors a held key keeps
+   its own solid accent. */
+:where(button)[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 var(--line) var(--current-ring);
+  background: var(--current-bg);
+  color: var(--current-text);
+}
+
+/* No hover or press recipe touches an on toggle (each leaves
+   [aria-pressed='true'] out, as it leaves out the chosen item), so the on
+   look holds under the pointer. A press sinks the on face, as every press
+   does, inside the same ring: still on, visibly held. */
+:where(button)[aria-pressed='true']:active:where(:not(:disabled, [aria-disabled='true'])) {
+  box-shadow:
+    var(--shadow-pressed),
+    inset 0 0 0 var(--line) var(--current-ring);
+}
+
+/* A focusable element that the keyboard reached: one ring from the focus
+   tokens. :where() leaves it the weight of :focus-visible alone, so a
+   component that must draw its ring inside a clipping parent changes only
+   outline-offset, and a host's class rule after it wins over it (a bare
+   element rule does not). A container focused by script (tabindex="-1")
+   draws no ring here. */
+:where(
+  button,
+  a[href],
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex]:not([tabindex^='-'])
+):focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset);
+}
+
+/* A pointer target at least --hit-target square, whatever the drawn size:
+   the pseudo-element grows the hit area around a small control without
+   moving it. A control already that size gains nothing. Where neighbours
+   sit closer than the growth (pager steps 2px apart), a component limits
+   the growth to the block axis. */
+.hit-target {
+  position: relative;
+}
+
+.hit-target::after {
+  position: absolute;
+  inset: min(0px, calc((100% - var(--hit-target)) / 2));
+  content: '';
+}
+
+/* The Spinner (src/icon): one turn per --duration-spin, standing still
+   under reduced motion. */
+.spinner {
+  flex: none;
+  animation: uiok-spin var(--duration-spin) linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}
+
+@keyframes uiok-spin {
+  to {
+    transform: rotate(1turn);
+  }
 }
 
 /* Kept in the accessibility tree but off screen, for text that only assistive
@@ -60,23 +647,34 @@
 
 /* A control that cannot act right now: a disabled field or button, a menu
    row or an option marked aria-disabled, a label whose checkbox or field is
-   disabled. It keeps its place and its words, faded whole (words, icon, and
-   fill) to --disabled-opacity, and the pointer stays an arrow over it. Inside
-   one already faded it fades no further. :root weighs it over a page's own
+   disabled, a field box whose input is. It keeps its place and its words,
+   faded whole (words, icon, and fill) to --disabled-opacity, and the pointer
+   stays an arrow over it. Inside one already faded it fades no further. A
+   checkbox or radio is left out: a .check draws its own disabled look
+   (field.css), and a box the platform draws already greys itself, so a
+   second fade would stack on the first. :root weighs it over a page's own
    cursor and opacity for a control; a control that hides its native input (a
    switch, a radio row) keeps the input hidden with a heavier rule and fades
    what it draws instead. A hover or cursor-row highlight leaves out a
    disabled control in its own rule (:enabled, :not([aria-disabled='true'])). */
 :root
   :is(
-    :is(button, input, select, textarea):disabled,
+    :is(
+      button,
+      input:not([type='checkbox'], [type='radio']),
+      input.switch,
+      select,
+      textarea
+    ):disabled,
     :is(button, [role^='menuitem'], [role='option'])[aria-disabled='true'],
-    label:is([data-disabled], :has(> :is(input, select, textarea):disabled))
+    label:is([data-disabled], :has(> :is(input, select, textarea):disabled)),
+    .field-box:has(> input:disabled)
   ):not(
     :where(
         :is(button, input, select, textarea):disabled,
         [aria-disabled='true'],
-        label:is([data-disabled], :has(> :is(input, select, textarea):disabled))
+        label:is([data-disabled], :has(> :is(input, select, textarea):disabled)),
+        .field-box:has(> input:disabled)
       )
       *
   ) {

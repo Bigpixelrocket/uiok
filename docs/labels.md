@@ -38,7 +38,7 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | `keys`      | `KeyLabels`       | `DEFAULT_KEY_LABELS`        | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
 | `charts`    | `ChartLabels`     | `DEFAULT_CHART_LABELS`      | `LineChart`, `ScatterChart`, `ResultChart`, and, given it, `tokenColour`, `svgPng`      |
 | `dateTime`  | `DateTimeLabels`  | `DEFAULT_DATE_TIME_LABELS`  | `DateTimePicker`                                                                        |
-| `dialog`    | `DialogLabels`    | `DEFAULT_DIALOG_LABELS`     | `ConfirmDialog`, and, given it, `filterLeaveLabel`                                      |
+| `dialog`    | `DialogLabels`    | `DEFAULT_DIALOG_LABELS`     | `ConfirmDialog`, `DialogItems`, and, given it, `filterLeaveLabel`                       |
 | `legend`    | `LegendLabels`    | `DEFAULT_LEGEND_LABELS`     | `KeyLegendStrip`, and, given it, `moreLabel`                                            |
 | `listing`   | `ListingLabels`   | `DEFAULT_LISTING_LABELS`    | `Strip` and `Listing`, for a column label that sorts                                    |
 | `pager`     | `PagerLabels`     | `DEFAULT_PAGER_LABELS`      | `Pager`                                                                                 |
@@ -101,8 +101,10 @@ Counts arrive as numbers, so the app formats them for its locale and picks the p
 | `cancel`        | `string`                    | `Cancel`         |
 | `clear`         | `string`                    | `Clear`          |
 | `affectedItems` | `(count: number) => string` | `Affected items` |
+| `moreItems`     | `(count: number) => string` | `+3 more`        |
+| `itemCount`     | `(count: number) => string` | `3 items`        |
 
-`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's list of paths, given how many it holds.
+`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's item list (one without a group label), given how many it holds. `moreItems` is that list's last row when it stops short, given how many items it leaves out (`DialogItems`). `itemCount` is the count a screen reader hears after the lead and before the names.
 
 ### `legend`
 
@@ -145,11 +147,11 @@ A folded pair's label ("Up/Down") is not a label here: the app owns its pair voc
 
 ### `selectAll`
 
-| Field          | Type     | English default                                                 |
-| -------------- | -------- | --------------------------------------------------------------- |
-| `checkAll`     | `string` | Check all                                                       |
-| `withSelected` | `string` | With selected:                                                  |
-| `label`        | `string` | With selected (the bar's accessible name when it is given none) |
+| Field      | Type                                         | English default                                                 |
+| ---------- | -------------------------------------------- | --------------------------------------------------------------- |
+| `checkAll` | `string`                                     | Check all                                                       |
+| `selected` | `(checked: number, total: number) => string` | "3 of 8 selected" (before the bulk actions)                     |
+| `label`    | `string`                                     | With selected (the bar's accessible name when it is given none) |
 
 ### `terminal`
 

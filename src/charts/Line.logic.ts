@@ -57,6 +57,20 @@ export function linePath(
   return parts.join(' ');
 }
 
+/**
+ * The points a line cannot show: a value with no value beside it on either
+ * side (the series' only point, or one between two gaps), which a path
+ * draws as a speck. The chart marks each with a dot at rest.
+ */
+export function lonePoints(points: readonly LinePoint[]): LinePoint[] {
+  const has = (point: LinePoint | undefined) =>
+    point !== undefined && point.value !== null && Number.isFinite(point.value);
+
+  return points.filter(
+    (point, index) => has(point) && !has(points[index - 1]) && !has(points[index + 1])
+  );
+}
+
 /** The moment among `moments` (in order) nearest `at`; null when there is none. */
 export function nearestMoment(moments: readonly number[], at: number): number | null {
   let best: number | null = null;

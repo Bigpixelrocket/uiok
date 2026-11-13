@@ -4,92 +4,260 @@
    are drawn: they carry their own font, size, and box model, so no
    surrounding stylesheet restyles them, and a consumer never overrides them
    (a layout class may set width or alignment only). Tiers: primary for a
-   view's one main action, tonal for a row's routine positive action, neutral
-   for the rest. Hover is the glass edge: a lit top edge and a touch of
-   brightness on fills, a frosted wash on outlines; a press sinks the face. */
+   view's one main action, tonal for a row's routine positive action, danger
+   for a button that destroys something, neutral for the rest. A neutral
+   button and an icon button are outlined in
+   --control-border, the 3:1 line every control a pointer acts on shares.
+   Fills carry the glass edge (a lit top edge) at rest; hover deepens a fill
+   to its own hover token and lays a frosted wash on an outline; a press
+   sinks the face to a pressed tone one step past hover. Every control with
+   the frosted hover takes --transition-control, so the change eases the
+   same everywhere. */
 .button,
 .icon-button {
   display: inline-flex;
   flex: none;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: var(--space-3);
   box-sizing: border-box;
-  height: 28px;
+  height: var(--control-height);
   margin: 0;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-md);
   background: transparent;
   color: var(--text);
-  cursor: pointer;
+  cursor: default;
   font-family: var(--font-ui);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-strong);
   line-height: 1;
   white-space: nowrap;
-  transition:
-    background-color 120ms,
-    border-color 120ms,
-    box-shadow 120ms,
-    color 120ms,
-    filter 120ms;
+  transition: var(--transition-control);
 }
 
 .button {
-  padding: 0 12px;
+  padding: 0 var(--space-6);
 }
 
 .button-small {
-  height: 24px;
-  padding: 0 9px;
-  font-size: 12px;
+  height: var(--control-height-sm);
+  padding: 0 var(--space-4);
+  font-size: var(--font-size-small);
+}
+
+/* The 20px push button, for a row or a strip where 24px would touch the
+   rules: the 4px corner every 20px control has, caption words at medium
+   weight, and the tighter glyph gap. These are the strip action's values
+   (.pane-strip-link in listing.css), so the library has one 20px push
+   button look; a test holds the two rules equal. Its pointer target grows
+   to --hit-target in the block axis only, so buttons side by side keep
+   their own targets; the default focus ring stays. */
+.button-xs {
+  position: relative;
+  gap: var(--space-2);
+  height: var(--control-height-xs);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-medium);
+}
+
+.button-xs::after {
+  position: absolute;
+  inset-block: min(0px, calc((100% - var(--hit-target)) / 2));
+  inset-inline: 0;
+  content: '';
 }
 
 .icon-button {
-  width: 28px;
+  width: var(--control-height);
   padding: 0;
   color: var(--text-dim);
 }
 
 .icon-button-small {
-  width: 24px;
-  height: 24px;
+  width: var(--control-height-sm);
+  height: var(--control-height-sm);
+}
+
+/* A glyph takes the size of the control it sits in, whatever size its
+   caller passed: 14px in a regular control, 12px in a small or xs one. */
+:is(.button, .icon-button) > svg {
+  flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+:is(.button-small, .button-xs, .icon-button-small) > svg {
+  width: var(--icon-sm);
+  height: var(--icon-sm);
 }
 
 .button-primary {
   border-color: var(--primary);
   background: var(--primary);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
   color: var(--on-primary);
 }
 
 .button-tonal {
   border-color: var(--tonal-border);
   background: var(--tonal);
+  box-shadow: inset 0 1px 0 var(--glass-edge);
   color: var(--on-tonal);
 }
 
-.button-primary:hover:enabled:not([aria-disabled='true']) {
+.button-primary:hover:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
+  background: var(--primary-hover);
   box-shadow: var(--hover-lit);
-  filter: brightness(1.08);
 }
 
-.button-tonal:hover:enabled:not([aria-disabled='true']) {
+.button-tonal:hover:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
+  background: var(--tonal-hover);
   box-shadow: var(--hover-lit);
-  filter: brightness(var(--tonal-hover-brightness));
 }
 
-:is(.button-neutral, .icon-button):hover:enabled:not([aria-disabled='true']) {
+:is(.button-neutral, .icon-button):hover:enabled:not(
+    [aria-disabled='true'],
+    [aria-pressed='true']
+  ) {
   background: var(--hover-wash);
   box-shadow: var(--hover-frost);
   color: var(--text);
 }
 
-:is(.button, .icon-button):active:enabled:not([aria-disabled='true']) {
-  box-shadow: var(--shadow-pressed);
-  filter: brightness(0.94);
+/* A danger button is outlined, not filled: a --danger outline (4.5:1 on a
+   panel, so it clears the 3:1 an outline needs) and --danger-text words at
+   rest, the danger wash under the pointer, the stronger danger
+   wash while held. Red is kept for what destroys, so a view never shows a
+   solid red button beside its primary action. */
+.button-danger {
+  border-color: var(--danger);
+  color: var(--danger-text);
 }
 
-:is(.button, .icon-button):focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
+.button-danger:hover:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
+  background: var(--danger-wash);
+  box-shadow: var(--hover-frost);
+}
+
+/* A press sinks the face. A fill steps past its hover tone to its pressed
+   tone (further from its words, so the label keeps its contrast) under the
+   pressed shadow; an outline takes the pressed wash, darker than the hover
+   wash. Pressed never reads as hovered, nor as the pointer having left. */
+:is(.button-primary, .button-tonal):active:enabled:not(
+    [aria-disabled='true'],
+    [aria-pressed='true']
+  ) {
+  box-shadow: var(--shadow-pressed);
+}
+
+.button-primary:active:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
+  background: var(--primary-pressed);
+}
+
+.button-tonal:active:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
+  background: var(--tonal-pressed);
+}
+
+/* An outline keeps the inner hairline its hover drew, under the pressed
+   shadow, as the base sheet's shared press does: where a theme's pressed
+   wash barely moves the face, the sunk top edge and the ring still tell a
+   press from hover. */
+.button-danger:active:enabled:not([aria-disabled='true'], [aria-pressed='true']) {
+  background: var(--danger-wash-strong);
+  box-shadow:
+    var(--shadow-pressed),
+    inset 0 0 0 var(--line) var(--border-strong);
+}
+
+:is(.button-neutral, .icon-button):active:enabled:not(
+    [aria-disabled='true'],
+    [aria-pressed='true']
+  ) {
+  background: var(--pressed-wash);
+  box-shadow:
+    var(--shadow-pressed),
+    inset 0 0 0 var(--line) var(--border-strong);
+  color: var(--text);
+}
+
+/* A neutral Button or an IconButton that is on (aria-pressed="true", a
+   toggle) draws one ring, not two: its own outline takes the current
+   item's ring in place of the base sheet's inset ring, so the grey
+   outline and the accent ring never stand side by side. Held, it sinks
+   inside that one outline. */
+:is(.button-neutral, .icon-button)[aria-pressed='true'] {
+  border-color: var(--current-ring);
+  box-shadow: none;
+}
+
+:is(.button-neutral, .icon-button)[aria-pressed='true']:active:enabled:not([aria-disabled='true']) {
+  box-shadow: var(--shadow-pressed);
+}
+
+/* A primary, tonal, or danger button that cannot act drops its tier and is
+   drawn as a disabled neutral button: a faded tinted fill or a faded red
+   line would leave it murky. The base rule fades it like every other
+   disabled control. */
+:is(.button-primary, .button-tonal, .button-danger):is(:disabled, [aria-disabled='true']) {
+  border-color: var(--control-border);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text);
+}
+
+/* ---- Disclosure ----
+
+   A section a user shows or hides (Extra options, Advanced options): a
+   disclosure chevron and a plain label, as a desktop window draws one,
+   never a bezelled push button. On a native button with aria-expanded;
+   the chevron is the icon family's (lucide ChevronRight, the glyph trees
+   and folds use), pointing to the label's end while closed and down while
+   open, and turns at once. At rest the words are dim, open or closed (the
+   chevron alone says open); under the pointer and with the keyboard focus
+   they are in the text colour, open or closed.
+   While held it takes the base sheet's shared press (the pressed wash and
+   hairline) on a face that reaches back over its own padding, so the words
+   keep their edge; the same corner rounds the base sheet's focus ring. */
+.disclosure {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  min-height: var(--control-height-sm);
+  margin: 0;
+  margin-inline: calc(-1 * var(--space-2));
+  padding: 0 var(--space-2);
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: none;
+  color: var(--text-dim);
+  font: var(--font-weight-medium) var(--font-size-small) / var(--line-height-compact) var(--font-ui);
+  text-align: start;
+}
+
+.disclosure::before {
+  flex: none;
+  width: var(--icon-sm);
+  height: var(--icon-sm);
+  background: currentColor;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m9 18 6-6-6-6'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  content: '';
+}
+
+/* Mirrored right to left, read from the dir attribute (minifiers rewrite
+   the direction pseudo-class into a list of languages). */
+.disclosure:where([dir='rtl'] *, [dir='rtl'])::before {
+  transform: scaleX(-1);
+}
+
+.disclosure[aria-expanded='true']::before {
+  transform: rotate(90deg);
+}
+
+.disclosure:is(:hover, :focus-visible):not(:disabled) {
+  color: var(--text);
 }

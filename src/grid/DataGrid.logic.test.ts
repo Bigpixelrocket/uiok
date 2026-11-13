@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   dropPlace,
+  editorLeft,
   gridMove,
   initialWidth,
   movedCell,
@@ -71,6 +72,11 @@ describe('DataGrid logic', () => {
     expect(resizedWidth(100, -500)).toBe(40);
     expect(initialWidth('id', ['1', '22'], 8)).toBe(60);
     expect(initialWidth('note', ['x'.repeat(200)], 8)).toBe(360);
+    // A sortable heading keeps room for its mark beside the label.
+    expect(initialWidth('status', ['ok'], 8)).toBe(68);
+    expect(initialWidth('status', ['ok'], 8, 24)).toBe(92);
+    // Rows longer than the label and its mark set the width as before.
+    expect(initialWidth('id', ['x'.repeat(20)], 8, 24)).toBe(180);
   });
 });
 
@@ -86,5 +92,17 @@ describe('dropPlace', () => {
     expect(dropPlace(-20, edges, 2)).toBe(0);
     expect(dropPlace(900, edges, 0)).toBe(2);
     expect(dropPlace(50, [], 3)).toBe(3);
+  });
+
+  it('keeps a wide editor inside the grid well, a margin from its right edge', () => {
+    const well = { left: 100, right: 500 };
+
+    // A layer that fits stays over its cell, even flush with the edge.
+    expect(editorLeft(300, 120, well, 8)).toBe(300);
+    expect(editorLeft(380, 120, well, 8)).toBe(380);
+    // One that would cross moves left to end 8px inside.
+    expect(editorLeft(400, 250, well, 8)).toBe(242);
+    // Wider than the well: from its left edge.
+    expect(editorLeft(400, 450, well, 8)).toBe(100);
   });
 });

@@ -1,6 +1,7 @@
 /**
  * Panes: the path bar and status line a pane opens and closes with, the
- * compact controls inside them and in listing rows, and the keyboard of a
+ * compact controls inside them, in listing rows, and in a toolbar that
+ * fits its tools to one line (`useToolbarFit`), and the keyboard of a
  * sidebar beside a page (`usePaneKeys`) with the pure key mapping and DOM
  * readers it is built on. Styled by the listing look under `.listing-root`.
  */
@@ -19,9 +20,11 @@ export {
 export {
   PanePathBar,
   PaneStatus,
+  PathFact,
   type PaneCrumb,
   type PanePathBarProps,
-  type PaneStatusProps
+  type PaneStatusProps,
+  type PathFactProps
 } from './PaneFrame.js';
 export {
   isTabStop,
@@ -46,4 +49,5 @@ export {
   type PaneKeyStroke,
   type PaneMove
 } from './PaneKeys.logic.js';
+export { useToolbarFit } from './useToolbarFit.js';
 export { usePaneKeys, type Pane, type PaneKeys, type PaneKeysOptions } from './usePaneKeys.js';

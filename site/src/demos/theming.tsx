@@ -1,78 +1,91 @@
 /**
- * The theme switcher across every theme, each drawn as a miniature through
- * `data-theme-preview`, and the tokens the worn theme sets, by role.
+ * The theme switcher across every theme, as the library's theme picker
+ * (miniatures painted through `data-theme-preview`, the same picker the
+ * Shell page shows), and the tokens the worn theme sets, by role.
  */
 
 import { useId } from 'react';
 
 import {
-  THEME_ENTRIES,
-  THEME_PREVIEW_ATTRIBUTE,
+  DARK_THEME_IDS,
+  LIGHT_THEME_IDS,
   themeById,
   themeTokens,
-  type ThemeEntry
+  type ThemeId
 } from '@bigpixelrocket/uiok';
 import { SegmentedChoice } from '@bigpixelrocket/uiok/segmented';
+import { cutTooltip } from '@bigpixelrocket/uiok/tooltip';
 
 import { useTheme, type AppearanceChoice } from '../theme';
+import { ThemeChoices } from '../ThemePicker';
 
-/** Token roles, in the order docs/themes.md lists them; a name lands in the first role that claims it. */
+/**
+ * Token roles; a name lands in the first role that claims it, so the
+ * narrower roles (selection, status words) come before the broad ones.
+ */
 const ROLES: readonly { readonly role: string; readonly claims: (name: string) => boolean }[] = [
-  { role: 'Grounds', claims: (name) => name.startsWith('--bg') },
+  {
+    role: 'Selection and current',
+    claims: (name) =>
+      /^--(cursor|selected|selection|on-selected|marked|current|match|text-selection|row-hover|fill$)/.test(
+        name
+      )
+  },
+  {
+    role: 'Grounds',
+    claims: (name) => /^--(bg|ground|surface|card-bg|file-list-bg|row-lift)/.test(name)
+  },
   { role: 'Lines', claims: (name) => name.startsWith('--border') },
-  { role: 'Text', claims: (name) => name.startsWith('--text') || name === '--row-meta-text' },
-  { role: 'Accent', claims: (name) => name.endsWith('accent') },
+  {
+    role: 'Text',
+    claims: (name) =>
+      name.startsWith('--text') || name === '--row-meta-text' || name === '--cell-binary-text'
+  },
+  { role: 'Accent', claims: (name) => name.startsWith('--accent') || name === '--on-accent' },
   { role: 'Primary', claims: (name) => name.includes('primary') },
   { role: 'Tonal tier', claims: (name) => name.includes('tonal') },
-  { role: 'Listings', claims: (name) => /^--(row-lift|file-list-bg|cursor)/.test(name) },
-  { role: 'Glass and hover', claims: (name) => name === '--glass-edge' || name === '--hover-wash' },
-  { role: 'Status', claims: (name) => ['--success', '--warning', '--danger'].includes(name) },
+  {
+    role: 'Status',
+    claims: (name) => /^--(on-)?(success|warning|danger)/.test(name) || name === '--idle-mark'
+  },
+  {
+    role: 'Controls',
+    claims: (name) =>
+      /^--(control|progress|scrollbar|pressed|hover|switch|disabled|dragging|well)/.test(name)
+  },
+  {
+    role: 'Depth and glass',
+    claims: (name) => /^--(shadow|scrim|glass)/.test(name)
+  },
+  { role: 'Charts', claims: (name) => name.startsWith('--chart') },
   { role: 'Categorical', claims: (name) => name.startsWith('--group') },
   { role: 'Terminal', claims: (name) => name.startsWith('--terminal') },
   { role: 'Syntax', claims: (name) => name.startsWith('--syntax') },
+  // A guard: every token belongs to a role above, so this stays empty; a new
+  // token that lands here needs its role claimed.
   { role: 'Other', claims: () => true }
 ];
 
-const isColour = (value: string): boolean => CSS.supports('color', value);
+/** The roles in the order the page lists them, as docs/themes.md does. */
+const SHOWN: readonly string[] = [
+  'Grounds',
+  'Lines',
+  'Text',
+  'Accent',
+  'Primary',
+  'Tonal tier',
+  'Status',
+  'Controls',
+  'Selection and current',
+  'Depth and glass',
+  'Charts',
+  'Categorical',
+  'Terminal',
+  'Syntax',
+  'Other'
+];
 
-/** One theme's miniature, a button that wears it. */
-function ThemeTile({
-  entry,
-  worn,
-  onWear
-}: {
-  readonly entry: ThemeEntry;
-  readonly worn: boolean;
-  readonly onWear: () => void;
-}) {
-  return (
-    <button
-      aria-pressed={worn}
-      className="theme-tile"
-      onClick={onWear}
-      type="button"
-      {...{ [THEME_PREVIEW_ATTRIBUTE]: entry.id }}
-    >
-      <span className="theme-tile-window" aria-hidden="true">
-        <span className="theme-tile-bar" />
-        <span className="theme-tile-body">
-          <span className="theme-tile-line strong" />
-          <span className="theme-tile-line" />
-          <span className="theme-tile-chips">
-            <span className="chip chip-1" />
-            <span className="chip chip-2" />
-            <span className="chip chip-3" />
-            <span className="chip chip-4" />
-            <span className="chip chip-5" />
-            <span className="chip chip-6" />
-          </span>
-          <span className="theme-tile-button" />
-        </span>
-      </span>
-      <span className="theme-tile-name">{entry.name}</span>
-    </button>
-  );
-}
+const isColour = (value: string): boolean => CSS.supports('color', value);
 
 const APPEARANCES: readonly AppearanceChoice[] = ['system', 'light', 'dark'];
 const WORDS: Readonly<Record<AppearanceChoice, string>> = {
@@ -92,13 +105,13 @@ export function ThemingDemo() {
     groups.set(role, [...(groups.get(role) ?? []), name]);
   }
 
-  const wear = (entry: ThemeEntry) => {
-    const keepsSystem =
-      theme.choice.appearance === 'system' && theme.appearance === entry.appearance;
+  const wear = (id: ThemeId) => {
+    const { appearance } = themeById(id);
+    const keepsSystem = theme.choice.appearance === 'system' && theme.appearance === appearance;
     theme.setChoice({
       ...theme.choice,
-      [entry.appearance]: entry.id,
-      appearance: keepsSystem ? 'system' : entry.appearance
+      [appearance]: id,
+      appearance: keepsSystem ? 'system' : appearance
     });
   };
 
@@ -128,21 +141,17 @@ export function ThemingDemo() {
           <h3 className="demo-subhead">
             {appearance === 'light' ? 'Light themes' : 'Dark themes'}
           </h3>
-          <div className="theme-tiles">
-            {THEME_ENTRIES.filter((entry) => entry.appearance === appearance).map((entry) => (
-              <ThemeTile
-                entry={entry}
-                key={entry.id}
-                onWear={() => wear(entry)}
-                worn={theme.choice[appearance] === entry.id && theme.appearance === appearance}
-              />
-            ))}
-          </div>
+          <ThemeChoices
+            chosen={theme.choice[appearance]}
+            ids={appearance === 'light' ? LIGHT_THEME_IDS : DARK_THEME_IDS}
+            label={appearance === 'light' ? 'Light themes' : 'Dark themes'}
+            onChoose={wear}
+          />
         </section>
       ))}
       <h3 className="demo-subhead">Tokens of {themeById(theme.worn).name}</h3>
       <div className="token-roles">
-        {ROLES.filter(({ role }) => groups.has(role)).map(({ role }) => (
+        {SHOWN.filter((role) => groups.has(role)).map((role) => (
           <section className="token-role" key={role}>
             <h4>{role}</h4>
             <ul>
@@ -156,7 +165,9 @@ export function ThemingDemo() {
                       style={isColour(value) ? { background: `var(${name})` } : undefined}
                     />
                     <code className="token-name">{name}</code>
-                    <code className="token-value">{value}</code>
+                    <code className="token-value" {...cutTooltip(value)}>
+                      {value}
+                    </code>
                   </li>
                 );
               })}

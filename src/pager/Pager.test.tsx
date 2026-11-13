@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
 import { Pager } from './Pager.js';
 
@@ -31,28 +32,31 @@ describe('Pager', () => {
     expect(onPage).toHaveBeenLastCalledWith(4);
   });
 
-  it('offers no step back on the first page, no End before the end is known, and nothing on past a stop', () => {
+  it('disables the steps back on the first page, End before the end is known, and both onward past a stop', () => {
     const { rerender } = render(
       <Pager endKnown={false} onPage={() => undefined} page={0} pages={5} />
     );
+    const step = (name: RegExp): HTMLButtonElement =>
+      screen.getByRole('button', { name }) as HTMLButtonElement;
 
-    expect(screen.queryByRole('button', { name: /^Begin/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Previous/ })).toBeNull();
-    expect(screen.getByRole('button', { name: 'Next page of items' })).toBeDefined();
-    expect(screen.queryByRole('button', { name: /^End/ })).toBeNull();
+    expect(step(/^Begin/).disabled).toBe(true);
+    expect(step(/^Previous/).disabled).toBe(true);
+    expect(step(/^Next/).disabled).toBe(false);
+    expect(step(/^End/).disabled).toBe(true);
 
     rerender(<Pager forward={false} onPage={() => undefined} page={1} pages={5} />);
-    expect(screen.queryByRole('button', { name: /^Next/ })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^End/ })).toBeNull();
+    expect(step(/^Previous/).disabled).toBe(false);
+    expect(step(/^Next/).disabled).toBe(true);
+    expect(step(/^End/).disabled).toBe(true);
   });
 
-  it('keeps a hidden icon step’s place, and draws steps in words when asked', () => {
+  it('keeps every step in its place in each look, so nothing moves between pages', () => {
     const { container, rerender } = render(<Pager onPage={() => undefined} page={0} pages={3} />);
 
-    expect(container.querySelectorAll('span.pager-step')).toHaveLength(2);
+    expect(container.querySelectorAll('button.pager-step')).toHaveLength(4);
 
     rerender(<Pager look="text" onPage={() => undefined} page={0} pages={3} />);
-    expect(container.querySelectorAll('span.pager-step')).toHaveLength(0);
+    expect(container.querySelectorAll('button.pager-step.worded')).toHaveLength(4);
     expect(screen.getByRole('button', { name: 'Next page of items' }).textContent).toBe('Next');
   });
 
@@ -78,5 +82,26 @@ describe('Pager', () => {
     render(<Pager onPage={() => undefined} page={0} pages={1200} />);
 
     expect(screen.getByRole('option', { name: '1 of 1,200' })).toBeDefined();
+  });
+
+  it('matches a toolbar’s 24px fields in the small size, and a row’s 20px ones unless given', () => {
+    const { unmount } = render(<Pager onPage={() => undefined} page={0} pages={3} />);
+
+    expect(screen.getByRole('navigation').className).toBe('pager');
+    expect(screen.getByRole('combobox').classList).toContain('field-xs');
+    unmount();
+
+    const small = render(<Pager onPage={() => undefined} page={0} pages={3} size="small" />);
+    expect(screen.getByRole('navigation').classList).toContain('pager-small');
+    expect(screen.getByRole('combobox').classList).toContain('field-sm');
+    small.unmount();
+
+    // A dialog's 28px fields: the regular field and 28px steps.
+    applyStylesheets(readStylesheet('src/pager/pager.css'));
+    render(<Pager onPage={() => undefined} page={0} pages={3} size="regular" />);
+    const nav = screen.getByRole('navigation');
+    expect(nav.className).toBe('pager pager-regular');
+    expect(declaredValues(nav, '--pager-height').at(-1)).toBe('var(--control-height)');
+    expect(screen.getByRole('combobox').className).toBe('field pager-page');
   });
 });

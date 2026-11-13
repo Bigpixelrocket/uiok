@@ -15,6 +15,7 @@ import {
   UiokProvider
 } from '@bigpixelrocket/uiok';
 import { IconButton } from '@bigpixelrocket/uiok/button';
+import { ICON_LG, ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { isModalOpen, isOverlayOpen, isTextEditingTarget } from '@bigpixelrocket/uiok/keyboard';
 import { KeyChord } from '@bigpixelrocket/uiok/keychord';
 import { KeyLegendStrip, type LegendPair, type LegendVerb } from '@bigpixelrocket/uiok/legend';
@@ -55,6 +56,7 @@ export function App() {
   const page = PAGES.find((candidate) => candidate.route === route) ?? PAGES[0];
 
   const mainRef = useRef<HTMLElement>(null);
+  const navRef = useRef<HTMLElement>(null);
   const shownPage = useRef(page);
 
   useEffect(() => {
@@ -68,6 +70,16 @@ export function App() {
       mainRef.current?.focus({ preventScroll: true });
     }
   }, [page]);
+
+  // The sidebar keeps the current page's entry in view: on load, on every page change, and when
+  // the narrow window's drawer opens. `nearest` leaves an entry already in view where it is, the
+  // nav's scroll padding keeps it clear of the edge fades, and the jump is instant (the nav sets
+  // no smooth scrolling), so nothing animates under reduced motion.
+  useEffect(() => {
+    const current = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (current === null || current === undefined || current.offsetParent === null) return;
+    current.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  }, [page, menuOpen]);
 
   const verbs: readonly LegendVerb[] = useMemo(
     () => [
@@ -100,20 +112,25 @@ export function App() {
         return;
       }
       if (event.metaKey || event.ctrlKey || event.altKey) return;
+      // Escape closes the open drawer, as a press beside it does.
+      if (event.key === 'Escape' && menuOpen && !isOverlayOpen(document)) {
+        setMenuOpen(false);
+        return;
+      }
       if (isTextEditingTarget(event.target) || isOverlayOpen(document)) return;
       if (event.key === '[') go(stepPage(route, -1));
       if (event.key === ']') go(stepPage(route, 1));
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [route]);
+  }, [route, menuOpen]);
 
   const themeIds = theme.appearance === 'light' ? LIGHT_THEME_IDS : DARK_THEME_IDS;
   const commands = useMemo(
     () =>
       PAGES.map((candidate) => ({
         id: candidate.route,
-        label: candidate.title,
+        label: candidate.name,
         hint: candidate.group,
         meta: candidate.route,
         run: () => go(candidate.route)
@@ -144,7 +161,7 @@ export function App() {
               className="menu-toggle"
               onClick={() => setMenuOpen((open) => !open)}
             >
-              <Menu size={16} />
+              <Menu size={ICON_LG} />
             </IconButton>
             <a className="brand" href="#/">
               <span className="brand-mark" aria-hidden="true">
@@ -154,12 +171,12 @@ export function App() {
             </a>
             <button
               aria-label="Find a page"
-              className="find-button"
+              className="find-button keycap"
               onClick={() => setFinding(true)}
               type="button"
               {...tooltip('Find a page')}
             >
-              <Search aria-hidden="true" size={13} />
+              <Search aria-hidden="true" size={ICON_MD} />
               <span className="find-words">Find a page</span>
               <KeyChord chord={{ key: 'k', meta: true }} />
             </button>
@@ -176,7 +193,7 @@ export function App() {
               />
               <select
                 aria-label={`${theme.appearance === 'light' ? 'Light' : 'Dark'} theme`}
-                className="theme-select"
+                className="field theme-select"
                 onChange={(event) =>
                   theme.setChoice({ ...theme.choice, [theme.appearance]: event.target.value })
                 }
@@ -190,10 +207,12 @@ export function App() {
               </select>
             </div>
           </header>
-          <nav aria-label="Pages" className="site-nav">
+          {/* In a narrow window the open drawer dims the page beside it; a press there closes it. */}
+          <div aria-hidden="true" className="nav-scrim" onClick={() => setMenuOpen(false)} />
+          <nav aria-label="Pages" className="site-nav scroll-fade" ref={navRef}>
             {groups.map((group) => (
               <section className="nav-group" key={group}>
-                <h2 className="nav-heading">{group}</h2>
+                <h2 className="nav-heading overline">{group}</h2>
                 <ul>
                   {PAGES.filter((candidate) => candidate.group === group).map((candidate) => (
                     <li key={candidate.route}>
@@ -202,7 +221,7 @@ export function App() {
                         className="nav-link"
                         href={`#${candidate.route}`}
                       >
-                        {candidate.title}
+                        {candidate.name}
                       </a>
                     </li>
                   ))}

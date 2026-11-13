@@ -8,7 +8,7 @@ SVG charts painted from the theme's chart tokens, so they follow light, dark, an
 - `ResultChart`: a table of rows drawn as bar, column, line, spline, area, pie, timeline, or scatter, stackable where it makes sense, with title, legend, and axes inside the SVG so it saves whole as a picture.
 - `tokenColour`, `svgMarkup`, `svgPng`: save a chart as SVG text or PNG bytes.
 
-Series take `--chart-1` to `--chart-8` in turn and start over after the eighth. `seriesColour(index)` gives that colour as a `var()` (`seriesColour(2)` is `'var(--chart-3)'`), so a series an app draws outside these charts, in its own legend or plot, matches theirs. The chrome reads `--text`, `--text-dim`, `--row-meta-text`, `--border`, `--border-strong`, `--surface`, `--accent`, and `--hover-wash`.
+Series take `--chart-1` to `--chart-8` in turn and start over after the eighth (a pie's slices then hatch; see `ResultChart` and `PieChart`). `seriesColour(index)` gives that colour as a `var()` (`seriesColour(2)` is `'var(--chart-3)'`), so a series an app draws outside these charts, in its own legend or plot, matches theirs. The chrome reads `--text`, `--text-dim`, `--row-meta-text`, `--border`, `--border-strong`, `--surface`, `--accent`, and `--hover-wash`.
 
 ## Example
 
@@ -108,7 +108,7 @@ Labels must be unique; they key the slices.
 | `picked` | `number \| null`          | Optional. The picked point's id, drawn lit                                                                                         |
 | `onPick` | `(id: number) => void`    | A click on a point, or Return or Space on a focused one                                                                            |
 
-Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for a time of day). The frame resizes by its corner (CSS `resize: both`). Mount `TooltipLayer` for the point tooltips.
+Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for a time of day); numbers from a million up are written short (`2.5M`, `1.7936T`). The frame resizes by its corner (CSS `resize: both`), which shows the resize cursor but draws no grip, as a window's corner does. Over the plot the pointer stays the arrow, as it does over a line chart that takes a range drag: the zoom rectangle and the guide line show the gesture. The picked point is drawn last, ringed 2px in `--text` over a halo of its colour. Mount `TooltipLayer` for the point tooltips.
 
 ### `ResultChart` (`ResultChartProps`)
 
@@ -124,7 +124,13 @@ Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for 
 | `width`, `height`  | `number`                      | The drawing's size in pixels                                                                         |
 | `svgRef`           | `Ref<SVGSVGElement>`          | Optional. Receives the `<svg>` for `svgMarkup`                                                       |
 
-`ResultChart` is memoised: keep the arrays stable across renders. The legend shows at most 24 entries in up to four rows. Values are written with six significant digits.
+`ResultChart` is memoised: keep the arrays stable across renders. The legend starts at the plot's left edge and shows at most 24 entries in up to four rows (a pie's legend, with its title, keeps within a third of the drawing's height, so a short pie keeps room for its tags); when entries are left out, the legend ends in a count of them, `+N` in the legend's own `--row-meta-text` with no swatch, whose width it reserves on its last row. The title is centred on the plot. Values are written with six significant digits. An area's fill breaks where a value is missing, as its line does. The legend keeps the same 12px of air under its last row whether it fits one row or wraps. A pie with more slices than the eight series colours numbers each slice its legend lists on a leader outside the rim, and its legend entry to match; a slice the legend counts in its `+N` carries no number. Past the eighth slice the colours come round again hatched (stripes of `--surface` across the hue), and past the sixteenth crosshatched, so the 24 legend entries each have a fill of their own; beyond 24 a slice that would match a neighbour, round the circle too, takes the next of the three, so no two neighbouring slices share a fill. A number or time X axis shows at least three ticks and leaves out any label that would touch its neighbour.
+
+## Look
+
+Every chart shares one vocabulary: caption-size type with tabular figures; a 10px swatch with a 2px corner, a dash for a line series; a left axis and a baseline in `--border-strong` with grid lines in `--border-faint`, never a box; a hovered mark ringed in `--text`; a dragged range in `--accent-wash`. A `LineChart` value with no value beside it (a series of one point, or one between two gaps) is a dot at rest, since a line of one point has no length. Hovering a `LineChart` puts a dot on every line at the guide and a read-out in the tooltip's look; hovering a `ResultChart` mark puts the same read-out beside it. An axis whose ticks lie too close together for their size to tell apart in short form (epoch milliseconds on a number axis) labels the first tick in full and the rest by their offset from it (`+100M`). Area fills are faint (`--chart-area-opacity`) and lie under the grid; where unstacked areas overlap, only the front series' tint shows (a mask cuts each fill wherever a series in front has its own), so an overlap never mixes into a hue the legend lacks; the unlit pie slices step back to `--dimmed-opacity`. Hovering a pie slice or its legend row lights both and steps the other slices back.
+
+A chart with no values keeps its plot's place and centres one dim line in it (`charts.noValue`): a `LineChart` draws its axes only, a `PieChart` a dashed ring, a `ScatterChart` its axes and titles, and a `ResultChart` its title, axes, and titles. The rules are `.chart-empty` (an HTML plot) and `.chart-empty-text` (inside an SVG).
 
 ## Saving a picture
 
@@ -138,7 +144,7 @@ Nothing is fetched: the SVG is loaded from its own `data:` URL. Writing the byte
 
 - Every `ScatterChart` point is a focusable `role="button"`; Return or Space picks it.
 - Pointer drags: `LineChart` picks a range with `onSelect`, `ScatterChart` zooms to a rectangle of at least 4 pixels a side (Reset zoom undoes it). A zoom finer than a double can resolve is refused.
-- Read-outs: `LineChart` shows a `role="status"` box at the nearest moment; `ResultChart` writes the hovered value to a polite live line under the drawing.
+- Read-outs: `LineChart` shows a `role="status"` box at the nearest moment; `ResultChart` floats the same box beside the hovered mark and writes its words to a visually hidden polite live line.
 
 ## Styling
 
@@ -146,4 +152,4 @@ Nothing is fetched: the SVG is loaded from its own `data:` URL. Writing the byte
 
 ## Labels read
 
-`charts`: `time` and `seriesValue` (`LineChart` read-out), `points`, `pointsShown`, and `resetZoom` (`ScatterChart` caption), `seriesValue`, `seriesCategoryValue`, `noValue`, and `chart` (`ResultChart`), `coloursUnreadable` and `drawFailed` (`tokenColour`, `svgPng`, when passed). See [labels](../labels.md).
+`charts`: `noValue` (every chart with no values), `time` and `seriesValue` (`LineChart` read-out), `points`, `pointsShown`, and `resetZoom` (`ScatterChart` caption), `seriesValue`, `seriesCategoryValue`, `noValue`, and `chart` (`ResultChart`), `coloursUnreadable` and `drawFailed` (`tokenColour`, `svgPng`, when passed). See [labels](../labels.md).

@@ -9,6 +9,7 @@ import type {
 } from 'react';
 
 import { FilterIcon } from '../filter/FilterIcon.js';
+import { ICON_SM } from '../icon/index.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { useBellBeat } from '../menu/useBellBeat.js';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
@@ -177,7 +178,7 @@ export function PaletteQuery({
           type="button"
           {...tooltip(labels.back, '←')}
         >
-          <ArrowLeft aria-hidden size={11} />
+          <ArrowLeft aria-hidden size={ICON_SM} />
           {level.title}
         </button>
       )}

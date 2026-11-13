@@ -100,8 +100,9 @@ describe('DateTimePicker', () => {
     expect(screen.getByRole('dialog')).toBeDefined();
   });
 
-  it('widens a fraction field past three digits to its digit count, and keeps a shorter one at 7ch', () => {
+  it('sizes every fraction field to its digit count, and keeps the hour at 6ch or more', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
+    const width = 'calc((var(--date-picker-digits) + 1) * 1ch + 2 * var(--space-4) + 2px)';
     const { rerender } = render(
       <DateTimePicker fraction={6} kind="time" label="Pick" onChange={() => undefined} value="" />
     );
@@ -110,20 +111,63 @@ describe('DateTimePicker', () => {
     const micro = screen.getByRole('textbox', { name: 'Microsecond' });
 
     expect(micro.style.getPropertyValue('--date-picker-digits')).toBe('6');
-    expect(declaredValues(micro, 'width').at(-1)).toBe(
-      'calc((var(--date-picker-digits) + 1) * 1ch + 18px)'
-    );
+    expect(declaredValues(micro, 'width')).toContain(width);
 
     rerender(
       <DateTimePicker fraction={3} kind="time" label="Pick" onChange={() => undefined} value="" />
     );
     const milli = screen.getByRole('textbox', { name: 'Millisecond' });
 
-    expect(milli.style.getPropertyValue('--date-picker-digits')).toBe('');
-    expect(declaredValues(milli, 'width')).toEqual(['7ch']);
-    expect(declaredValues(screen.getByRole('spinbutton', { name: 'Hour' }), 'width')).toEqual([
-      '7ch'
-    ]);
+    expect(milli.style.getPropertyValue('--date-picker-digits')).toBe('3');
+    expect(declaredValues(milli, 'width')).toContain(width);
+    expect(declaredValues(milli, 'max-width')).toContain('100%');
+
+    rerender(
+      <DateTimePicker fraction={1} kind="time" label="Pick" onChange={() => undefined} value="" />
+    );
+    // One digit still takes a two-digit field.
+    expect(
+      screen
+        .getByRole('textbox', { name: 'Millisecond' })
+        .style.getPropertyValue('--date-picker-digits')
+    ).toBe('2');
+
+    const hour = screen.getByRole('spinbutton', { name: 'Hour' });
+    // Six characters beside the room a number field's stepper takes.
+    expect(declaredValues(hour, 'min-width')).toContain(
+      'calc(6ch + var(--field-stepper-width, 0px))'
+    );
+    expect(declaredValues(hour, 'width')).not.toContain(width);
+  });
+
+  it('marks today, zero-pads the time fields, and opens a panel placed in the window', () => {
+    render(
+      <DateTimePicker
+        kind="datetime"
+        label="Pick"
+        onChange={() => undefined}
+        value="2026-10-30 09:05:00"
+      />
+    );
+
+    open('Pick');
+    const today = new Date();
+    const marked = document.querySelector('.date-picker-day.today');
+
+    // October 2026 is shown; today is marked only when it falls in the grid.
+    if (marked !== null) {
+      expect(marked.getAttribute('aria-current')).toBe('date');
+      expect(marked.textContent).toBe(String(today.getDate()));
+    }
+    expect((screen.getByRole('spinbutton', { name: 'Hour' }) as HTMLInputElement).value).toBe('09');
+    expect((screen.getByRole('spinbutton', { name: 'Minute' }) as HTMLInputElement).value).toBe(
+      '05'
+    );
+    expect((screen.getByRole('spinbutton', { name: 'Second' }) as HTMLInputElement).value).toBe(
+      '00'
+    );
+    // jsdom lays nothing out, but the panel is measured and placed, never left hidden.
+    expect(screen.getByRole('dialog').style.visibility).toBe('');
   });
 
   it('shows only the time fields for a time, named by them', () => {
@@ -200,5 +244,89 @@ describe('DateTimePicker', () => {
     open('Pick');
     fireEvent.pointerDown(screen.getByRole('button', { name: 'Elsewhere' }));
     expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('lifts a fading scroller’s mask while its panel is open, so the mask never cuts the panel', () => {
+    applyStylesheets(readStylesheet('src/datetime/datetime.css'));
+    render(
+      <div className="listing-root">
+        <div className="pane-list" data-testid="list">
+          <div className="scroll-fade-x" data-testid="well">
+            <DateTimePicker kind="date" label="Pick" onChange={() => undefined} value="" />
+          </div>
+        </div>
+      </div>
+    );
+    const list = screen.getByTestId('list');
+    const well = screen.getByTestId('well');
+
+    expect(declaredValues(list, 'mask-image')).toEqual([]);
+    open('Pick');
+    expect(declaredValues(list, 'mask-image')).toEqual(['none']);
+    expect(declaredValues(well, 'mask-image')).toEqual(['none']);
+  });
+
+  it('keeps hour, minute, and second on one row and gives every fraction a row of its own', () => {
+    applyStylesheets(readStylesheet('src/datetime/datetime.css'));
+    const { rerender } = render(
+      <DateTimePicker fraction={6} kind="time" label="Pick" onChange={() => undefined} value="" />
+    );
+
+    open('Pick');
+    const hour = screen.getByRole('spinbutton', { name: 'Hour' }).parentElement as HTMLElement;
+    const micro = screen.getByRole('textbox', { name: 'Microsecond' }).parentElement as HTMLElement;
+    const row = hour.parentElement as HTMLElement;
+
+    expect(declaredValues(row, 'display')).toEqual(['grid']);
+    expect(declaredValues(row, 'flex-wrap')).toEqual([]);
+    // Three columns whatever the fraction: its label never sets them.
+    expect(declaredValues(row, 'grid-template-columns')).toEqual(['repeat(3, minmax(6ch, 1fr))']);
+    expect(declaredValues(hour, 'grid-column')).toEqual([]);
+    expect(declaredValues(micro, 'grid-column')).toEqual(['1 / -1']);
+
+    rerender(
+      <DateTimePicker fraction={3} kind="time" label="Pick" onChange={() => undefined} value="" />
+    );
+    const milli = screen.getByRole('textbox', { name: 'Millisecond' }).parentElement as HTMLElement;
+    expect(declaredValues(milli, 'grid-column')).toEqual(['1 / -1']);
+    expect(declaredValues(row, 'grid-template-columns')).toEqual(['repeat(3, minmax(6ch, 1fr))']);
+  });
+
+  it('sizes a fraction field to its digits, so it never widens the time row and the panel', () => {
+    const { unmount } = render(
+      <DateTimePicker
+        fraction={3}
+        kind="datetime"
+        label="Pick"
+        onChange={() => undefined}
+        value=""
+      />
+    );
+
+    open('Pick');
+    expect(screen.getByRole('textbox', { name: 'Millisecond' }).getAttribute('size')).toBe('3');
+    unmount();
+
+    render(
+      <DateTimePicker fraction={1} kind="time" label="Pick" onChange={() => undefined} value="" />
+    );
+    open('Pick');
+    expect(screen.getByRole('textbox', { name: 'Millisecond' }).getAttribute('size')).toBe('2');
+  });
+
+  it('matches its button to the field beside it: small unless `size` is regular', () => {
+    const { unmount } = render(
+      <DateTimePicker kind="date" label="Pick" onChange={() => undefined} value="" />
+    );
+
+    expect(screen.getByRole('button', { name: 'Pick' }).classList).toContain('icon-button-small');
+    unmount();
+
+    render(
+      <DateTimePicker kind="date" label="Pick" onChange={() => undefined} size="regular" value="" />
+    );
+    expect(screen.getByRole('button', { name: 'Pick' }).classList).not.toContain(
+      'icon-button-small'
+    );
   });
 });

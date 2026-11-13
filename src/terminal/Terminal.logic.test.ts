@@ -3,6 +3,13 @@ import { describe, expect, it } from 'vitest';
 import { THEMES } from '../themes/catalog.js';
 import { themeTokens } from '../themes/tokens.js';
 import {
+  TERMINAL_MIN_CONTRAST,
+  legibleForeground,
+  parseTranslucentColor,
+  selectedForeground,
+  terminalContrast
+} from './ghostty/contrast.logic.js';
+import {
   BELL_FLASH_MS,
   BELL_INTERVAL_MS,
   bellFlashes,
@@ -61,7 +68,7 @@ describe('terminalThemeFromTokens', () => {
     'reads a complete theme from the tokens of %s, every colour in a form it parses',
     (_id, theme) => {
       const tokens = terminalTokens(themeTokens(theme));
-      expect(tokens.size).toBe(20);
+      expect(tokens.size).toBe(21);
       for (const [name, value] of tokens) expect(parseCssColor(value), name).not.toBeNull();
 
       const terminal = terminalThemeFromTokens((token) => tokens.get(token) ?? '');
@@ -69,6 +76,9 @@ describe('terminalThemeFromTokens', () => {
       expect(terminal.foreground).toEqual(parseCssColor(tokens.get('--terminal-fg') ?? ''));
       expect(terminal.cursor).toEqual(parseCssColor(tokens.get('--terminal-cursor') ?? ''));
       expect(terminal.selectionBackground).toBe(tokens.get('--terminal-selection'));
+      expect(terminal.selectionForeground).toEqual(
+        parseCssColor(tokens.get('--terminal-selection-text') ?? '')
+      );
       expect(terminal.palette?.[1]).toEqual(parseCssColor(tokens.get('--terminal-ansi-1') ?? ''));
       expect(terminal.palette?.[15]).toEqual(parseCssColor(tokens.get('--terminal-ansi-15') ?? ''));
     }
@@ -79,6 +89,7 @@ describe('terminalThemeFromTokens', () => {
     expect(theme.background).toEqual({ r: 30, g: 30, b: 46 });
     expect(theme.selectionBackground).toBe('rgba(137, 180, 250, 0.28)');
     expect(theme.palette).toBeUndefined();
+    expect(theme.selectionForeground).toBeUndefined();
   });
 
   it('resolves values the parser cannot read through the given parser', () => {
@@ -88,6 +99,57 @@ describe('terminalThemeFromTokens', () => {
     );
     expect(theme.background).toEqual({ r: 0, g: 0, b: 0 });
   });
+});
+
+// In every theme, a cell's text keeps the minimum contrast on
+// what is behind it, the ground or the selection laid over it, whatever
+// colour the program asked for (each ANSI colour, the light and dark ends
+// of truecolour, the terminal's own text).
+describe('the per-cell floor in every theme', () => {
+  const asks = (palette: readonly { r: number; g: number; b: number }[] | undefined) => [
+    ...(palette?.slice(0, 16) ?? []),
+    { r: 255, g: 255, b: 255 },
+    { r: 235, g: 235, b: 225 },
+    { r: 40, g: 40, b: 60 },
+    { r: 0, g: 0, b: 0 }
+  ];
+
+  it.each(THEMES.map((theme) => [theme.id, theme] as const))(
+    'keeps text on the ground of %s at the floor, bright white included',
+    (_id, theme) => {
+      const tokens = terminalTokens(themeTokens(theme));
+      const terminal = terminalThemeFromTokens((token) => tokens.get(token) ?? '');
+      const palette = asks(terminal.palette);
+      expect(palette).toHaveLength(20);
+      for (const asked of palette) {
+        const ink = legibleForeground(asked, terminal.background);
+        expect(terminalContrast(ink, terminal.background)).toBeGreaterThanOrEqual(
+          TERMINAL_MIN_CONTRAST
+        );
+      }
+    }
+  );
+
+  it.each(THEMES.map((theme) => [theme.id, theme] as const))(
+    'keeps selected text of %s at the floor on the selection over the ground',
+    (_id, theme) => {
+      const tokens = terminalTokens(themeTokens(theme));
+      const terminal = terminalThemeFromTokens((token) => tokens.get(token) ?? '');
+      const fill = parseTranslucentColor(terminal.selectionBackground ?? '');
+      expect(fill).not.toBeNull();
+      const { color, alpha } = fill!;
+      const ground = terminal.background;
+      const under = {
+        r: Math.round(ground.r + (color.r - ground.r) * alpha),
+        g: Math.round(ground.g + (color.g - ground.g) * alpha),
+        b: Math.round(ground.b + (color.b - ground.b) * alpha)
+      };
+      for (const asked of [terminal.foreground, ...asks(terminal.palette)]) {
+        const ink = selectedForeground(asked, ground, fill, terminal.selectionForeground);
+        expect(terminalContrast(ink, under)).toBeGreaterThanOrEqual(TERMINAL_MIN_CONTRAST);
+      }
+    }
+  );
 });
 
 describe('terminalFontFamilyFromCss', () => {

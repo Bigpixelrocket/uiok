@@ -12,15 +12,16 @@ export interface SelectAllBarProps {
   readonly checked: number;
   /** Checks every offered row (true), or clears them all (false). */
   readonly onCheckAll: (on: boolean) => void;
-  /** The bulk actions after "With selected:". */
+  /** The bulk actions after the count of checked rows. */
   readonly children: ReactNode;
 }
 
 /**
  * The select-all footer of a list whose rows have checkboxes: Check all,
  * which checks or clears every row the list offers (its filter's
- * survivors, never a row it disables), then "With selected:" and the
- * list's bulk actions. The checkbox is ticked when every row is, ticked
+ * survivors, never a row it disables), then how many rows are checked
+ * ("3 of 8 selected", as a status line says it) and the list's bulk
+ * actions. The checkbox is ticked when every row is, ticked
  * and mixed when some are, and clear when none are, and follows each row's
  * change. A list with no row to check draws it disabled. Its words come
  * from the `selectAll` labels; pair it with `checkedAfterClick` for the
@@ -47,6 +48,7 @@ export function SelectAllBar({
       <label className="select-all-check">
         <input
           checked={all || some}
+          className="check"
           disabled={total === 0}
           onChange={() => onCheckAll(!all)}
           ref={box}
@@ -54,7 +56,7 @@ export function SelectAllBar({
         />
         {labels.checkAll}
       </label>
-      <span className="select-all-with">{labels.withSelected}</span>
+      <span className="select-all-count">{labels.selected(checked, total)}</span>
       {children}
     </div>
   );

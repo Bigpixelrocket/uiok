@@ -5,7 +5,7 @@
  * what the rules set.
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, onTestFinished } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 
@@ -59,10 +59,14 @@ const paneControls = `
 
 describe('the listing look', () => {
   it('is declared under the listing scope with its metrics', () => {
-    expect(sheet).toMatch(/:where\(\.listing-root\) \.row\s*\{[^}]*height:\s*24px;/);
-    expect(sheet).toMatch(/\.listing-root\s*\{[^}]*--pane-columns-height:\s*22px;/);
-    expect(sheet).toMatch(/\.listing-root\s*\{[^}]*--pane-path-height:\s*26px;/);
-    expect(sheet).toMatch(/:where\(\.listing-root\) \.pane-status\s*\{[^}]*height:\s*26px;/);
+    expect(sheet).toMatch(/:where\(\.listing-root\) \.row\s*\{[^}]*height:\s*var\(--row-height\);/);
+    expect(sheet).toMatch(
+      /\.listing-root\s*\{[^}]*--pane-columns-height:\s*var\(--row-height-dense\);/
+    );
+    expect(sheet).toMatch(/\.listing-root\s*\{[^}]*--pane-path-height:\s*var\(--bar-height\);/);
+    expect(sheet).toMatch(
+      /:where\(\.listing-root\) \.pane-status\s*\{[^}]*height:\s*var\(--bar-height\);/
+    );
   });
 
   it('draws a pane with the base metrics, which an app class beside the scope keeps', () => {
@@ -74,9 +78,10 @@ describe('the listing look', () => {
     const plain = measured(document.getElementById('plain') as Element);
 
     expect(measured(document.getElementById('app') as Element)).toEqual(plain);
-    expect(plain['.row']?.[0]).toBe('24px');
-    expect(plain['.pane-status']?.[0]).toBe('26px');
-    expect(plain['.pane-list']?.[1]).toBe('13px');
+    // jsdom resolves no var(), so a metric reads as the token it is drawn from.
+    expect(plain['.row']?.[0]).toBe('var(--row-height)');
+    expect(plain['.pane-status']?.[0]).toBe('var(--bar-height)');
+    expect(plain['.pane-list']?.[1]).toBe('var(--font-size-body)');
     document.body.innerHTML = '';
   });
 
@@ -88,16 +93,12 @@ describe('the listing look', () => {
     document.body.innerHTML = '';
   });
 
-  it('turns a busy mark, and holds it still under reduced motion', () => {
+  it('holds a busy mark still: its heavy ring says it, with no pulse', () => {
     expect(sheet).toMatch(
-      /:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot\s*\{[^}]*animation:\s*pane-state-pulse /
+      /:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot\s*\{[^}]*var\(--line-strong\)/
     );
-    expect(sheet).toMatch(
-      /:where\(\.listing-root\) \.pane-state-busy\s*\{[^}]*animation:\s*pane-state-spin /
-    );
-    expect(sheet).toMatch(
-      /@media \(prefers-reduced-motion: reduce\)\s*\{\s*:where\(\.listing-root\) \.pane-tone-busy > \.pane-state-dot,\s*:where\(\.listing-root\) \.pane-state-busy\s*\{\s*animation:\s*none;/
-    );
+    expect(sheet).not.toMatch(/uiok-pulse/);
+    expect(sheet).not.toMatch(/\.pane-state-dot\s*\{[^}]*animation/);
   });
 });
 
@@ -109,20 +110,26 @@ describe("the frame's compact controls", () => {
     const act = getComputedStyle(document.querySelector('.pane-act') as Element);
     const icon = getComputedStyle(document.querySelector('.pane-icon-act') as Element);
 
+    // jsdom resolves no var(), so a metric reads as the token it is drawn from.
     expect([
       act.getPropertyValue('height'),
-      act.getPropertyValue('padding-left'),
       icon.getPropertyValue('width'),
       icon.getPropertyValue('height')
-    ]).toEqual(['20px', '4px', '22px', '20px']);
+    ]).toEqual([
+      'var(--control-height-xs)',
+      'var(--control-height-xs)',
+      'var(--control-height-xs)'
+    ]);
+    // jsdom drops a padding shorthand that holds var(), so read the rule.
+    expect(sheet).toMatch(/^\.pane-act \{[^}]*padding: 0 var\(--space-3\) 0 var\(--space-2\);/m);
     document.body.innerHTML = '';
   });
 
-  it("keep their ring inside, weighing more than a host's own button ring", () => {
-    // A host's own button ring, such as `.my-view button:focus-visible`,
-    // weighs two classes and an element; the look's weighs three classes.
+  it("keep their ring on their edge, and yield to a host's own ring", () => {
+    // The ring is the base sheet's (no weight); the compact-control rule
+    // only moves it onto the edge, so a host's own rule decides.
     expect(sheet).toMatch(
-      /^\.listing-root :is\(\.pane-act, \.pane-icon-act\):focus-visible \{[^}]*outline-offset: -2px;/m
+      /^:is\(\.crumb-label, \.path-star, \.pane-act, \.pane-icon-act\):focus-visible \{[^}]*outline-offset: var\(--focus-offset-flush\);/m
     );
 
     applyStylesheets(
@@ -133,7 +140,7 @@ describe("the frame's compact controls", () => {
     const act = document.querySelector('.pane-act') as HTMLButtonElement;
 
     act.focus();
-    expect(getComputedStyle(act).outlineOffset).toBe('-2px');
+    expect(getComputedStyle(act).outlineOffset).toBe('1px');
     document.body.innerHTML = '';
   });
 
@@ -144,7 +151,9 @@ describe("the frame's compact controls", () => {
       .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule)
       .map((rule) => rule.selectorText)
       .filter((selector) => /:hover\b/.test(selector.replace(/:not\([^()]*\)/g, '')))
-      .map((selector) => selector.replace(/:hover\b/g, ''));
+      // Hover stands as a match-anything test, so a selector that lists it
+      // with other states (`:is(:hover, :active)`) stays valid.
+      .map((selector) => selector.replace(/:hover\b/g, ':where(*)'));
     const lit = (disabled: boolean): string[] => {
       document.body.innerHTML = `<fieldset${disabled ? ' disabled' : ''} class="listing-root">
         <button class="pane-act">Start</button>
@@ -164,7 +173,7 @@ describe("the frame's compact controls", () => {
     expect(lit(true)).toEqual([]);
   });
 
-  it('hide a row’s hover icons at rest, showing them on the cursor row', () => {
+  it('keep a row’s secondary icons in view on every row, never appearing on hover', () => {
     applyStylesheets(styles);
     document.body.innerHTML = `<section class="listing-root">
       <div class="row"><span class="row-meta pane-hover-cell"><button class="pane-icon-act"></button></span></div>
@@ -172,8 +181,580 @@ describe("the frame's compact controls", () => {
     </section>`;
     const [rest, cursor] = [...document.querySelectorAll('.pane-icon-act')] as Element[];
 
-    expect(declaredValues(rest as Element, 'opacity')).toEqual(['0']);
+    expect(declaredValues(rest as Element, 'opacity')).toEqual([]);
     expect(declaredValues(cursor as Element, 'opacity')).toEqual([]);
+    expect(getComputedStyle(rest as Element).getPropertyValue('color')).toBe('var(--text-dim)');
     document.body.innerHTML = '';
+  });
+});
+
+describe('the listing states', () => {
+  const colour = (element: Element | null): string =>
+    getComputedStyle(element as Element).getPropertyValue('color');
+
+  it('sets every quiet word on a cursor or marked row in the on-surface tone', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="row cursor" id="cursor"><span class="row-icon"></span><span class="row-name">a</span>
+        <span class="row-meta"><span class="pane-state pane-tone-muted">idle</span></span>
+        <span class="row-meta"><span class="pane-state pane-tone-busy">saving</span></span>
+      </div>
+      <div class="row marked" id="marked"><span class="row-icon"></span><span class="row-name">b</span>
+        <span class="row-meta"><span class="pane-state pane-tone-muted">idle</span></span>
+      </div>
+      <div class="row" id="rest"><span class="row-icon"></span><span class="row-name">c</span>
+        <span class="row-meta"><span class="pane-state pane-tone-muted">idle</span></span>
+      </div>
+    </section>`;
+
+    for (const id of ['cursor', 'marked']) {
+      for (const word of document.querySelectorAll(`#${id} :is(.row-meta, .pane-state)`)) {
+        expect(colour(word)).toBe('var(--text-on-surface)');
+      }
+    }
+    expect(colour(document.querySelector('#rest .pane-state'))).toBe('var(--row-meta-text)');
+    document.body.innerHTML = '';
+  });
+
+  it('lights the row actions in full words, never the accent, only on the cursor row of the pane that holds the keys', () => {
+    applyStylesheets(styles);
+    const pane = (active: boolean): string => `<div class="pane${active ? ' active' : ''}">
+      <div class="row cursor"><span class="row-meta">
+        <button class="pane-act" type="button">Stop</button>
+        <button class="pane-icon-act danger" type="button"></button>
+      </span></div></div>`;
+    document.body.innerHTML = `<section class="listing-root">${pane(true)}${pane(false)}</section>`;
+    const [lit, danger, quiet, quietDanger] = document.querySelectorAll('button');
+
+    expect(colour(lit as Element)).toBe('var(--text)');
+    expect(colour(danger as Element)).toBe('var(--danger-text)');
+    expect(colour(quiet as Element)).toBe('var(--text-on-surface)');
+    expect(colour(quietDanger as Element)).toBe('var(--text-on-surface)');
+    document.body.innerHTML = '';
+  });
+
+  it('keeps a worded action on a marked row in the on-surface tone, a lit one lit', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="row marked"><span class="row-meta">
+        <button class="pane-icon-act worded" type="button">Drop</button>
+        <button class="pane-act" type="button">Open</button>
+        <button class="pane-act lit" type="button">Start</button>
+      </span></div></section>`;
+    const [worded, quiet, lit] = document.querySelectorAll('button');
+
+    expect(colour(worded as Element)).toBe('var(--text-on-surface)');
+    expect(colour(quiet as Element)).toBe('var(--text-on-surface)');
+    expect(colour(lit as Element)).toBe('var(--text)');
+    document.body.innerHTML = '';
+  });
+
+  it('draws a worded action on every state row in a tone floored on its fill', () => {
+    // `:hover` reads as a class, so the hovered row matches as it would
+    // under the pointer, and the action itself is not hovered.
+    applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
+    const row = (classes: string): string =>
+      `<div class="row ${classes}"><span class="row-meta">
+        <button class="pane-icon-act worded" type="button">Edit</button>
+      </span></div>`;
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane active"><div class="pane-list pointer">
+        ${row('cursor')}${row('marked cursor')}${row('marked')}${row('is-hovered')}${row('')}
+      </div></div>
+      <div class="pane"><div class="pane-list">${row('cursor')}</div></div>
+    </section>`;
+    const tones = [...document.querySelectorAll('button')].map((button) => colour(button));
+
+    expect(tones).toEqual([
+      'var(--text)',
+      'var(--text)',
+      'var(--text-on-surface)',
+      'var(--text-on-surface)',
+      'var(--text-dim)',
+      'var(--text-on-surface)'
+    ]);
+    document.body.innerHTML = '';
+  });
+
+  it("draws a state row's bar on its edge, not as an inset shadow that scrolls away", () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane active"><div class="pane-list">
+        <div class="row cursor"></div><div class="row marked"></div>
+        <div class="row marked cursor"></div><div class="row selected cursor"></div>
+      </div></div>
+      <div class="pane"><div class="pane-list"><div class="row cursor"></div></div></div>
+    </section>`;
+    const rows = [...document.querySelectorAll('.row')];
+    const value = (row: Element, name: string): string =>
+      getComputedStyle(row).getPropertyValue(name).trim();
+
+    expect(rows.map((row) => value(row, '--row-bar'))).toEqual([
+      'var(--cursor-bar)',
+      'var(--marked-bar)',
+      'var(--cursor-bar)',
+      'var(--on-selected)',
+      'transparent'
+    ]);
+    for (const row of rows) {
+      expect(value(row, 'box-shadow')).not.toMatch(/var\(--line-strong\)/);
+    }
+    // The marked cursor row's ring, which its pinned cell repeats.
+    expect(value(rows[2] as Element, '--pane-pin-ring')).toMatch(/var\(--cursor-bar\)/);
+    document.body.innerHTML = '';
+  });
+
+  it('lets no cursor, mark, or pointer rule recolour a word on a selected row', () => {
+    // Every element is hovered: `:hover` reads as a class each one carries,
+    // so a hover rule weighs what it does and matches as it would under the
+    // pointer, the excluding ones (`:not(:hover)`) included.
+    applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
+    const words = `<span class="row-icon"></span><span class="row-name">a</span>
+      <span class="row-meta">2 MB</span>
+      <span class="row-meta"><span class="pane-state pane-tone-muted"><span class="pane-state-dot"></span><span class="pane-state-word">stopped</span></span></span>
+      <span class="row-meta"><span class="pane-state pane-tone-busy"><span class="pane-state-dot"></span><span class="pane-state-word">restarting</span></span></span>
+      <span class="row-meta pane-path"><span class="pane-path-head">~/a/</span><span class="pane-path-tail">b/</span><span class="pane-path-name">c</span></span>
+      <span class="row-meta pane-action-cell">
+        <button class="pane-act" type="button">Open</button>
+        <button class="pane-act lit" type="button">Start</button>
+        <button class="pane-act danger" type="button">Remove</button>
+        <button class="pane-icon-act worded" type="button">Drop</button>
+        <button class="pane-icon-act danger" type="button"></button>
+      </span>`;
+    const rows = ['cursor selected', 'marked selected', 'marked cursor selected', 'selected']
+      .map((states) => `<div class="row pane-add ${states}">${words}</div>`)
+      .join('');
+    // A lone pane, and the pane that holds the keys beside another: both
+    // selections hold the keys (a pane that does not greys its own, below).
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane"><div class="pane-list pointer">${rows}</div></div>
+    </section><section class="listing-root">
+      <div class="pane active"><div class="pane-list pointer">${rows}</div></div><div class="pane"></div>
+    </section>`;
+    for (const element of document.body.querySelectorAll('*')) element.classList.add('is-hovered');
+
+    const dim = '.row-meta:not(.pane-path, .pane-action-cell), .pane-path-head, .pane-path-tail';
+    const full =
+      '.row-icon, .row-name, .pane-path-name, .pane-state-word, button, .row-meta > .pane-state';
+
+    for (const element of document.querySelectorAll(dim)) {
+      expect(colour(element)).toBe('var(--on-selected-dim)');
+    }
+    for (const element of document.querySelectorAll(full)) {
+      expect([element.className, colour(element)]).toEqual([
+        element.className,
+        expect.stringMatching(/^(var\(--on-selected\)|)$/)
+      ]);
+      // A word that sets no colour of its own inherits its cell's.
+      if (colour(element) === '') {
+        expect(colour(element.closest('.pane-state, .row'))).toBe('var(--on-selected)');
+      }
+    }
+  });
+
+  it('rings the quiet and busy marks and the busy spinner in the selection tone', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="row selected"><span class="row-meta">
+        <span class="pane-state pane-tone-muted"><span class="pane-state-dot" id="muted"></span></span>
+        <span class="pane-state pane-tone-busy"><span class="pane-state-dot" id="busy"></span></span>
+        <span class="pane-state pane-tone-busy"><svg class="pane-state-busy" id="spinner"></svg></span>
+        <span class="pane-state pane-tone-ready"><span class="pane-state-dot" id="ready"></span></span>
+      </span></div>
+      <div class="row selected cursor"><span class="row-meta">
+        <span class="pane-state pane-tone-busy"><span class="pane-state-dot" id="busy-cursor"></span></span>
+      </span></div></section>`;
+    const shadow = (id: string): string =>
+      getComputedStyle(document.getElementById(id) as Element).getPropertyValue('box-shadow');
+
+    expect(shadow('muted')).toBe('inset 0 0 0 var(--line) var(--on-selected)');
+    expect(shadow('busy')).toBe('inset 0 0 0 var(--line-strong) var(--on-selected)');
+    expect(shadow('busy-cursor')).toBe('inset 0 0 0 var(--line-strong) var(--on-selected)');
+    // A filled mark keeps its outer hairline.
+    expect(shadow('ready')).toBe('0 0 0 var(--line) var(--on-selected)');
+    expect(colour(document.getElementById('spinner'))).toBe('var(--on-selected)');
+    document.body.innerHTML = '';
+  });
+
+  it('greys a selection in a pane that does not hold the keys and in a window not in front', () => {
+    applyStylesheets(styles);
+    const words = `<span class="row-icon"></span><span class="row-name">a</span>
+      <span class="row-meta">2 MB</span>
+      <span class="row-meta"><span class="pane-state pane-tone-ready"><span class="pane-state-dot"></span>up</span></span>
+      <span class="row-meta pane-action-cell"><button class="pane-act lit" type="button">Start</button></span>`;
+    const pane = (active: boolean): string =>
+      `<div class="pane${active ? ' active' : ''}"><div class="pane-list">
+        <div class="row selected">${words}</div><div class="row selected cursor">${words}</div>
+      </div></div>`;
+    const read = (): Record<string, string>[] =>
+      [...document.querySelectorAll('.row')].map((row) => ({
+        fill: getComputedStyle(row).getPropertyValue('--row-fill').trim(),
+        bar: getComputedStyle(row).getPropertyValue('--row-bar').trim(),
+        name: colour(row),
+        meta: colour(row.querySelector('.row-meta')),
+        state: colour(row.querySelector('.pane-state')),
+        action: colour(row.querySelector('button'))
+      }));
+    const held = {
+      fill: 'var(--selected-bg)',
+      name: 'var(--on-selected)',
+      meta: 'var(--on-selected-dim)',
+      state: 'var(--on-selected)',
+      action: 'var(--on-selected)'
+    };
+    const grey = {
+      fill: 'var(--fill)',
+      name: 'var(--text)',
+      meta: 'var(--text-on-surface)',
+      state: 'var(--success-text)',
+      action: 'var(--text-on-surface)'
+    };
+
+    document.body.innerHTML = `<section class="listing-root">${pane(true)}${pane(false)}</section>`;
+    const [active, activeCursor, other, otherCursor] = read();
+    expect(active).toEqual({ ...held, bar: '' });
+    expect(activeCursor).toEqual({
+      ...held,
+      fill: 'var(--selected-cursor-bg)',
+      bar: 'var(--on-selected)'
+    });
+    expect(other).toEqual({ ...grey, bar: '' });
+    expect(otherCursor).toEqual({ ...grey, bar: 'transparent' });
+
+    document.documentElement.setAttribute('data-window-inactive', '');
+    onTestFinished(() => document.documentElement.removeAttribute('data-window-inactive'));
+    const [front, frontCursor] = read();
+    expect(front).toEqual({ ...grey, bar: '' });
+    expect(frontCursor).toEqual({ ...grey, bar: 'transparent' });
+    expect(sheet).toMatch(
+      /:where\(:root\[data-window-inactive\] \.listing-root\) \.pane\.active::before\s*\{\s*border-color: var\(--border-strong\);/
+    );
+    document.body.innerHTML = '';
+  });
+
+  it('quiets every row mark where the keys are not: the cursor, a mark, a checked box, a selection', () => {
+    applyStylesheets(styles);
+    const row = (classes: string): string =>
+      `<div class="row ${classes}"><input class="check" type="checkbox" checked>
+        <span class="row-name">a</span><span class="row-meta">2 MB</span></div>`;
+    const pane = (active: boolean): string =>
+      `<div class="pane${active ? ' active' : ''}"><div class="pane-list">
+        ${row('cursor')}${row('marked')}${row('marked cursor')}${row('selected')}
+      </div></div>`;
+    const read = (scope: Element): Record<string, string>[] =>
+      [...scope.querySelectorAll('.row')].map((element) => {
+        const style = getComputedStyle(element);
+        const check = getComputedStyle(element.querySelector('input') as Element);
+        return {
+          fill: style.getPropertyValue('--row-fill').trim(),
+          bar: style.getPropertyValue('--row-bar').trim(),
+          shadow: style.boxShadow,
+          meta: colour(element.querySelector('.row-meta')),
+          checkOn: check.getPropertyValue('--check-on').trim(),
+          checkMark: check.getPropertyValue('--check-mark').trim(),
+          words: style.getPropertyValue('--row-selected-text').trim()
+        };
+      });
+    const quietCheck = { checkOn: 'var(--control-border-strong)', checkMark: 'var(--fill)' };
+    // The quiet cursor is a hairline frame with no fill, so it stays apart
+    // from a quiet selection or mark (their fill) and shows on them.
+    const frame = /inset 0 0 0 var\(--line\) var\(--control-border-strong\)/;
+    const quiet = [
+      { fill: 'transparent', bar: 'transparent', words: '' },
+      { fill: 'var(--fill)', bar: 'var(--control-border-strong)', words: '' },
+      { fill: 'var(--fill)', bar: 'var(--control-border-strong)', words: '' },
+      { fill: 'var(--fill)', bar: '', words: 'var(--text)' }
+    ];
+    const framed = [true, false, true, false];
+    const expectQuiet = (rows: Record<string, string>[]) =>
+      rows.forEach((found, index) => {
+        expect(found).toMatchObject({ ...quiet[index], ...quietCheck });
+        if (framed[index]) expect(found.shadow).toMatch(frame);
+        else expect(found.shadow).toMatch(/^(none)?$/);
+      });
+
+    document.body.innerHTML = `<section class="listing-root">${pane(true)}${pane(false)}</section>`;
+    const [held, beside] = [...document.querySelectorAll('.pane')];
+    const heldRows = read(held as Element);
+    expect(heldRows.map(({ fill }) => fill)).toEqual([
+      'var(--cursor-row)',
+      'var(--marked-bg)',
+      'var(--marked-cursor-bg)',
+      'var(--selected-bg)'
+    ]);
+    expect(heldRows[3]?.words).toBe('var(--on-selected)');
+    expect(heldRows.every(({ checkOn }) => checkOn === 'var(--accent)')).toBe(true);
+    expectQuiet(read(beside as Element));
+
+    document.documentElement.setAttribute('data-window-inactive', '');
+    onTestFinished(() => document.documentElement.removeAttribute('data-window-inactive'));
+    expectQuiet(read(held as Element));
+    document.body.innerHTML = '';
+  });
+
+  it('ends the last glyph of the path bar, of each row, and of the status line on one edge', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane">
+      <div class="pane-path-row"><div class="path-tools">
+        <button class="pane-act">Start</button><button class="path-star" aria-label="Star"></button>
+      </div></div>
+      <div class="pane-list"><div class="row"><span class="row-meta">
+        <button class="pane-act wordless">Open</button>
+      </span></div><div class="row"><span class="row-meta">
+        <button class="pane-icon-act" aria-label="Reveal"></button>
+      </span></div></div>
+      <div class="pane-status"><span class="pane-status-tools">
+        <button class="pane-icon-act" aria-label="Copy"></button>
+      </span></div>
+    </div></section>`;
+    const reach = (selector: string): string | undefined =>
+      declaredValues(document.querySelector(selector) as Element, 'margin-right').at(-1);
+    const glyphReach = 'calc(-1 * var(--pane-glyph-reach))';
+
+    expect(reach('.path-star')).toBe(glyphReach);
+    expect(reach('.pane-act.wordless')).toBe(glyphReach);
+    expect(reach('.row-meta > .pane-icon-act')).toBe(glyphReach);
+    expect(reach('.pane-status-tools')).toBe(glyphReach);
+    expect(styles).toMatch(
+      /--pane-glyph-reach: calc\(\(var\(--control-height-xs\) - var\(--icon-md\)\) \/ 2\);/
+    );
+    document.body.innerHTML = '';
+  });
+
+  it('selects rows, not text, while its messages, summary, and output stay selectable', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root selectable"><div class="pane">
+      <div class="pane-list"><div class="pane-listing" role="table">
+        <div class="pane-columns pane-strip"><span class="pane-sort-label">Name</span></div>
+        <div class="row cursor selected"><span class="row-icon"></span>
+          <span class="row-name">app.ts</span><span class="row-meta">2 KB</span>
+          <span class="row-meta pane-path"><span class="pane-path-name"><code>src</code></span></span>
+          <span class="row-meta"><input class="field-xs" type="text" value="rename"></span>
+        </div>
+        <p class="pane-message empty">Nothing here.</p>
+      </div></div>
+      <pre class="pane-well">output</pre>
+      <div class="pane-status"><span class="pane-summary">1 file</span></div>
+    </div></section>`;
+    const select = (selector: string): string =>
+      getComputedStyle(document.querySelector(selector) as Element).getPropertyValue('user-select');
+
+    for (const selector of [
+      '.pane-strip',
+      '.pane-sort-label',
+      '.row',
+      '.row-name',
+      '.row-meta',
+      '.pane-path-name',
+      'code'
+    ]) {
+      expect(select(selector), selector).toBe('none');
+    }
+    for (const selector of ['input', '.pane-message', '.pane-well', '.pane-summary']) {
+      expect(select(selector), selector).toBe('text');
+    }
+    document.body.innerHTML = '';
+  });
+
+  it('stretches the pinned action cells and squares the strip cell over them', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane-listing pane-pin-end" role="table">
+        <div class="pane-columns pane-strip"><span class="row-name"></span><span class="row-meta pane-col-blank"></span></div>
+        <div class="row"><span class="row-name">a</span><span class="row-meta pane-action-cell"></span></div>
+      </div></section>`;
+    const [strip, cell] = [...document.querySelectorAll('.row-meta')].map((element) =>
+      getComputedStyle(element)
+    );
+
+    expect([strip?.alignSelf, cell?.alignSelf]).toEqual(['stretch', 'stretch']);
+    expect([strip?.position, cell?.position]).toEqual(['sticky', 'sticky']);
+    expect(strip?.borderRadius).toBe('0px');
+    document.body.innerHTML = '';
+  });
+
+  it('sticks the pinned cells at the edge of whatever scrolls them, with no end padding to reach back over', () => {
+    // A sticky box stops at its scroller's padding, and the cell cannot tell
+    // which box scrolls it. A pinned listing ends its grid with an empty
+    // track as wide as the row inset instead of padding its end, so the
+    // cells stick at 0 in a host's own scroller with no padding (where a
+    // negative inset left their end inset outside the scrollport), in a
+    // .pane-list, and in a listing that scrolls itself alike.
+    applyStylesheets(styles);
+    const hosts = [
+      '<div class="g-host" style="overflow-y: auto">LISTING</div>',
+      '<div class="pane-list">LISTING</div>',
+      'LISTING'
+    ];
+    const listing = `<div class="pane-listing pane-pin-end" role="table" style="--pane-grid: 20px 1fr 80px">
+        <div class="pane-columns pane-strip"><span class="row-name"></span><span class="row-meta"></span></div>
+        <div class="row marked cursor"><span class="row-name">a</span><span class="row-meta pane-action-cell">In use here</span></div>
+        <p class="pane-message">note</p>
+      </div>`;
+
+    for (const host of hosts) {
+      document.body.innerHTML = `<section class="listing-root">${host.replace('LISTING', listing)}</section>`;
+      const table = document.querySelector('.pane-listing') as HTMLElement;
+      const [strip, row, message] = [...table.children] as HTMLElement[];
+
+      for (const cell of document.querySelectorAll('.row-meta')) {
+        expect(getComputedStyle(cell).getPropertyValue('inset-inline-end').trim(), host).toBe(
+          '0px'
+        );
+        expect(getComputedStyle(cell).getPropertyValue('padding-inline-end').trim(), host).toBe(
+          'var(--pane-row-inset)'
+        );
+      }
+      expect(getComputedStyle(table).gridTemplateColumns.replace(/\s+/g, ' '), host).toBe(
+        'var(--pane-grid, var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr)) var(--pane-row-inset)'
+      );
+      expect(getComputedStyle(table).paddingInlineEnd, host).toBe('0px');
+      expect(declaredValues(table, 'padding'), host).toEqual(['0 var(--pane-row-inset)']);
+      for (const child of [strip, row, message]) {
+        expect(getComputedStyle(child as Element).marginInlineEnd, host).toBe('0px');
+      }
+      for (const child of [strip, row]) {
+        expect(getComputedStyle(child as Element).paddingInlineEnd, host).toBe('0px');
+      }
+    }
+    // No rule depends on which box scrolls the listing any more.
+    expect(sheet).not.toMatch(/uiok-pane-pin-list|scroll-state/);
+    document.body.innerHTML = '';
+  });
+
+  it('keeps the end padding of a listing that pins nothing', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-listing" role="table">
+        <div class="row"><span class="row-name">a</span><span class="row-meta">b</span></div>
+      </div></section>`;
+    const table = document.querySelector('.pane-listing') as Element;
+
+    // Only the pinned listing trades its end padding for a track.
+    expect(declaredValues(table, 'padding')).toEqual(['0 var(--pane-row-inset)']);
+    expect(declaredValues(table, 'padding-inline-end')).toEqual([]);
+    expect(declaredValues(table, 'grid-template-columns')).toHaveLength(1);
+    expect(declaredValues(document.querySelector('.row') as Element, 'margin-inline-end')).toEqual(
+      []
+    );
+    document.body.innerHTML = '';
+  });
+
+  it('gives way in a narrow path bar in one order: the trail to its floor, the tools to their least, then the trail', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-path-row" style="--pane-crumb-count: 3">
+      <div class="pane-crumbs"><span class="crumb"><span class="crumb-label">a</span></span>
+        <span class="crumb-separator">/</span>
+        <span class="crumb here"><span class="crumb-label">b</span><span class="current-dot"></span></span></div>
+      <div class="path-tools"><span class="path-facts"><span class="path-fact-text">Stopped</span></span></div>
+    </div></section>`;
+    const style = (selector: string) =>
+      getComputedStyle(document.querySelector(selector) as Element);
+
+    // The trail gives way first and past its floor; it scrolls, so nothing
+    // it holds is drawn under the tools.
+    expect(style('.pane-crumbs').flexShrink).toBe('1000000');
+    expect(style('.pane-crumbs').minWidth).toMatch(/^0(px)?$/);
+    expect([style('.pane-crumbs').overflowX, style('.pane-crumbs').overflowY]).toEqual([
+      'auto',
+      'hidden'
+    ]);
+    // The tools take no more than the row less the trail's floor, and no
+    // less than they need at their least, which wins.
+    expect(style('.path-tools').maxWidth).toBe('calc(100% - var(--pane-crumb-room))');
+    expect(style('.path-tools').minWidth).toBe('calc-size(min-content, min(size, 100%))');
+    expect(style('.pane-path-row').getPropertyValue('--pane-crumb-room')).toContain(
+      'var(--pane-crumb-here-room,9ch)'
+    );
+    expect(sheet).toMatch(
+      /@property --pane-crumb-count \{\n\s*syntax: '<integer>';\n\s*inherits: true;/
+    );
+    // The last crumb keeps a stem of eight characters, and goes below it
+    // only to what its trail holds, less a leading slash.
+    expect(style('.crumb.here').minWidth).toContain(
+      'min(10ch + var(--space-4) + var(--dot) + var(--space-2), 100% - 1ch - var(--space-1))'
+    );
+    // A trail pinned at rest gives the tools what it leaves.
+    document.querySelector('.pane-crumbs')?.setAttribute('data-cramped', 'pinned');
+    expect([style('.pane-crumbs').flexGrow, style('.pane-crumbs').width]).toEqual([
+      '0',
+      'var(--pane-crumb-fit)'
+    ]);
+    expect(style('.path-tools').maxWidth).toBe('none');
+    // A crumb's open menu sits inside the trail; the trail clips nothing then.
+    document.querySelector('.crumb-label')?.setAttribute('aria-expanded', 'true');
+    expect(style('.pane-crumbs').overflowX).not.toBe('auto');
+    document.body.innerHTML = '';
+  });
+
+  it('cuts a fact’s words in one clamped line in every form the bar can cut, its mark one gap away', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-path-row"><div class="path-tools">
+      <span class="path-facts" id="pathfact"><span class="pane-state"><span class="pane-state-dot"></span><span class="pane-state-word"></span></span><span class="path-fact-text">Stopped</span></span>
+      <span class="path-facts" id="bare">Stopped</span>
+      <span class="path-facts" id="hostspan"><span class="host-dot"></span>Stopped</span>
+      <span class="path-facts" id="boxes"><a href="#x">localhost:5173</a><span class="chip">8.3</span></span>
+    </div></div></section>`;
+    const style = (selector: string) =>
+      getComputedStyle(document.querySelector(selector) as Element);
+
+    for (const selector of ['#pathfact .path-fact-text', '#bare', '#hostspan']) {
+      expect([
+        style(selector).display,
+        style(selector).overflow,
+        style(selector).wordBreak,
+        style(selector).whiteSpace
+      ]).toEqual(['-webkit-box', 'hidden', 'break-all', 'normal']);
+      expect(style(selector).getPropertyValue('-webkit-line-clamp')).toBe('1');
+    }
+    // The floors: a character and its ellipsis, after a mark and its gap.
+    expect(style('#bare').minWidth).toContain('min(size, 2ch + var(--line))');
+    expect(style('#hostspan').minWidth).toContain(
+      'var(--dot) + var(--space-3) + 2ch + var(--line)'
+    );
+    // A host's own mark keeps its size in the line and stands a gap from the words.
+    expect([
+      style('#hostspan .host-dot').display,
+      style('#hostspan .host-dot').marginInlineEnd
+    ]).toEqual(['inline-block', 'var(--space-3)']);
+    // A mark with no word carries no gap of its own.
+    expect(style('#pathfact .pane-state-word').display).toBe('none');
+    // A fact of a host's own boxes keeps its flex layout and its width.
+    expect([style('#boxes').display, style('#boxes').minWidth]).toEqual(['inline-flex', 'auto']);
+    // A fact that opens the tools stands clear of the trail.
+    expect(style('.path-tools').paddingLeft).toBe('var(--space-3)');
+    document.body.innerHTML = '';
+  });
+
+  it('steps a tight bar’s action words down to their icons, the words out of the drawing', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-path-row" data-tight>
+      <div class="path-tools"><button class="pane-act"><span class="pane-act-word">Start</span></button></div>
+    </div></section>`;
+    const word = getComputedStyle(document.querySelector('.pane-act-word') as Element);
+
+    expect([word.position, word.clipPath, word.overflow]).toEqual([
+      'absolute',
+      'inset(50%)',
+      'hidden'
+    ]);
+    expect(getComputedStyle(document.querySelector('.pane-act') as Element).gap).toMatch(
+      /^0(px)?$/
+    );
+    document.body.innerHTML = '';
+  });
+
+  it("starts a no-icon listing's first label past the icon column, below an app's own placement", () => {
+    // The rule weighs what the label's default does, so any scoped app rule
+    // that places the label wins, and a section's heading keeps the edge.
+    expect(sheet).toMatch(
+      /^:where\(\.listing-root \.pane-listing:has\(> \.row\):not\(:has\(> \.row > \.row-icon:not\(:empty\)\)\)\)\n\s*> \.pane-columns\n\s*> \.row-name:where\(:not\(:has\(h3\)\)\) \{\n\s*grid-column: 2;/m
+    );
+  });
+
+  it('keeps the press of a crumb and a sort label over their hover', () => {
+    // Their hover is the base sheet's shared recipe, which weighs what the
+    // pressed one does; a heavier component hover would win over a press.
+    expect(sheet).not.toMatch(/crumb-label:hover/);
+    expect(sheet).not.toMatch(/\.pane-sort\.sortable:hover/);
   });
 });

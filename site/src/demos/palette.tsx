@@ -1,7 +1,12 @@
 /**
  * A command palette: type to filter, ↑ ↓ move, Return runs, Escape clears
- * the query and then closes. The header's Find a page (⌘K) is the same
- * palette over the site's pages.
+ * the query and then closes. Switch Branch… opens a second level, with a
+ * note and a failure under its list; the chip, ←, or Backspace in an empty
+ * field steps back. Run Task… lists command lines (`.palette-command`) and
+ * Open Recent… paths that give way at their start. A tag at the field's end
+ * says what the commands act on, and a key legend closes the box. The
+ * header's Find a page (⌘K) is the same palette over the site's pages, with
+ * each page's route in the meta tone.
  */
 
 import {
@@ -21,7 +26,7 @@ import {
 import { useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { chordGlyphs } from '@bigpixelrocket/uiok/keyboard';
+import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 
 import { CommandPalette, type Command } from '../CommandPalette';
 
@@ -34,16 +39,16 @@ export function PaletteDemo() {
     label: string,
     hint: string,
     icon: Command['icon'],
-    chord?: Parameters<typeof chordGlyphs>[0]
+    chord?: Command['chord']
   ): Command => ({
     id,
     label,
     hint,
     icon,
-    meta: chord === undefined ? undefined : chordGlyphs(chord),
+    chord,
     run: () => setRan(label)
   });
-  const size = 14;
+  const size = ICON_MD;
   const commands: readonly Command[] = [
     command('new', 'New File', 'Create an empty file here', <FilePlus size={size} />, {
       key: 'n',
@@ -67,14 +72,56 @@ export function PaletteDemo() {
       meta: true,
       shift: true
     }),
-    command('run', 'Run Task…', 'Pick a script from package.json', <Play size={size} />),
+    {
+      id: 'run',
+      label: 'Run Task…',
+      hint: 'Pick a script from package.json',
+      icon: <Play size={size} />,
+      level: [
+        ['build', 'vite build && node scripts/verify-dist.mjs'],
+        ['test', 'vitest run --coverage --reporter=dot'],
+        ['lint', 'eslint . --max-warnings 0'],
+        ['format', 'prettier --write .']
+      ].map(([name, line]) => ({
+        ...command(`task-${name}`, name ?? '', '', <Play size={size} />),
+        hint: undefined,
+        line
+      }))
+    },
+    {
+      id: 'recent',
+      label: 'Open Recent…',
+      hint: 'A folder opened before',
+      icon: <FolderOpen size={size} />,
+      level: [
+        '~/projects/site',
+        '~/projects/infrastructure-and-deployment-scripts/environments/production',
+        '~/Documents/notes'
+      ].map((path) => ({
+        ...command(`recent-${path}`, path.split('/').pop() ?? path, '', <FolderOpen size={size} />),
+        hint: undefined,
+        path
+      }))
+    },
     command(
       'restart',
       'Restart Server',
       'Stop and start the dev server',
       <RefreshCw size={size} />
     ),
-    command('branch', 'Switch Branch…', 'Check out another branch', <GitBranch size={size} />),
+    {
+      id: 'branch',
+      label: 'Switch Branch…',
+      hint: 'Check out another branch',
+      icon: <GitBranch size={size} />,
+      level: ['main', 'release/1.4', 'fix/settings-type', 'feat/dark-charts'].map((name) =>
+        command(`branch-${name}`, name, `Check out ${name}`, <GitBranch size={size} />)
+      ),
+      notes: [
+        { text: 'Branches as of 2 minutes ago.' },
+        { text: 'Could not reach origin: offline.', failure: true }
+      ]
+    },
     command('terminal', 'New Terminal', 'Open a shell in this folder', <Terminal size={size} />, {
       key: '`',
       ctrl: true
@@ -109,7 +156,9 @@ export function PaletteDemo() {
         <div className="listing-root">
           <CommandPalette
             commands={commands}
+            aside={<span className="palette-meta demo-palette-aside">site</span>}
             label="Commands"
+            legend={{ leave: 'Cancel', primary: 'Run' }}
             onClose={() => setOpen(false)}
             placeholder="Type a command"
           />

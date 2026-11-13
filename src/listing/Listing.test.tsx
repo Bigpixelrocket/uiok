@@ -5,7 +5,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
-import { RowIconAction, RowLinkLookContext, type LinkLook } from '../pane/PaneActions.js';
+import {
+  QuietAction,
+  RowIconAction,
+  RowLinkLookContext,
+  type LinkLook
+} from '../pane/PaneActions.js';
 import { CurrentDot } from './CurrentDot.js';
 import {
   Cell,
@@ -440,6 +445,27 @@ describe('a row', () => {
     expect(screen.getByRole('button', { name: 'Remove a' }).tabIndex).toBe(0);
     expect(rows.map((row) => row.tabIndex)).toEqual([0, 0, -1]);
   });
+
+  it('draws a quiet action in a tabbable row with its word, keeping its Tab stop', () => {
+    render(
+      <RowCursorContext value={cursorOn('a', [])}>
+        <Listing columns={[]} grid="20px 1fr auto" title="Hosts">
+          <Row name="a" rowKey="a" tabbable>
+            <Cell>
+              <QuietAction icon={Trash2} label="Remove a" onClick={() => undefined} word="Remove" />
+            </Cell>
+          </Row>
+        </Listing>
+      </RowCursorContext>
+    );
+    const action = screen.getByRole('button', { name: 'Remove a' });
+
+    // Reached by Tab, it shows what it does without a hover.
+    expect(action.classList.contains('wordless')).toBe(false);
+    expect(action.querySelector('.pane-act-word')?.textContent).toBe('Remove');
+    expect(action.dataset.tooltip).toBeUndefined();
+    expect(action.tabIndex).toBe(0);
+  });
 });
 
 describe('a cell', () => {
@@ -478,7 +504,7 @@ describe('StateMark', () => {
     expect(container.querySelector('svg.pane-state-busy')).not.toBeNull();
   });
 
-  it('colours its word by its tone inside a row, a warning in the app’s warning text', () => {
+  it('colours its word by its tone inside a row, in the text-safe tone of its state', () => {
     applyStylesheets(styles);
     render(
       <div className="listing-root">
@@ -490,10 +516,8 @@ describe('StateMark', () => {
     );
     const [warning, danger] = [...document.querySelectorAll('.pane-state')];
 
-    expect(declaredValues(warning as Element, 'color')).toEqual([
-      'var(--warning-text, var(--warning))'
-    ]);
-    expect(declaredValues(danger as Element, 'color')).toEqual(['var(--danger)']);
+    expect(declaredValues(warning as Element, 'color')).toEqual(['var(--warning-text)']);
+    expect(declaredValues(danger as Element, 'color')).toEqual(['var(--danger-text)']);
   });
 });
 
@@ -521,7 +545,7 @@ describe('WellColumn', () => {
 
     expect(screen.queryByRole('region')).toBeNull();
     expect(document.querySelector('.pane-well-column')?.getAttribute('style')).toContain(
-      '--pane-grid: 20px minmax(0, 1fr) auto'
+      '--pane-grid: var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr) auto'
     );
 
     rerender(

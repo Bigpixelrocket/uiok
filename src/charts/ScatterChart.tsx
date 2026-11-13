@@ -10,13 +10,14 @@ import {
 } from 'react';
 
 import { Button } from '../button/Button.js';
+import { ICON_SM } from '../icon/index.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { createValueStore, type ValueStore } from '../store/ValueStore.js';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
 import {
   domainOf,
   scaled,
-  tickLabel,
+  tickLabels,
   ticksOf,
   zoomedTo,
   type Domain,
@@ -137,13 +138,18 @@ export function ScatterChart({
   };
   const px = (value: number): number => scaled(value, domains.x, 0, width);
   const py = (value: number): number => scaled(value, domains.y, height, 0);
-  const shown = points.filter(
+  const inView = points.filter(
     (point) =>
       point.x >= domains.x.min &&
       point.x <= domains.x.max &&
       point.y >= domains.y.min &&
       point.y <= domains.y.max
   );
+  // The picked point is drawn last, over its neighbours, so its ring shows whole.
+  const shown = [
+    ...inView.filter((point) => point.id !== picked),
+    ...inView.filter((point) => point.id === picked)
+  ];
 
   /** Where a pointer is in the plot, in its own pixels. */
   const inPlot = (event: PointerEvent<SVGRectElement>): { x: number; y: number } => {
@@ -162,6 +168,11 @@ export function ScatterChart({
     }
   };
 
+  const xTicks = ticksOf(domains.x, x.kind, Math.max(2, Math.floor(width / 110)));
+  const yTicks = ticksOf(domains.y, y.kind, Math.max(2, Math.floor(height / 50)));
+  const xTickLabels = tickLabels(xTicks, x, domains.x);
+  const yTickLabels = tickLabels(yTicks, y, domains.y);
+
   return (
     <figure aria-label={label} className="scatter-chart">
       <div className="scatter-frame" ref={frame}>
@@ -173,23 +184,25 @@ export function ScatterChart({
           width={size.width}
         >
           <g transform={`translate(${MARGIN.left} ${MARGIN.top})`}>
-            {ticksOf(domains.x, x.kind, Math.max(2, Math.floor(width / 110))).map((tick) => (
-              <g className="scatter-tick" key={`x${tick}`} transform={`translate(${px(tick)} 0)`}>
-                <line className="scatter-grid" y1={0} y2={height} />
-                <text dy="1.2em" textAnchor="middle" y={height + 4}>
-                  {tickLabel(tick, x, domains.x)}
-                </text>
-              </g>
-            ))}
-            {ticksOf(domains.y, y.kind, Math.max(2, Math.floor(height / 50))).map((tick) => (
-              <g className="scatter-tick" key={`y${tick}`} transform={`translate(0 ${py(tick)})`}>
-                <line className="scatter-grid" x1={0} x2={width} />
-                <text dy="0.32em" textAnchor="end" x={-6}>
-                  {tickLabel(tick, y, domains.y)}
-                </text>
-              </g>
-            ))}
-            <rect className="scatter-axes" height={height} width={width} />
+            {points.length > 0 &&
+              xTicks.map((tick, at) => (
+                <g className="scatter-tick" key={`x${tick}`} transform={`translate(${px(tick)} 0)`}>
+                  <line className="scatter-grid" y1={0} y2={height} />
+                  <text dy="1.2em" textAnchor="middle" y={height + 4}>
+                    {xTickLabels[at]}
+                  </text>
+                </g>
+              ))}
+            {points.length > 0 &&
+              yTicks.map((tick, at) => (
+                <g className="scatter-tick" key={`y${tick}`} transform={`translate(0 ${py(tick)})`}>
+                  <line className="scatter-grid" x1={0} x2={width} />
+                  <text dy="0.32em" textAnchor="end" x={-6}>
+                    {yTickLabels[at]}
+                  </text>
+                </g>
+              ))}
+            <path className="scatter-axes" d={`M0 0V${height}H${width}`} />
             <rect
               className="scatter-plot"
               data-testid="scatter-plot"
@@ -220,6 +233,29 @@ export function ScatterChart({
               width={width}
             />
             <ScatterSelection drag={drag} />
+            {/* A halo of the picked point's colour behind it, so it is found among many. */}
+            {shown
+              .filter((point) => point.id === picked)
+              .map((point) => (
+                <circle
+                  className="scatter-halo"
+                  cx={px(point.x)}
+                  cy={py(point.y)}
+                  key="halo"
+                  r={10}
+                />
+              ))}
+            {points.length === 0 && (
+              <text
+                className="chart-empty-text"
+                dominantBaseline="middle"
+                textAnchor="middle"
+                x={width / 2}
+                y={height / 2}
+              >
+                {labels.noValue}
+              </text>
+            )}
             {shown.map((point) => (
               <circle
                 aria-label={point.label}
@@ -255,7 +291,7 @@ export function ScatterChart({
             : labels.pointsShown(shown.length, points.length)}
         </span>
         <Button disabled={zoom === null} onClick={() => setZoom(null)} size="small">
-          <RotateCcw aria-hidden size={13} />
+          <RotateCcw aria-hidden size={ICON_SM} />
           {labels.resetZoom}
         </Button>
       </figcaption>

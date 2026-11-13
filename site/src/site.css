@@ -1,13 +1,31 @@
 /* The documentation site's own look: its layout, its prose, and the frames
    around each demo. Every colour is a UIOK theme token, as in the library;
    the library's components keep their own look, and the site only lays them
-   out and draws the key-cap frames a surface adds around .keychord. */
+   out (key caps come from the library's .keycap host class). */
 
 :root {
   --site-header-height: 48px;
   --site-legend-height: 34px;
   --site-nav-width: 232px;
   --site-measure: 860px;
+  /* Running prose wraps at a reading measure inside the page's width; demos,
+     tables, and code blocks take the whole page. */
+  --site-measure-prose: 75ch;
+
+  /* The site's prose sizes: a reading page's type, larger than the
+     library's compact interface scale (src/tokens.css) and only the site's.
+     Everything else on the site uses the library's tokens. */
+  --site-font-body: 14px;
+  --site-font-lede: 15px;
+  --site-font-h3: 15px;
+  --site-font-h2: 18px;
+  --site-font-h1: 28px;
+  --site-font-hero: 44px;
+  /* The wordmark: a brand lockup, set at its own size and weight. */
+  --site-font-brand: 15px;
+  --site-weight-brand: 700;
+  /* Lists of names and token rows, set loose so each reads as one entry. */
+  --site-line-list: 1.9;
 }
 
 * {
@@ -15,24 +33,19 @@
 }
 
 html {
-  scroll-padding-top: calc(var(--site-header-height) + 16px);
+  scroll-padding-top: calc(var(--site-header-height) + var(--space-8));
 }
 
 body {
   margin: 0;
   background: var(--ground);
   color: var(--text);
-  font: 14px/1.55 var(--font-ui);
+  font: var(--site-font-body)/var(--line-height-prose) var(--font-ui);
   -webkit-font-smoothing: antialiased;
 }
 
 a {
-  color: var(--accent);
-}
-
-:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
+  color: var(--accent-text);
 }
 
 /* ---- The shell ---- */
@@ -55,10 +68,10 @@ a {
   z-index: var(--z-panel);
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 0 16px;
+  gap: var(--space-6);
+  padding: 0 var(--space-8);
   background: var(--surface-header);
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--line) solid var(--border);
 }
 
 .menu-toggle {
@@ -68,10 +81,10 @@ a {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-4);
   color: var(--text);
   text-decoration: none;
-  font: 700 15px/1 var(--font-mono);
+  font: var(--site-weight-brand) var(--site-font-brand)/1 var(--font-mono);
   letter-spacing: 0.12em;
 }
 
@@ -80,31 +93,32 @@ a {
   place-items: center;
   width: 24px;
   height: 24px;
-  border-radius: 5px;
+  border-radius: var(--radius-md);
   background: var(--primary);
   color: var(--on-primary);
-  font-size: 15px;
+  font-size: var(--site-font-brand);
   letter-spacing: 0;
 }
 
 .find-button {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  height: 28px;
-  margin-left: 12px;
-  padding: 0 6px 0 10px;
+  gap: var(--space-4);
+  height: var(--control-height);
+  margin-left: var(--space-6);
+  padding: 0 var(--space-3) 0 var(--space-5);
   min-width: 220px;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--text-dim);
-  font: 12px var(--font-mono);
-  cursor: pointer;
+  font: var(--font-size-small) var(--font-mono);
+  cursor: default;
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 .find-button:hover {
-  background: var(--cursor-bg);
+  background: var(--hover-wash);
 }
 
 .find-words {
@@ -115,19 +129,16 @@ a {
 .theme-switcher {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-4);
   margin-left: auto;
+  /* The appearance switch stands as tall as the find button and the theme
+     select beside it. */
+  --segmented-height: var(--control-height);
 }
 
 .theme-select,
 .demo-select {
-  height: 26px;
-  padding: 0 6px;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  font: 12px var(--font-ui);
+  max-width: 100%;
 }
 
 .site-nav {
@@ -137,22 +148,21 @@ a {
   align-self: start;
   height: calc(100vh - var(--site-header-height) - var(--site-legend-height));
   overflow-y: auto;
-  padding: 16px 12px 24px;
+  padding: var(--space-8) var(--space-6) var(--space-12);
+  /* The current page's entry is scrolled into view (App.tsx) and rests clear
+     of the edge fades. */
+  scroll-padding-block: var(--space-12);
   background: var(--surface);
-  border-right: 1px solid var(--border);
+  border-right: var(--line) solid var(--border);
 }
 
 .nav-group + .nav-group {
-  margin-top: 18px;
+  margin-top: var(--space-8);
 }
 
 .nav-heading {
-  margin: 0 0 6px;
-  padding: 0 8px;
-  color: var(--text-dim);
-  font: 600 11px/1.4 var(--font-mono);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  margin: 0 0 var(--space-3);
+  padding: 0 var(--space-4);
 }
 
 .nav-group ul {
@@ -163,30 +173,34 @@ a {
 
 .nav-link {
   display: block;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-sm);
   color: var(--text);
-  font: 13px/1.5 var(--font-mono);
+  font: var(--font-size-body)/var(--line-height-prose) var(--font-mono);
   text-decoration: none;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* A long page name wraps rather than hiding its end. */
+  overflow-wrap: anywhere;
+  transition: background-color var(--duration-fast) var(--ease-out);
 }
 
 .nav-link:hover {
-  background: var(--cursor-bg);
+  background: var(--hover-wash);
 }
 
+/* The open page is the current item: its own tint and mark, never the cursor's. */
 .nav-link[aria-current='page'] {
-  background: var(--cursor-row-bg);
-  color: var(--text-on-surface);
-  box-shadow: inset 2px 0 0 var(--accent);
+  background: var(--current-bg);
+  color: var(--current-text);
+  font-weight: var(--font-weight-strong);
+  box-shadow: inset var(--line-strong) 0 0 var(--current-mark);
 }
 
 .site-main {
   grid-area: main;
   min-width: 0;
-  padding: 32px 40px 64px;
+  /* The page's outer margins: a reading layout's, wider than any step of
+     the interface's spacing scale. */
+  padding: var(--space-16) 40px 64px;
 }
 
 /* The main region takes the focus only from code (a page change, the skip
@@ -199,17 +213,17 @@ a {
 /* Hidden until the keyboard reaches it, then drawn over the header. */
 .skip-link {
   position: fixed;
-  top: 8px;
-  left: 8px;
-  z-index: calc(var(--z-panel) + 1);
-  padding: 6px 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  top: var(--space-4);
+  left: var(--space-4);
+  z-index: var(--z-overlay);
+  padding: var(--space-3) var(--space-6);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
   background: var(--surface);
   color: var(--text);
-  font: 12px var(--font-mono);
+  font: var(--font-size-small) var(--font-mono);
   text-decoration: none;
-  transform: translateY(calc(-100% - 16px));
+  transform: translateY(calc(-100% - var(--space-8)));
 }
 
 .skip-link:focus {
@@ -221,7 +235,18 @@ a {
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: var(--z-panel);
+  /* Under an anchored popover (a date picker, a menu at --z-menu) opened
+     low in the window, so the popover paints over the legend. */
+  z-index: var(--z-local-overlay);
+}
+
+/* A sentence holding a choice, set as an app sets it: at the control's
+   size, so the words around the choice match the choice's own. */
+.demo-running-choice {
+  margin: 0;
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
 }
 
 /* ---- Prose rendered from docs/ ---- */
@@ -231,65 +256,108 @@ a {
   max-width: var(--site-measure);
 }
 
+/* The docs site is a website: its own reading text selects as a page's
+   does, though the library makes an application's chrome unselectable. The
+   live demos inside it keep the library's rule, as an app would. */
+.home,
+.prose {
+  user-select: text;
+}
+
 .prose {
   overflow-wrap: break-word;
 }
 
 .prose h1,
 .hero-title {
-  margin: 0 0 12px;
-  font: 700 28px/1.2 var(--font-mono);
+  margin: 0 0 var(--space-6);
+  font: var(--font-weight-strong) var(--site-font-h1)/var(--line-height-heading) var(--font-mono);
   letter-spacing: -0.01em;
 }
 
-.prose h2,
-.home-section h2 {
-  margin: 36px 0 10px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--border);
-  font: 600 18px/1.3 var(--font-mono);
+/* The import path under a page title (render-docs.ts sets it on its own line):
+   a value to copy, in the body size, and free to break at any character so a
+   long path never runs out of a phone's width. */
+.prose .doc-import {
+  margin: calc(-1 * var(--space-3)) 0 var(--space-6);
+  color: var(--text-dim);
+  font: var(--font-size-body)/var(--line-height-prose) var(--font-mono);
+  overflow-wrap: anywhere;
 }
 
-.prose h2::before,
-.home-section h2::before {
-  content: '## ';
-  color: var(--text-dim);
+.prose .doc-import code {
+  padding: 0;
+  background: none;
+  font: inherit;
+}
+
+/* Headings are marked by the mono face and the rule under them. */
+.prose h2,
+.home-section h2 {
+  margin: var(--space-16) 0 var(--space-5);
+  padding-bottom: var(--space-3);
+  border-bottom: var(--line) solid var(--border);
+  font: var(--font-weight-strong) var(--site-font-h2)/var(--line-height-heading) var(--font-mono);
 }
 
 .prose h3 {
-  margin: 26px 0 8px;
-  font: 600 15px/1.3 var(--font-mono);
+  margin: var(--space-12) 0 var(--space-4);
+  font: var(--font-weight-strong) var(--site-font-h3)/var(--line-height-heading) var(--font-mono);
 }
 
 .prose p,
 .prose ul,
 .prose ol {
-  margin: 0 0 12px;
+  margin: 0 0 var(--space-6);
+}
+
+.prose :is(p, ul, ol, blockquote),
+.home-section > p,
+.feature-list {
+  max-width: var(--site-measure-prose);
 }
 
 .prose li + li {
-  margin-top: 4px;
+  margin-top: var(--space-2);
 }
 
+/* Inline code is a quiet wash, not a chip: no frame, and a run that wraps
+   keeps its ends on both lines. */
 .prose code,
 .home code {
-  padding: 1px 4px;
-  border-radius: 4px;
-  background: var(--bg-panel);
-  border: 1px solid var(--border);
+  padding: 1px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--surface-header);
+  /* Inline code follows the running text's size, a little smaller. */
   font: 0.9em var(--font-mono);
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+/* A short run with no space (a token or attribute name) stays whole, so a
+   phone-width line never breaks it after a hyphen (render-docs.ts marks it). */
+.prose code.code-word {
+  white-space: nowrap;
+}
+
+/* A code block: the frame draws the border and the ground, and the pre inside
+   it scrolls sideways under the library's edge fade, which would fade a
+   border of the scroller's own (render-docs.ts frames each fenced block). */
+.prose .code-frame,
+.code-block {
+  margin: 0 0 var(--space-8);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--terminal-bg);
 }
 
 .prose pre,
 .code-block pre {
-  margin: 0 0 16px;
-  padding: 12px 14px;
+  margin: 0;
+  padding: var(--space-6) var(--space-6);
   overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--terminal-bg);
   color: var(--terminal-fg);
-  font: 12.5px/1.55 var(--font-mono);
+  font: var(--font-size-small)/var(--line-height-prose) var(--font-mono);
 }
 
 .prose pre code,
@@ -300,145 +368,190 @@ a {
   font: inherit;
 }
 
-.prose table {
-  display: block;
+/* A table scrolls sideways in its own box (render-docs.ts wraps each one)
+   under the edge fade, rather than squeezing a column to a word per line. */
+.prose .table-scroll {
   max-width: 100%;
-  margin: 0 0 16px;
+  margin: 0 0 var(--space-8);
   overflow-x: auto;
+}
+
+.prose table {
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: var(--font-size-body);
+}
+
+/* The last column of a reference table is its description: it keeps room for
+   a few words a line, and a narrow window scrolls the table instead. */
+.prose td:last-child {
+  min-width: 24ch;
 }
 
 .prose th,
 .prose td {
-  padding: 5px 10px;
-  border: 1px solid var(--border);
+  padding: var(--space-2) var(--space-5);
+  border: var(--line) solid var(--border);
   text-align: left;
   vertical-align: top;
 }
 
 .prose th {
-  background: var(--bg-header);
-  font: 600 12px var(--font-mono);
+  background: var(--surface-header);
+  font: var(--font-weight-strong) var(--font-size-small) var(--font-mono);
 }
 
 .prose tr:nth-child(even) td {
-  background: var(--bg-panel);
+  background: var(--surface);
 }
 
 .prose blockquote {
-  margin: 0 0 12px;
-  padding: 2px 12px;
-  border-left: 3px solid var(--accent);
+  margin: 0 0 var(--space-6);
+  padding: var(--space-1) var(--space-6);
+  border-left: var(--line-strong) solid var(--accent);
   color: var(--text-dim);
 }
 
 /* ---- The demo frame ---- */
 
+/* A demo sits in the page flow, so its frame is a line, not a lift. */
 .demo {
-  margin: 20px 0 28px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  margin: var(--space-10) 0 var(--space-12);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
   background: var(--surface);
-  box-shadow: var(--shadow-card);
 }
 
 .demo-head {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 6px 12px;
-  border-bottom: 1px solid var(--border);
+  gap: var(--space-5);
+  min-width: 0;
+  padding: var(--space-3) var(--space-6);
+  border-bottom: var(--line) solid var(--border);
   background: var(--surface-header);
-  border-radius: 8px 8px 0 0;
-  font: 11px var(--font-mono);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  font: var(--font-size-caption)/var(--line-height-compact) var(--font-mono);
   color: var(--text-dim);
 }
 
 .demo-tag {
-  padding: 0 6px;
-  border-radius: 3px;
-  background: var(--success);
-  color: var(--bg-panel);
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  flex: none;
+  padding: 0 var(--space-3);
+  border: var(--line) solid var(--tonal-border);
+  border-radius: var(--radius-sm);
+  background: var(--tonal);
+  color: var(--on-tonal);
+  font-weight: var(--font-weight-strong);
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
+}
+
+.demo-source {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .demo-stage {
   position: relative;
-  padding: 18px;
+  padding: var(--space-8);
+}
+
+/* A grid of labelled states (DemoStates.tsx): each cell shows one state of a
+   component with a caption under it naming the state, so every demo lays out
+   rest, hover, disabled, empty, and the rest the same way. */
+.demo-states {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.demo-states-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--demo-state-min, 140px), 1fr));
+  gap: var(--space-8) var(--space-6);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.demo-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+/* The caption sits on its cell's bottom line, so the captions of one row
+   share a line when the states in it differ in height. */
+.demo-state-label {
+  max-width: 100%;
+  margin-top: auto;
+  color: var(--text-dim);
+  font: var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
 }
 
 .demo-stack {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-6);
 }
 
 .demo-row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-4);
   margin: 0;
 }
 
+/* A label that heads a row of a demo: the interface face, as labels that head
+   data are. */
 .demo-label {
   min-width: 72px;
   color: var(--text-dim);
-  font: 12px var(--font-mono);
+  font: var(--font-size-small) var(--font-ui);
+}
+
+/* The Segmented demo's longest label ("Plain buttons") is wider than the
+   shared column, so its column is widened to keep every control on one line. */
+.segmented-demo .demo-label {
+  min-width: 80px;
 }
 
 .demo-readout {
   color: var(--text-dim);
-  font: 12px var(--font-mono);
+  font: var(--font-size-small) var(--font-mono);
 }
 
+/* A group heading inside a demo, drawn as the small uppercase heading. */
 .demo-subhead {
-  margin: 4px 0 8px;
-  font: 600 12px var(--font-mono);
+  margin: var(--space-2) 0 var(--space-4);
+  font: var(--font-weight-strong) var(--font-size-caption)/var(--line-height-compact) var(--font-ui);
   color: var(--text-dim);
-  letter-spacing: 0.04em;
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
 }
 
+/* A demo's text field: the library's `field` draws it; this sets its width. */
 .demo-input {
-  width: 200px;
-  height: 26px;
-  padding: 0 8px;
-  border: 1px solid var(--border-strong);
-  border-radius: 5px;
-  background: var(--bg);
-  color: var(--text);
-  font: 13px var(--font-mono);
+  width: min(200px, 100%);
 }
 
 .demo-input.wide {
-  width: 280px;
+  width: min(280px, 100%);
 }
 
 .demo-link {
   padding: 0;
   border: none;
   background: none;
-  color: var(--accent);
+  color: var(--accent-text);
   font: inherit;
   text-decoration: underline;
-  cursor: pointer;
-}
-
-.demo-track {
-  position: relative;
-  display: flex;
-  height: 8px;
-  overflow: hidden;
-  border-radius: 4px;
-  background: var(--border);
-}
-
-.demo-fill {
-  background: var(--accent);
-  transition: width 120ms ease-out;
+  cursor: default;
 }
 
 /* A demo pane sizes to its listing instead of sharing a row of panes. */
@@ -446,8 +559,17 @@ a {
   flex: none;
 }
 
+/* Panes that share a row take equal parts of it, and each drops to a line of
+   its own before its heading or names would be cut (a phone-width window). */
+.demo-pane.shares-row {
+  flex: 1 1 160px;
+}
+
+/* A demo's scroller; a list used as one drops its block margin, so it
+   starts under its heading as a framed one does. */
 .demo-scroll {
   max-height: 320px;
+  margin: 0;
   overflow: auto;
 }
 
@@ -455,55 +577,61 @@ a {
   max-height: 260px;
 }
 
-.demo-filter {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  height: 30px;
-  padding: 0 6px 0 8px;
-  border-bottom: 1px solid var(--border);
-  font: 13px var(--font-mono);
+/* A row that scrolls sideways under the sideways scroll fade. */
+.demo-scroll-x {
+  width: 100%;
+  max-width: 360px;
+  overflow-x: auto;
+  white-space: nowrap;
 }
 
-.demo-filter input {
-  flex: 1;
-  min-width: 0;
-  border: none;
-  outline: none;
+/* The path it holds is set in the code face, not the browser's own. */
+.demo-scroll-x > code {
+  font: var(--font-size-body) var(--font-mono);
+}
+
+/* A host's own button, as an app draws one: its rest face only, at zero
+   weight, so the recipe class it joins (quiet-control, quiet-track-item)
+   paints its hover and press over it, as the recipes expect of a host. */
+:where(.demo-host-button) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  height: var(--control-height-sm);
+  padding: 0 var(--space-6);
+  border: 0;
+  border-radius: var(--radius-md);
   background: transparent;
-  color: var(--text);
-  font: inherit;
+  color: var(--text-dim);
+  font: var(--font-size-small) var(--font-ui);
 }
 
 .demo-described {
-  border-bottom: 1px dashed var(--text-dim);
+  border-bottom: var(--line) dashed var(--text-dim);
   font-family: var(--font-mono);
 }
 
 .demo-popover {
   max-width: 360px;
-  padding: 10px 12px;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  padding: var(--space-5) var(--space-6);
+  border: var(--line) solid var(--border-strong);
+  /* A floating panel takes the menu corner, as every library menu does. */
+  border-radius: var(--radius-lg);
   background: var(--surface);
-  box-shadow: var(--shadow-menu);
-  font-size: 13px;
-}
-
-.demo-dialog {
-  width: min(440px, calc(100vw - 32px));
-}
-
-.demo-dialog .demo-input {
-  width: 100%;
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    var(--shadow-popover);
+  font-size: var(--font-size-body);
 }
 
 .data-grid-cell.demo-cell-dim {
   color: var(--text-dim);
 }
 
+/* Room for the open menu at its tallest (the query row, nine rows, and the
+   note), so it ends inside the demo's frame. */
 .menu-demo {
-  min-height: 320px;
+  min-height: 344px;
 }
 
 /* The menu opens under the button that opened it. */
@@ -512,20 +640,10 @@ a {
   align-self: flex-start;
 }
 
-/* Key caps: the frame a surface draws around a chord. */
-:is(.chord-cap, .showcase-keys, .find-button, .key-catcher) .keychord {
-  padding: 2px 4px;
-  border: 1px solid var(--border-strong);
-  border-bottom-width: 2px;
-  border-radius: 4px;
-  background: var(--bg-panel);
-  color: var(--text);
-}
-
 .chord-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 10px 16px;
+  gap: var(--space-5) var(--space-8);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -534,7 +652,7 @@ a {
 .chord-list li {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-5);
 }
 
 .marked-list,
@@ -542,44 +660,64 @@ a {
   margin: 0;
   padding: 0;
   list-style: none;
-  font: 13px/1.9 var(--font-mono);
+  font: var(--font-size-body)/var(--site-line-list) var(--font-mono);
 }
 
+/* A marked path keeps its runs and marks together on the left (MarkedText
+   returns loose text and marks, each its own flex item), and the score sits
+   at the end. */
 .marked-list li {
   display: flex;
-  justify-content: space-between;
-  gap: 12px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.marked-list li > .demo-readout {
+  flex: none;
+  margin-inline-start: auto;
+  padding-inline-start: var(--space-6);
 }
 
 .check-list label {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-4);
+}
+
+/* The list's boxes stand in the SelectAllBar's column below them: the bar's
+   inset (the line plus --space-3, a grid's lead column), and no browser
+   margin of their own. */
+.check-list {
+  padding-inline-start: calc(var(--line) + var(--space-3));
+}
+
+.check-list input {
+  margin: 0;
 }
 
 .namecut-box {
   max-width: 100%;
-  padding: 6px 10px;
-  border: 1px dashed var(--border-strong);
-  border-radius: 5px;
-  font-size: 13px;
+  padding: var(--space-3) var(--space-5);
+  border: var(--line) dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-body);
 }
 
 .run-frame,
 .legend-frame {
   overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--bg);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--ground);
 }
 
 .run-frame {
-  padding: 14px 16px;
+  padding: var(--space-6) var(--space-8);
 }
 
 .pane-demo {
   display: flex;
-  gap: 8px;
+  gap: var(--space-4);
   height: 260px;
 }
 
@@ -592,6 +730,41 @@ a {
   overflow: auto;
 }
 
+/* The Listing demo's later panes. The well's pane sizes to its output, so
+   no line stands cut at its foot; an empty block fills its pane, so that
+   pane is given a height; the pinned-column listing is wider than its 360px
+   pane, so its list scrolls sideways. */
+.demo-well-pane > .pane-well-column {
+  flex: 1;
+}
+
+/* A well with output beside an empty one, the two the same height. */
+.demo-wells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-4);
+}
+
+.demo-empty-pane {
+  height: 320px;
+}
+
+.demo-pin {
+  width: min(360px, 100%);
+}
+
+/* The Pane demo's path bars, one pane each, stacked; the narrow set stands
+   at 300px, the width a quarter-width pane reaches. */
+.demo-facts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.demo-facts-narrow {
+  width: min(300px, 100%);
+}
+
 .charts-demo section {
   min-width: 0;
 }
@@ -599,7 +772,7 @@ a {
 .charts-pair {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  gap: 24px;
+  gap: var(--space-12);
   align-items: start;
 }
 
@@ -607,28 +780,45 @@ a {
   overflow-x: auto;
 }
 
+/* A terminal host in a demo: framed on the terminal's own ground, so an idle
+   well still shows where it stands and no terminal bleeds into the page. The
+   host sizes the terminal inside it; `.short` is an idle well's height. */
+.demo-terminal {
+  display: grid;
+  height: 240px;
+  padding: var(--space-4);
+  overflow: hidden;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--terminal-bg);
+}
+
+.demo-terminal.short {
+  height: 96px;
+}
+
 .keyboard-demo {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-6);
 }
 
 .key-catcher {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
+  gap: var(--space-6);
   min-height: 56px;
-  padding: 10px 14px;
-  border: 1px dashed var(--border-strong);
-  border-radius: 6px;
-  background: var(--bg);
-  font: 13px var(--font-mono);
+  padding: var(--space-5) var(--space-6);
+  border: var(--line) dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--ground);
+  font: var(--font-size-body) var(--font-mono);
   cursor: text;
 }
 
 .key-catcher:focus-visible {
-  outline-offset: 0;
+  outline-offset: var(--focus-offset-flush);
   border-style: solid;
 }
 
@@ -640,7 +830,7 @@ a {
 .labels-sample {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: var(--space-6);
 }
 
 /* ---- Theming ---- */
@@ -648,125 +838,22 @@ a {
 .theming-demo {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.theme-tiles {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
-}
-
-/* A miniature painted from the preview tokens its data-theme-preview sets. */
-.theme-tile {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 6px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--bg);
-  color: var(--text);
-  font: 12px var(--font-mono);
-  text-align: left;
-  cursor: pointer;
-}
-
-.theme-tile[aria-pressed='true'] {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.theme-tile-window {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--bg-panel);
-}
-
-.theme-tile-bar {
-  height: 10px;
-  background: var(--bg-header);
-  border-bottom: 1px solid var(--border);
-}
-
-.theme-tile-body {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 7px;
-}
-
-.theme-tile-line {
-  height: 4px;
-  width: 60%;
-  border-radius: 2px;
-  background: var(--text-dim);
-}
-
-.theme-tile-line.strong {
-  width: 80%;
-  background: var(--text);
-}
-
-.theme-tile-chips {
-  display: flex;
-  gap: 3px;
-}
-
-.chip {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-}
-
-.chip-1 {
-  background: var(--terminal-ansi-1);
-}
-
-.chip-2 {
-  background: var(--terminal-ansi-2);
-}
-
-.chip-3 {
-  background: var(--terminal-ansi-3);
-}
-
-.chip-4 {
-  background: var(--terminal-ansi-4);
-}
-
-.chip-5 {
-  background: var(--terminal-ansi-5);
-}
-
-.chip-6 {
-  background: var(--terminal-ansi-6);
-}
-
-.theme-tile-button {
-  align-self: flex-end;
-  width: 34px;
-  height: 9px;
-  border-radius: 3px;
-  background: var(--primary);
+  gap: var(--space-5);
 }
 
 .token-roles {
   columns: 2 300px;
-  column-gap: 24px;
+  column-gap: var(--space-12);
 }
 
 .token-role {
   break-inside: avoid;
-  margin-bottom: 14px;
+  margin-bottom: var(--space-6);
 }
 
 .token-role h4 {
-  margin: 0 0 4px;
-  font: 600 12px var(--font-mono);
+  margin: 0 0 var(--space-2);
+  font: var(--font-weight-strong) var(--font-size-small) var(--font-mono);
 }
 
 .token-role ul {
@@ -779,16 +866,16 @@ a {
   display: grid;
   grid-template-columns: 16px minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
-  font-size: 11.5px;
-  line-height: 1.9;
+  gap: var(--space-4);
+  font-size: var(--font-size-caption);
+  line-height: var(--site-line-list);
 }
 
 .token-swatch {
   width: 16px;
   height: 16px;
-  border: 1px solid var(--border-strong);
-  border-radius: 4px;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-sm);
 }
 
 .token-swatch.none {
@@ -808,31 +895,124 @@ a {
   white-space: nowrap;
 }
 
+/* ---- Scale tokens ---- */
+
+.scale-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Name, value, then the step drawn at its own size. */
+.scale-row {
+  display: grid;
+  grid-template-columns: minmax(0, 22ch) 7ch minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-6);
+  min-height: var(--row-height);
+  padding-block: var(--space-1);
+  border-bottom: var(--line) solid var(--border-faint);
+  font-size: var(--font-size-caption);
+}
+
+.scale-row .token-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.scale-sample {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.scale-type {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  line-height: var(--line-height-heading);
+  white-space: nowrap;
+}
+
+.scale-space {
+  height: var(--space-4);
+  border-radius: var(--radius-xs);
+  background: var(--accent);
+}
+
+.scale-radius {
+  width: 48px;
+  height: var(--control-height);
+  border: var(--line) solid var(--control-border);
+  background: var(--surface);
+}
+
+.scale-height {
+  width: 48px;
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+
+.scale-icon {
+  color: var(--primary-mark);
+}
+
+.scale-line {
+  width: 96px;
+  background: var(--text);
+}
+
+/* The focus ring as the base sheet draws it; each row sets its offset. */
+.scale-focus {
+  width: 48px;
+  height: var(--control-height-sm);
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  outline: var(--focus-ring-width) solid var(--accent);
+}
+
+.scale-dot {
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: var(--radius-pill);
+  background: var(--success);
+}
+
+.scale-swatch {
+  width: var(--space-4);
+  height: var(--space-4);
+  border-radius: var(--radius-xs);
+  background: var(--chart-1);
+}
+
 /* ---- Home ---- */
 
 .hero {
-  padding: 8px 0 24px;
+  padding: var(--space-4) 0 var(--space-12);
 }
 
 .hero-prompt {
-  margin: 0 0 6px;
+  margin: 0 0 var(--space-3);
   color: var(--text-dim);
-  font: 13px var(--font-mono);
+  font: var(--font-size-body) var(--font-mono);
 }
 
 .prompt-sigil {
-  color: var(--success);
+  color: var(--text-dim);
 }
 
 .hero-title {
-  font-size: 44px;
+  font-size: var(--site-font-hero);
   letter-spacing: 0.14em;
 }
 
 .hero-title::after {
   content: '_';
   color: var(--accent);
-  animation: cursor-blink 1.1s steps(1) infinite;
+  /* steps() blinks the cursor on and off, the one easing outside the tokens. */
+  animation: cursor-blink var(--duration-spin) steps(1) infinite;
 }
 
 @keyframes cursor-blink {
@@ -849,31 +1029,37 @@ a {
 
 .hero-lede {
   max-width: 640px;
-  margin: 0 0 18px;
-  font-size: 15px;
+  margin: 0 0 var(--space-8);
+  font-size: var(--site-font-lede);
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: var(--space-5);
+}
+
+/* The text links wrap as one item, so neither is left alone on a row. */
+.hero-links {
+  display: inline-flex;
+  gap: var(--space-5);
+  white-space: nowrap;
 }
 
 .hero-link {
-  font: 13px var(--font-mono);
+  font: var(--font-size-body) var(--font-mono);
 }
 
 .showcase {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  margin: 8px 0 12px;
-  padding: 14px;
-  border: 1px solid var(--border-strong);
-  border-radius: 10px;
-  background: var(--bg);
-  box-shadow: var(--shadow-card);
+  gap: var(--space-5);
+  margin: var(--space-4) 0 var(--space-6);
+  padding: var(--space-6);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--ground);
 }
 
 .showcase-pane {
@@ -881,36 +1067,38 @@ a {
 }
 
 .showcase-run {
-  padding: 4px 4px 0;
+  padding: var(--space-2) var(--space-2) 0;
 }
 
 .showcase-actions {
   display: inline-flex;
-  gap: 2px;
+  gap: var(--space-1);
 }
 
 .showcase-keys {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: var(--space-3);
   margin: 0;
   color: var(--text-dim);
-  font: 12px var(--font-mono);
+  font: var(--font-size-small) var(--font-mono);
 }
 
 .showcase-keys .keychord + .keychord {
-  margin-left: -2px;
+  margin-left: calc(-1 * var(--space-1));
 }
 
+/* A code block with its copy button in a column of its own beside the code,
+   so a line longer than the block scrolls under nothing. */
 .code-block {
-  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
 }
 
 .code-block .copy-button {
-  position: absolute;
-  top: 6px;
-  right: 6px;
+  margin: var(--space-3) var(--space-3) 0 0;
 }
 
 .feature-list {
@@ -922,8 +1110,8 @@ a {
 .feature-list li {
   display: flex;
   align-items: baseline;
-  gap: 6px;
-  margin-bottom: 6px;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
 .feature-list svg {
@@ -934,16 +1122,39 @@ a {
 
 /* ---- Narrow windows ---- */
 
+/* The drawer's scrim exists only while the drawer is open in a narrow window. */
+.nav-scrim {
+  display: none;
+}
+
+/* A tablet-wide window: the pages move into a drawer behind the menu button,
+   and the header keeps its one row with the labelled find button. */
 @media (max-width: 860px) {
+  /* A window this narrow is usually touched, not typed at; the legend strip
+     gives its room back. */
   .shell {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'header'
       'main';
+    padding-bottom: 0;
+  }
+
+  .site-legend {
+    display: none;
+  }
+
+  .site-header {
+    gap: var(--space-5);
+    padding-inline: var(--space-8);
   }
 
   .menu-toggle {
     display: inline-flex;
+  }
+
+  .shell {
+    --site-drawer-width: min(280px, 85vw);
   }
 
   .site-nav {
@@ -951,37 +1162,202 @@ a {
     top: var(--site-header-height);
     left: 0;
     z-index: var(--z-panel);
-    width: min(280px, 85vw);
-    box-shadow: var(--shadow-menu);
+    width: var(--site-drawer-width);
+    height: calc(100vh - var(--site-header-height));
+    box-shadow: var(--shadow-popover);
   }
 
   .shell[data-menu='closed'] .site-nav {
     display: none;
   }
 
+  /* The open drawer dims the page beside it, under the drawer and below the
+     header; a press on the dimmed page closes the drawer. Under the drawer
+     the scrim paints the drawer's own ground: the drawer's edge fade
+     (.scroll-fade) fades its ground too, and the page must not show
+     through it. */
+  .shell[data-menu='open'] .nav-scrim {
+    display: block;
+    position: fixed;
+    inset: var(--site-header-height) 0 0;
+    z-index: var(--z-panel);
+    background:
+      linear-gradient(var(--surface), var(--surface)) 0 0 / var(--site-drawer-width) 100% no-repeat,
+      var(--scrim);
+  }
+
+  /* The header keeps one row by steps, never by cutting words: the find
+     button drops its chord, then its words (the steps below), and the theme
+     controls keep their full width. */
   .find-button {
-    min-width: 0;
-    margin-left: 0;
+    flex: none;
+    margin-left: var(--space-2);
   }
 
-  .find-words,
-  .find-button .keychord {
-    display: none;
-  }
-
-  .theme-switcher .segmented-choice {
-    display: none;
+  .theme-switcher {
+    flex: none;
   }
 
   .site-main {
-    padding: 20px 16px 48px;
+    padding: var(--space-12) var(--space-10) var(--space-16);
   }
 
   .charts-pair {
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .scale-row {
+    grid-template-columns: minmax(0, 1fr) 6ch minmax(0, 1fr);
+    gap: var(--space-4);
+  }
+}
+
+/* Below the room for its words and chord both, the find button keeps its
+   words. */
+@media (max-width: 760px) {
+  .find-button {
+    min-width: 0;
+  }
+
+  .find-button .keychord {
+    display: none;
+  }
+}
+
+/* Below the room for its words, find collapses to its icon (a square button,
+   its name in the tooltip and its label), so the row still fits with its inset
+   down to the phone step. */
+@media (max-width: 680px) {
+  .find-button {
+    justify-content: center;
+    width: var(--control-height);
+    padding: 0;
+  }
+
+  .find-words {
+    display: none;
+  }
+}
+
+/* A phone: the header takes two rows (the menu, the wordmark, and find on the
+   first; the appearance switch and the theme on the second). */
+@media (max-width: 560px) {
+  :root {
+    --site-header-height: calc(2 * var(--control-height) + var(--space-4) + 2 * var(--space-5));
+  }
+
+  .site-header {
+    flex-wrap: wrap;
+    align-content: center;
+    row-gap: var(--space-4);
+    padding-block: var(--space-5);
+  }
+
+  .find-button {
+    margin-left: auto;
+  }
+
+  .theme-switcher {
+    flex: 1 0 100%;
+    min-width: 0;
+    margin-left: 0;
+  }
+
+  .theme-select {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: 200px;
+  }
+
+  .site-main {
+    padding: var(--space-10) var(--space-8) var(--space-16);
+  }
+
   .pane-demo-sidebar {
     flex-basis: 120px;
   }
+}
+
+/* A window's content area standing in for the whole window, so the Shell
+   demo can show the settings notice as the band under a header: the band
+   keeps its own margins, and the window's ground runs on under it. */
+.shell-demo-window {
+  display: flex;
+  flex-direction: column;
+  min-height: 96px;
+  overflow: hidden;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--ground);
+}
+
+/* A short Updates column, so its What's new list has to give way. */
+.shell-demo-updates-short {
+  max-width: 420px;
+  height: 220px;
+  padding: var(--space-6);
+}
+
+/* A host's mark for a name by its kind (PathCell's nameClassName): a
+   document a weight up, in the text colour. Never the accent, which in a row
+   reads as a link. A selection paints its own words, so the rule leaves a
+   selected row alone. */
+:where(.listing-root) .row:where(:not(.selected)) .pane-path-name.demo-kind-doc {
+  font-weight: var(--font-weight-medium);
+}
+
+/* A host's quieter entry (an ignored file), as the listing page describes:
+   the meta tone at rest, the dim tone made for a state fill on the cursor,
+   a marked row, or under the pointer. */
+:where(.listing-root) .row:where(:not(.selected)) > .row-name.demo-quiet-name {
+  color: var(--row-meta-text);
+}
+
+:where(.listing-root) .row:where(:not(.selected)):is(.cursor, .marked) > .row-name.demo-quiet-name {
+  color: var(--text-dim-on-surface);
+}
+
+/* The Text demo's listing is narrow, so its longest names cut short. */
+.demo-marked-pane {
+  width: min(240px, 100%);
+}
+
+/* A scatter chart in a state cell fills the cell: its frame sizes to the
+   width it is given, which a cell would otherwise leave open. */
+.demo-state > .charts-scatter {
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* A menu opened from a tool at the row's end opens toward the start, so it
+   stays inside a narrow window. */
+.demo-anchor.end > .folder-menu {
+  right: 0;
+  left: auto;
+}
+
+/* A result chart in a state cell scrolls inside the cell, never the page. */
+.demo-state > .result-chart-frame {
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* A grid cell the caller draws itself (DataGridCell's content): a kind's
+   glyph and word on one line, in the cell's own colour. */
+.demo-cell-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* The palette demo's tag at the field's end keeps clear of the count
+   before it, as a host's own tag does. */
+.demo-palette-aside {
+  margin-inline-start: var(--space-6);
+}
+
+/* The Pane demo's tightest bar: narrow enough that the action's word steps
+   down to its icon. */
+.demo-facts-tight {
+  width: min(240px, 100%);
 }

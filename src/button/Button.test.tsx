@@ -39,10 +39,51 @@ describe('Button', () => {
       'button button-tonal button-small wide'
     );
   });
+
+  it('draws the 20px size with the 20px corner, a 12px glyph, and a 24px pointer target', () => {
+    render(<Button size="xs">Retry</Button>);
+
+    expect(screen.getByRole('button', { name: 'Retry' }).className).toBe(
+      'button button-neutral button-xs'
+    );
+    const styles = readStylesheet('src/button/button.css');
+    const rule = /\.button-xs \{([^}]*)\}/.exec(styles)?.[1] ?? '';
+    expect(rule).toContain('height: var(--control-height-xs);');
+    expect(rule).toContain('border-radius: var(--radius-sm);');
+    expect(rule).toContain('position: relative;');
+    expect(styles).toMatch(
+      /\.button-xs::after \{[^}]*inset-block: min\(0px, calc\(\(100% - var\(--hit-target\)\) \/ 2\)\);/
+    );
+    expect(styles).toMatch(/:is\([^)]*\.button-xs[^)]*\) > svg \{\s*width: var\(--icon-sm\);/);
+  });
+});
+
+describe('the danger and pressed looks', () => {
+  const styles = readStylesheet('src/button/button.css');
+
+  it('draws a danger Button red-outlined, washed red under the pointer and while held', () => {
+    render(<Button variant="danger">Delete</Button>);
+
+    expect(screen.getByRole('button', { name: 'Delete' }).className).toBe('button button-danger');
+    expect(styles).toMatch(
+      /\.button-danger \{\s*border-color: var\(--danger\);\s*color: var\(--danger-text\);/
+    );
+    expect(styles).toMatch(/\.button-danger:hover[^{]*\{\s*background: var\(--danger-wash\);/);
+    expect(styles).toMatch(
+      /\.button-danger:active[^{]*\{\s*background: var\(--danger-wash-strong\);/
+    );
+  });
+
+  it('presses a fill past its hover tone, never back to rest', () => {
+    expect(styles).toMatch(
+      /\.button-primary:active[^{]*\{\s*background: var\(--primary-pressed\);/
+    );
+    expect(styles).toMatch(/\.button-tonal:active[^{]*\{\s*background: var\(--tonal-pressed\);/);
+  });
 });
 
 describe('a disabled Button or IconButton', () => {
-  it('fades to --disabled-opacity under an arrow, over its own pointer', () => {
+  it('fades to --disabled-opacity under the same arrow an enabled one shows', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     render(
       <>
@@ -61,7 +102,7 @@ describe('a disabled Button or IconButton', () => {
       expect(style.cursor, name).toBe('default');
       expect(style.opacity, name).toBe('var(--disabled-opacity)');
     }
-    expect(getComputedStyle(screen.getByRole('button', { name: 'Close' })).cursor).toBe('pointer');
+    expect(getComputedStyle(screen.getByRole('button', { name: 'Close' })).cursor).toBe('default');
   });
 });
 

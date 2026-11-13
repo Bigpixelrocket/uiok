@@ -38,6 +38,7 @@
  * element.
  */
 
+import { CircleAlert } from 'lucide-react';
 import {
   useContext,
   useEffect,
@@ -49,6 +50,7 @@ import {
   type Ref
 } from 'react';
 
+import { ICON_MD } from '../icon/index.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { subscribeThemeChange } from '../themes/attributes.js';
 import type { GhosttyColor, GhosttyTheme } from './ghostty/core.js';
@@ -433,7 +435,12 @@ export function Terminal({
         role={readOnly ? 'group' : undefined}
         tabIndex={readOnly ? 0 : -1}
       />
-      {failed && <p className="terminal-failure">{labels.startFailed}</p>}
+      {failed && (
+        <div className="terminal-failure" role="alert">
+          <CircleAlert aria-hidden className="terminal-failure-glyph" size={ICON_MD} />
+          <p className="terminal-failure-text">{labels.startFailed}</p>
+        </div>
+      )}
       {menu !== null && (
         <TerminalMenu
           at={menu.at}

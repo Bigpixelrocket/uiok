@@ -2,11 +2,18 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { labelHelp } from '../field/labelHelp.js';
 import { SegmentedChoice } from './SegmentedChoice.js';
 
 const SIZES = ['small', 'medium', 'large'] as const;
 
-function Sizes({ onChange }: { readonly onChange: (size: string) => void }) {
+function Sizes({
+  onChange,
+  disabledChoices
+}: {
+  readonly onChange: (size: string) => void;
+  readonly disabledChoices?: readonly (typeof SIZES)[number][];
+}) {
   const [size, setSize] = useState<(typeof SIZES)[number]>('medium');
 
   return (
@@ -19,6 +26,7 @@ function Sizes({ onChange }: { readonly onChange: (size: string) => void }) {
           onChange(next);
           setSize(next);
         }}
+        disabledChoices={disabledChoices}
         render={(choice) => choice}
         value={size}
       />
@@ -61,5 +69,52 @@ describe('SegmentedChoice', () => {
 
     fireEvent.click(screen.getByRole('radio', { name: 'small' }));
     expect(onChange).toHaveBeenCalledWith('small');
+  });
+
+  it('passes over a disabled choice with the arrow keys and ignores a click on it', () => {
+    const onChange = vi.fn();
+    render(<Sizes disabledChoices={['large']} onChange={onChange} />);
+
+    const large = screen.getByRole('radio', { name: 'large' }) as HTMLButtonElement;
+    expect(large.disabled).toBe(true);
+
+    fireEvent.click(large);
+    expect(onChange).not.toHaveBeenCalled();
+
+    fireEvent.keyDown(screen.getByRole('radio', { name: 'medium' }), { key: 'ArrowRight' });
+    expect(onChange).toHaveBeenLastCalledWith('small');
+    expect(document.activeElement).toBe(screen.getByRole('radio', { name: 'small' }));
+  });
+
+  it("takes its help as the group's description, the label's tooltip being the other half", () => {
+    const help = labelHelp('How big each row is drawn.');
+
+    render(
+      <>
+        <span id="density-label" {...help.label}>
+          Density
+        </span>
+        <SegmentedChoice
+          choices={SIZES}
+          labelId="density-label"
+          onChange={() => undefined}
+          render={(choice) => choice}
+          value="medium"
+          {...help.control}
+        />
+      </>
+    );
+    const group = screen.getByRole('radiogroup', { name: 'Density' });
+
+    expect(group.getAttribute('aria-description')).toBe('How big each row is drawn.');
+    expect(screen.getByText('Density').getAttribute('data-tooltip')).toBe(
+      'How big each row is drawn.'
+    );
+  });
+
+  it('carries no description without help', () => {
+    render(<Sizes onChange={() => undefined} />);
+
+    expect(screen.getByRole('radiogroup').hasAttribute('aria-description')).toBe(false);
   });
 });

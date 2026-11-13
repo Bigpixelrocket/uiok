@@ -1,0 +1,154 @@
+/* ---- Notices and cards (docs/components/surface.md) ----
+
+   Surfaces a page draws around its own content, as classes on the page's
+   own markup. No component: their words are the page's.
+
+   - .notice: an application's status line, never a web page's alert. It
+     sits on the surface it is about (a step, a field, a pane) with no fill,
+     no frame, and no side bar of its own: a small status glyph in the
+     tone's colour, the words in --text, and an optional small button after
+     them. Tones: .notice-danger, .notice-warning, .notice-success; none is
+     a note. .notice-card sets it as the window's status line under a
+     header: the same plain line at the window's inset, a hairline under it.
+   - .card: a lifted panel that groups one subject's lines, framed in
+     --border-strong like every framed surface (panes, menus, the grid),
+     at the 12px surface inset at both ends, whatever its children's
+     margins. */
+
+.notice {
+  /* The tone's glyph, 3:1 on every ground by its token. */
+  --notice-tone: var(--text-faint);
+
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  box-sizing: border-box;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+}
+
+.notice-danger {
+  --notice-tone: var(--danger);
+}
+
+.notice-warning {
+  --notice-tone: var(--warning);
+}
+
+.notice-success {
+  --notice-tone: var(--success);
+}
+
+/* The glyph (a lucide icon of --icon-md, or anything marked .notice-glyph)
+   sits on the first line's centre in the tone. */
+.notice > svg:first-child,
+.notice-glyph {
+  flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  margin-block: var(--space-1);
+  color: var(--notice-tone);
+}
+
+/* A glyph wrapped in .notice-glyph (a Spinner in a span) fills its box,
+   off the text baseline. */
+.notice-glyph > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.notice-text {
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+/* A message's words are content: a path or a server's reply in them is
+   what a user pastes into a report, so they can be swept and copied. */
+.notice-text {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* An action follows the words, as a status line's button does, centred
+   on the message's first line. */
+.notice-actions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: var(--space-2);
+  margin-block: calc((var(--line-height-compact) - var(--control-height-sm)) / 2);
+  margin-inline-start: var(--space-2);
+}
+
+/* The window's status line under a header, about a state that stands
+   until the user fixes it elsewhere (a settings file with a mistake): the
+   notice's plain line at the window's inset, with a hairline under it to
+   part it from the panes. No fill, no tint, no side bar, no shadow, and no
+   close cross: it goes when its cause does. */
+.notice-card {
+  align-items: center;
+  padding: var(--space-2) var(--space-6);
+  border-bottom: var(--line) solid var(--border);
+}
+
+.notice-card .notice-actions {
+  margin-block: 0;
+}
+
+/* A status line is one line: in a narrow window its words are cut with an
+   ellipsis rather than wrapped onto a second line that pushes the panes
+   down. The host gives the words their whole text as a tooltip while cut
+   (cutTooltip on the .notice-text). */
+.notice-card .notice-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The danger glyph for a message whose markup draws none: a field's
+   problem (.field-problem), a listing's refusal (.pane-message.danger),
+   and a palette's failure note (.palette-failure) lead with the danger
+   tone's CircleAlert, drawn as a mask in --danger, so they read as the same status line a notice is, words in --text. A host
+   that draws its own glyph first (an svg) gets no second one. */
+:is(
+    .field-problem,
+    :where(.listing-root) .pane-message.danger,
+    :where(.palette-notes) .palette-failure
+  ):not(:has(> svg:first-child))::before {
+  content: '';
+  flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  background: var(--danger);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='10'/%3E%3Cline x1='12' x2='12' y1='8' y2='12'/%3E%3Cline x1='12' x2='12.01' y1='16' y2='16'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+.card {
+  box-sizing: border-box;
+  min-width: 0;
+  padding: var(--space-6);
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--card-bg);
+}
+
+/* The card's inset is its spacing at both ends: its first child starts at
+   the 12px edge and its last ends there, whatever margins a heading or a
+   paragraph brings. Space between children stays the content's own (a
+   paragraph's margin, a grid's gap), so a card laid out as a grid is not
+   spaced twice. */
+.card > :first-child {
+  margin-block-start: 0;
+}
+
+.card > :last-child {
+  margin-block-end: 0;
+}
