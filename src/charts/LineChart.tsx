@@ -106,7 +106,14 @@ export function LineChart({
   const timeTicks = ticksOf(time, 'time', Math.max(2, Math.floor(plotWidth / 90)));
   const timeLabels = timeTickLabels(timeTicks, timeText, px, plotWidth, widthOf);
   const labelKey = JSON.stringify([...timeTicks.map(timeText), ...valueTicks.map(format)]);
+  // A value to draw: one that is not missing, inside the time axis.
+  const drawable = series.some((entry) =>
+    entry.points.some(
+      (point) => point.value !== null && point.at >= time.min && point.at <= time.max
+    )
+  );
 
+  // Measured again when the plot mounts, since the empty state draws no labels.
   useLayoutEffect(() => {
     const measured: Record<string, number> = {};
 
@@ -119,7 +126,7 @@ export function LineChart({
     setLabelWidths((known) =>
       Object.entries(measured).some(([text, width]) => known[text] !== width) ? measured : known
     );
-  }, [labelKey]);
+  }, [labelKey, drawable]);
 
   const moments = [
     ...new Set(series.flatMap((entry) => entry.points.map((point) => point.at)))
@@ -133,12 +140,6 @@ export function LineChart({
     return unscaled(x, time, 0, plotWidth);
   };
   const shown = hover === null ? null : nearestMoment(moments, hover);
-  // A value to draw: one that is not missing, inside the time axis.
-  const drawable = series.some((entry) =>
-    entry.points.some(
-      (point) => point.value !== null && point.at >= time.min && point.at <= time.max
-    )
-  );
 
   return (
     <figure aria-label={label} className="line-chart">

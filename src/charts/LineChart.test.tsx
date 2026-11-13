@@ -63,6 +63,40 @@ describe('the line chart', () => {
     expect(empty(SERIES).querySelector('.chart-empty')).toBeNull();
   });
 
+  it('measures its labels when values arrive in a plot that had none', () => {
+    // Every label measures 72px, far wider than the 16px estimated for 'ab'.
+    const measure = vi.fn(() => 72);
+    Object.defineProperty(SVGElement.prototype, 'getComputedTextLength', {
+      configurable: true,
+      value: measure
+    });
+
+    try {
+      const plot = (value: number | null) => (
+        <LineChart
+          format={() => 'ab'}
+          from={0}
+          label="Queries"
+          series={[{ label: 'reads', points: [{ at: 500, value }] }]}
+          timeText={() => 'ab'}
+          to={1000}
+        />
+      );
+      const { container, rerender } = render(plot(null));
+
+      // The same ticks either way, so only the plot's mounting can ask for a measure.
+      rerender(plot(0));
+      expect(measure).toHaveBeenCalled();
+      // The value axis makes room for a measured label: 72px and its 8px gap.
+      expect(
+        container.querySelector('.line-svg > g:not(.line-measure)')?.getAttribute('transform')
+      ).toBe('translate(80 8)');
+    } finally {
+      delete (SVGElement.prototype as Partial<{ getComputedTextLength: unknown }>)
+        .getComputedTextLength;
+    }
+  });
+
   it('reads out every series at the moment nearest the pointer, a missing value as dashes', () => {
     render(chart());
 
