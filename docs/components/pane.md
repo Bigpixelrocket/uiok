@@ -59,13 +59,32 @@ function View() {
 
 ## Compact controls
 
-- `QuietAction` (`QuietActionProps`): words on tools when they fit. In a path bar, in a `tabbable` row (where it keeps its Tab stop), and in any toolbar it draws its glyph and its `word` by default, so a command reached by Tab shows what it does without a hover; a path bar too tight for its words hides them and keeps the glyph, the word then its tooltip (step 5 below). Only in a row the keys reach (not `tabbable`) is it a glyph alone by default, its `word` its tooltip (followed by `shortcut`) and kept for assistive technology, with its glyph and word where `RowLinkLookContext` is `'text'` or `'both'`, which an app sets from a user's icon-or-text preference. An app sets nothing to get words on its tools. In the dim tone, lit on the cursor row or with `lit`: full words in `--text`, never the accent, so it reads as a control and not as a link (`lit` also sets the verb a weight up and keeps its glyph in `--accent`). `danger` marks a destructive one (Remove, Drop): quiet at rest, in the danger tone under the pointer, with the focus, and on the cursor row. `label` is the accessible name, `tip` the tooltip and description, `shortcut` the chord the tooltip shows. `verb` marks what the cursor row's keys run it for (`data-verb`), `pageVerb` what the page's chords run it for (`data-page-verb`), and `action` tells several controls on one verb apart. `softDisabled` keeps it focusable but inert (`aria-disabled`).
+- `QuietAction` (`QuietActionProps`): words on tools when they fit. In a path bar, in a `tabbable` row (where it keeps its Tab stop), and in any toolbar it draws its glyph and its `word` by default, so a command reached by Tab shows what it does without a hover; a path bar too tight for its words hides them and keeps the glyph, the word then its tooltip (step 5 below). Only in a row the keys reach (not `tabbable`) is it a glyph alone by default, its `word` its tooltip (followed by `shortcut`) and kept for assistive technology, with its glyph and word where `RowLinkLookContext` is `'text'` or `'both'`, which an app sets from a user's icon-or-text preference. An app sets nothing to get words on its tools. In the dim tone, lit on the cursor row or with `lit`: full words in `--text`, never the accent, so it reads as a control and not as a link (`lit` also sets the verb a weight up and keeps its glyph in `--accent`). `danger` marks a destructive one (Remove, Drop): quiet at rest, in the danger tone under the pointer, with the focus, and on the cursor row. `label` is the accessible name, `tip` the tooltip and description, `shortcut` the chord the tooltip shows. `verb` marks what the cursor row's keys run it for (`data-verb`), `pageVerb` what the page's chords run it for (`data-page-verb`), and `action` tells several controls on one verb apart. `softDisabled` keeps it focusable but inert (`aria-disabled`). `keepWord` (`data-keep-word`) keeps its word in a fitted toolbar until the other tools have stepped (below).
 - `RowIconAction` (`RowIconActionProps`): an icon control with the same `label`, `tip`, `verb`, `softDisabled`, `danger`. With a `word`, it draws as `RowLinkLookContext` says.
 - `LinkLook` (`'icons' | 'text' | 'both'`) and `RowLinkLookContext` (icons by default): how row links and the `QuietAction`s in rows the keys reach draw, for an app with an icon-or-text preference. Path-bar tools and a `tabbable` row's actions follow it only for `'text'` and `'both'`; `'icons'` never takes their words.
 - `InRowContext` and `useInRow()`: set by `Row`. A control inside a row leaves the Tab order, since the cursor row's keys run it.
 - `ControlVerb`: a string. Several verbs on one control are separated by spaces (`enter reveal`).
 
 Every press stops propagation, so a row's `onOpen` never fires from its controls.
+
+### A toolbar that fits its line
+
+`useToolbarFit()` returns a ref for a toolbar of `QuietAction`s (`role="toolbar"`, one line that never wraps). While every tool's glyph and word fit beside the bar's other items, they show. When they do not, every tool steps to its glyph alone, the step a path bar takes (step 5 below, the same rules and the same tooltips): the word becomes the tool's tooltip (unless it has a `tip`) and stays its accessible name. A tool never cuts its word and never leaves the bar, and the words come back as soon as the room does.
+
+- **What counts toward the room.** Everything else in the bar (a search field, a pager, a check and its label, a primary button, a separator) is measured at its full size, even an item the host lets shrink, so the tools step before a field gives up its width.
+- **A word kept until last.** A tool whose glyph alone could be misread at a cost (Kill, Drop) takes `keepWord`: it keeps its word while the other tools step, and steps only when the bar still does not fit (`data-tight="all"`).
+- **When it refits.** When the bar or any of its items resizes, when an item comes, goes, or changes its words, and once the document's fonts load.
+- **What the host keeps.** The bar must be as wide as the room it has, not sized to its content (a block, or a flex item that may shrink), so overflow shows in it. The fit sets `data-tool-fit` on the bar, `data-tight` (`''` or `'all'`) while it steps, and `data-word-tip` on each tool it gave a tooltip; the stepping is drawn by the library's stylesheet, inside or outside the listing look.
+
+```tsx
+const fit = useToolbarFit();
+
+<div aria-label="Table" className="my-toolbar" ref={fit} role="toolbar">
+  <QuietAction icon={Printer} label="Print" onClick={print} word="Print" />
+  <QuietAction icon={Table2} label="Normalize" onClick={normalize} word="Normalize" />
+  <QuietAction danger icon={Skull} keepWord label="Kill process 42" onClick={kill} word="Kill" />
+</div>;
+```
 
 ## Keyboard
 
@@ -96,7 +115,7 @@ DOM helpers: `paneRows`, `paneRow`, `verbControl(root, verb, 'verb' | 'page-verb
 
 ## Styling
 
-`.pane` (`.active` wears the accent on its frame), `.pane-path-row` (`--pane-crumb-count`, `--pane-crumb-here-room`, `data-tight`, `data-wraps`), `.pane-crumbs` (`data-cramped`, `--pane-crumb-fit`), `.crumb` (`.root`, `.home`, `.here`, `.brief`), `.crumb-label` (a crumb's words in `.crumb-text`), `.crumb-separator`, `.path-tools`, `.path-facts` (`.danger`, `.warning`; its words in `.path-fact-text`, as `PathFact` writes it), `.path-star`, `.pane-act` (`.lit`, `.danger`; its verb in `.pane-act-word`), `.pane-icon-act` (`.worded`, `.danger`), `.pane-list`, `.pane-status`, `.pane-summary`, `.pane-status-tools`.
+`.pane` (`.active` wears the accent on its frame), `.pane-path-row` (`--pane-crumb-count`, `--pane-crumb-here-room`, `data-tight`, `data-wraps`), `.pane-crumbs` (`data-cramped`, `--pane-crumb-fit`), `.crumb` (`.root`, `.home`, `.here`, `.brief`), `.crumb-label` (a crumb's words in `.crumb-text`), `.crumb-separator`, `.path-tools`, `.path-facts` (`.danger`, `.warning`; its words in `.path-fact-text`, as `PathFact` writes it), `.path-star`, `.pane-act` (`.lit`, `.danger`, `data-keep-word`; its verb in `.pane-act-word`), a fitted toolbar's `data-tool-fit` and `data-tight`, `.pane-icon-act` (`.worded`, `.danger`), `.pane-list`, `.pane-status`, `.pane-summary`, `.pane-status-tools`.
 
 ### How a narrow bar gives way
 

@@ -449,10 +449,15 @@ button.crumb-label > .crumb-text {
 
 /* Where even the last crumb's stem would not fit, a bar's quiet actions
    say their verbs with their icons alone (PanePathBar's `data-tight`), as
-   a row's actions do where values need the room. The word leaves the
-   drawing as the base sheet's .visually-hidden does, so the button keeps
-   its name. */
-:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act:not(.wordless) {
+   a row's actions do where values need the room. A toolbar fitted by
+   useToolbarFit (`data-tool-fit`) steps its tools the same way when their
+   words do not fit its line, a tool marked `data-keep-word` only at its
+   last step (`data-tight="all"`); it is drawn outside the listing look
+   too. The word leaves the drawing as the base sheet's .visually-hidden
+   does, so the button keeps its name. */
+:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act:not(.wordless),
+[data-tool-fit][data-tight] .pane-act:not(.wordless, [data-keep-word]),
+[data-tool-fit][data-tight='all'] .pane-act[data-keep-word]:not(.wordless) {
   gap: 0;
   padding: 0 var(--space-2);
 }
@@ -464,7 +469,9 @@ button.crumb-label > .crumb-text {
   margin-right: calc(-1 * var(--space-2));
 }
 
-:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act > .pane-act-word {
+:where(.listing-root) .pane-path-row[data-tight] > .path-tools > .pane-act > .pane-act-word,
+[data-tool-fit][data-tight] .pane-act:not([data-keep-word]) > .pane-act-word,
+[data-tool-fit][data-tight='all'] .pane-act[data-keep-word] > .pane-act-word {
   position: absolute;
   width: 1px;
   height: 1px;

@@ -9,6 +9,7 @@ import {
 
 import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
 import { InPathBarContext } from './PaneActions.js';
+import { clearWordTips, giveWordTips } from './toolWords.js';
 
 /** A crumb that is a control: a press goes to the place it names. */
 export interface PaneCrumb {
@@ -125,10 +126,7 @@ function fitTrail(row: HTMLElement): void {
  */
 function stepActionWords(row: HTMLElement, trail: HTMLElement): void {
   delete row.dataset.tight;
-  for (const act of row.querySelectorAll<HTMLElement>('[data-path-act-tip]')) {
-    delete act.dataset.pathActTip;
-    delete act.dataset.tooltip;
-  }
+  clearWordTips(row);
   const acts = row.querySelectorAll<HTMLElement>(':scope > .path-tools > .pane-act');
   const text = trail.lastElementChild?.querySelector<HTMLElement>('.crumb-text');
   if (acts.length === 0 || text == null) return;
@@ -149,11 +147,7 @@ function stepActionWords(row: HTMLElement, trail: HTMLElement): void {
   if (text.getBoundingClientRect().width >= stem - 0.01) return;
 
   row.dataset.tight = '';
-  for (const act of acts) {
-    if (act.hasAttribute('data-tooltip') || act.dataset.word === undefined) continue;
-    act.dataset.pathActTip = '';
-    act.dataset.tooltip = act.dataset.word;
-  }
+  giveWordTips(acts);
 }
 
 /**

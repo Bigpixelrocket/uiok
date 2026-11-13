@@ -99,6 +99,13 @@ export interface QuietActionProps {
    * danger tone under the pointer, with the focus, and on the cursor row.
    */
   readonly danger?: boolean;
+  /**
+   * In a toolbar fitted by `useToolbarFit`, keeps its word after the other
+   * tools have stepped to their glyphs, and steps only when the bar still
+   * does not fit (`data-keep-word`). For the one command whose glyph alone
+   * could be misread at a cost (Kill, Drop). A path bar ignores it.
+   */
+  readonly keepWord?: boolean;
 }
 
 /**
@@ -112,7 +119,7 @@ export interface QuietActionProps {
  * command draw their glyph and word by default, whatever the row look, so
  * a command reached by Tab shows what it does without a hover; a path bar
  * too tight for its words hides them and keeps the glyph, its word then
- * its tooltip. In a row it leaves the Tab order (`useInRow`)
+ * its tooltip, as a toolbar fitted by `useToolbarFit` does. In a row it leaves the Tab order (`useInRow`)
  * unless the row is `tabbable`, and a press never reaches the row's own
  * `onOpen`. Drawn by `.pane-act` in the listing
  * look, `.pane-act.wordless` for the glyph alone.
@@ -131,7 +138,8 @@ export function QuietAction({
   verb,
   pageVerb,
   action,
-  danger = false
+  danger = false,
+  keepWord = false
 }: QuietActionProps): ReactElement {
   const inRow = useInRow();
   const inListingRow = useContext(InListingRowContext);
@@ -162,6 +170,7 @@ export function QuietAction({
         .filter(Boolean)
         .join(' ')}
       data-action={action}
+      data-keep-word={keepWord ? '' : undefined}
       data-page-verb={pageVerb}
       data-verb={verb}
       data-word={word}
