@@ -87,8 +87,8 @@ export interface ConfirmDialogProps {
 /**
  * The one confirmation surface, for destructive, privileged, and
  * side-effect-bearing actions, read at a glance: a one-line title that says
- * what will happen, one short sentence of consequence, at most one compact
- * list (facts, or the names it acts on, each row one line), an optional
+ * what will happen, one short sentence of consequence, then its facts and
+ * the names it acts on as compact lists (each row one line), an optional
  * choice the caller draws, then the legend's esc Cancel (or the
  * leave verb named) and the named action at the right edge, on Return, or
  * on ⌥⌘⌫ with Return running nothing for a delete that cannot be undone

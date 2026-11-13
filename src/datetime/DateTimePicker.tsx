@@ -352,7 +352,7 @@ export function DateTimePicker({
             >
               {kind === 'date' ? labels.today : labels.now}
             </Button>
-            <Button onClick={close} size="small" variant="primary">
+            <Button onClick={close} size="small">
               {labels.done}
             </Button>
           </div>
