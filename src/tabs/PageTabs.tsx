@@ -50,8 +50,10 @@ function tabsOf(strip: HTMLElement): HTMLElement[] {
  * `tabs.css` shows a chevron there, and marks `data-clipped` every tab that
  * does not lie whole in the clear span, which `tabs.css` does not draw: the
  * strip shows whole tabs only, ending after the last one that fits. A tab
- * wider than the clear span can never lie whole in it, so it is drawn cut
- * wherever it crosses the span, and stays visible and clickable.
+ * wider than the clear span left between both chevrons may never lie whole
+ * in the span (at an end of the scroll, as near the strip's whole width as
+ * one chevron allows), so it is drawn cut wherever it crosses the span, and
+ * stays visible and clickable.
  */
 function markOverflow(strip: HTMLElement): void {
   const sides: string[] = [];
@@ -62,12 +64,12 @@ function markOverflow(strip: HTMLElement): void {
   else strip.setAttribute('data-overflow', sides.join(' '));
 
   const span = clearSpan(strip);
+  const room = strip.getBoundingClientRect().width - 2 * EDGE;
 
   for (const tab of tabsOf(strip)) {
     const box = tab.getBoundingClientRect();
     const whole = box.left >= span.start - SLACK && box.right <= span.end + SLACK;
-    const oversized =
-      box.width > span.end - span.start + SLACK && box.right > span.start && box.left < span.end;
+    const oversized = box.width > room + SLACK && box.right > span.start && box.left < span.end;
 
     tab.toggleAttribute('data-clipped', !whole && !oversized);
   }

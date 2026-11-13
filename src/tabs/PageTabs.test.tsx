@@ -415,6 +415,25 @@ describe('PageTabs in a strip too narrow for its tabs', () => {
     expect(scrollBy).toHaveBeenLastCalledWith({ left: -370, behavior: 'instant' });
   });
 
+  it('draws a tab too wide for the span beside one chevron, where it rests at the start', () => {
+    // Overview is 272px: wider than the 252px between both chevrons, and too
+    // wide to lie whole beside one (6 to 278 at rest, past the chevron at 276).
+    widths.overview = 272;
+    layout.scrollWidth = 604;
+    render(<WideStrip initial="overview" />);
+    const strip = screen.getByRole('tablist');
+    const overview = screen.getByRole('tab', { name: 'Overview' });
+
+    expect(overview.hasAttribute('data-clipped')).toBe(false);
+
+    // At the end of the scroll (304), Overview (-298 to -26) is out of the
+    // span and is not drawn; the tabs after it that fit stay whole.
+    layout.scrollLeft = 304;
+    fireEvent.scroll(strip);
+    expect(overview.hasAttribute('data-clipped')).toBe(true);
+    expect(screen.getByRole('tab', { name: 'Search' }).hasAttribute('data-clipped')).toBe(false);
+  });
+
   it('always comes to rest on a snap position, so no tab rests cut in the clear span', () => {
     applyStylesheets(readStylesheet('src/tabs/tabs.css'));
     render(<WideStrip initial="overview" />);
