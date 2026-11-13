@@ -85,7 +85,7 @@
 
 .page-tabs-more:active > svg {
   background: var(--pressed-wash);
-  box-shadow: var(--shadow-pressed);
+  box-shadow: var(--press-frost);
 }
 
 .page-tabs-more.start {

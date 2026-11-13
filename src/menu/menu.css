@@ -158,6 +158,20 @@
    drawn as key caps, as every chord in a menu or a palette is (keychord.css
    lists the menu row), so it keeps the cap's own text on the cap's ground
    on every row, the cursor row included. */
+/* A row drawn on a native button (a context menu's command) is the same
+   row: a zero-weight reset takes away the button's bezel, ground, and
+   face, so every rule above and below still wins. */
+:where(button.folder-menu-option) {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+
 .folder-menu-option > .keychord {
   margin-left: var(--space-5);
 }
@@ -173,6 +187,15 @@
 
 .folder-menu-option.cursor:not([aria-disabled='true']) :is(.row-icon, .row-meta) {
   color: var(--text-on-surface);
+}
+
+/* A destructive command (Delete, Drop) says so in the danger tone, its
+   icon with it, at rest and on the cursor row, as a row's destructive
+   action does. --danger-text keeps 4.5:1 on the menu and the cursor row. */
+.folder-menu-option.danger,
+.folder-menu-option.danger .row-icon,
+.folder-menu-option.danger.cursor:not([aria-disabled='true']) .row-icon {
+  color: var(--danger-text);
 }
 
 /* A line under the rows (why a list is short, what a key does), in the

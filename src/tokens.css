@@ -27,7 +27,6 @@
   --font-size-small: 12px;
   --font-size-body: 13px;
   --font-size-heading: 14px;
-  --font-size-display: 20px;
 
   /* Line heights. compact sets 11 and 12 px text in one-line chrome; body
      sets 13 and 14 px lines; prose is wrapped sentences; heading is titles.
@@ -101,8 +100,6 @@
   --duration-slow: 280ms;
   --duration-signal: 280ms;
   --duration-spin: 1s;
-  --duration-loop: 1.4s;
-  --duration-notice: 2.4s;
   --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
   --ease-in-out: ease-in-out;
 

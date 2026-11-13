@@ -480,7 +480,7 @@ meter::-webkit-meter-even-less-good-value {
       [aria-pressed='true'],
       [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
     )
-  ):hover {
+  ):is(:hover, [aria-expanded='true']) {
   box-shadow: var(--hover-frost);
   background: var(--hover-wash);
   color: var(--text);
@@ -503,7 +503,7 @@ meter::-webkit-meter-even-less-good-value {
       [aria-pressed='true'],
       [aria-current]:not([aria-current='false'], [aria-current='date'], [aria-current='time'])
     )
-  ):hover {
+  ):is(:hover, [aria-expanded='true']) {
   background: var(--hover-wash);
   color: var(--text);
 }
@@ -523,6 +523,7 @@ meter::-webkit-meter-even-less-good-value {
     .pane-strip-link,
     .data-grid-sort,
     .palette-level,
+    .disclosure,
     .settings-sidebar-page,
     .settings-sidebar-subsection,
     .quiet-control,

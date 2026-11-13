@@ -134,10 +134,19 @@
   outline-color: var(--danger);
 }
 
+/* A toned field is told from a plain one by more than the hue of its 1px
+   outline, which some light themes leave a shade from the plain outline:
+   a 2px bar in the tone inside the field's leading edge goes with it. The
+   well's top shade stays. Logical, so a right-to-left field bars its
+   right. */
+
 /* A value that works but needs a second look (overridden, out of date):
-   the outline in the warning tone. Invalid wins over it. */
+   the outline in the warning tone, and the bar. Invalid wins over it. */
 .field[data-tone='warning']:not([aria-invalid='true']) {
   border-color: var(--warning);
+  box-shadow:
+    inset var(--field-tone-bar) 0 0 0 var(--warning),
+    inset 0 1px 0 var(--well-shade);
 }
 
 .field[data-tone='warning']:not([aria-invalid='true']):focus-visible {
@@ -150,6 +159,17 @@
    edge by weight (focus is the border plus a 1px ring). */
 .field[data-tone='accent']:not([aria-invalid='true']) {
   border-color: var(--accent);
+  box-shadow:
+    inset var(--field-tone-bar) 0 0 0 var(--accent),
+    inset 0 1px 0 var(--well-shade);
+}
+
+.field[data-tone] {
+  --field-tone-bar: var(--line-strong);
+}
+
+.field[data-tone]:dir(rtl) {
+  --field-tone-bar: calc(-1 * var(--line-strong));
 }
 
 /* Read-only: the value is there to copy, not to change; the well loses its
@@ -713,6 +733,25 @@ select.field option {
 
 .field-grid > .field-label {
   padding-block: var(--space-2);
+}
+
+/* A label centres its first line on the control beside it wherever the
+   label column stands (a dialog, a settings page, a page form). The grid
+   pads a label for a 24px control; beside a 28px field (.field), or a 20px
+   one (.field-xs), the padding follows the height of the field that leads
+   the row: the label's next sibling, or the first child of its
+   .field-value. Rows of 24px controls, checks, and notes keep the grid's
+   own padding. */
+.field-grid
+  > .field-label:has(
+    + :is(.field, .field-box):not(.field-sm, .field-xs),
+    + .field-value > :is(.field, .field-box):first-child:not(.field-sm, .field-xs)
+  ) {
+  padding-block: calc((var(--control-height) - var(--line-height-compact)) / 2);
+}
+
+.field-grid > .field-label:has(+ .field-xs, + .field-value > .field-xs:first-child) {
+  padding-block: calc((var(--control-height-xs) - var(--line-height-compact)) / 2);
 }
 
 /* A value of several lines: options, then the note under them. */

@@ -89,7 +89,11 @@ function snapCut(box: HTMLElement): void {
     if (prefix(middle) + dots <= fitsIn) fits = middle;
     else over = middle;
   }
-  if (fits === 0) return;
+  // Squeezed to its floor, the box still keeps its space before the name.
+  if (fits === 0) {
+    if (space > 0) box.style.marginInlineEnd = `${space}px`;
+    return;
+  }
 
   // Half a pixel more than the characters and the ellipsis: the engine
   // lays boxes out in fractions of a pixel and would round a width set to

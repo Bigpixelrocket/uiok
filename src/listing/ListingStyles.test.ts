@@ -456,16 +456,21 @@ describe('the listing states', () => {
         };
       });
     const quietCheck = { checkOn: 'var(--control-border-strong)', checkMark: 'var(--fill)' };
+    // The quiet cursor is a hairline frame with no fill, so it stays apart
+    // from a quiet selection or mark (their fill) and shows on them.
+    const frame = /inset 0 0 0 var\(--line\) var\(--control-border-strong\)/;
     const quiet = [
-      { fill: 'var(--fill)', bar: 'transparent', words: '' },
+      { fill: 'transparent', bar: 'transparent', words: '' },
       { fill: 'var(--fill)', bar: 'var(--control-border-strong)', words: '' },
       { fill: 'var(--fill)', bar: 'var(--control-border-strong)', words: '' },
       { fill: 'var(--fill)', bar: '', words: 'var(--text)' }
     ];
+    const framed = [true, false, true, false];
     const expectQuiet = (rows: Record<string, string>[]) =>
       rows.forEach((found, index) => {
         expect(found).toMatchObject({ ...quiet[index], ...quietCheck });
-        expect(found.shadow).toMatch(/^(none)?$/);
+        if (framed[index]) expect(found.shadow).toMatch(frame);
+        else expect(found.shadow).toMatch(/^(none)?$/);
       });
 
     document.body.innerHTML = `<section class="listing-root">${pane(true)}${pane(false)}</section>`;
@@ -487,10 +492,40 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
+  it('ends the last glyph of the path bar, of each row, and of the status line on one edge', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="pane">
+      <div class="pane-path-row"><div class="path-tools">
+        <button class="pane-act">Start</button><button class="path-star" aria-label="Star"></button>
+      </div></div>
+      <div class="pane-list"><div class="row"><span class="row-meta">
+        <button class="pane-act wordless">Open</button>
+      </span></div><div class="row"><span class="row-meta">
+        <button class="pane-icon-act" aria-label="Reveal"></button>
+      </span></div></div>
+      <div class="pane-status"><span class="pane-status-tools">
+        <button class="pane-icon-act" aria-label="Copy"></button>
+      </span></div>
+    </div></section>`;
+    const reach = (selector: string): string | undefined =>
+      declaredValues(document.querySelector(selector) as Element, 'margin-right').at(-1);
+    const glyphReach = 'calc(-1 * var(--pane-glyph-reach))';
+
+    expect(reach('.path-star')).toBe(glyphReach);
+    expect(reach('.pane-act.wordless')).toBe(glyphReach);
+    expect(reach('.row-meta > .pane-icon-act')).toBe(glyphReach);
+    expect(reach('.pane-status-tools')).toBe(glyphReach);
+    expect(styles).toMatch(
+      /--pane-glyph-reach: calc\(\(var\(--control-height-xs\) - var\(--icon-md\)\) \/ 2\);/
+    );
+    document.body.innerHTML = '';
+  });
+
   it('selects rows, not text, while its messages, summary, and output stay selectable', () => {
     applyStylesheets(styles);
     document.body.innerHTML = `<section class="listing-root selectable"><div class="pane">
       <div class="pane-list"><div class="pane-listing" role="table">
+        <div class="pane-columns pane-strip"><span class="pane-sort-label">Name</span></div>
         <div class="row cursor selected"><span class="row-icon"></span>
           <span class="row-name">app.ts</span><span class="row-meta">2 KB</span>
           <span class="row-meta pane-path"><span class="pane-path-name"><code>src</code></span></span>
@@ -504,7 +539,15 @@ describe('the listing states', () => {
     const select = (selector: string): string =>
       getComputedStyle(document.querySelector(selector) as Element).getPropertyValue('user-select');
 
-    for (const selector of ['.row', '.row-name', '.row-meta', '.pane-path-name', 'code']) {
+    for (const selector of [
+      '.pane-strip',
+      '.pane-sort-label',
+      '.row',
+      '.row-name',
+      '.row-meta',
+      '.pane-path-name',
+      'code'
+    ]) {
       expect(select(selector), selector).toBe('none');
     }
     for (const selector of ['input', '.pane-message', '.pane-well', '.pane-summary']) {

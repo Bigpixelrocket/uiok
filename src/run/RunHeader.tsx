@@ -10,7 +10,7 @@ import type { ReactElement, ReactNode } from 'react';
 
 import { ActivityBar } from '../activity/ActivityBar.js';
 import { ICON_LG, Spinner } from '../icon/index.js';
-import { tooltip } from '../tooltip/Tooltip.logic.js';
+import { cutTooltip } from '../tooltip/Tooltip.logic.js';
 import type { RunState } from './RunProgress.logic.js';
 
 /** Each still state's glyph; a running header draws the shared Spinner. */
@@ -96,14 +96,14 @@ export function RunHeader({
         )}
         <div className="run-header-said">
           {announcement !== undefined && (
-            <span className="run-header-headline" {...tooltip(headline)}>
+            <span className="run-header-headline" {...cutTooltip(headline)}>
               {headline}
             </span>
           )}
           {/* A new alert element is announced; a role flipped in place may not be. */}
           <div key={role} role={role}>
             {announcement === undefined ? (
-              <span className="run-header-headline" {...tooltip(headline)}>
+              <span className="run-header-headline" {...cutTooltip(headline)}>
                 {headline}
               </span>
             ) : (

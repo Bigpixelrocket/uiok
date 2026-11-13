@@ -365,11 +365,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The count of entries a legend leaves out: a quiet figure after the last
-   one listed, with no swatch. */
-.result-chart-legend .result-chart-legend-more {
-  fill: var(--text-dim);
-}
+/* The count of entries a legend leaves out (.result-chart-legend-more) is a
+   quiet figure after the last one listed, with no swatch, in the legend's
+   own --row-meta-text. */
 
 .result-chart-line {
   stroke-width: 2;

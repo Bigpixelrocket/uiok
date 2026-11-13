@@ -180,8 +180,11 @@ export type TooltipBeside = 'left' | 'right';
  * from the control's leading edge (the left, or the right in a right-to-left
  * page), as a desktop tooltip starts where the pointer is, so one on a short
  * label at the start of a row does not spread back over the pane beside it.
- * A glyph button (a control no wider than it is tall) keeps its tooltip
- * centred under it. A control wider than its tooltip (a strip of empty
+ * A glyph button keeps its tooltip centred under it: the caller says
+ * which anchors are one (`glyph`, by what the anchor is: a control no wider
+ * than it is tall), so a short label, a status line, or any other text
+ * keeps the leading edge whatever its box; without `glyph` a box no wider
+ * than it is tall is taken for one. A control wider than its tooltip (a strip of empty
  * ground) centres the tooltip on the pointer instead, without letting it run
  * past the control's ends, so the tooltip opens where the eye is. It opens
  * above when the window ends too soon below and there is room above, and it
@@ -197,7 +200,8 @@ export function placeTooltip(
   viewport: TooltipExtent,
   pointerX: number,
   beside?: TooltipBeside | null,
-  rtl = false
+  rtl = false,
+  glyph: boolean = anchor.width <= anchor.height
 ): TooltipPosition {
   if (beside) {
     const right = anchor.left + anchor.width + GAP;
@@ -234,7 +238,7 @@ export function placeTooltip(
   const x =
     anchor.width > tip.width
       ? Math.max(anchor.left + half, Math.min(pointerX, anchor.left + anchor.width - half)) - half
-      : anchor.width <= anchor.height
+      : glyph
         ? anchor.left + anchor.width / 2 - half
         : rtl
           ? anchor.left + anchor.width - tip.width

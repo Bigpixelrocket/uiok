@@ -29,6 +29,21 @@ interface ShownTooltip {
   readonly rtl: boolean;
 }
 
+// A glyph button is told by what it is, a control, and then by its box (no
+// wider than tall): a short label in a dialog's label column is as square
+// as a glyph button but keeps its tooltip at its leading edge.
+const GLYPH_CONTROL = "button, a[href], [role='button'], [role='tab'], [role='radio'], input";
+
+const isGlyphButton = (anchor: Element): boolean => {
+  if (!anchor.matches(GLYPH_CONTROL)) {
+    return false;
+  }
+
+  const box = anchor.getBoundingClientRect();
+
+  return box.width <= box.height;
+};
+
 // The physical side a `data-tooltip-side` names, by the element's own direction.
 const besideOf = (anchor: Element, rtl: boolean): TooltipBeside | null => {
   const side = anchor.getAttribute('data-tooltip-side');
@@ -176,7 +191,8 @@ export function TooltipLayer(): ReactElement | null {
       { width: window.innerWidth, height: window.innerHeight },
       shown.pointerX,
       shown.beside,
-      shown.rtl
+      shown.rtl,
+      isGlyphButton(shown.anchor)
     );
 
     tip.style.left = `${left}px`;

@@ -212,8 +212,9 @@
    A value is copied whole from the cursor cell by the page's Copy (⌘C),
    which DataGrid answers with `copyText`. This holds inside a region a
    host opts into selection, so it is said here and not left to the base
-   sheet's default. */
-:is(.data-grid-row, .data-grid-row *) {
+   sheet's default. The header is chrome and refuses selection with the
+   rows; a field in it keeps its own text. */
+:is(.data-grid-header, .data-grid-header :not(input, textarea), .data-grid-row, .data-grid-row *) {
   -webkit-user-select: none;
   user-select: none;
 }
@@ -329,6 +330,14 @@
   color: var(--text-on-surface);
 }
 
+/* An action under the pointer or held on a hovered or marked row keeps the
+   row's fill under its words (floored there), not the wash over it; the
+   frosted ring and the pressed hairline still answer. */
+:is(.data-grid.pointer .data-grid-row:hover, .data-grid-row.marked)
+  :is(.pane-act, .pane-icon-act):is(:hover, :active):enabled {
+  background: transparent;
+}
+
 .data-grid-row.marked::before {
   position: absolute;
   inset-block: 0;
@@ -383,10 +392,12 @@
 /* A grid where the keys are not (a window that is not in front, which the
    host marks with `data-window-inactive` on the root, or a pane beside the
    one that holds the keys) draws its marks quiet, as a listing's quiet rows
-   do: a marked row, a marked column, and the cursor cell take the neutral
-   fill (--fill) with the text on it, the marked bar and the column's
-   underline the neutral edge tone, the cursor cell no ring, and a checked
-   box in a row turns grey, its mark cut out in the fill. */
+   do: a marked row and a marked column take the neutral fill (--fill)
+   with the text on it, the marked bar and the column's underline the
+   neutral edge tone, and a checked box in a row turns grey, its mark cut
+   out in the fill. The cursor cell is another thing (decision 63): no
+   fill of its own, a hairline frame in the neutral edge tone, so it shows
+   on a plain row and inside a quiet mark alike. */
 :where(
     :root[data-window-inactive] .data-grid,
     .listing-root:has(.pane.active) .pane:not(.active, .active .pane) .data-grid
@@ -417,8 +428,8 @@
   )
   .data-grid-row
   .data-grid-cell.cursor:not(.cell-edited) {
-  background: var(--fill);
-  box-shadow: none;
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--line) var(--control-border-strong);
 }
 
 :where(
@@ -489,16 +500,20 @@
 
 /* The caller's field takes the cell's place: as wide as the cell (the layer
    is, unless buttons beside it ask for more), as tall as the row plus the
-   frame, its text in the cell's face on the cell's baseline, a field edge
-   in the accent, whether it is the layer's own child or inside a wrapper.
-   A direct child's own width never widens the layer. */
+   frame, its text in the cell's face on the cell's baseline and at the
+   cell's own inset (the layer starts a hairline before the cell, so its
+   edge lies on the column line, and the field's border fills that
+   hairline: the start padding is the cell's), a field edge in the accent,
+   whether it is the layer's own child or inside a wrapper. A direct
+   child's own width never widens the layer. */
 .data-grid-editor :is(input:not([type='checkbox'], [type='radio']), select, textarea) {
   flex: 1 1 0;
   box-sizing: border-box;
   min-width: 0;
   height: calc(var(--row-height-dense) + 2 * var(--line));
   margin: 0;
-  padding: 0 calc(var(--space-4) - var(--line));
+  padding: 0;
+  padding-inline: var(--space-4) calc(var(--space-4) - var(--line));
   border: var(--line) solid var(--accent);
   border-radius: var(--radius-xs);
   background: var(--ground);
@@ -525,11 +540,12 @@
 
 /* A value edited but not saved: the warning tint over the bare ground,
    whatever row it sits in, and a warning corner, the spreadsheet's mark,
-   which holds where the tint alone is faint. */
+   which holds where the tint alone is faint. The corner is drawn in
+   --warning-text, which keeps 3:1 on the strong wash under it. */
 .data-grid-cell.cell-edited,
 .data-grid-row.marked .data-grid-cell.cell-edited {
   background:
-    linear-gradient(225deg, var(--warning) var(--space-3), transparent var(--space-3)),
+    linear-gradient(225deg, var(--warning-text) var(--space-3), transparent var(--space-3)),
     linear-gradient(var(--warning-wash-strong), var(--warning-wash-strong)) var(--ground);
 }
 

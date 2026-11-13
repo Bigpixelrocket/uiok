@@ -294,7 +294,7 @@ export function FieldDemo() {
             Overwrite
           </Choice>
         </DemoState>
-        <DemoState label="Disabled, off (keeps its outline)">
+        <DemoState label="Disabled, off">
           <Choice>
             <input className="check" disabled type="checkbox" />
             Logs
@@ -596,7 +596,7 @@ export function FieldDemo() {
           </select>
         </DemoState>
         <DemoState label="A choice in running text">
-          <p>
+          <p className="demo-running-choice">
             Keep{' '}
             <Choice>
               <input className="check" defaultChecked type="checkbox" />

@@ -67,7 +67,7 @@
   margin: var(--space-2) 0 0;
   -webkit-user-select: text;
   user-select: text;
-  color: var(--text);
+  color: var(--text-dim);
   font-size: var(--font-size-small);
   line-height: var(--line-height-prose);
   overflow-wrap: anywhere;

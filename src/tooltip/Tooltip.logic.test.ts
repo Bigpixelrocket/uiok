@@ -168,4 +168,18 @@ describe('placeTooltip', () => {
       placeTooltip({ left: 780, top: 100, width: 20, height: 20 }, tip, viewport, 0).left
     ).toBe(694);
   });
+
+  it("hangs a short label's tooltip from its start and centres it under a glyph button", () => {
+    const tip = { width: 284, height: 40 };
+    const viewport = { width: 1280, height: 800 };
+    // A 27 by 28 label ("Host" in a dialog's label column) is as square as a
+    // glyph button; told by what it is, it keeps the leading edge.
+    const label = { left: 420, top: 100, width: 27, height: 28 };
+
+    expect(placeTooltip(label, tip, viewport, 430, null, false, false).left).toBe(420);
+    expect(placeTooltip(label, tip, viewport, 430, null, true, false).left).toBe(420 + 27 - 284);
+    expect(placeTooltip({ ...label, width: 28 }, tip, viewport, 430, null, false, true).left).toBe(
+      420 + 14 - 142
+    );
+  });
 });

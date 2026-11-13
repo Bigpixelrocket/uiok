@@ -76,7 +76,12 @@ function MarkedRows({
         tabIndex={0}
       >
         <RowCursorContext value={cursor}>
-          <Listing columns={[]} grid="var(--icon-column) minmax(0, 1fr)" title="Match">
+          <Listing
+            columns={[]}
+            empty="No match"
+            grid="var(--icon-column) minmax(0, 1fr)"
+            title="Match"
+          >
             {rows.map((row, index) => (
               <Row
                 className={index === 1 ? 'selected' : undefined}

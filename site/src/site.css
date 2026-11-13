@@ -235,7 +235,18 @@ a {
   right: 0;
   bottom: 0;
   left: 0;
-  z-index: var(--z-panel);
+  /* Under an anchored popover (a date picker, a menu at --z-menu) opened
+     low in the window, so the popover paints over the legend. */
+  z-index: var(--z-local-overlay);
+}
+
+/* A sentence holding a choice, set as an app sets it: at the control's
+   size, so the words around the choice match the choice's own. */
+.demo-running-choice {
+  margin: 0;
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
 }
 
 /* ---- Prose rendered from docs/ ---- */

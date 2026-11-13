@@ -13,7 +13,6 @@ Colour tokens are in [themes](themes.md).
 | `--font-size-small`   | 12px  | Compact control labels, status lines, help text, dialog titles, grid cells, tooltips |
 | `--font-size-body`    | 13px  | Listing rows, regular Button labels, body text, the terminal                         |
 | `--font-size-heading` | 14px  | A run headline and its clock, a Settings page title                                  |
-| `--font-size-display` | 20px  | A startup or splash title                                                            |
 
 | Token                   | Value | Role                                       |
 | ----------------------- | ----- | ------------------------------------------ |
@@ -92,8 +91,6 @@ A corner nested inside another keeps it concentric: `calc(var(--radius-md) - var
 | `--duration-slow`   | 280ms                          | A signal only, never a state change: a refusal's shake and red together; a bell                |
 | `--duration-signal` | 280ms                          | A change shown by colour alone (a refusal's red under reduced motion); reduced motion keeps it |
 | `--duration-spin`   | 1s                             | One turn of a spinner, a cursor blink                                                          |
-| `--duration-loop`   | 1.4s                           | One sweep of a slow loop that shows work without a figure: a loading shimmer                   |
-| `--duration-notice` | 2.4s                           | One beat of a flash that must be seen before it ends: a key that just changed                  |
 | `--ease-out`        | cubic-bezier(0.2, 0.8, 0.2, 1) | A signal's colour fading                                                                       |
 | `--ease-in-out`     | ease-in-out                    | Shakes                                                                                         |
 

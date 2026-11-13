@@ -115,9 +115,10 @@
 
 /* A page's trailing label (the Updates row's offered build): the shell's
    small square tag (below, with the channel tag), outlined in the warning
-   tone. */
+   tone's text-safe form, which keeps 3:1 on the panel and on the current
+   row's tint, since the outline is all that makes it a tag. */
 .settings-sidebar-page > .settings-sidebar-chip {
-  --tag-tone: var(--warning-line);
+  --tag-tone: var(--warning-text);
 
   flex: none;
   height: calc(var(--line-height-compact) + 2 * var(--line));
@@ -425,9 +426,13 @@
    data-name, and a hidden copy in that weight floats at the name's start
    with no width of its own, so the visible name sets over it and the name
    is as tall as the taller of the two. Choosing a theme then never wraps
-   its name or moves the grid. The copy is not read aloud. */
+   its name or moves the grid. The copy is not read aloud. The name may
+   use half the gap to each neighbouring card (cards stand --space-6
+   apart), so the longest catalog name sets on one line in either weight
+   on the narrowest card. */
 .theme-choice-name {
   display: flow-root;
+  margin-inline: calc(var(--space-6) / -2);
   overflow-wrap: break-word;
   text-wrap: balance;
 }
@@ -745,7 +750,9 @@
 /* The download's state is a status line in a preferences page, not a pane's
    heading: the progress header under the card says it at the card title's
    size and weight, so the bar and its caption carry the state. Its glyph
-   stays centred on that shorter line. */
+   takes the card's glyph size and stays centred on that shorter line, so
+   the status row and the header under it lead with one glyph size and
+   start their words on one edge; indented facts follow that edge. */
 .update-card .run-header-headline {
   font-size: var(--font-size-small);
   font-weight: var(--font-weight-regular);
@@ -753,7 +760,13 @@
 }
 
 .update-card .run-header-glyph {
-  margin-top: calc((var(--line-height-compact) - var(--icon-lg)) / 2);
+  width: var(--icon-md);
+  height: var(--icon-md);
+  margin-top: calc((var(--line-height-compact) - var(--icon-md)) / 2);
+}
+
+.update-card .run-header-facts.indented {
+  padding-left: calc(var(--icon-md) + var(--space-4));
 }
 
 /* What the system returned for a failed download (an error code, a host
@@ -813,9 +826,10 @@
   outline: none;
 }
 
-/* A read-only text view that takes focus to scroll by the arrow keys,
-   as a desktop text view does: it draws no focus ring, which belongs to
-   controls; its scrollbar shows that it scrolls. */
+/* A read-only text view that takes focus to scroll by the arrow keys. It
+   is a Tab stop, so focus a user moved there with the keyboard shows: the
+   frame around it (below) draws the ring, out of the scroll fade's mask,
+   which would cut a ring drawn by the list itself. */
 .update-notes-list:focus-visible {
   outline: none;
 }
@@ -823,7 +837,7 @@
 /* The frame a host may wrap the list in (.update-notes-frame) stands out
    by the list's small inset on every side, so the bullets and the last
    line's descenders clear the scroll fade while the text column keeps the
-   card's width. It draws no ring either. */
+   card's width. It draws the list's focus ring, following its corner. */
 .update-notes-frame {
   display: flex;
   flex: 1 1 auto;
@@ -831,6 +845,11 @@
   min-height: 0;
   margin: calc(-1 * var(--space-1)) calc(-1 * var(--space-3));
   border-radius: var(--radius-sm);
+}
+
+.update-notes-frame:has(> .update-notes-list:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset-inset);
 }
 
 .update-notes-frame > .update-notes-list {
@@ -981,6 +1000,26 @@
   padding-block: calc((var(--control-height) - var(--line-height-compact)) / 2);
 }
 
+/* Where and who the prompt signs in to (Server, then Account or Key file)
+   stand as rows of the same label column, before the secret's row, so
+   they share the field's label edge and label look. A fact's label sits
+   on its one line of value, not on a 28px field; the value is dim, one
+   line, cut with an ellipsis (the host gives it cutTooltip). */
+.sign-in-dialog .field-grid > .field-label.sign-in-fact {
+  padding-block: 0;
+}
+
+.sign-in-dialog .sign-in-fact-value {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-compact);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* A block of its own, so no line box adds room under it. */
 .sign-in-field {
   display: block;
@@ -1057,12 +1096,18 @@
   user-select: text;
 }
 
+/* Short of room, the reason gives way first: it shrinks down to a few
+   characters and an ellipsis while the headline, what failed, stays whole;
+   only then does the headline shrink. The headline's tiny shrink factor
+   leaves the room to the reason until the reason sits at its floor, where
+   flex layout freezes it and hands the rest to the headline. */
 .space-load-failure strong {
-  flex-shrink: 0.5;
+  flex-shrink: 0.001;
   font-weight: var(--font-weight-medium);
 }
 
 .space-load-failure p {
+  min-width: 3ch;
   color: var(--text-dim);
 }
 

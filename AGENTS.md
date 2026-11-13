@@ -35,7 +35,7 @@ src/legend/                   # KeyLegendStrip and legendUnits / fittingUnits / 
 src/store/ src/clock/         # ValueStore, sameData/sameProps, useStableHandlers, keepUnchanged*; useClock
 src/icon/                     # ICON_SM, ICON_MD, ICON_LG, ICON_XL (sizes.ts): the sizes for lucide's size prop, mirroring --icon-* in tokens.css; Spinner, the one turning ring (StateMark busy, RunHeader running)
 src/field/                    # the form controls as classes on native elements (field.css: .field and its heights by place, .check with its tones, .switch, .range, labels, notes, problems, groups, the label-column grid) and Check, a checkbox whose state can be mixed (docs/components/field.md)
-src/surface/surface.css       # .notice and its tones, .card; a stylesheet without a module, so no area export (docs/components/surface.md)
+src/surface/surface.css       # .notice and its tones; a stylesheet without a module, so no area export (docs/components/surface.md)
 src/shell/shell.css           # the shell's shared surfaces as classes: the Settings dialog (frame, sidebar, pages, subsections, a file's problems), the theme picker and miniatures, the Updates card and notes, the update pill's entrance, .channel-tag, the sign-in prompts, the load failure; a stylesheet without a module, so no area export (docs/components/shell.md)
 src/dialog/                   # ModalDialog frame, DialogLayer (where a host's dialogs mount, above its content), DialogLegend footer and legendKeyAction (which slot a key runs), ConfirmDialog; dialog labels in src/labels/dialog.ts
 src/run/                      # RunHeader progress header and the RunProgress state and elapsed-time helpers

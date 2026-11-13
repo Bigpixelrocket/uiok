@@ -318,7 +318,7 @@ describe('overrides', () => {
     // @ts-expect-error A colour token takes a hex colour, not a compound value.
     const compoundColour: ThemeOverrides = { '--primary': 'rgb(0 0 0 / 50%)' };
     // @ts-expect-error A compound token follows its rule in every theme.
-    const compound: ThemeOverrides = { '--row-lift': 'transparent' };
+    const compound: ThemeOverrides = { '--glass-edge': 'transparent' };
     // @ts-expect-error The text is drawn from the palette, which the quieter text and the terminal read too.
     const paletteDrawn: ThemeOverrides = { '--text': '#ffffff' };
     // @ts-expect-error The primary hue is drawn from the palette, which the primary and tonal text read too.
@@ -636,7 +636,11 @@ const PAIRINGS = [
   ...STATUSES.flatMap((status) => [
     ...pairs(`var(--${status}-text)`, 4.5, WORD_GROUNDS),
     ...(['ground', 'panel'] as const).flatMap((under) =>
-      [`var(--${status}-wash)`, `var(--${status}-wash-strong)`].map(
+      // Success has no strong wash: nothing paints one.
+      [
+        `var(--${status}-wash)`,
+        ...(status === 'success' ? [] : [`var(--${status}-wash-strong)`])
+      ].map(
         (wash) =>
           [
             `var(--${status}-text)`,
@@ -678,12 +682,19 @@ const PAIRINGS = [
   ]),
   ...pairs('var(--on-danger)', 4.5, ['the danger fill']),
   ...pairs('var(--on-warning)', 4.5, ['the warning fill']),
-  ...pairs('var(--on-success)', 4.5, ['the success fill']),
   ...pairs('var(--terminal-fg)', 4.5, ['the terminal']),
   // Selected terminal text takes one ink, whatever its cell's colour.
   ...pairs('var(--terminal-selection-text)', 4.5, ['the terminal selection']),
 
   // Marks, outlines, and lines.
+  // The corner that marks an edited cell, on the cell's own strong wash.
+  ...pairs('var(--warning-text)', 3, [
+    'a strongly edited cell over the ground',
+    'a strongly edited cell over a panel'
+  ]),
+  // The warning tag's outline (the Settings sidebar's offered build), the
+  // only thing that makes it a tag, on the panel and on the current row.
+  ...pairs('var(--warning-text)', 3, ['panel', 'the current item over a panel']),
   // The 16 terminal colours are the published palette: the renderer floors
   // each cell's text against that cell's background (src/terminal).
   ...pairs('var(--control-border)', 3, ['ground', 'panel', 'header', 'listing', 'a zebra row']),

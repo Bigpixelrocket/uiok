@@ -51,6 +51,9 @@ const EDGE = 16;
 /** The most rows a legend draws. */
 const LEGEND_ROWS = 4;
 
+/** The most characters a legend entry's name shows before it is cut (its whole name in a tooltip). */
+const LEGEND_NAME_CAP = 40;
+
 /**
  * What the pointer is on: a series' value at a category, or a slice, and
  * where its mark sits in the figure (its left, right, and vertical centre in
@@ -227,10 +230,14 @@ function ResultChartDrawing({
   // The legend starts at the plot's left edge and wraps inside its width.
   // A pie whose colours repeat numbers its legend as it numbers its slices;
   // a name that is its own number is written once.
+  // A name longer than the cap is cut before layout (the fitted legend
+  // wraps by measured width and counts what it leaves out, so the cap only
+  // stops one name taking a whole row), and its entry carries the whole name
+  // as its tooltip.
   const legendTexts = legendNames.map((name, at) =>
     type === 'pie' && categories.length > SERIES_COLOURS && name !== String(at + 1)
-      ? `${at + 1} ${cutLabel(name, 24)}`
-      : cutLabel(name, 24)
+      ? `${at + 1} ${cutLabel(name, LEGEND_NAME_CAP)}`
+      : cutLabel(name, LEGEND_NAME_CAP)
   );
   const legendTop = title === '' ? 8 : 28;
   // A pie's legend keeps to a third of the drawing, so a short one leaves
@@ -625,6 +632,10 @@ function ResultChartDrawing({
               <text x={14} y={10}>
                 {place.text}
               </text>
+              {cutLabel(legendNames[at] ?? '', LEGEND_NAME_CAP) ===
+              (legendNames[at] ?? '') ? null : (
+                <title>{legendNames[at]}</title>
+              )}
             </g>
           ))}
           {legendMore !== null && (

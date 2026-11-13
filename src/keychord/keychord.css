@@ -97,8 +97,19 @@
   color: var(--on-accent);
 }
 
+/* A chord that cannot change, on a cap, is also a key with no travel: the
+   divider-grade frame and no 2px foot (its height kept by the padding),
+   so the tone shows by shape where a theme leaves the dim glyphs a shade
+   from the plain ones. */
 .keychord[data-tone='quiet'] {
   color: var(--text-dim);
+}
+
+:where(.keycap, .keylegend, .legend-slot, .filter-escape, .folder-menu-option, .terminal-menu-item)
+  .keychord[data-tone='quiet'] {
+  border-color: var(--border);
+  border-bottom-width: var(--line);
+  padding-bottom: calc(2 * var(--line));
 }
 
 :where(.keycap, .keylegend, .legend-slot, .filter-escape, .folder-menu-option, .terminal-menu-item)

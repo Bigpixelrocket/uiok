@@ -28,6 +28,31 @@ const chart = (type: ResultChartType): HTMLElement =>
 const readout = (container: HTMLElement): string =>
   container.querySelector('.result-chart-readout')?.textContent ?? '';
 
+describe('the result chart’s legend', () => {
+  it('cuts only a name longer than 40 characters, and gives a cut one its whole name', () => {
+    const long = 'Noise-cancelling headphones, over-ear, wireless, black';
+    const { container } = render(
+      <ResultChart
+        categories={['Noise-cancelling headphones', long]}
+        height={300}
+        series={[{ name: 'units', values: [4, 6] }]}
+        stacked={false}
+        title=""
+        type="pie"
+        width={500}
+        xLabel="product"
+        xValues={[1, 2]}
+        yLabel="units"
+      />
+    );
+    const entries = [...container.querySelectorAll('.result-chart-legend > g')];
+
+    expect(entries[0]?.querySelector('text')?.textContent).toBe('Noise-cancelling headphones');
+    expect(entries[0]?.querySelector('title')).toBeNull();
+    expect(entries[1]?.querySelector('title')?.textContent).toBe(long);
+  });
+});
+
 describe('the result chart’s read-out', () => {
   it('names the value under the pointer from the mark it came onto, and keeps it over the axes', () => {
     const container = chart('line');

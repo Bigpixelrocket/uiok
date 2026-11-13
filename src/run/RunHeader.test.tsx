@@ -27,6 +27,28 @@ describe('RunHeader', () => {
     expect(screen.getByText('167 of 412 files')).toBeTruthy();
   });
 
+  it('opens its headline as a tooltip only while the headline is cut', () => {
+    // The tooltip layer shows a data-tooltip-cut text only when its box cuts
+    // it, so a whole headline ("Paused") never repeats itself under the pointer.
+    for (const announcement of [undefined, 'Paused at 40%']) {
+      const { container, unmount } = render(
+        <RunHeader announcement={announcement} headline="Paused" state="stopped" />
+      );
+      const headline = container.querySelector('.run-header-headline') as Element;
+
+      expect(headline.getAttribute('data-tooltip')).toBe('Paused');
+      expect(headline.hasAttribute('data-tooltip-cut')).toBe(true);
+      unmount();
+    }
+  });
+
+  it("sets a failure's reason in the quiet colour every failure's second line takes", () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(<RunHeader headline="Failed" reason="ECONNRESET" state="failed" />);
+
+    expect(declaredValues(screen.getByText('ECONNRESET'), 'color').at(-1)).toBe('var(--text-dim)');
+  });
+
   it('draws stripes for a run without a fraction, moving only while it runs', () => {
     const { rerender } = render(
       <RunHeader

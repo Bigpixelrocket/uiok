@@ -412,7 +412,13 @@ function SettingsDialog({ onClose }: { readonly onClose: () => void }): ReactEle
   );
 }
 
-/** A password asked again after the server refused the last one. */
+/**
+ * A password asked again after the server refused the last one: the one
+ * body every host shares. A short title, then one label column: the server
+ * and the account as fact rows (a passphrase prompt names its key file
+ * instead of the account), then the field under a one-word label and,
+ * after a refusal, its problem.
+ */
 function PasswordPrompt({ onClose }: { readonly onClose: () => void }): ReactElement {
   const labelId = useId();
   const fieldId = useId();
@@ -424,11 +430,19 @@ function PasswordPrompt({ onClose }: { readonly onClose: () => void }): ReactEle
       labelId={labelId}
       legend={{ leave: { label: 'Cancel' }, primary: { label: 'Sign In', onRun: onClose } }}
       onCancel={onClose}
-      title="Sign in to build.example.com"
+      title="Sign In"
     >
       <div className="field-grid">
+        <span className="field-label sign-in-fact">Server</span>
+        <p className="sign-in-fact-value dialog-value" {...cutTooltip('build')}>
+          build
+        </p>
+        <span className="field-label sign-in-fact">Account</span>
+        <p className="sign-in-fact-value dialog-value" {...cutTooltip('deploy@build.example.com')}>
+          deploy@build.example.com
+        </p>
         <label className="field-label" htmlFor={fieldId}>
-          Password for deploy
+          Password
         </label>
         <div className="field-value">
           <input
@@ -440,7 +454,7 @@ function PasswordPrompt({ onClose }: { readonly onClose: () => void }): ReactEle
             type="password"
           />
           <p className="field-problem" id={problemId}>
-            The server did not accept that password. Try again.
+            That password was not accepted.
           </p>
         </div>
       </div>

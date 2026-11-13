@@ -417,6 +417,12 @@ describe('the data grid’s cursor, sort, and edit', () => {
     const bare = grid(<input aria-label="Edit" />);
 
     expect(declaredValues(bare.parentElement as Element, 'background')).toEqual([]);
+    // The layer starts a hairline before the cell and the field's border
+    // fills it, so the field's start padding is the cell's: the text stands
+    // where the cell had it.
+    expect(declaredValues(bare, 'padding-inline').at(-1)).toBe(
+      'var(--space-4) calc(var(--space-4) - var(--line))'
+    );
     cleanup();
 
     // The field sits in the caller's wrapper beside Save and Cancel.
@@ -466,7 +472,9 @@ describe('the data grid’s cursor, sort, and edit', () => {
       expect(looks()).toEqual({
         row: 'var(--fill)',
         column: 'none',
-        cursor: 'none',
+        // The quiet cursor cell is a hairline frame, not a fill, so it shows
+        // inside a quiet mark.
+        cursor: 'inset 0 0 0 var(--line) var(--control-border-strong)',
         heading: 'inset 0 calc(-1 * var(--line-strong)) 0 var(--control-border-strong)',
         check: 'var(--control-border-strong)',
         mark: 'var(--fill)'

@@ -175,8 +175,6 @@ const BY_APPEARANCE: Readonly<
     {
       /** The accent's share of the keyboard cursor row over `base`. */
       readonly cursorRow: number;
-      /** A listing's lift off the ground: white over a light surface, the base tone over a dark one. */
-      readonly rowLift: (palette: ThemePalette) => string;
       readonly glassEdge: string;
       /**
        * White's least share in the frosted wash an outlined control takes on
@@ -209,7 +207,6 @@ const BY_APPEARANCE: Readonly<
 > = {
   light: {
     cursorRow: 10,
-    rowLift: () => translucent(WHITE, 35),
     glassEdge: translucent(WHITE, 60),
     hoverWhite: 50,
     fileListLift: 30,
@@ -219,7 +216,6 @@ const BY_APPEARANCE: Readonly<
   },
   dark: {
     cursorRow: 14,
-    rowLift: (palette) => translucent(palette.base, 50),
     glassEdge: translucent(WHITE, 10),
     hoverWhite: 6,
     fileListLift: 0,
@@ -672,7 +668,6 @@ function derivedTokens(
   };
   const onDanger = tuned('--on-danger', textOnFill(danger, palette));
   const onWarning = tuned('--on-warning', textOnFill(warning, palette));
-  const onSuccess = tuned('--on-success', textOnFill(success, palette));
 
   // A quiet word on a listing's state rows (a hidden entry's name under the
   // cursor, the pointer, or a mark): the tone nearest the row meta, toward
@@ -995,7 +990,6 @@ function derivedTokens(
     '--tonal-pressed': tonalPressed,
     // Listings lift themselves off the ground, so rows read as a pane rather
     // than as the ground.
-    '--row-lift': look.rowLift(palette),
     '--cursor-bg': surfaceFill,
     // The keyboard cursor row in listings: a whisper of the accent over the
     // panel, so the cursor reads apart from the surface0 hover fills.
@@ -1044,7 +1038,6 @@ function derivedTokens(
     // it), so it keeps a full step from the hover's --danger-wash.
     '--danger-wash-strong': translucent(danger, WASH.statusStrong),
     '--warning-wash-strong': translucent(warning, statusStrong(warning)),
-    '--success-wash-strong': translucent(success, statusStrong(success)),
     // A binary value in a grid cell: the palette's teal as a word, moved
     // until it keeps 4.5:1 on every ground a cell takes.
     '--cell-binary-text': legibleOn(
@@ -1055,7 +1048,6 @@ function derivedTokens(
     // Text on a solid status fill (a destructive key cap, a status badge).
     '--on-danger': onDanger,
     '--on-warning': onWarning,
-    '--on-success': onSuccess,
     // A solid fill held down (a checked box or radio pressed), one clear
     // step from its rest fill with its mark kept (see pressedFill).
     '--accent-pressed': pressedFill(accent, onAccent),
@@ -1237,7 +1229,6 @@ export const FIXED_TOKENS: Readonly<Record<string, string>> = {
   '--current-text': 'var(--text)',
   '--current-mark': 'var(--accent)',
   // A card's fill: the listing's lift over the panel.
-  '--card-bg': 'linear-gradient(var(--row-lift), var(--row-lift)) var(--surface)',
   // A text field's placeholder, and a drawn scrollbar's thumb.
   '--text-placeholder': 'var(--text-dim)',
   '--scrollbar-thumb': 'var(--control-border)',
@@ -1262,7 +1253,6 @@ export const FIXED_TOKENS: Readonly<Record<string, string>> = {
   '--warning-wash': `color-mix(in srgb, var(--warning) ${WASH.status}%, transparent)`,
   '--success-wash': `color-mix(in srgb, var(--success) ${WASH.status}%, transparent)`,
   '--accent-line': `color-mix(in srgb, var(--accent) ${WASH.line}%, transparent)`,
-  '--danger-line': `color-mix(in srgb, var(--danger) ${WASH.line}%, transparent)`,
   '--warning-line': `color-mix(in srgb, var(--warning) ${WASH.line}%, transparent)`,
   '--border-faint': 'color-mix(in srgb, var(--border) 60%, transparent)',
   // The wash under a modal overlay, and the stronger one under an overlay
@@ -1414,7 +1404,6 @@ const BASE_TOKEN_NAMES = [
   '--font-size-small',
   '--font-size-body',
   '--font-size-heading',
-  '--font-size-display',
   '--line-height-compact',
   '--line-height-body',
   '--line-height-prose',
@@ -1445,8 +1434,6 @@ const BASE_TOKEN_NAMES = [
   '--duration-slow',
   '--duration-signal',
   '--duration-spin',
-  '--duration-loop',
-  '--duration-notice',
   '--ease-out',
   '--ease-in-out',
   '--control-height',
@@ -1496,6 +1483,7 @@ const BASE_TOKEN_NAMES = [
   '--pane-path-height',
   '--pane-column-gap',
   '--pane-row-inset',
+  '--pane-glyph-reach',
   '--pane-grid',
   '--date-picker-digits',
   '--page-tabs-fade-start',
@@ -1505,6 +1493,7 @@ const BASE_TOKEN_NAMES = [
   '--field-label-width',
   '--field-chevron-end',
   '--field-stepper-width',
+  '--field-tone-bar',
   '--range-fill',
   '--notice-tone',
   '--tag-tone',

@@ -42,6 +42,51 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
     document.body.innerHTML = '';
   });
 
+  it('leads the Updates card and the progress header in it with one glyph size', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="update-card">
+      <div class="update-card-head"><svg class="update-card-glyph"></svg></div>
+      <div class="run-header"><div class="run-header-top"><svg class="run-header-glyph"></svg></div></div>
+    </div>`;
+    const size = (selector: string) => {
+      const style = getComputedStyle(document.querySelector(selector) as Element);
+      return [style.width, style.height];
+    };
+
+    expect(size('.run-header-glyph')).toEqual(size('.update-card-glyph'));
+    expect(size('.update-card-glyph')).toEqual(['var(--icon-md)', 'var(--icon-md)']);
+    document.body.innerHTML = '';
+  });
+
+  it('centres a label on the field that leads its row, in a dialog or not', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const padding = `calc((var(--control-height) - var(--line-height-compact)) / 2)`;
+    for (const host of ['dialog', 'settings-page', 'page']) {
+      document.body.innerHTML = `<div class="${host}"><div class="field-grid">
+        <label class="field-label">Name</label><input class="field">
+        <label class="field-label">Port</label><input class="field field-sm">
+      </div></div>`;
+      const [regular, small] = [...document.querySelectorAll('label')];
+
+      expect(declaredValues(regular as Element, 'padding-block').at(-1), host).toBe(padding);
+      expect(declaredValues(small as Element, 'padding-block').at(-1), host).toBe('var(--space-2)');
+    }
+    document.body.innerHTML = '';
+  });
+
+  it("rings the What's New list's frame when the keyboard focuses the list", () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="update-notes-frame">
+      <ul class="update-notes-list scroll-fade" tabindex="0"><li>One</li></ul></div>`;
+    const frame = document.querySelector('.update-notes-frame') as HTMLElement;
+    (document.querySelector('ul') as HTMLElement).focus();
+
+    expect(declaredValues(frame, 'outline').at(-1)).toBe(
+      'var(--focus-ring-width) solid var(--accent)'
+    );
+    document.body.innerHTML = '';
+  });
+
   it('leaves a disabled control out of every hover and press highlight', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     // Each rule's selector as if the pointer were over and pressing everything.
@@ -90,6 +135,55 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
     expect(pointerRules.length).toBeGreaterThan(0);
     expect(highlighted(false).length).toBeGreaterThan(0);
     expect(highlighted(true)).toEqual([]);
+  });
+});
+
+describe('delivered tokens', () => {
+  // A token the library delivers in every theme has a reader: a rule or a
+  // module under src/ or site/src/ that writes var(--name). The tokens
+  // below are read where this suite cannot see: by script through their
+  // names (chart series, the terminal's colours, group and syntax hues), by
+  // the consuming apps, or by a size constant that mirrors them.
+  const READ_ELSEWHERE = [
+    /^--group-/,
+    /^--chart-\d$/,
+    /^--terminal-/,
+    /^--syntax-/,
+    // Palette-drawn roles and app-read tokens, documented in docs/themes.md
+    // and docs/tokens.md.
+    /^--primary-hue$/,
+    /^--success-wash$/,
+    /^--accent-line$/,
+    /^--warning-line$/,
+    /^--duration-base$/,
+    /^--z-drag$/,
+    // ICON_XL (src/icon/sizes.ts) mirrors it for lucide's size prop.
+    /^--icon-xl$/
+  ];
+
+  it('delivers no token that nothing reads', () => {
+    const sources = (dir: string): string[] =>
+      readdirSync(join(SRC, '..', dir), { recursive: true, withFileTypes: true })
+        .filter((entry) => entry.isFile() && /\.(css|tsx?)$/.test(entry.name))
+        .map((entry) => join(entry.parentPath, entry.name))
+        .filter((path) => !path.endsWith('themes.generated.css'));
+    const text = [...sources('src'), ...sources('site/src')]
+      .map((path) => readFileSync(path, 'utf8'))
+      .join('\n');
+    const delivered = new Set(
+      ['themes/themes.generated.css', 'tokens.css'].flatMap((sheet) =>
+        [...readFileSync(join(SRC, sheet), 'utf8').matchAll(/(--[\w-]+)\s*:/g)].map(
+          ([, name]) => name as string
+        )
+      )
+    );
+    const unread = [...delivered].filter(
+      (name) =>
+        !READ_ELSEWHERE.some((pattern) => pattern.test(name)) &&
+        !new RegExp(`var\\(${name}[,)\\s]`).test(text)
+    );
+
+    expect(unread).toEqual([]);
   });
 });
 
@@ -238,7 +332,9 @@ describe('pointer states of the shared recipes and form controls', () => {
       <button class="pager-step">Next</button>
       <button class="toggle-chip" aria-pressed="false">Wrap</button>
       <button class="quiet-control">Stop</button>
-      <button class="quiet-track-item">Log</button>`;
+      <button class="quiet-track-item">Log</button>
+      <button class="disclosure" aria-expanded="false">More</button>
+      <button class="disclosure" aria-expanded="true">Less</button>`;
     for (const element of document.querySelectorAll('button')) {
       const matched = rules.filter(
         ({ selector, rule }) =>
@@ -275,6 +371,67 @@ describe('pointer states of the shared recipes and form controls', () => {
     for (const block of sheet.match(/[^{}]*\.pane-strip-link[^{}]*\{[^}]*\}/g) ?? []) {
       expect(block).not.toMatch(/text-decoration:\s*underline/);
     }
+    document.body.innerHTML = '';
+  });
+
+  it("keeps a state row's own fill under an action the pointer is over or holds", () => {
+    // Words on a state row are floored on the row's fill; a wash over it
+    // would make a ground nothing is floored on.
+    const rules = pressedRules();
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="pane active"><div class="pane-list">
+        <div class="row cursor"><button class="pane-act">Open</button></div>
+        <div class="row marked"><button class="pane-icon-act worded">Stop</button></div>
+      </div></div>
+      <div class="pane"><div class="pane-list">
+        <div class="row selected"><button class="pane-act">Open</button></div>
+      </div></div>
+      <div class="data-grid"><div class="data-grid-row marked">
+        <button class="pane-icon-act worded">Edit</button></div></div>
+    </section>`;
+    for (const element of document.querySelectorAll('button')) {
+      const grounds = rules
+        .filter(
+          ({ selector, rule }) =>
+            rule.style.getPropertyValue('background') !== '' && element.matches(selector)
+        )
+        .map(({ rule }) => rule.style.getPropertyValue('background'));
+
+      // Rules are read in source order here, not by weight: the row's rule
+      // outweighs the shared recipes, whose class list weighs nothing.
+      expect(grounds, element.closest('.row, .data-grid-row')?.className).toContain('transparent');
+    }
+    document.body.innerHTML = '';
+  });
+
+  it('draws an outlined toggle that is on with one ring, not its outline and a ring', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="listing-root">
+      <button class="button button-neutral" aria-pressed="true">Wrap</button>
+      <button class="icon-button" aria-label="Wrap" aria-pressed="true"></button>
+      <button class="pane-strip-link" aria-pressed="true">All</button>
+    </div>`;
+    for (const element of document.querySelectorAll('button')) {
+      expect(declaredValues(element, 'border-color').at(-1), element.className).toBe(
+        'var(--current-ring)'
+      );
+      expect(getComputedStyle(element).boxShadow, element.className).toBe('none');
+    }
+    document.body.innerHTML = '';
+  });
+
+  it('draws a strip action as a small push button, apart from the column labels', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="listing-root">
+      <button class="pane-strip-link">Update all</button>
+      <button class="pane-strip-link danger">Clear</button>
+    </div>`;
+    const [plain, danger] = [...document.querySelectorAll('button')];
+
+    expect(declaredValues(plain as Element, 'border').at(-1)).toMatch(/var\(--control-border\)/);
+    expect(getComputedStyle(plain as Element).color).toBe('var(--text)');
+    expect(declaredValues(danger as Element, 'border-color').at(-1)).toBe('var(--danger)');
+    expect(getComputedStyle(danger as Element).color).toBe('var(--danger-text)');
     document.body.innerHTML = '';
   });
 

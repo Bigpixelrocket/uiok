@@ -97,6 +97,12 @@ export function SurfaceDemo() {
         <Info size={ICON_MD} />
         <p className="notice-text">Changes apply to new windows.</p>
       </div>
+      <div className="notice" role="status">
+        <span aria-hidden className="notice-glyph spinner" />
+        <p className="notice-text">
+          Checking the settings file… (<code>notice-glyph</code>: a glyph that is not an svg)
+        </p>
+      </div>
       <div className="notice notice-card notice-warning" role="status">
         <TriangleAlert size={ICON_MD} />
         <p className="notice-text" {...cutTooltip('settings.json has a mistake on line 12.')}>
