@@ -1153,12 +1153,16 @@ a {
     display: inline-flex;
   }
 
+  .shell {
+    --site-drawer-width: min(280px, 85vw);
+  }
+
   .site-nav {
     position: fixed;
     top: var(--site-header-height);
     left: 0;
     z-index: var(--z-panel);
-    width: min(280px, 85vw);
+    width: var(--site-drawer-width);
     height: calc(100vh - var(--site-header-height));
     box-shadow: var(--shadow-popover);
   }
@@ -1168,13 +1172,18 @@ a {
   }
 
   /* The open drawer dims the page beside it, under the drawer and below the
-     header; a press on the dimmed page closes the drawer. */
+     header; a press on the dimmed page closes the drawer. Under the drawer
+     the scrim paints the drawer's own ground: the drawer's edge fade
+     (.scroll-fade) fades its ground too, and the page must not show
+     through it. */
   .shell[data-menu='open'] .nav-scrim {
     display: block;
     position: fixed;
     inset: var(--site-header-height) 0 0;
     z-index: var(--z-panel);
-    background: var(--scrim);
+    background:
+      linear-gradient(var(--surface), var(--surface)) 0 0 / var(--site-drawer-width) 100% no-repeat,
+      var(--scrim);
   }
 
   /* The header keeps one row by steps, never by cutting words: the find
