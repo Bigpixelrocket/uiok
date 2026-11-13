@@ -256,7 +256,7 @@
 
 /* A cell whose value leads out of its row (`onOpen`: a foreign key into
    another table, a download) is a link to another record, not an action,
-   so it looks like one, as at the end of Phase I: the accent's text colour
+   so it looks like one: the accent's text colour
    over an accent underline that darkens under the pointer, so a mouse user
    sees which columns lead elsewhere. On the cursor cell a small dim arrow
    at the cell's trailing edge says Return or a click follows it. A value
@@ -446,7 +446,7 @@
    do: a marked row and a marked column take the neutral fill (--fill)
    with the text on it, the marked bar and the column's underline the
    neutral edge tone, and a checked box in a row turns grey, its mark cut
-   out in the fill. The cursor cell is another thing (decision 63): no
+   out in the fill. The cursor cell is another thing: no
    fill of its own, a hairline frame in the neutral edge tone, so it shows
    on a plain row and inside a quiet mark alike. */
 :where(

@@ -101,7 +101,7 @@ describe('terminalThemeFromTokens', () => {
   });
 });
 
-// Decision 18 in every theme: a cell's text keeps the minimum contrast on
+// In every theme, a cell's text keeps the minimum contrast on
 // what is behind it, the ground or the selection laid over it, whatever
 // colour the program asked for (each ANSI colour, the light and dark ends
 // of truecolour, the terminal's own text).

@@ -1024,7 +1024,7 @@ button.crumb-label > .crumb-text {
    row on it wears: full words for its name, the on-surface tone for its
    quiet words and actions; a quiet mark keeps a bar in the neutral edge
    tone; a checked box on a quiet row turns grey. A quiet cursor is
-   another thing (decision 63): no fill and no bar, a hairline frame in the
+   another thing: no fill and no bar, a hairline frame in the
    neutral edge tone (--control-border-strong, 3:1 on the list and on the
    quiet fill), so a cursor on a plain row, a quiet selection, and the
    cursor inside a quiet selection (fill and frame) stay three looks. A
@@ -1436,7 +1436,7 @@ button.crumb-label > .crumb-text {
 }
 
 /* A strip action is a small push button, never a link and never a bare
-   word (decision 64): words in the text colour inside a --control-border
+   word: words in the text colour inside a --control-border
    bezel 20px high, so it cannot be read as the dim column labels beside
    it. It takes the base sheet's shared quiet hover (the frosted box) and
    press. Its edge stands on the column's right edge. Its hit area grows to

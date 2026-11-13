@@ -519,10 +519,9 @@
 
 /* ---- Item list (DialogItems) ----
 
-   The things a confirmation acts on, as one framed list (a well, the frame
-   a confirmation's path list had at the end of Phase I): one row per item,
-   its kind's glyph, its name in monospace in the text colour, and one dim
-   detail at the row's end. The rows share the list's three columns
+   The things a confirmation acts on, as one framed list (a well): one row
+   per item, its kind's glyph, its name in monospace in the text colour, and
+   one dim detail at the row's end. The rows share the list's three columns
    (subgrid), so names and details line up. The name and detail columns
    share the row by content: each grows from its narrowest toward its
    one-line width at the same pace, and one that reaches its one-line width
@@ -561,8 +560,7 @@
   grid-template-columns: var(--icon-md) auto auto;
   gap: var(--space-2) var(--space-4);
   margin: 0;
-  /* Text starts 12px in, level with the body's edge inside the frame, as
-     the Phase I well did. */
+  /* Text starts 12px in, level with the body's edge inside the frame. */
   padding: var(--space-3) var(--space-6);
   list-style: none;
   border: var(--line) solid var(--border-strong);
