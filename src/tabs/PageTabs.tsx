@@ -49,7 +49,9 @@ function tabsOf(strip: HTMLElement): HTMLElement[] {
  * `data-overflow="start end"` (either, both, or the attribute removed), so
  * `tabs.css` shows a chevron there, and marks `data-clipped` every tab that
  * does not lie whole in the clear span, which `tabs.css` does not draw: the
- * strip shows whole tabs only, ending after the last one that fits.
+ * strip shows whole tabs only, ending after the last one that fits. A tab
+ * wider than the clear span can never lie whole in it, so it is drawn cut
+ * wherever it crosses the span, and stays visible and clickable.
  */
 function markOverflow(strip: HTMLElement): void {
   const sides: string[] = [];
@@ -64,8 +66,10 @@ function markOverflow(strip: HTMLElement): void {
   for (const tab of tabsOf(strip)) {
     const box = tab.getBoundingClientRect();
     const whole = box.left >= span.start - SLACK && box.right <= span.end + SLACK;
+    const oversized =
+      box.width > span.end - span.start + SLACK && box.right > span.start && box.left < span.end;
 
-    tab.toggleAttribute('data-clipped', !whole);
+    tab.toggleAttribute('data-clipped', !whole && !oversized);
   }
 }
 
@@ -130,7 +134,8 @@ function revealTab(strip: HTMLElement, tab: HTMLElement): void {
  * not drawn there comes to rest at the start chevron's inner edge; toward
  * the start, the strip rests on the earliest tab start that still shows
  * the last tab not drawn there whole. Either rest is a tab start, which
- * the strip's mandatory snap keeps.
+ * the strip's mandatory snap keeps. A tab wider than the clear span, which
+ * no rest shows whole, is passed by its start, so every page moves.
  */
 function pageStrip(strip: HTMLElement, side: 'start' | 'end'): void {
   const bounds = strip.getBoundingClientRect();
@@ -140,14 +145,15 @@ function pageStrip(strip: HTMLElement, side: 'start' | 'end'): void {
   let by: number | undefined;
 
   if (side === 'end') {
-    const next = tabs.find((box) => box.right > span.end + SLACK);
+    const next = tabs.find((box) => box.right > span.end + SLACK && box.left > inner + SLACK);
     if (next !== undefined) by = next.left - inner;
   } else {
     const last = tabs.filter((box) => box.left < span.start - SLACK).at(-1);
     const room = bounds.width - 2 * EDGE;
-    const first =
-      last === undefined ? undefined : tabs.find((box) => box.left >= last.right - room);
-    if (first !== undefined) by = first.left - inner;
+    if (last !== undefined) {
+      const first = tabs.find((box) => box.left >= last.right - room) ?? last;
+      by = Math.min(first.left, last.left) - inner;
+    }
   }
   scrollStrip(strip, by ?? (side === 'start' ? -1 : 1) * Math.max(EDGE, bounds.width - 2 * EDGE));
 }
