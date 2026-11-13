@@ -7,9 +7,10 @@ UIOK is an open-source (MIT) React 19 UI library published to npm as `@bigpixelr
 - Give every exported symbol a docblock; `test/api.test.ts` fails on an undocumented export of `src/index.ts`.
 - Ship no source maps or declaration maps. `tsconfig.build.json` turns them off and `scripts/verify-pack.mjs` fails the gate if one reaches `dist/` or the tarball.
 - Import local modules with the `.js` extension (`./VisuallyHidden.js`); the package is ESM only and `tsc` emits imports as written.
-- Run `npm run check` and `npm run site:build` before pushing; CI runs both.
+- Install with `pnpm install`; mise pins pnpm beside Node (`mise.toml`), and the repository has no npm lockfile. `pnpm-workspace.yaml` turns on pnpm's global virtual store, which links every checkout's packages to one shared copy in the pnpm store, so a new worktree's install takes about a second and almost no disk. Run scripts as `pnpm run <name>`, with any arguments after the name and no `--`, which pnpm would pass on to the script.
+- Run `pnpm run check` and `pnpm run site:build` before pushing; CI runs both.
 - Title commits and pull requests with Conventional Commits; pull requests are squash-merged.
-- Bump the version in every pull request that changes the published package (`shipsInPackage` and `packageJsonChanges` in `scripts/version.mjs`), by exactly one step: `npm version <patch|minor> --no-git-tag-version`, which updates package-lock.json too (before 1.0, `minor` for a breaking change and `patch` for anything else; from 1.0, `major`, `minor`, `patch` for breaking, feature, fix). Then add a dated `## [X.Y.Z] - YYYY-MM-DD` section listing the changes, with its link reference, to `CHANGELOG.md`; leave `[Unreleased]` empty and point its link at `compare/vX.Y.Z...HEAD`. CI's `Check` enforces this; `node scripts/version.mjs check origin/main` runs it locally. Bump by hand too when a `tsconfig.json` or TypeScript change alters `dist/`, which the check cannot see. If `main` takes your version first, rebase and bump again. Merging publishes to npm and creates the tag and GitHub Release (`docs/releasing.md`), so never create either by hand.
+- Bump the version in every pull request that changes the published package (`shipsInPackage` and `packageJsonChanges` in `scripts/version.mjs`), by exactly one step: `pnpm version <patch|minor> --no-git-tag-version --no-git-checks`, which edits only package.json (`--no-git-checks` lets it run on an uncommitted tree; before 1.0, `minor` for a breaking change and `patch` for anything else; from 1.0, `major`, `minor`, `patch` for breaking, feature, fix). Then add a dated `## [X.Y.Z] - YYYY-MM-DD` section listing the changes, with its link reference, to `CHANGELOG.md`; leave `[Unreleased]` empty and point its link at `compare/vX.Y.Z...HEAD`. CI's `Check` enforces this; `node scripts/version.mjs check origin/main` runs it locally. Bump by hand too when a `tsconfig.json` or TypeScript change alters `dist/`, which the check cannot see. If `main` takes your version first, rebase and bump again. Merging publishes to npm and creates the tag and GitHub Release (`docs/releasing.md`), so never create either by hand.
 
 ## Architecture
 
@@ -59,11 +60,13 @@ test/iconStroke.test.ts       # no strokeWidth and no numeric size on an icon in
 test/setup.ts                 # Testing Library cleanup after each test; calls no app code
 scripts/build.mjs             # cleans dist/, runs tsc -p tsconfig.build.json, copies src/**/*.css, *.wasm, *.woff2, and vendored LICENSE files
 scripts/verify-pack.mjs       # no source maps; every exports target packed; each area resolves as @bigpixelrocket/uiok/<area>; packed @imports resolve; every new URL('./…', import.meta.url) asset, the terminal's licences, and NOTICE packed
-scripts/smoke-terminal.mjs    # npm run smoke:terminal: packs, installs into a Vite app, builds, checks the terminal's assets are emitted; needs the network, not in check or CI
+scripts/smoke-terminal.mjs    # pnpm run smoke:terminal: packs, installs into a Vite app, builds, checks the terminal's assets are emitted; needs the network, not in check or CI
 scripts/version.mjs           # check: CI's version-bump rule for pull requests; notes: a version's CHANGELOG.md section; exceeds: release.yml's no-downgrade guard; types for its tests in version.d.mts, tests in test/version.test.ts
 scripts/build-libghostty-vt.sh # builds the terminal's WebAssembly from Ghostty source and ghostty-effects.zig with the Zig in mise.toml; not run in CI
 NOTICE                        # third-party licences of the terminal's engine, adapter, and font, shipped in the package
-mise.toml, mise.lock          # Node and Zig pins; `mise trust && mise install` in a new clone, and CI installs from the lock
+mise.toml, mise.lock          # Node, pnpm, and Zig pins; `mise trust && mise install` in a new clone, and CI installs from the lock
+pnpm-lock.yaml                # the dependency lockfile; CI installs with `pnpm install --frozen-lockfile`
+pnpm-workspace.yaml           # pnpm settings: the global virtual store
 tsconfig.json                 # strict, NodeNext; type-checks src, test, and configs without emitting
 tsconfig.build.json           # emits dist/: one .js and .d.ts per module, no maps, no Node types
 vitest.config.ts              # jsdom by default; a suite opts into node with `@vitest-environment node`
@@ -72,10 +75,10 @@ site/render-docs.ts           # the Vite plugin behind `?doc` imports: marked re
 site/src/pages.tsx            # the page list: hand-listed guides, then one page per docs/components/<area>.md (found by import.meta.glob)
 site/src/demos/<area>.tsx     # an area's live demo, registered by area name in site/src/demos/index.ts
 site/src/site.css             # the site's layout and prose, painted with theme tokens only
-site/verify-dist.mjs          # fails npm run site:build if site/dist holds a source map
-.github/workflows/ci.yml      # job Check (the required status): version check on pull requests, then npm ci, npm run check, npm run site:build; also on main
+site/verify-dist.mjs          # fails pnpm run site:build if site/dist holds a source map
+.github/workflows/ci.yml      # job Check (the required status): version check on pull requests, then pnpm install, pnpm run check, pnpm run site:build; also on main
 .github/workflows/pages.yml   # on push to main: builds the site and deploys site/dist to GitHub Pages
-.github/workflows/release.yml # on push to main: if npm lacks package.json's version, gate and npm publish via Trusted Publishing (npm trusts this filename); then the v<version> tag and GitHub Release
+.github/workflows/release.yml # on push to main: if npm lacks package.json's version, pnpm install and the gate, then npm publish via Trusted Publishing (npm trusts this filename); then the v<version> tag and GitHub Release
 docs/releasing.md             # the automatic release, recovering a failed run, and the one-time npm setup
 docs/themes.md                # how themes work, the attribute contract, tokens by role, app tokens, the migration renames
 docs/tokens.md                # the scale tokens: each step's role, the spacing relationships, focus geometry, and the exceptions
@@ -83,4 +86,4 @@ docs/tokens.md                # the scale tokens: each step's role, the spacing 
 
 `package.json` `exports` maps `.` (`dist/index.js` and its types), `./styles.css`, `./package.json`, and the pattern `./*` to `dist/<area>/index.js` and `index.d.ts`, so a new `src/<area>/index.ts` is importable as `@bigpixelrocket/uiok/<area>` with no exports change. A new stylesheet is imported from `src/styles.css`; any other public file needs its own `exports` entry. `verify-pack.mjs` checks each. A runtime asset (the terminal's WebAssembly and font) is named with `new URL('./…', import.meta.url)` from the module beside it, never a bundler-specific `?url` import, and `build.mjs` copies it into `dist/`.
 
-To add an area: create `src/<area>/` with an `index.ts` barrel (a docblock on every export), put its CSS beside it and `@import` it from `src/styles.css`, add one `export *` line to `src/index.ts`, write `docs/components/<area>.md`, and add any shared chrome strings as a label group (`docs/labels.md`). Per-instance copy is a prop. The doc becomes a page of the docs site on its own; give it a live demo in `site/src/demos/<area>.tsx` and one line in `site/src/demos/index.ts`, then check it with `npm run site:dev`. The site keeps to the library's rules: theme tokens for every colour, the library's components unrestyled, no source maps in `site/dist`. `lucide-react` is a peer dependency for icons.
+To add an area: create `src/<area>/` with an `index.ts` barrel (a docblock on every export), put its CSS beside it and `@import` it from `src/styles.css`, add one `export *` line to `src/index.ts`, write `docs/components/<area>.md`, and add any shared chrome strings as a label group (`docs/labels.md`). Per-instance copy is a prop. The doc becomes a page of the docs site on its own; give it a live demo in `site/src/demos/<area>.tsx` and one line in `site/src/demos/index.ts`, then check it with `pnpm run site:dev`. The site keeps to the library's rules: theme tokens for every colour, the library's components unrestyled, no source maps in `site/dist`. `lucide-react` is a peer dependency for icons.

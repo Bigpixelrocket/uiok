@@ -1,5 +1,5 @@
 /**
- * The publish guard, run after `npm run build`: fails when a source map could
+ * The publish guard, run after `pnpm run build`: fails when a source map could
  * ship, when an `exports` target is missing from the tarball, when an area
  * does not resolve as `@bigpixelrocket/uiok/<area>`, when a packed stylesheet imports one
  * that is not packed, or when a runtime asset a packed module names with
@@ -23,7 +23,7 @@ const problems = [];
 const built = (existsSync(dist) ? readdirSync(dist, { recursive: true, withFileTypes: true }) : [])
   .filter((entry) => entry.isFile())
   .map((entry) => join(entry.parentPath, entry.name));
-if (built.length === 0) problems.push('dist/ is empty; run npm run build first');
+if (built.length === 0) problems.push('dist/ is empty; run pnpm run build first');
 
 for (const file of built) {
   const path = relative(root, file);

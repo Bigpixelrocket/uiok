@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [0.2.0] - 2026-11-11
+## [0.2.0] - 2026-11-13
 
 ### Added
 
@@ -110,6 +110,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `.exit-confirmation-sentence`, the `update-pill-in` and `uiok-pulse` keyframes, the `::-webkit-resizer` grip, and the `--font-size-figure` token.
 - Tokens nothing reads since the tinted notices, loading shimmer, and key flash went: `--danger-line`, `--success-wash-strong`, `--duration-loop`, and `--duration-notice`. A test now fails on a delivered token that nothing in the library or its site reads, apart from the ones listed there as read by script or by an app.
 
+## [0.1.4] - 2026-11-12
+
+### Fixed
+
+- The package declares `@types/react` `^19.0.0` as an optional peer dependency. Its type declarations import types from `react`, so a package manager that isolates each package's dependencies, such as pnpm with a global virtual store, can now link the app's `@types/react` to UIOK and its types resolve. Apps written in JavaScript need not install it.
+
 ## [0.1.3] - 2026-11-09
 
 ### Fixed
@@ -159,7 +165,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
 [Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.0...HEAD
-[0.2.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.3...v0.2.0
+[0.2.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.4...v0.2.0
+[0.1.4]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.0...v0.1.1

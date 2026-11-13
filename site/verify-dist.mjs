@@ -1,5 +1,5 @@
 /**
- * Fails `npm run site:build` when the built site holds a source map. The
+ * Fails `pnpm run site:build` when the built site holds a source map. The
  * site is published to GitHub Pages, and public artifacts ship no maps;
  * `build.sourcemap: false` in vite.config.ts keeps them out, and this check
  * catches a plugin or a config change that brings one back.

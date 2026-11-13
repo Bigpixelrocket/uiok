@@ -1,0 +1,5 @@
+# pnpm reads its settings from this file, even for a single package.
+
+# Every checkout links its packages to one shared copy in the pnpm store instead
+# of writing its own, so a new worktree's install adds almost nothing.
+enableGlobalVirtualStore: true

@@ -53,13 +53,19 @@
     "site:dev": "vite --config site/vite.config.ts",
     "site:build": "tsc -p site/tsconfig.json && vite build --config site/vite.config.ts && node site/verify-dist.mjs",
     "site:preview": "vite preview --config site/vite.config.ts",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test && npm run build && npm run verify:pack",
-    "prepublishOnly": "npm run check"
+    "check": "pnpm run typecheck && pnpm run lint && pnpm run format:check && pnpm test && pnpm run build && pnpm run verify:pack",
+    "prepublishOnly": "pnpm run check"
   },
   "peerDependencies": {
+    "@types/react": "^19.0.0",
     "lucide-react": "^1.31.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@types/react": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

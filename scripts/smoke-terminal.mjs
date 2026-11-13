@@ -1,12 +1,14 @@
 /**
- * The terminal's consumer smoke test (`npm run smoke:terminal`): builds and
+ * The terminal's consumer smoke test (`pnpm run smoke:terminal`): builds and
  * packs the library, installs the tarball into a throwaway Vite app that
  * imports `@bigpixelrocket/uiok/terminal`, runs `vite build`, and checks that
  * the bundle emitted the engine's WebAssembly and the symbols font as files
  * and that the bundled code names each by its emitted path.
  *
  * It installs React and Vite from the npm registry, so it needs the network
- * and takes a minute; it stays out of `npm run check` and CI. Run it after
+ * and takes a minute; it stays out of `pnpm run check` and CI. The app is
+ * a consumer's, so it installs with npm, and the library is packed with npm,
+ * as the release publishes it. Run it after
  * changing how the terminal names its assets or how the package ships them.
  * Set `KEEP_SMOKE=1` to keep the temporary app for inspection.
  */
