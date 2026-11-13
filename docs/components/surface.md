@@ -1,4 +1,4 @@
-# Notices, selection, and shared recipes
+# Notices, cards, selection, and shared recipes
 
 Looks a page puts on its own markup, shipped in `@bigpixelrocket/uiok/styles.css`. None is a component: the words are the page's.
 
@@ -33,7 +33,7 @@ A notice that reports a failure the user should act on takes `role="alert"`; one
 - **The status line** for what concerns the whole pane or window and needs no action: a count, a state, a finished step. A status line under the header (`notice-card`) is for a state that stands until the user fixes it elsewhere, such as a settings file with a mistake: glyph, words, a small button to show the problem, and no close cross, since it goes when its cause does.
 - **An alert dialog** for a message that must stop the user, or that asks a decision before anything goes on. A message never borrows weight from a box, a tint, or a coloured bar: if a line is not enough, it is a dialog.
 
-A failure told in two parts, what failed and why, colours them one way everywhere: the glyph carries the danger tone, the headline stays in `--text`, and the reason stays in the body's quiet colour (`--text-dim`, in the code face when it is a raw line the system returned, such as an error code and a host). `RunHeader`'s failed state, the update status, a load failure, a palette's failure note, and every notice follow it. No message sets its words in red.
+A failure told in two parts, what failed and why, colours them one way everywhere: the glyph carries the danger tone, the headline stays in `--text`, and the reason stays in the body's quiet colour (`--text-dim`, in the code face when it is a raw line the system returned, such as an error code and a host). `RunHeader`'s failed state, a load failure, a palette's failure note, and every notice follow it, and no notice sets its words in red. The one exception is the Updates card, a designed surface: a failure that is the card's headline (its `error` tone, or a failed download under its head) takes `--danger-text` and its reason `--text`, as the card had it before ([Settings, themes, and updates](shell.md)).
 
 Each tone has one glyph, drawn first in a notice, a problem line, or a status card, in the tone's colour (`ICON_MD` in a notice and a problem line):
 
@@ -46,9 +46,9 @@ Each tone has one glyph, drawn first in a notice, a problem line, or a status ca
 
 `CircleX` marks one thing only: a run that failed, as `RunHeader`'s failed state draws it (and a host's list of runs that follows `RunHeader`'s run states). A notice or a status line that reports a failure takes `CircleAlert`, never `CircleX`.
 
-## No cards
+## Card
 
-A group of lines is never a framed, filled, rounded panel: that is a web card. A desktop window groups lines under a small heading (`overline`) with a hairline between groups, as Settings pages do (`settings-subsection`). The library has no `card` class.
+`card`: a lifted panel (`--card-bg`, a `--border-strong` frame like every framed surface, `--radius-md`, 12px inset) grouping one subject's lines, such as the Updates page's check cadence and its status ([Settings, themes, and updates](shell.md)). Its first child starts at the inset and its last ends there, whatever margins a heading or a paragraph brings; the space between children stays the content's own. Parts inside a card are parted by a hairline (`--border`). A card groups content; it is never a message's box: a notice stays a plain line ([Notice](#notice)).
 
 ## Selection
 
@@ -56,7 +56,7 @@ Chrome cannot be selected: the base sheet sets `user-select: none` on the body, 
 
 - Fields (text inputs, textareas, anything `contenteditable`).
 - `selectable`, on a host's own content: a value, a name, a path, output, anything a user would copy. A `code`, `pre`, or `samp` element is not content by its tag: a command named in a label or a token in a menu is chrome, so a value a user copies takes `selectable` (`<code className="selectable">`).
-- Each component's content, in its own rule: a listing's summary, messages, empty space, and well (`pane-summary`, `pane-filter-summary`, `pane-message`, `pane-empty`, `pane-well`); a grid's empty line (`data-grid-empty`); a dialog's message, values, fact counts and values, and names (`dialog-message`, `dialog-value`, `dialog-fact-count`, `dialog-fact-value`, `dialog-names > li`); a message's words (`notice-text`, `field-problem`, a settings file's problem, the settings folder's path (`settings-file-path`), a load failure's headline and reason, the update status's fact, a palette's note and failure); a run's reason, figure, and facts; a pie's value; the terminal's copy buffer; the About window's version; a host key's fingerprint.
+- Each component's content, in its own rule: a listing's summary, messages, empty space, and well (`pane-summary`, `pane-filter-summary`, `pane-message`, `pane-empty`, `pane-well`); a grid's empty line (`data-grid-empty`); a dialog's message, values, fact counts and values, and names (`dialog-message`, `dialog-value`, `dialog-fact-count`, `dialog-fact-value`, `dialog-names > li`); a message's words (`notice-text`, `field-problem`, a settings file's problem, the settings folder's path (`settings-file-path`), a load failure's headline and reason, the update card's fact, a palette's note and failure); a run's reason, figure, and facts; a pie's value; the terminal's copy buffer; the About window's version; a host key's fingerprint.
 
 A listing and a grid select rows, not text, as a file manager does: a drag, Shift-click, or double-click on a row never starts a text selection, even inside a `selectable` host, and a grid copies its cursor cell with ⌘C.
 

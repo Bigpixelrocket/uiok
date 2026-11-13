@@ -196,6 +196,11 @@ const MIXED_PROPERTIES: readonly { file: string; property: string; reason: strin
     reason: "The stripes' band is a share of the ink a host passes as --stripe-ink."
   },
   {
+    file: 'src/shell/shell.css',
+    property: '--channel-tag-bg',
+    reason: "A channel tag's pill is a share of the channel hue an app passes as --channel."
+  },
+  {
     file: 'src/terminal/terminal.css',
     property: '--terminal-bell-wash',
     reason: "The bell's wash is a share of the terminal's own foreground, set per session."

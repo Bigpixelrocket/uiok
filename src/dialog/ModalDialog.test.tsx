@@ -160,7 +160,7 @@ describe('ModalDialog', () => {
     render(
       <>
         <button type="button">Behind</button>
-        <ModalDialog labelId="test-title" onCancel={vi.fn()} title="Install 8.5.0">
+        <ModalDialog labelId="test-title" onCancel={vi.fn()} title="Install Update">
           <div data-testid="body" tabIndex={-1}>
             Waiting for earlier operations
           </div>

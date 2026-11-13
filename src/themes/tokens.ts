@@ -175,6 +175,8 @@ const BY_APPEARANCE: Readonly<
     {
       /** The accent's share of the keyboard cursor row over `base`. */
       readonly cursorRow: number;
+      /** A listing's lift off the ground: white over a light surface, the base tone over a dark one. */
+      readonly rowLift: (palette: ThemePalette) => string;
       readonly glassEdge: string;
       /**
        * White's least share in the frosted wash an outlined control takes on
@@ -207,6 +209,7 @@ const BY_APPEARANCE: Readonly<
 > = {
   light: {
     cursorRow: 10,
+    rowLift: () => translucent(WHITE, 35),
     glassEdge: translucent(WHITE, 60),
     hoverWhite: 50,
     fileListLift: 30,
@@ -216,6 +219,7 @@ const BY_APPEARANCE: Readonly<
   },
   dark: {
     cursorRow: 14,
+    rowLift: (palette) => translucent(palette.base, 50),
     glassEdge: translucent(WHITE, 10),
     hoverWhite: 6,
     fileListLift: 0,
@@ -668,6 +672,7 @@ function derivedTokens(
   };
   const onDanger = tuned('--on-danger', textOnFill(danger, palette));
   const onWarning = tuned('--on-warning', textOnFill(warning, palette));
+  const onSuccess = tuned('--on-success', textOnFill(success, palette));
 
   // A quiet word on a listing's state rows (a hidden entry's name under the
   // cursor, the pointer, or a mark): the tone nearest the row meta, toward
@@ -990,6 +995,7 @@ function derivedTokens(
     '--tonal-pressed': tonalPressed,
     // Listings lift themselves off the ground, so rows read as a pane rather
     // than as the ground.
+    '--row-lift': look.rowLift(palette),
     '--cursor-bg': surfaceFill,
     // The keyboard cursor row in listings: a whisper of the accent over the
     // panel, so the cursor reads apart from the surface0 hover fills.
@@ -1048,6 +1054,7 @@ function derivedTokens(
     // Text on a solid status fill (a destructive key cap, a status badge).
     '--on-danger': onDanger,
     '--on-warning': onWarning,
+    '--on-success': onSuccess,
     // A solid fill held down (a checked box or radio pressed), one clear
     // step from its rest fill with its mark kept (see pressedFill).
     '--accent-pressed': pressedFill(accent, onAccent),
@@ -1229,6 +1236,7 @@ export const FIXED_TOKENS: Readonly<Record<string, string>> = {
   '--current-text': 'var(--text)',
   '--current-mark': 'var(--accent)',
   // A card's fill: the listing's lift over the panel.
+  '--card-bg': 'linear-gradient(var(--row-lift), var(--row-lift)) var(--surface)',
   // A text field's placeholder, and a drawn scrollbar's thumb.
   '--text-placeholder': 'var(--text-dim)',
   '--scrollbar-thumb': 'var(--control-border)',
@@ -1404,6 +1412,7 @@ const BASE_TOKEN_NAMES = [
   '--font-size-small',
   '--font-size-body',
   '--font-size-heading',
+  '--font-size-display',
   '--line-height-compact',
   '--line-height-body',
   '--line-height-prose',
@@ -1496,7 +1505,6 @@ const BASE_TOKEN_NAMES = [
   '--field-tone-bar',
   '--range-fill',
   '--notice-tone',
-  '--tag-tone',
   '--check-edge',
   '--terminal-bell-wash',
   '--terminal-bell-line',

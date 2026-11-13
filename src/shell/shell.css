@@ -1,7 +1,7 @@
 /* The shell's shared surfaces: what an app's window draws around its own
    pages and every app of the family draws the same way. A Settings dialog
    (its frame, the sidebar of pages, a page's subsections, the theme picker,
-   a file's problems, the update status and its notes), the update pill's
+   a file's problems, the update cards and their notes), the update pill's
    failed state, the release channel tag, the About window's layout, the
    sign-in prompts, and the line a part of the window shows when it fails
    to load. None is a component: the app writes the markup with these
@@ -49,13 +49,13 @@
 }
 
 /* A page's row: its glyph and its title, the chosen one on the current
-   item's tint and ring. Its subsections unfold under it as indented child
-   rows, the one in view on the quiet fill in the text colour. A row keeps
-   one line, as a source list's does: a name too long for the sidebar is
-   cut with an ellipsis, and the host gives it its whole text as a cut
-   tooltip (`cutTooltip`). Hover is the quiet row
-   tint alone and press the shared press (styles.css), as a source list's
-   rows take them; the chosen row takes neither. The focus ring is the base sheet's, drawn inside the row. */
+   item's tint and ring. Its subsections unfold under it on a rail, the one
+   in view in the text colour with the rail lit beside it. A name too long
+   for the sidebar wraps onto a second compact line rather than losing its
+   end, between words, and inside a word only when the word alone cannot
+   fit (never with a hyphen the browser guessed). Hover and press are the
+   quiet control's shared recipe (styles.css); the chosen row takes
+   neither. The focus ring is the base sheet's, drawn inside the row. */
 .settings-sidebar-page,
 .settings-sidebar-subsection {
   display: flex;
@@ -74,21 +74,21 @@
   font-size: var(--font-size-small);
   line-height: var(--line-height-compact);
   text-align: start;
-  white-space: nowrap;
+  overflow-wrap: break-word;
+  hyphens: manual;
   transition: var(--transition-control);
 }
 
-/* A page's row hangs its parts from its one line, so the glyph column stays
-   straight. The block padding centres that line in the bar. */
+/* A page's row hangs its parts from the first line, so a name that wraps
+   keeps its glyph and chip beside its first line and the glyph column
+   stays straight. The block padding centres that one line in the bar. */
 .settings-sidebar-page {
   align-items: flex-start;
   padding-block: calc((var(--bar-height) - var(--line-height-compact)) / 2);
 }
 
-.settings-sidebar-page > span:not(.settings-sidebar-chip) {
+.settings-sidebar-page > span {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .settings-sidebar-page:focus-visible,
@@ -113,18 +113,32 @@
   color: var(--text);
 }
 
-/* A page's trailing label (the Updates row's offered build): the shell's
-   small square tag (below, with the channel tag), outlined in the warning
-   tone's text-safe form, which keeps 3:1 on the panel and on the current
-   row's tint, since the outline is all that makes it a tag. */
+/* A page's trailing label (the Updates row's offered build) as a warning
+   chip. On the current page's tint a second tint would sink its words, so
+   there it keeps the outline alone. */
 .settings-sidebar-page > .settings-sidebar-chip {
-  --tag-tone: var(--warning-text);
-
+  display: inline-flex;
   flex: none;
+  align-items: center;
+  gap: var(--space-2);
   height: calc(var(--line-height-compact) + 2 * var(--line));
   margin-block: calc(-1 * var(--line));
   margin-inline-start: auto;
+  padding: 0 var(--space-3);
+  overflow: visible;
+  border: var(--line) solid var(--warning-line);
+  border-radius: var(--radius-pill);
+  background: var(--warning-wash-strong);
   color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-caption);
+  font-weight: var(--font-weight-strong);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.settings-sidebar-page[aria-current='page'] > .settings-sidebar-chip {
+  background: none;
 }
 
 .settings-sidebar-page .settings-sidebar-chip svg {
@@ -133,30 +147,32 @@
 }
 
 .settings-sidebar-subsections {
-  /* Child rows of the page's row: indented so their words start under the
-     page's title, past its glyph. */
-  margin: var(--space-1) 0 var(--space-2);
-  margin-inline-start: calc(var(--icon-md) + var(--space-4));
-  padding: 0;
+  margin: var(--space-1) 0 var(--space-2) var(--space-8);
+  padding-inline-start: var(--space-4);
+  border-inline-start: var(--line) solid var(--border-strong);
 }
 
-/* A subsection's row is its words alone, so it is a block that cuts them
-   with an ellipsis, its one line centred in the row by the block padding. */
 .settings-sidebar-subsection {
-  display: block;
+  position: relative;
   min-height: var(--row-height-dense);
-  padding-block: calc((var(--row-height-dense) - var(--line-height-compact)) / 2);
-  overflow: hidden;
+  padding-block: var(--space-1);
   color: var(--text-dim);
-  text-overflow: ellipsis;
 }
 
-/* The section in view is marked as a source list marks a child row it
-   follows: the quiet neutral fill, words in the text colour at the regular
-   weight. The page's row keeps the one current-item tint. */
 .settings-sidebar-subsection[aria-current='location'] {
-  background: var(--fill);
   color: var(--text);
+  font-weight: var(--font-weight-strong);
+}
+
+/* The lit rail sits on the hairline: a 2px mark over the 1px line. */
+.settings-sidebar-subsection[aria-current='location']::before {
+  content: '';
+  position: absolute;
+  inset-block: var(--space-2);
+  inset-inline-start: calc(-1 * (var(--space-4) + var(--line-strong)));
+  width: var(--line-strong);
+  border-radius: var(--radius-xs);
+  background: var(--accent);
 }
 
 /* The page's column: the failed-save alert, which never scrolls, over the
@@ -608,59 +624,42 @@
 
 /* ---- Updates ---- */
 
-/* The Updates page, laid out as every Settings page is: the check
-   cadence, then the update's status, each a group with a hairline between
-   them, no frame and no fill. */
+/* The Updates page: the check cadence over the status card, both uiok's
+   .card; the rules here lay out what is inside them. */
 .updates-page {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--space-6);
+  gap: var(--space-8);
   min-height: 0;
 }
 
-/* The check cadence, a row of the label column every Settings page uses
-   (.field-grid): its label in the leading column, dim at a label's size
-   and weight and centred on the 24px control, the pop-up at its own width
-   where every page's controls start, and the note that follows the choice
-   under the pop-up. A host whose page sets --field-label-width gets the
-   same column here. */
+/* The check cadence: its label on the left at a Settings row's size, the
+   select at the end where the card's verb sits, and the note that follows
+   the choice under both. */
 .update-checks {
   display: grid;
   flex: none;
-  grid-template-columns: var(--field-label-width, 136px) minmax(0, 1fr);
-  align-items: start;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: var(--space-2) var(--space-6);
 }
 
 .update-checks-label {
-  /* Beside the pop-up and its note both, so a label that wraps never
-     parts the note from its pop-up. */
-  grid-row: span 2;
-  padding-block: var(--space-2);
-  color: var(--text-dim);
+  color: var(--text);
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-compact);
-  overflow-wrap: anywhere;
-}
-
-.update-checks > select {
-  justify-self: start;
-  width: auto;
-  max-width: 100%;
+  font-weight: var(--font-weight-medium);
 }
 
 .update-checks .field-note {
-  grid-column: 2;
+  grid-column: 1 / -1;
 }
 
-/* The update's status, one row as a status line says it: the state's glyph
-   in its tone, the state at a Settings row's size and weight (only a
-   strong element in it, the version, is set strong), the fact after it in the dim
-   small size (taking the next line when the row cannot hold both), and
-   the one verb at the row's end. A download, and What's new, follow as
-   rows of their own. */
+/* The status card: a glyph in the state's tone, the headline and what it
+   means, and the one verb at the end. The head never shrinks: under a long
+   What's new list only the list gives way, so a headline or a fact that
+   takes two lines never runs into the part below it. The glyph hangs on
+   the headline's first line. */
 .update-card {
   display: flex;
   flex: none;
@@ -668,42 +667,29 @@
   gap: var(--space-6);
 }
 
-.update-checks + .update-card {
-  padding-top: var(--space-6);
-  border-top: var(--line) solid var(--border);
-}
-
-/* With notes at its foot it fits them, and grows only to the bottom of the
-   column, where the list scrolls inside it. */
+/* With notes at its foot the card fits them, and grows only to the bottom
+   of the column, where the list scrolls inside it. */
 .update-card.with-notes {
   flex: 0 1 auto;
   min-height: 0;
 }
 
-/* The status row. Its words may take two lines (a long state or a long
-   language), so the glyph hangs on the first line, centred on a
-   one-line row's height, and the verb stays centred on the row. The
-   words take the row's padding, so a one-line row is 24px with its glyph
-   centred, and a wrapped one keeps that room under its last line. The
-   row never shrinks: under a long What's New list only the list gives
-   way, so the wrapped words never run into the row below. */
 .update-card-head {
   display: grid;
   flex: none;
-  grid-template-columns: var(--icon-md) minmax(0, 1fr) auto;
+  grid-template-columns: var(--icon-lg) minmax(0, 1fr) auto;
   align-items: start;
   column-gap: var(--space-4);
-  min-height: var(--control-height-sm);
 }
 
-.update-card-head > :not(.update-card-glyph, .update-card-said) {
-  align-self: center;
+.update-card-head > .button {
+  margin-top: calc(-1 * var(--space-1));
 }
 
 .update-card-glyph {
-  width: var(--icon-md);
-  height: var(--icon-md);
-  margin-top: calc((var(--control-height-sm) - var(--icon-md)) / 2);
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  margin-top: 1px;
   color: var(--text-dim);
 }
 
@@ -724,22 +710,23 @@
   color: var(--danger);
 }
 
-.update-card-said {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0 var(--space-4);
-  min-width: 0;
-  padding-block: calc((var(--control-height-sm) - var(--line-height-compact)) / 2);
+/* A failure is told as RunHeader tells it: the headline in the danger's
+   text tone, the reason under it in the body's quiet colour. */
+.update-card[data-tone='error'] .update-card-title {
+  color: var(--danger-text);
 }
 
-/* The state, in the text colour in every tone: the glyph carries the tone,
-   a failure included. */
+.update-card-said {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
 .update-card-title {
   color: var(--text);
-  font-size: var(--font-size-small);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-compact);
+  font-size: var(--font-size-heading);
+  font-weight: var(--font-weight-strong);
+  line-height: var(--line-height-body);
 }
 
 .update-card-title strong {
@@ -761,34 +748,46 @@
   user-select: text;
 }
 
-/* The download's state is a status line in a preferences page, not a pane's
-   heading: the progress header under the card says it at the card title's
-   size and weight, so the bar and its caption carry the state. Its glyph
-   takes the card's glyph size and stays centred on that shorter line, so
-   the status row and the header under it lead with one glyph size and
-   start their words on one edge; indented facts follow that edge. */
-.update-card .run-header-headline {
+.update-card-note {
+  margin: 0;
+  color: var(--text-dim);
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-regular);
-  line-height: var(--line-height-compact);
 }
 
-/* A figure at the end of that line (a clock) is set on the same line: the
-   status line's size and line height, so the two share one baseline. It
-   keeps its monospace, tabular numerals, and strong weight. */
-.update-card .run-header-figure {
-  font-size: var(--font-size-small);
-  line-height: var(--line-height-compact);
+/* With a download under it (uiok's RunHeader), the head is the card's
+   title: quieter, ruled off, its glyph a size down, centred in the full
+   glyph's column so the title starts where it always does. */
+.update-card.with-run .update-card-head {
+  padding-bottom: var(--space-5);
+  border-bottom: var(--line) solid var(--border);
 }
 
-.update-card .run-header-glyph {
+.update-card.with-run .update-card-title {
+  font-size: var(--font-size-body);
+}
+
+.update-card.with-run .update-card-glyph {
+  justify-self: center;
   width: var(--icon-md);
   height: var(--icon-md);
-  margin-top: calc((var(--line-height-compact) - var(--icon-md)) / 2);
+  margin-top: var(--space-1);
 }
 
-.update-card .run-header-facts.indented {
-  padding-left: calc(var(--icon-md) + var(--space-4));
+/* A download under the head, told as the card's failure is: a failed
+   download's headline in the danger's text tone, the reason under it in
+   the text colour. A clock at the end of the headline shares its size and
+   line, so the two sit on one baseline. */
+.update-card .run-header[data-state='failed'] .run-header-headline {
+  color: var(--danger-text);
+}
+
+.update-card .run-header-reason {
+  color: var(--text);
+}
+
+.update-card .run-header-figure {
+  font-size: var(--font-size-heading);
+  line-height: var(--line-height-body);
 }
 
 /* What the system returned for a failed download (an error code, a host
@@ -911,9 +910,9 @@
 
 .update-notes-area {
   margin: 0;
-  color: var(--text-dim);
+  color: var(--text);
   font-size: var(--font-size-small);
-  font-weight: var(--font-weight-regular);
+  font-weight: var(--font-weight-strong);
   line-height: var(--line-height-compact);
 }
 
@@ -937,36 +936,27 @@
 
 /* ---- Channel tag ---- */
 
-/* The shell's small square tag: a caption in the code face inside a
-   hairline of the tag's tone, on no fill, as a desktop window labels a
-   build or a count. The release channel beside a lockup (an About window,
-   a splash) on a build that is not the release wears it, so a screenshot
-   always says which build it shows; so does a Settings page's trailing
-   label (above). An app that colours its channels sets --channel (the
-   hairline's hue) and --channel-text (its words at 4.5:1 on the window's
-   ground); without them the tag wears the accent. */
-.channel-tag,
-.settings-sidebar-page > .settings-sidebar-chip {
+/* The release channel beside a lockup (an About window, a splash) on a
+   build that is not the release: small caps on a pill of the channel's
+   colour, so a screenshot always says which build it shows. An app that
+   colours its channels sets --channel (the hue) and --channel-text (its
+   words at 4.5:1 on the pill); without them the tag wears the accent. */
+.channel-tag {
+  --channel-tag-bg: color-mix(in srgb, var(--channel, var(--accent)) 14%, transparent);
+
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
-  box-sizing: border-box;
   min-width: 0;
-  padding: 0 var(--space-2);
-  border: var(--line) solid var(--tag-tone);
-  border-radius: var(--radius-xs);
-  background: none;
-  font: var(--font-weight-regular) var(--font-size-caption) / var(--line-height-compact)
-    var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.channel-tag {
-  --tag-tone: var(--channel, var(--accent));
-
+  padding: 1px var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--channel-tag-bg);
   color: var(--channel-text, var(--accent-text));
+  font: var(--font-weight-strong) var(--font-size-caption) / var(--line-height-compact)
+    var(--font-ui);
+  letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 /* ---- About window ---- */
@@ -1076,64 +1066,38 @@
 
 /* ---- Load failure ---- */
 
-/* What a part of the window shows in place of content that failed to
-   load, said where that content would start, as a status line: one line
-   at the pane's content inset, the failure's glyph in the danger tone, the
-   headline in the text colour, the reason after it in the dim tone, and a
-   small button (Try Again) at the line's end. The headline and the
-   reason end in an ellipsis when the line cannot hold them; the host puts
-   their whole text in a tooltip (cutTooltip). A failure that blocks the
-   whole window is an alert dialog instead. */
+/* The block a part of the window shows in place of its content when that
+   content failed to load: the failure's glyph (an icon of --icon-xl, as
+   every failure over an empty space has) in the danger tone, a headline,
+   the reason under it, centred. */
 .space-load-failure {
-  display: grid;
-  flex: none;
-  grid-template-columns: auto minmax(0, max-content) minmax(3ch, 1fr) auto;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
   align-items: center;
-  column-gap: var(--space-3);
-  min-width: 0;
-  padding: var(--space-4) var(--space-6);
-  color: var(--text);
-  font-size: var(--font-size-small);
-  line-height: var(--line-height-compact);
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-16);
+  text-align: center;
 }
 
 .space-load-failure > svg {
   flex: none;
-  width: var(--icon-md);
-  height: var(--icon-md);
   color: var(--danger);
 }
 
-.space-load-failure :is(strong, p) {
-  min-width: 0;
+.space-load-failure strong {
+  font-size: var(--font-size-heading);
+}
+
+.space-load-failure p {
+  max-width: 420px;
   margin: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  color: var(--text-dim);
 }
 
 /* The failure's words, an error a user pastes into a report. */
 .space-load-failure :is(strong, p) {
   -webkit-user-select: text;
   user-select: text;
-}
-
-/* Short of room, the reason gives way first: it shrinks down to a few
-   characters and an ellipsis while the headline, what failed, stays whole;
-   only then does the headline shrink. The grid does this exactly: the
-   headline's column takes its whole width before the reason's flexible
-   column gets any, and the reason's column stops at 3ch. (A flex row with
-   a tiny shrink factor still cut the headline by a fraction of a pixel,
-   enough for its ellipsis to show.) */
-.space-load-failure strong {
-  font-weight: var(--font-weight-medium);
-}
-
-.space-load-failure p {
-  min-width: 3ch;
-  color: var(--text-dim);
-}
-
-.space-load-failure > :is(button, .button) {
-  margin-inline-start: var(--space-2);
 }

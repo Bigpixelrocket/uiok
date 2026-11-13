@@ -517,7 +517,7 @@ export function DialogDemo() {
             '~/projects/site/docs/deploying.md',
             '~/projects/site/tests/App.test.tsx'
           ]}
-          title="Delete 4 Items Now?"
+          title="Delete Now?"
         />
       ) : null}
       {open === 'delete-all' ? (
@@ -529,7 +529,7 @@ export function DialogDemo() {
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
           paths={LONG_PATHS}
-          title={`Delete ${LONG_PATHS.length} Items Now?`}
+          title="Delete Now?"
         />
       ) : null}
       {open === 'sign-out' ? (
@@ -574,7 +574,7 @@ export function DialogDemo() {
           message="Every process and schedule below stops; logs are kept."
           onCancel={close('kept running')}
           onConfirm={close('quit')}
-          title="Quit and Stop 15 Processes?"
+          title="Quit and Stop Processes?"
           tone="warning"
         />
       ) : null}
@@ -586,7 +586,7 @@ export function DialogDemo() {
           message="These items cannot be recovered."
           onCancel={close('cancelled')}
           onConfirm={close('deleted for good')}
-          title="Delete Now from the Production Environment Folder"
+          title="Delete Now Without Moving Anything to the Trash"
         />
       ) : null}
       {open === 'connect' ? (

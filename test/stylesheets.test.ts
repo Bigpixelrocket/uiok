@@ -66,7 +66,7 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
         line('.run-header-headline', property)
       );
     }
-    expect(size('.update-card-glyph')).toEqual(['var(--icon-md)', 'var(--icon-md)']);
+    expect(size('.update-card-glyph')).toEqual(['var(--icon-lg)', 'var(--icon-lg)']);
     document.body.innerHTML = '';
   });
 
@@ -77,40 +77,36 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
         <div class="update-card-said"></div><button class="button">Restart</button></div>
     </div>`;
     const head = document.querySelector('.update-card-head') as Element;
-    const half = (size: string) => `calc((var(--control-height-sm) - ${size}) / 2)`;
 
     // Only the notes give way when the column is short.
     // jsdom writes `flex: none` out as its longhands.
     expect(declaredValues(head, 'flex').at(-1)).toMatch(/^(?:none|0 0 auto)$/);
     expect(declaredValues(head, 'align-items').at(-1)).toBe('start');
+    // The glyph hangs on the headline's first line, whatever lines follow.
     expect(
       declaredValues(document.querySelector('.update-card-glyph') as Element, 'margin-top').at(-1)
-    ).toBe(half('var(--icon-md)'));
-    expect(
-      declaredValues(document.querySelector('.update-card-said') as Element, 'padding-block').at(-1)
-    ).toBe(half('var(--line-height-compact)'));
-    expect(
-      declaredValues(
-        document.querySelector('.update-card-head > button') as Element,
-        'align-self'
-      ).at(-1)
-    ).toBe('center');
+    ).toBe('1px');
     document.body.innerHTML = '';
   });
 
-  it("gives a load failure's headline its whole width before the reason gets any", () => {
+  it('centres a failed or empty pane in a block with its words, actions, and error', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     document.body.innerHTML = `<div class="space-load-failure"><svg></svg>
-      <strong>The list could not be loaded</strong><p>permission denied</p><button>Try Again</button></div>`;
-    const line = document.querySelector('.space-load-failure') as Element;
-
-    // A grid, not a flex row: a flex row with a tiny shrink factor still cut
-    // the headline by a fraction of a pixel, enough to draw its ellipsis.
-    expect(declaredValues(line, 'display').at(-1)).toBe('grid');
-    expect(declaredValues(line, 'grid-template-columns').at(-1)).toBe(
-      'auto minmax(0, max-content) minmax(3ch, 1fr) auto'
-    );
-    expect(declaredValues(document.querySelector('strong') as Element, 'flex-shrink')).toEqual([]);
+      <strong>The list could not be loaded</strong><p>permission denied</p><button>Try Again</button></div>
+      <div class="listing-root"><div class="pane-empty"><svg></svg><strong>No projects yet</strong>
+      <p>Add a folder.</p><div class="pane-empty-actions"></div>
+      <p class="pane-empty-detail">EACCES</p></div></div>`;
+    for (const selector of ['.space-load-failure', '.pane-empty']) {
+      const block = document.querySelector(selector) as Element;
+      expect(declaredValues(block, 'flex-direction').at(-1), selector).toBe('column');
+      expect(declaredValues(block, 'align-items').at(-1), selector).toBe('center');
+      expect(declaredValues(block, 'justify-content').at(-1), selector).toBe('center');
+      expect(declaredValues(block, 'text-align').at(-1), selector).toBe('center');
+    }
+    // The system's own line is set in the code face.
+    expect(
+      declaredValues(document.querySelector('.pane-empty-detail') as Element, 'font-family').at(-1)
+    ).toBe('var(--font-mono)');
     document.body.innerHTML = '';
   });
 
@@ -213,6 +209,8 @@ describe('delivered tokens', () => {
     /^--warning-line$/,
     /^--duration-base$/,
     /^--z-drag$/,
+    // A startup or splash title, which the apps draw themselves.
+    /^--font-size-display$/,
     // ICON_XL (src/icon/sizes.ts) mirrors it for lucide's size prop.
     /^--icon-xl$/
   ];

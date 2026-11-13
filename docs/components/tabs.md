@@ -2,6 +2,8 @@
 
 The tab strip a page draws under its path bar: one tab per page of the level shown, each a small cornered tab inside the strip, the current one on the current item's tint and ring, as a desktop tab control draws it. `pills` draws the second strip a tab's own pages take under the first: the same tabs on a shorter row, in smaller type.
 
+The strip has room above and below its tabs, as the toolbars around it have round their controls: the tabs are 24px (`--control-height-sm`) with 6px (`--space-3`) clear above them and above the strip's hairline, a 36px strip; the `pills` strip holds 20px tabs (`--control-height-xs`) with 4px (`--space-2`) clear, a 28px strip. The tabs never touch the strip's edges, in any look (icons, words, both) or with the chevrons showing.
+
 ## Example
 
 ```tsx

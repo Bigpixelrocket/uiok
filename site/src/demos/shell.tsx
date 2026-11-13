@@ -1,13 +1,13 @@
 /**
  * The shell's shared surfaces: a Settings dialog with its sidebar of pages
- * (Appearance with the theme picker, Updates with the status row and its
+ * (Appearance with the theme picker, Updates with the status card and its
  * notes, Files with a file's problems), the theme picker and the update
- * status in each tone on the page itself (a failed download under its
- * row), the status line a settings file's new mistake shows under the
+ * card in each tone on the page itself (a note under the ready card's head,
+ * a failed download under a ruled-off head), the status line a settings file's new mistake shows under the
  * header, the update pill's states, the channel tag in the accent and in a
  * host's own hue, the About window, the sign-in prompts (a password asked
  * again after a refusal, a new host key), the exit confirmation, and the
- * load failure line. The Files page of the Settings dialog holds a change a
+ * load failure block. The Files page of the Settings dialog holds a change a
  * file could not take, over the page.
  */
 
@@ -62,12 +62,13 @@ const NOTES: readonly { readonly area: string; readonly lines: readonly string[]
 
 type CardTone = 'idle' | 'busy' | 'ready' | 'ok' | 'warning' | 'error';
 
-/** The status row for one state of the updater. */
+/** The status card for one state of the updater. */
 function UpdateCard({
   tone,
   title,
   sub,
   verb,
+  note,
   notes = false,
   run = false
 }: {
@@ -75,6 +76,8 @@ function UpdateCard({
   readonly title: ReactNode;
   readonly sub: string;
   readonly verb?: string;
+  /** A quiet line under the head (`update-card-note`). */
+  readonly note?: string;
   readonly notes?: boolean;
   /** A download under the head: one running, or one that failed in a neutral card. */
   readonly run?: boolean | 'failed';
@@ -96,7 +99,12 @@ function UpdateCard({
               ? RefreshCw
               : Download;
   const headingId = useId();
-  const classes = ['update-card', notes ? 'with-notes' : '', run === false ? '' : 'with-run']
+  const classes = [
+    'update-card',
+    'card',
+    notes ? 'with-notes' : '',
+    run === false ? '' : 'with-run'
+  ]
     .filter(Boolean)
     .join(' ');
   return (
@@ -113,13 +121,16 @@ function UpdateCard({
           </Button>
         ) : null}
       </div>
-      {/* A download's status line says the time left; the caption under
-          the bar leads with the percent, then the size and the rate. */}
+      {note === undefined ? null : <p className="update-card-note">{note}</p>}
+      {/* A download under its ruled-off head: the clock on the headline's
+          line, and the caption under the bar leading with the percent, then
+          the size and the rate. */}
       {run === true ? (
         <RunHeader
           bar={{ fraction: 0.42, label: 'Download' }}
           facts={['42%', '38.2 MB of 91.0 MB', '4.1 MB/s']}
-          headline="About 9 seconds left"
+          figure="0:09"
+          headline="Downloading 2.5.0"
           state="running"
         />
       ) : null}
@@ -164,11 +175,11 @@ function UpdateCard({
   );
 }
 
-/** The check cadence above the status row. */
+/** The check cadence, a card above the status card. */
 function UpdateChecks(): ReactElement {
   const id = useId();
   return (
-    <div className="update-checks">
+    <div className="update-checks card">
       <label className="update-checks-label" htmlFor={id}>
         Check for updates automatically
       </label>
@@ -476,9 +487,11 @@ function HostKeyPrompt({ onClose }: { readonly onClose: () => void }): ReactElem
         primary: { label: 'Trust and Connect', onRun: onClose }
       }}
       onCancel={onClose}
-      title="Trust build.example.com?"
+      title="Trust This Host?"
     >
-      <p>First connection to this host: check the key with its owner.</p>
+      <p>
+        First connection to <strong>build.example.com</strong>: check the key with its owner.
+      </p>
       <dl className="sign-in-fingerprint">
         <dt>ED25519</dt>
         <dd>
@@ -507,7 +520,7 @@ function ExitConfirmation({ onClose }: { readonly onClose: () => void }): ReactE
       message="Logs are kept; the transfer resumes at the next launch."
       onCancel={onClose}
       onConfirm={onClose}
-      title="Quit and Stop 4 Tasks?"
+      title="Quit and Stop Tasks?"
       tone="warning"
     />
   );
@@ -581,6 +594,7 @@ export function ShellDemo(): ReactElement {
           verb="Stop"
         />
         <UpdateCard
+          note="It also installs the next time the app opens."
           sub="Restart to finish installing 2.5.0."
           title="Ready to install"
           tone="ready"
@@ -670,17 +684,11 @@ export function ShellDemo(): ReactElement {
       </div>
 
       <h3 className="demo-subhead">Load failure</h3>
-      {/* Where the list's rows would start, in a frame standing in for the pane.
-          The host gives each part that may be cut its whole text in a tooltip. */}
-      <div className="shell-demo-window">
+      <div className="card">
         <div className="space-load-failure" role="alert">
-          <CircleAlert aria-hidden size={ICON_MD} />
-          <strong {...cutTooltip('The list could not be loaded')}>
-            The list could not be loaded
-          </strong>
-          <p {...cutTooltip('The settings folder could not be read: permission denied.')}>
-            The settings folder could not be read: permission denied.
-          </p>
+          <CircleAlert absoluteStrokeWidth aria-hidden size={ICON_XL} />
+          <strong>The list could not be loaded</strong>
+          <p>The settings folder could not be read: permission denied. Check its permissions.</p>
           <Button size="small">Try Again</Button>
         </div>
       </div>

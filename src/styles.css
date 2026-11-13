@@ -474,6 +474,8 @@ meter::-webkit-meter-even-less-good-value {
     .path-star,
     .crumb-label,
     .pane-strip-link,
+    .settings-sidebar-page,
+    .settings-sidebar-subsection,
     .quiet-control,
     .toggle-chip
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
@@ -499,8 +501,6 @@ meter::-webkit-meter-even-less-good-value {
     .segmented-choice-option,
     .date-picker-day,
     .pane-sort.sortable,
-    .settings-sidebar-page,
-    .settings-sidebar-subsection,
     .quiet-track-item
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
     :not(

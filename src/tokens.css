@@ -20,13 +20,15 @@
      - small: compact control labels, status lines, help text, dialog
        titles, grid cells, tooltips;
      - body: listing rows, regular Button labels, body text, the terminal;
-     - heading: a run headline and its clock, a Settings page title;
+     - heading: a run headline and its clock, a Settings page title, a
+       card title, an empty or failed pane's heading;
      - display: a startup or splash title. */
   --font-size-key: 10px;
   --font-size-caption: 11px;
   --font-size-small: 12px;
   --font-size-body: 13px;
   --font-size-heading: 14px;
+  --font-size-display: 20px;
 
   /* Line heights. compact sets 11 and 12 px text in one-line chrome; body
      sets 13 and 14 px lines; prose is wrapped sentences; heading is titles.
@@ -111,15 +113,15 @@
     box-shadow var(--duration-fast), color var(--duration-fast), filter var(--duration-fast);
 
   /* Heights. Controls that share a row share a height:
-     - control-height: Button, IconButton, text field, select, tab strip;
+     - control-height: Button, IconButton, text field, select;
      - control-height-sm: small Button, a dense form's field and select,
-       the segmented choice, legend slots, day cells;
+       the segmented choice, legend slots, day cells, page tabs;
      - control-height-xs: inline controls in a 24 to 26 px row or bar
        (crumbs, quiet actions, row icon actions, pager steps, in-row
-       editors).
+       editors, the second strip's page tabs).
      Rows and bars: row-height for a listing row or menu option;
      row-height-dense for a grid row or column strip; bar-height for a path
-     bar, status line, tab strip, or query row; bar-height-lg for a title
+     bar, status line, or query row; bar-height-lg for a title
      strip, key legend, or dialog legend. hit-target is the smallest pointer
      target, whatever the drawn size (the .hit-target utility). */
   --control-height: 28px;

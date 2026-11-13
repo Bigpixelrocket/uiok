@@ -9,16 +9,28 @@
  * list whose names are buttons (`.pane-row-open`), and a listing with
  * nothing in it. Then, under their own headings: strips with a
  * strip link and a pane message, a WellColumn and an empty one with its
- * note, a pane with nothing in it,
+ * note, a pane with nothing in it and one that could not load,
  * marked rows in a listing wider than its box with its action column pinned,
  * and rows with no icon that take the focus themselves, one with a value cut
  * short, under a section heading drawn by a lone Strip.
  */
 
-import { ArrowDownToLine, FileText, FolderOpen, Plus, Server, Trash2, X } from 'lucide-react';
+import {
+  ArrowDownToLine,
+  FileText,
+  FolderOpen,
+  FolderPlus,
+  GitBranch,
+  Lock,
+  Plus,
+  Server,
+  Trash2,
+  X
+} from 'lucide-react';
 import { useState } from 'react';
 
-import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
+import { Button } from '@bigpixelrocket/uiok/button';
+import { ICON_MD, ICON_SM, ICON_XL } from '@bigpixelrocket/uiok/icon';
 import {
   Cell,
   column,
@@ -425,12 +437,46 @@ export function ListingDemo() {
             word="Add"
           />
         </PanePathBar>
-        {/* An empty space keeps its frame: the way on is the bar's Add, and one quiet
-            line in the rows' own type stands in the first row's place. */}
-        <div className="pane-list">
-          <p className="pane-message empty">No projects</p>
+        <div className="pane-empty">
+          <FolderOpen aria-hidden size={ICON_XL} />
+          <strong>No projects yet</strong>
+          <p>
+            Add a folder you work in, or clone one from a repository, and it shows here with its
+            scripts and services.
+          </p>
+          <div className="pane-empty-actions">
+            <Button onClick={() => setDid('add a folder')} variant="primary">
+              <FolderPlus size={ICON_MD} />
+              Add a Folder
+            </Button>
+            <Button onClick={() => setDid('clone a repository')}>
+              <GitBranch size={ICON_MD} />
+              Clone a Repository
+            </Button>
+          </div>
         </div>
         <PaneStatus>No projects</PaneStatus>
+      </div>
+
+      <h3 className="demo-subhead">Pane that could not load</h3>
+      {/* The same block for a pane whose content could not be read: what failed,
+          why and what to do, the ways on, and the system's own line under them. */}
+      <div className="pane demo-pane demo-empty-pane">
+        <PanePathBar trail={['~', 'locked']} />
+        <div className="pane-empty" role="alert">
+          <Lock aria-hidden size={ICON_XL} />
+          <strong>You do not have permission to open locked</strong>
+          <p>Grant access to the folder, or go back to where you were.</p>
+          <div className="pane-empty-actions">
+            <Button onClick={() => setDid('grant access')} variant="primary">
+              Grant Access…
+            </Button>
+            <Button onClick={() => setDid('try again')}>Try Again</Button>
+            <Button onClick={() => setDid('go back')}>Go Back</Button>
+          </div>
+          <p className="pane-empty-detail">EACCES: permission denied, scandir '~/locked'</p>
+        </div>
+        <PaneStatus>Could not read locked</PaneStatus>
       </div>
 
       <h3 className="demo-subhead">Rows without icons</h3>

@@ -108,11 +108,11 @@ const NestedFocusContext = createContext<((claim: boolean) => void) | null>(null
 /** Props for {@link ModalDialog}; content renders below the title strip. */
 export interface ModalDialogProps {
   /**
-   * What the dialog does, in at most five words ("Delete 7 Items Now?"),
-   * never a sentence: words, or a line that names a file cut so the name
-   * keeps its end (`NameCut`). Always one line: a title too long for the
-   * strip is cut with an ellipsis, and a string title shows its full text
-   * in a tooltip while it is cut.
+   * What the dialog does, in at most five words ("Delete Now?"), never a
+   * sentence, and no count, name, or path the body shows: those go in
+   * the body. Always one line: a title too long for the strip is cut with
+   * an ellipsis, and a string title shows its full text in a tooltip while
+   * it is cut.
    */
   readonly title: ReactNode;
   /** Heading element id, unique per dialog, wired to `aria-labelledby`. */

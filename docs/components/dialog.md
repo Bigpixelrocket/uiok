@@ -122,13 +122,17 @@ A dialog whose form is narrower than its step by a column's width or more is on 
 
 A title names the action in at most five words. It is not a sentence: it says what will happen, and the body says what it means.
 
-| Good                          | Not                                                 |
-| ----------------------------- | --------------------------------------------------- |
-| `Delete 7 Items Now?`         | `Delete Now from the Production Environment Folder` |
-| `Quit and Stop 15 Processes?` | `Close the window and stop 15 running processes?`   |
-| `Rename`                      | `Rename the file in ~/Documents`                    |
+| Good                       | Not                                               |
+| -------------------------- | ------------------------------------------------- |
+| `Delete Now?`              | `Delete 7 Items Now?`                             |
+| `Move to Trash?`           | `Move 1,000 Items to the Trash?`                  |
+| `Quit and Stop Processes?` | `Close the window and stop 15 running processes?` |
+| `Rename`                   | `Rename the file in ~/Documents`                  |
+| `Trust This Host?`         | `Trust build.example.com?`                        |
 
-Nothing stands beside the title: no path, no count, no item name at the strip's end. Context a dialog needs (where it acts, the item it asks about) goes in the body's first line, a sentence (`dialog-help` or the confirmation's message) with the name as a value (`dialog-value` or `<strong>`).
+A title carries no data: no count, no name, no path, no other value the body shows. The body carries them: the count in the message ("These 7 items cannot be recovered.") or a fact row, the names in the names list, a host or a file as a value in the first line. A title that named its data would say it twice, and would change length with the data, so the same dialog would look different every time.
+
+Nothing stands beside the title either: no path, no count, no item name at the strip's end. Context a dialog needs (where it acts, the item it asks about) goes in the body's first line, a sentence (`dialog-help` or the confirmation's message) with the name as a value (`dialog-value` or `<strong>`).
 
 ### Type
 
@@ -235,7 +239,7 @@ import { Power } from 'lucide-react';
   message="Every process and schedule below stops; logs are kept."
   onCancel={keepRunning}
   onConfirm={quit}
-  title="Quit and Stop 15 Processes?"
+  title="Quit and Stop Processes?"
   tone="warning"
 />;
 ```

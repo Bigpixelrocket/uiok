@@ -682,6 +682,7 @@ const PAIRINGS = [
   ]),
   ...pairs('var(--on-danger)', 4.5, ['the danger fill']),
   ...pairs('var(--on-warning)', 4.5, ['the warning fill']),
+  ...pairs('var(--on-success)', 4.5, ['the success fill']),
   ...pairs('var(--terminal-fg)', 4.5, ['the terminal']),
   // Selected terminal text takes one ink, whatever its cell's colour.
   ...pairs('var(--terminal-selection-text)', 4.5, ['the terminal selection']),
@@ -692,9 +693,6 @@ const PAIRINGS = [
     'a strongly edited cell over the ground',
     'a strongly edited cell over a panel'
   ]),
-  // The warning tag's outline (the Settings sidebar's offered build), the
-  // only thing that makes it a tag, on the panel and on the current row.
-  ...pairs('var(--warning-text)', 3, ['panel', 'the current item over a panel']),
   // The 16 terminal colours are the published palette: the renderer floors
   // each cell's text against that cell's background (src/terminal).
   ...pairs('var(--control-border)', 3, ['ground', 'panel', 'header', 'listing', 'a zebra row']),

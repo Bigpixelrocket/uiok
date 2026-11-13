@@ -1,7 +1,6 @@
 /**
- * Notices in each tone, in the flow and as a window's status line; groups
- * under the overline heading with a hairline between them, holding a value
- * a user may select; a list that fades where it scrolls on, two framed scrollers
+ * Notices in each tone, in the flow and as a window's status line; a card
+ * with the overline heading, holding a value a user may select; a list that fades where it scrolls on, two framed scrollers
  * whose frames stay solid while their contents fade, and a row that fades
  * at its inline ends; then a host's own buttons joining the quiet control
  * and track item recipes, at rest, hovered, and pressed.
@@ -115,21 +114,14 @@ export function SurfaceDemo() {
         </div>
       </div>
 
-      <h3 className="demo-subhead">Groups and selectable text</h3>
-      {/* Groups of lines under an overline, divided by a hairline, never a
-          framed card. The label is chrome; the version is a value a user
-          may select and copy. */}
-      <div>
-        <section className="settings-subsection">
-          <h4 className="overline">Updates</h4>
-          <p className="field-note">
-            Ready to install: <span className="selectable">2.4.1 (412)</span>
-          </p>
-        </section>
-        <section className="settings-subsection" style={{ paddingBottom: 0 }}>
-          <h4 className="overline">Folder</h4>
-          <code className="settings-file-path">~/.config/example-app</code>
-        </section>
+      <h3 className="demo-subhead">Card and overline</h3>
+      {/* A card groups one subject's lines under an overline. The label is
+          chrome; the version is a value a user may select and copy. */}
+      <div className="card">
+        <h4 className="overline">Updates</h4>
+        <p>
+          Version <span className="selectable">2.4.1 (412)</span> is ready to install.
+        </p>
       </div>
 
       <h3 className="demo-subhead">Scroll fade</h3>

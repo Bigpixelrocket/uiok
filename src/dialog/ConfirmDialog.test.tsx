@@ -75,7 +75,7 @@ describe('ConfirmDialog', () => {
           { label: 'Terminals', count: 6, value: 'zsh, npm run dev, vite' },
           { label: 'Schedules', value: 'nightly backup' }
         ]}
-        title="Quit and Stop 6 Processes?"
+        title="Quit and Stop Processes?"
       />
     );
 
@@ -103,7 +103,7 @@ describe('ConfirmDialog', () => {
         onCancel={vi.fn()}
         onConfirm={onConfirm}
         paths={paths}
-        title="Delete 7 Items Now?"
+        title="Delete Now?"
       />
     );
 
@@ -129,7 +129,7 @@ describe('ConfirmDialog', () => {
         onCancel={vi.fn()}
         onConfirm={vi.fn()}
         paths={['/a', '/b']}
-        title="Delete 2 Items?"
+        title="Delete?"
       />
     );
 

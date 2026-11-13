@@ -27,7 +27,7 @@ describe('overlay entrances', () => {
     applyStylesheets(...SHEETS.map(readStylesheet));
     document.body.innerHTML = `
       <div class="dialog-backdrop frosted"><div class="dialog" data-tone="danger">
-        <div class="dialog-heading"><h2>Delete 3 Items Now?</h2></div>
+        <div class="dialog-heading"><h2>Delete Now?</h2></div>
         <p class="dialog-message">They cannot be restored.</p>
         <div class="dialog-legend"><button class="legend-slot legend-primary">Delete</button></div>
       </div></div>

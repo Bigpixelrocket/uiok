@@ -21,8 +21,8 @@ export type ConfirmTone = 'danger' | 'warning' | 'primary';
 export interface ConfirmDialogProps {
   /**
    * What will happen, in at most five words, on one line of the title
-   * strip ("Delete 7 Items Now?"); a title too long is cut with an
-   * ellipsis, never wrapped.
+   * strip ("Delete Now?"), with no count, name, or path the body shows;
+   * a title too long is cut with an ellipsis, never wrapped.
    */
   readonly title: string;
   /**

@@ -6,13 +6,14 @@ Colour tokens are in [themes](themes.md).
 
 ## Type
 
-| Token                 | Value | Role                                                                                 |
-| --------------------- | ----- | ------------------------------------------------------------------------------------ |
-| `--font-size-key`     | 10px  | A letter or a word inside a key cap                                                  |
-| `--font-size-caption` | 11px  | Column and group labels, counts, pill tabs, chart labels, uppercase headings         |
-| `--font-size-small`   | 12px  | Compact control labels, status lines, help text, dialog titles, grid cells, tooltips |
-| `--font-size-body`    | 13px  | Listing rows, regular Button labels, body text, the terminal                         |
-| `--font-size-heading` | 14px  | A run headline and its clock, a Settings page title                                  |
+| Token                 | Value | Role                                                                                      |
+| --------------------- | ----- | ----------------------------------------------------------------------------------------- |
+| `--font-size-key`     | 10px  | A letter or a word inside a key cap                                                       |
+| `--font-size-caption` | 11px  | Column and group labels, counts, pill tabs, chart labels, uppercase headings              |
+| `--font-size-small`   | 12px  | Compact control labels, status lines, help text, dialog titles, grid cells, tooltips      |
+| `--font-size-body`    | 13px  | Listing rows, regular Button labels, body text, the terminal                              |
+| `--font-size-heading` | 14px  | A run headline and its clock, a Settings page title, a card title, a pane's state heading |
+| `--font-size-display` | 20px  | A startup or splash title                                                                 |
 
 | Token                   | Value | Role                                       |
 | ----------------------- | ----- | ------------------------------------------ |
@@ -104,12 +105,12 @@ Reduced motion: under `prefers-reduced-motion: reduce`, `tokens.css` sets the th
 
 | Token                 | Value | Controls                                                                               |
 | --------------------- | ----- | -------------------------------------------------------------------------------------- |
-| `--control-height`    | 28px  | Button, IconButton, text field, select, page tab strip                                 |
+| `--control-height`    | 28px  | Button, IconButton, text field, select                                                 |
 | `--control-height-sm` | 24px  | Small Button, a dense form's field and select, segmented choice, legend slot, day cell |
 | `--control-height-xs` | 20px  | Crumb, quiet action, row icon action, pager step and select, in-row editor             |
 | `--row-height`        | 24px  | Listing row, menu option                                                               |
 | `--row-height-dense`  | 22px  | Data grid row, column strip                                                            |
-| `--bar-height`        | 26px  | Path bar, status line, tab strip, query row                                            |
+| `--bar-height`        | 26px  | Path bar, status line, query row                                                       |
 | `--bar-height-lg`     | 34px  | Title strip, key legend, dialog legend                                                 |
 | `--hit-target`        | 24px  | The smallest pointer target, whatever the drawn size                                   |
 
