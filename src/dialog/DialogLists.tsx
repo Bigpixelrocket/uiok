@@ -313,32 +313,6 @@ function breakable(text: string): ReactNode {
       ));
 }
 
-/** Props for {@link DialogNames}. */
-export interface DialogNamesProps {
-  /** The names or paths, in the order they are listed. */
-  readonly names: readonly string[];
-  /**
-   * Ignored: the list always shows five rows in full and then "+N more".
-   * Kept so existing callers still compile.
-   *
-   * @deprecated The rule is fixed; leave it out.
-   */
-  readonly max?: number;
-  /** The block's id, for a dialog that names it as its description. */
-  readonly id?: string;
-}
-
-/**
- * Names without a kind, drawn as `DialogItems` with no glyph and no detail:
- * the same framed list, five rows in full, then "+N more".
- *
- * @deprecated Pass items to `DialogItems` (or `ConfirmDialog`'s `items`)
- * with the kind's glyph and a detail where the kind has one.
- */
-export function DialogNames({ names, id }: DialogNamesProps): ReactElement {
-  return <DialogItems id={id} items={names.map((name) => ({ name }))} />;
-}
-
 /** Props for {@link DialogStatements}. */
 export interface DialogStatementsProps {
   /** What the statements are, short, as the block's heading and accessible name: "SQL". */

@@ -296,8 +296,6 @@ A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode; 
 
 `DialogStatements` (`label`, `lines`, `id`) is the block `statements` draws, for any other dialog body. In a `ConfirmDialog`, prefer the `statements` prop; a `DialogStatements` passed as children still gives the confirmation its 480px width.
 
-`DialogNames` (`names`, `id`) is deprecated: it draws its names as `DialogItems` without glyphs or details. Pass items instead.
-
 ### Deletes that cannot be undone
 
 People confirm a delete out of habit, ⌘⌫ then Return, without reading. With `forGood` the confirm verb still stands at the right edge, lit red, but its key is ⌥⌘⌫ (the Delete Now chord, Finder's chord for a delete that skips the Trash), Return runs nothing, and a held chord never runs it on a repeat.

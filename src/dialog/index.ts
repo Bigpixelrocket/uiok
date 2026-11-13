@@ -13,7 +13,6 @@ export {
   DIALOG_ITEMS_SHOWN,
   DialogFacts,
   DialogItems,
-  DialogNames,
   DialogStatements,
   shownItems,
   type DialogFact,
@@ -21,7 +20,6 @@ export {
   type DialogItem,
   type DialogItemGroup,
   type DialogItemsProps,
-  type DialogNamesProps,
   type DialogStatementsProps
 } from './DialogLists.js';
 export { DialogLegend, type DialogLegendProps } from './DialogLegend.js';

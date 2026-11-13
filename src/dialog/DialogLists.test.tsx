@@ -2,13 +2,13 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
-import { DialogFacts, DialogNames } from './DialogLists.js';
+import { DialogFacts, DialogItems } from './DialogLists.js';
 
-describe('DialogNames', () => {
+describe('DialogItems', () => {
   it('draws names as the framed item list, exactly as written', () => {
     const names = ['~/n1000/.controller 85977', '~/Documents/Q3 budget review.xlsx', '~/a b/c'];
 
-    render(<DialogNames names={names} />);
+    render(<DialogItems items={names.map((name) => ({ name }))} />);
 
     const shown = screen
       .getAllByRole('listitem')
