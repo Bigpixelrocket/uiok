@@ -18,9 +18,12 @@ On fleet machines, evidence for a PR that changes what the docs site shows follo
 
 ```sh
 mkdir -p ~/.cache/evidence-web && cd ~/.cache/evidence-web
-npm install playwright-core && npx playwright-core install chromium-headless-shell
-node ~/.agents/skills/EVIDENCE/scripts/capture.mjs web --url 'http://localhost:5299/#/tokens' --script /abs/path/scenario.mjs --out /abs/path/evidence
+mise exec node@26.13 -- npm install playwright-core
+mise exec node@26.13 -- npx playwright-core install chromium-headless-shell
+mise exec node@26.13 -- node ~/.agents/skills/EVIDENCE/scripts/capture.mjs web --url 'http://localhost:5299/#/tokens' --script /abs/path/scenario.mjs --out /abs/path/evidence
 ```
+
+Run node and npm there through `mise exec node@<version>`, with the version `mise.toml` pins, from the scratch directory. Never use `mise -C <uiok checkout>`: it runs the command inside the checkout, where `npm install` fails. If `mise install` rewrites `mise.lock` with changes unrelated to your work, leave them out of your commit.
 
 ## Architecture
 
