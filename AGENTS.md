@@ -12,6 +12,16 @@ UIOK is an open-source (MIT) React 19 UI library published to npm as `@bigpixelr
 - Title commits and pull requests with Conventional Commits; pull requests are squash-merged.
 - Bump the version in every pull request that changes the published package (`shipsInPackage` and `packageJsonChanges` in `scripts/version.mjs`), by exactly one step: `pnpm version <patch|minor> --no-git-tag-version --no-git-checks`, which edits only package.json (`--no-git-checks` lets it run on an uncommitted tree; before 1.0, `minor` for a breaking change and `patch` for anything else; from 1.0, `major`, `minor`, `patch` for breaking, feature, fix). Then add a dated `## [X.Y.Z] - YYYY-MM-DD` section listing the changes, with its link reference, to `CHANGELOG.md`; leave `[Unreleased]` empty and point its link at `compare/vX.Y.Z...HEAD`. CI's `Check` enforces this; `node scripts/version.mjs check origin/main` runs it locally. Bump by hand too when a `tsconfig.json` or TypeScript change alters `dist/`, which the check cannot see. If `main` takes your version first, rebase and bump again. Merging publishes to npm and creates the tag and GitHub Release (`docs/releasing.md`), so never create either by hand.
 
+## Capture
+
+On fleet machines, evidence for a PR that changes what the docs site shows follows the shared `EVIDENCE` skill (`~/.agents/skills/EVIDENCE/SKILL.md`). Serve the site on a fixed port with `pnpm run site:dev --port 5299 --strictPort` (pages are hash routes such as `#/tokens`). The capture driver loads `playwright-core` from the directory it runs in and this repository does not depend on it, so install it once in a scratch directory outside the checkout, never in the checkout, and capture from there with absolute paths, starting from a copy of the skill's `scripts/example-scenario.mjs`:
+
+```sh
+mkdir -p ~/.cache/evidence-web && cd ~/.cache/evidence-web
+npm install playwright-core && npx playwright-core install chromium-headless-shell
+node ~/.agents/skills/EVIDENCE/scripts/capture.mjs web --url 'http://localhost:5299/#/tokens' --script /abs/path/scenario.mjs --out /abs/path/evidence
+```
+
 ## Architecture
 
 ```text
