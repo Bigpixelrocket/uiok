@@ -14,13 +14,13 @@ UIOK is an open-source (MIT) React 19 UI library published to npm as `@bigpixelr
 
 ## Capture
 
-Evidence for a PR that changes what the docs site shows follows the shared `EVIDENCE` skill (`~/.agents/skills/EVIDENCE/SKILL.md`). Serve the site with `pnpm run site:dev`, which prints its URL (Vite's default is `http://localhost:5173/`; pages are hash routes such as `#/tokens`), then capture from the checkout root:
+On fleet machines, evidence for a PR that changes what the docs site shows follows the shared `EVIDENCE` skill (`~/.agents/skills/EVIDENCE/SKILL.md`). Serve the site on a fixed port with `pnpm run site:dev --port 5299 --strictPort` (pages are hash routes such as `#/tokens`). The capture driver loads `playwright-core` from the directory it runs in and this repository does not depend on it, so install it once in a scratch directory outside the checkout, never in the checkout, and capture from there with absolute paths, starting from a copy of the skill's `scripts/example-scenario.mjs`:
 
 ```sh
-node ~/.agents/skills/EVIDENCE/scripts/capture.mjs web --url 'http://localhost:5173/#/tokens' --script <scenario.mjs> --out <dir>
+mkdir -p ~/.cache/evidence-web && cd ~/.cache/evidence-web
+npm install playwright-core && npx playwright-core install chromium-headless-shell
+node ~/.agents/skills/EVIDENCE/scripts/capture.mjs web --url 'http://localhost:5299/#/tokens' --script /abs/path/scenario.mjs --out /abs/path/evidence
 ```
-
-The driver loads `playwright-core` from the directory it runs in, and this repository does not depend on it: when it reports it missing, run it from a directory where `playwright-core` is installed.
 
 ## Architecture
 
