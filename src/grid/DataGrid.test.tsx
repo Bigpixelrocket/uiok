@@ -3,7 +3,7 @@ import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
-import { DataGrid } from './DataGrid.js';
+import { DataGrid, type DataGridColumn } from './DataGrid.js';
 
 /** Gives every element the viewport's height, which jsdom never lays out. */
 const viewportHeight = (height: number): void => {
@@ -214,6 +214,114 @@ describe('the data grid’s cursor, sort, and edit', () => {
     // The mark is the listing's chevron (descending points down) and the sort's place.
     expect(size.textContent).toBe('size2');
     expect(size.querySelector('.data-grid-arrow svg.lucide-chevron-down')).not.toBeNull();
+  });
+
+  it('keeps a column that does not sort a plain heading beside one that does', () => {
+    const onSort = vi.fn();
+    const onMarkColumn = vi.fn();
+
+    render(
+      <DataGrid
+        cell={() => ({ text: '' })}
+        columns={[{ label: 'name' }, { label: 'shape', sortable: false }]}
+        copyText={() => null}
+        label="Places"
+        onMarkColumn={onMarkColumn}
+        onSort={onSort}
+        rowCount={0}
+        sorts={[
+          { column: 0, direction: 'ascending', position: 1 },
+          { column: 1, direction: 'descending', position: 2 }
+        ]}
+      />
+    );
+    const [name, shape] = screen.getAllByRole('columnheader');
+
+    if (name === undefined || shape === undefined) throw new Error('no headings drawn');
+    expect(screen.queryByRole('button', { name: /^shape/ })).toBeNull();
+    expect(shape.querySelector('button, .data-grid-sort, .data-grid-arrow')).toBeNull();
+    expect(shape.querySelector('.data-grid-label')?.textContent).toBe('shape');
+    expect(shape.hasAttribute('aria-sort')).toBe(false);
+    // Its label cut by the column names itself, as a heading of a grid that never sorts does.
+    expect(shape.getAttribute('data-tooltip')).toBe('shape');
+
+    const label = shape.querySelector('.data-grid-label') ?? shape;
+
+    fireEvent.click(label);
+    fireEvent.click(label, { shiftKey: true });
+    fireEvent.click(label, { altKey: true });
+    fireEvent.click(label, { ctrlKey: true });
+    expect(onSort).not.toHaveBeenCalled();
+    // A click on it still marks its column.
+    expect(onMarkColumn.mock.calls).toEqual([[1], [1], [1], [1]]);
+
+    const sorted = screen.getByRole('button', { name: /^name/ });
+
+    fireEvent.click(sorted);
+    expect(onSort.mock.calls).toEqual([[0, { add: false, remove: false }]]);
+    expect(name.getAttribute('aria-sort')).toBe('ascending');
+    // The sort it was handed for the plain column is not counted: no place number.
+    expect(sorted.textContent).toBe('name');
+  });
+
+  it('marks the sort on headings of a grid that does not ask to sort, but not on a column that does not sort', () => {
+    const props = {
+      cell: () => ({ text: '' }),
+      columns: [{ label: 'name' }, { label: 'shape', sortable: false }],
+      copyText: () => null,
+      label: 'Places',
+      rowCount: 0
+    };
+    const ariaSorts = (): (string | null)[] =>
+      screen.getAllByRole('columnheader').map((header) => header.getAttribute('aria-sort'));
+    const { rerender } = render(
+      <DataGrid {...props} sort={{ column: 0, direction: 'ascending' }} />
+    );
+
+    expect(ariaSorts()).toEqual(['ascending', null]);
+    rerender(
+      <DataGrid
+        {...props}
+        sorts={[
+          { column: 0, direction: 'descending', position: 1 },
+          { column: 1, direction: 'ascending', position: 2 }
+        ]}
+      />
+    );
+    expect(ariaSorts()).toEqual(['descending', null]);
+  });
+
+  it('leaves room for the sort mark only beside a heading that sorts', () => {
+    const widths = (columns: readonly DataGridColumn[], onSort?: () => void): number[] => {
+      const { unmount } = render(
+        <DataGrid
+          cell={() => ({ text: '' })}
+          columns={columns}
+          copyText={() => null}
+          label="Places"
+          onSort={onSort}
+          rowCount={0}
+        />
+      );
+      const template =
+        document.querySelector<HTMLElement>('.data-grid-header')?.style.gridTemplateColumns ?? '';
+
+      unmount();
+      return template.split(' ').map((width) => parseFloat(width));
+    };
+    const sorting = widths(
+      [{ label: 'a much longer heading' }, { label: 'another long heading' }],
+      () => undefined
+    );
+    const plain = widths([{ label: 'a much longer heading' }, { label: 'another long heading' }]);
+    const mixed = widths(
+      [{ label: 'a much longer heading' }, { label: 'another long heading', sortable: false }],
+      () => undefined
+    );
+
+    expect(sorting[0]).toBeGreaterThan(plain[0] ?? Infinity);
+    // The sortable column keeps its width; the one that does not sort is as wide as a plain heading.
+    expect(mixed).toEqual([sorting[0], plain[1]]);
   });
 
   it('draws a cell’s class and content, and runs its link on Return', () => {

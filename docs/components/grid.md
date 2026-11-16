@@ -31,7 +31,7 @@ import { DataGrid } from '@bigpixelrocket/uiok/grid';
 | Prop                            | Type                                                   | Meaning                                                                                                              |
 | ------------------------------- | ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
 | `label`                         | `string`                                               | The grid's accessible name                                                                                           |
-| `columns`                       | `readonly DataGridColumn[]`                            | `label`, `tip` (header hover), `align: 'right'`, `id` (keeps a width across reorders)                                |
+| `columns`                       | `readonly DataGridColumn[]`                            | `label`, `tip` (header hover), `align: 'right'`, `id` (keeps a width across reorders), `sortable: false` (see below) |
 | `rowCount`                      | `number`                                               | Rows in all, read or not                                                                                             |
 | `cell`                          | `(row, column) => DataGridCell \| null`                | A cell's look; null while its row is unread                                                                          |
 | `copyText`                      | `(row, column) => string \| null`                      | What Copy puts on the clipboard for the cursor cell                                                                  |
@@ -39,7 +39,7 @@ import { DataGrid } from '@bigpixelrocket/uiok/grid';
 | `rowLead`, `leadWidth`          | `(row) => ReactNode`, `number`                         | Controls before a row's cells and their column's width                                                               |
 | `rowAction`, `actionWidth`      | `(row) => ReactNode`, `number`                         | A control after a row's cells; `max-content` wide without a width                                                    |
 | `sort` / `sorts`                | `DataGridSort \| null` / `readonly DataGridSortMark[]` | One sort column, or several numbered in order                                                                        |
-| `onSort`                        | `(column, { add, remove }) => void`                    | Makes headers sort controls; Shift adds, Option or Control removes                                                   |
+| `onSort`                        | `(column, { add, remove }) => void`                    | Makes headers sort controls, but not `sortable: false`; Shift adds, Option or Control removes                        |
 | `onReorder`                     | `(from, to) => void`                                   | Lets a header drag to another column's place                                                                         |
 | `onHeaderDoubleClick`           | `(column) => void`                                     | A header double-click (copy its name); its second click never sorts again                                            |
 | `markedColumns`, `onMarkColumn` | `ReadonlySet<number>`, `(column) => void`              | Lit columns, and a header click beside its sort control                                                              |
@@ -52,6 +52,10 @@ import { DataGrid } from '@bigpixelrocket/uiok/grid';
 | `editorContainer`               | `(grid: HTMLElement) => Element \| null`               | Where the editor's fixed layer is drawn; `document.body` by default                                                  |
 | `empty`                         | `ReactNode`                                            | What a grid with no rows says, dim, where the first row would be in the cells' type; the well stays blank without it |
 
+### Columns that do not sort
+
+A column whose values have no order (a JSON document, a geometric point) takes `sortable: false`. While the grid sorts, its heading stays a plain label: no sort button, no room for the sort mark in its first width, no `aria-sort` even if `sort` or `sorts` names it (nor does such an entry count toward the numbers of a sort of several), and no click on it, with Shift, Option, or Control, asks `onSort`. A click on it still marks its column (`onMarkColumn`), and it still resizes, drags (`onReorder`), and takes a double-click (`onHeaderDoubleClick`) as any heading does. The other columns sort and keep their widths.
+
 ### Cells (`DataGridCell`)
 
 `text` is what the cell draws and what its name reads. `className` adds classes, `tip` a hover tooltip and accessible description, `onOpen` makes the value lead out of its row (a click or Return on the cursor cell runs it): give it to a value that leads elsewhere, such as a foreign key into another table, a document, or a web address, never to the row's own name or id, which Return or a double-click opens as a row, and `content` draws any node in place of the text.
@@ -60,7 +64,7 @@ import { DataGrid } from '@bigpixelrocket/uiok/grid';
 
 ### Logic
 
-`visibleRows` and `windowHolds` decide which rows draw and when a scroll draws them again; `gridMove` and `movedCell` the cursor's moves; `initialWidth` (a column's first width from its label, with room for a sort mark when the grid sorts, and its first rows), `resizedWidth`, and `MINIMUM_COLUMN_WIDTH` the column widths; `dropPlace` where a dragged header lands.
+`visibleRows` and `windowHolds` decide which rows draw and when a scroll draws them again; `gridMove` and `movedCell` the cursor's moves; `initialWidth` (a column's first width from its label, with room for a sort mark when its column sorts, and its first rows), `resizedWidth`, and `MINIMUM_COLUMN_WIDTH` the column widths; `dropPlace` where a dragged header lands.
 
 ## Keyboard
 

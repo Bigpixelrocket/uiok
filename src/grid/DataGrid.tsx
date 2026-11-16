@@ -68,6 +68,13 @@ export interface DataGridColumn {
   readonly align?: 'right';
   /** Names the column across reorders, so its width follows it; its index when absent. */
   readonly id?: string;
+  /**
+   * False keeps the header a plain label while the grid sorts (a value with
+   * no order, such as a JSON document or a point): no sort control, no room
+   * for the sort mark, no `aria-sort`, and a click on it never asks
+   * `onSort`. Sortable when absent or true.
+   */
+  readonly sortable?: boolean;
 }
 
 /** The column a grid is sorted by, and which way. */
@@ -152,7 +159,10 @@ export interface DataGridProps {
   readonly sort?: DataGridSort | null;
   /** The columns the rows are sorted by, in order, each header numbered while there are several. */
   readonly sorts?: readonly DataGridSortMark[];
-  /** Makes each header a control that asks to sort by its column; the caller orders the rows. */
+  /**
+   * Makes each header a control that asks to sort by its column, except a
+   * column with `sortable: false`; the caller orders the rows.
+   */
   readonly onSort?: (column: number, click: DataGridSortClick) => void;
   /** Lets a header be dragged to another column's place; the caller reorders `columns`. */
   readonly onReorder?: (from: number, to: number) => void;
@@ -296,6 +306,11 @@ export function DataGrid({
     []
   );
   const keyOf = (column: DataGridColumn, index: number): string => column.id ?? String(index);
+  /** Whether a column's header is a sort control: the grid sorts and the column allows it. */
+  const sortsBy = (column: DataGridColumn): boolean =>
+    onSort !== undefined && column.sortable !== false;
+  /** The room a column's heading keeps beside its label for the sort mark. */
+  const labelRoom = (column: DataGridColumn): number => (sortsBy(column) ? SORT_MARK_ROOM : 0);
   const [widths, setWidths] = useState<ReadonlyMap<string, number>>(
     () =>
       new Map(
@@ -308,14 +323,14 @@ export function DataGrid({
               (_, row) => cell(row, index)?.text ?? ''
             ),
             CHAR_WIDTH,
-            onSort === undefined ? 0 : SORT_MARK_ROOM
+            labelRoom(column)
           )
         ])
       )
   );
   const widthOf = (column: DataGridColumn, index: number): number =>
     widths.get(keyOf(column, index)) ??
-    initialWidth(column.label, [], CHAR_WIDTH, onSort === undefined ? 0 : SORT_MARK_ROOM);
+    initialWidth(column.label, [], CHAR_WIDTH, labelRoom(column));
   // The rows drawn last while they still cover where the grid stands, a fresh window otherwise.
   const held = committed.current;
   const { from, to } =
@@ -338,8 +353,10 @@ export function DataGrid({
     .filter((part) => part !== null)
     .join(' ');
   const page = Math.max(1, Math.floor(viewportHeight / ROW_HEIGHT) - 1);
-  const marks: readonly DataGridSortMark[] =
-    sorts ?? (sort === null || sort === undefined ? [] : [{ ...sort, position: 1 }]);
+  // A column that does not sort shows no mark, whatever the sort names, and is not counted.
+  const marks: readonly DataGridSortMark[] = (
+    sorts ?? (sort === null || sort === undefined ? [] : [{ ...sort, position: 1 }])
+  ).filter((mark) => columns[mark.column]?.sortable !== false);
 
   useLayoutEffect(() => {
     const element = viewport.current;
@@ -784,6 +801,7 @@ export function DataGrid({
         >
           {rowLead !== undefined && <div className="data-grid-lead" />}
           {columns.map((column, index) => {
+            const sortable = sortsBy(column);
             const mark = marks.find((entry) => entry.column === index);
 
             return (
@@ -815,12 +833,12 @@ export function DataGrid({
                 // A caller's tip tells more than the label; without one, a
                 // label cut by its column shows itself whole, only while cut.
                 {...(column.tip === undefined
-                  ? onSort === undefined
-                    ? cutTooltip(column.label)
-                    : {}
+                  ? sortable
+                    ? {}
+                    : cutTooltip(column.label)
                   : describedTooltip(column.tip))}
               >
-                {onSort === undefined ? (
+                {onSort === undefined || !sortable ? (
                   <span className="data-grid-label">{column.label}</span>
                 ) : (
                   <button

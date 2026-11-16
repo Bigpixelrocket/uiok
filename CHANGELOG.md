@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-16
+
+### Added
+
+- `DataGridColumn` `sortable`: `false` keeps a column's heading a plain label in a grid that sorts, for values with no order such as a JSON document or a geometric point. It draws no sort button or mark, keeps no room for the mark in its first width, has no `aria-sort`, and a click on it never asks `onSort`; it still marks, resizes, and drags as any heading does. Other columns sort as before.
+
 ## [0.2.0] - 2026-11-13
 
 ### Added
@@ -146,7 +152,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.2...v0.1.3
