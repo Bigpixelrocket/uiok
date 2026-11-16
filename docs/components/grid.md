@@ -54,7 +54,7 @@ import { DataGrid } from '@bigpixelrocket/uiok/grid';
 
 ### Columns that do not sort
 
-A column whose values have no order (a JSON document, a geometric point) takes `sortable: false`. While the grid sorts, its heading stays a plain label: no sort button, no room for the sort mark in its first width, no `aria-sort` even if `sort` or `sorts` names it, and no click on it, with Shift, Option, or Control, asks `onSort`. A click on it still marks its column (`onMarkColumn`), and it still resizes, drags (`onReorder`), and takes a double-click (`onHeaderDoubleClick`) as any heading does. The other columns sort and keep their widths.
+A column whose values have no order (a JSON document, a geometric point) takes `sortable: false`. While the grid sorts, its heading stays a plain label: no sort button, no room for the sort mark in its first width, no `aria-sort` even if `sort` or `sorts` names it (nor does such an entry count toward the numbers of a sort of several), and no click on it, with Shift, Option, or Control, asks `onSort`. A click on it still marks its column (`onMarkColumn`), and it still resizes, drags (`onReorder`), and takes a double-click (`onHeaderDoubleClick`) as any heading does. The other columns sort and keep their widths.
 
 ### Cells (`DataGridCell`)
 

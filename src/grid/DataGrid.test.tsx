@@ -255,9 +255,40 @@ describe('the data grid’s cursor, sort, and edit', () => {
     // A click on it still marks its column.
     expect(onMarkColumn.mock.calls).toEqual([[1], [1], [1], [1]]);
 
-    fireEvent.click(screen.getByRole('button', { name: /^name/ }));
+    const sorted = screen.getByRole('button', { name: /^name/ });
+
+    fireEvent.click(sorted);
     expect(onSort.mock.calls).toEqual([[0, { add: false, remove: false }]]);
     expect(name.getAttribute('aria-sort')).toBe('ascending');
+    // The sort it was handed for the plain column is not counted: no place number.
+    expect(sorted.textContent).toBe('name');
+  });
+
+  it('marks the sort on headings of a grid that does not ask to sort, but not on a column that does not sort', () => {
+    const props = {
+      cell: () => ({ text: '' }),
+      columns: [{ label: 'name' }, { label: 'shape', sortable: false }],
+      copyText: () => null,
+      label: 'Places',
+      rowCount: 0
+    };
+    const ariaSorts = (): (string | null)[] =>
+      screen.getAllByRole('columnheader').map((header) => header.getAttribute('aria-sort'));
+    const { rerender } = render(
+      <DataGrid {...props} sort={{ column: 0, direction: 'ascending' }} />
+    );
+
+    expect(ariaSorts()).toEqual(['ascending', null]);
+    rerender(
+      <DataGrid
+        {...props}
+        sorts={[
+          { column: 0, direction: 'descending', position: 1 },
+          { column: 1, direction: 'ascending', position: 2 }
+        ]}
+      />
+    );
+    expect(ariaSorts()).toEqual(['descending', null]);
   });
 
   it('leaves room for the sort mark only beside a heading that sorts', () => {

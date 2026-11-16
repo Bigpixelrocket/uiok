@@ -353,8 +353,10 @@ export function DataGrid({
     .filter((part) => part !== null)
     .join(' ');
   const page = Math.max(1, Math.floor(viewportHeight / ROW_HEIGHT) - 1);
-  const marks: readonly DataGridSortMark[] =
-    sorts ?? (sort === null || sort === undefined ? [] : [{ ...sort, position: 1 }]);
+  // A column that does not sort shows no mark, whatever the sort names, and is not counted.
+  const marks: readonly DataGridSortMark[] = (
+    sorts ?? (sort === null || sort === undefined ? [] : [{ ...sort, position: 1 }])
+  ).filter((mark) => columns[mark.column]?.sortable !== false);
 
   useLayoutEffect(() => {
     const element = viewport.current;
@@ -800,7 +802,7 @@ export function DataGrid({
           {rowLead !== undefined && <div className="data-grid-lead" />}
           {columns.map((column, index) => {
             const sortable = sortsBy(column);
-            const mark = sortable ? marks.find((entry) => entry.column === index) : undefined;
+            const mark = marks.find((entry) => entry.column === index);
 
             return (
               <div
