@@ -285,6 +285,20 @@ describe('the line chart’s references, fixed range, gutter, and colours', () =
     const id = clip?.getAttribute('id') ?? '';
 
     expect(id).toMatch(/^line-clip-[\w-]+$/);
+    // The clip spares 4px past every edge of the plot, so a dot on a fixed end or at
+    // the time axis's start or end (the 40 at 0, the 100 at 1000) keeps its whole circle.
+    const [, plotHeight, plotWidth] =
+      /^M0 0V([\d.]+)H([\d.]+)$/.exec(
+        container.querySelector('path.line-axes')?.getAttribute('d') ?? ''
+      ) ?? [];
+    const rect = clip?.querySelector('rect');
+
+    expect(['x', 'y', 'width', 'height'].map((name) => Number(rect?.getAttribute(name)))).toEqual([
+      -4,
+      -4,
+      Number(plotWidth) + 8,
+      Number(plotHeight) + 8
+    ]);
     for (const mark of container.querySelectorAll('path.line-series, line.line-reference')) {
       expect(mark.getAttribute('clip-path')).toBe(`url(#${id})`);
     }

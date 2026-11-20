@@ -25,9 +25,10 @@ import { seriesColour } from './seriesColour.js';
 const MARGIN = { top: 8, right: 10, bottom: 22, left: 52 };
 
 /**
- * How far past the plot's top and bottom a line or dot still shows on a
- * chart with a fixed end: a value on the end keeps its whole stroke and
- * dot (a 3px dot ringed in 1px), and one beyond it is cut there.
+ * How far past the plot's edges a line or dot still shows on a chart with
+ * a fixed end: a value on a fixed end, or at the time axis's start or end,
+ * keeps its whole stroke and dot (a 3px dot ringed in 1px), and one beyond
+ * a fixed end is cut there.
  */
 const CLIP_SPARE = 4;
 
@@ -234,8 +235,8 @@ export function LineChart({
                   <clipPath id={clipId}>
                     <rect
                       height={plotHeight + 2 * CLIP_SPARE}
-                      width={plotWidth}
-                      x={0}
+                      width={plotWidth + 2 * CLIP_SPARE}
+                      x={-CLIP_SPARE}
                       y={-CLIP_SPARE}
                     />
                   </clipPath>

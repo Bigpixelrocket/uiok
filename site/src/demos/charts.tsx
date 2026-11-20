@@ -1,8 +1,9 @@
 /**
  * Each chart over sample series: a day of requests (drag across it to pick a
  * range), an hour of load pinned to 0 to 100 with warning and critical
- * lines, two charts stacked over one hour with aligned plots, time per state, price against weight (drag to zoom), and a week of
- * sales drawn as any result chart type; then edge cases (a pie of more slices
+ * lines, two charts stacked over one hour with aligned plots, time per
+ * state, price against weight (drag to zoom), and a week of sales drawn as
+ * any result chart type; then edge cases (a pie of more slices
  * than series colours, a lone point between two gaps, a scatter over a
  * time-of-day axis and a category axis, and one over dates) and each chart
  * with nothing to draw.
