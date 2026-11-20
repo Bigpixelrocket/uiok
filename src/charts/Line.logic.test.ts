@@ -26,13 +26,18 @@ describe('the line chart’s geometry', () => {
     // Every value beyond the fixed end: the free end gives the unit span.
     expect(valueDomain([10, 20], { min: 50 })).toEqual({ min: 50, max: 51 });
     expect(valueDomain([10, 20], { max: -5 })).toEqual({ min: -6, max: -5 });
+    // A fixed bottom below zero: the free top still starts from zero, as with no fixed end.
+    expect(valueDomain([-30, -10], { min: -50 })).toEqual({ min: -50, max: 5 });
+    expect(valueDomain([-30, 20], { min: -50 })).toEqual({ min: -50, max: 27 });
   });
 
   it('keeps every tick of a fixed value axis inside it', () => {
     for (const domain of [
       valueDomain([], { min: 0, max: 100 }),
       valueDomain([], { min: 3, max: 97 }),
-      valueDomain([], { min: -0.5, max: 0.25 })
+      valueDomain([], { min: -0.5, max: 0.25 }),
+      // A narrow span far from zero, where rounding a tick to 12 digits would leave the domain.
+      valueDomain([], { min: 1_700_000_000_001, max: 1_700_000_000_004 })
     ]) {
       const ticks = ticksOf(domain, 'number', 5);
 

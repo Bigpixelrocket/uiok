@@ -25,12 +25,13 @@ import { seriesColour } from './seriesColour.js';
 const MARGIN = { top: 8, right: 10, bottom: 22, left: 52 };
 
 /**
- * How far past the plot's edges a line or dot still shows on a chart with
- * a fixed end: a value on a fixed end, or at the time axis's start or end,
- * keeps its whole stroke and dot (a 3px dot ringed in 1px), and one beyond
- * a fixed end is cut there.
+ * How far past the plot's edges the clip of a chart with a fixed end
+ * reaches: half the 1.5px stroke of a series or reference line
+ * (`charts.css`), so a line on a fixed end, or ending at the time axis's
+ * start or end, keeps its whole stroke, and one beyond a fixed end is cut
+ * there. Dots are not clipped; a dot beyond a fixed end is not drawn.
  */
-const CLIP_SPARE = 4;
+const CLIP_SPARE = 0.75;
 
 /** A series of a {@link LineChart}: its label in the legend and the read-out, and its values in time order. */
 export interface LineSeries {
@@ -210,6 +211,9 @@ export function LineChart({
     return unscaled(x, time, 0, plotWidth);
   };
   const shown = hover === null ? null : nearestMoment(moments, hover);
+  /** Whether a dot at `value` is drawn: always, unless it lies beyond a fixed end. */
+  const onAxis = (value: number): boolean =>
+    clipPath === undefined || (value >= values.min && value <= values.max);
   /** A series' colour: its own, or its position's chart token. */
   const colourOf = (entry: LineSeries, index: number): string =>
     entry.colour ?? seriesColour(index);
@@ -295,17 +299,18 @@ export function LineChart({
               {series.map((entry, index) =>
                 lonePoints(
                   entry.points.filter((point) => point.at >= time.min && point.at <= time.max)
-                ).map((point) => (
-                  <circle
-                    className="line-dot"
-                    clipPath={clipPath}
-                    cx={px(point.at)}
-                    cy={py(point.value ?? 0)}
-                    fill={colourOf(entry, index)}
-                    key={`lone${index}:${entry.label}:${point.at}`}
-                    r={3}
-                  />
-                ))
+                )
+                  .filter((point) => onAxis(point.value ?? 0))
+                  .map((point) => (
+                    <circle
+                      className="line-dot"
+                      cx={px(point.at)}
+                      cy={py(point.value ?? 0)}
+                      fill={colourOf(entry, index)}
+                      key={`lone${index}:${entry.label}:${point.at}`}
+                      r={3}
+                    />
+                  ))
               )}
               {shown !== null && (
                 <line className="line-guide" x1={px(shown)} x2={px(shown)} y1={0} y2={plotHeight} />
@@ -314,10 +319,9 @@ export function LineChart({
                 series.map((entry, index) => {
                   const value = entry.points.find((point) => point.at === shown)?.value ?? null;
 
-                  return value === null ? null : (
+                  return value === null || !onAxis(value) ? null : (
                     <circle
                       className="line-dot"
-                      clipPath={clipPath}
                       cx={px(shown)}
                       cy={py(value)}
                       fill={colourOf(entry, index)}

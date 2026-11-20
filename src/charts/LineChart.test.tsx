@@ -285,8 +285,8 @@ describe('the line chart’s references, fixed range, gutter, and colours', () =
     const id = clip?.getAttribute('id') ?? '';
 
     expect(id).toMatch(/^line-clip-[\w-]+$/);
-    // The clip spares 4px past every edge of the plot, so a dot on a fixed end or at
-    // the time axis's start or end (the 40 at 0, the 100 at 1000) keeps its whole circle.
+    // The clip spares half a line's stroke past every edge of the plot, so a line on a
+    // fixed end or at the time axis's start or end keeps its whole stroke.
     const [, plotHeight, plotWidth] =
       /^M0 0V([\d.]+)H([\d.]+)$/.exec(
         container.querySelector('path.line-axes')?.getAttribute('d') ?? ''
@@ -294,10 +294,10 @@ describe('the line chart’s references, fixed range, gutter, and colours', () =
     const rect = clip?.querySelector('rect');
 
     expect(['x', 'y', 'width', 'height'].map((name) => Number(rect?.getAttribute(name)))).toEqual([
-      -4,
-      -4,
-      Number(plotWidth) + 8,
-      Number(plotHeight) + 8
+      -0.75,
+      -0.75,
+      Number(plotWidth) + 1.5,
+      Number(plotHeight) + 1.5
     ]);
     for (const mark of container.querySelectorAll('path.line-series, line.line-reference')) {
       expect(mark.getAttribute('clip-path')).toBe(`url(#${id})`);
@@ -310,11 +310,51 @@ describe('the line chart’s references, fixed range, gutter, and colours', () =
     expect(ys[1]).toBeLessThan(0);
 
     fireEvent.pointerMove(screen.getByTestId('line-plot'), { clientX: 129 });
-    // The read-out still says the true value.
+    // The read-out still says the true value; the dot beyond the fixed end is not drawn.
     expect(screen.getByRole('status').textContent).toContain('cpu: 140 °C');
-    expect(container.querySelector('circle.line-dot')?.getAttribute('clip-path')).toBe(
-      `url(#${id})`
+    expect(container.querySelector('circle.line-dot')).toBeNull();
+
+    // The dot on the fixed end is drawn whole, unclipped.
+    fireEvent.pointerMove(screen.getByTestId('line-plot'), { clientX: 10_000 });
+    const dot = container.querySelector('circle.line-dot');
+
+    expect(dot?.getAttribute('cy')).toBe('0');
+    expect(dot?.hasAttribute('clip-path')).toBe(false);
+  });
+
+  it('cuts a value just past a fixed end and leaves its dot out', () => {
+    const { container } = render(
+      <LineChart
+        {...props}
+        series={[
+          {
+            label: 'cpu',
+            points: [
+              { at: 0, value: 101 },
+              { at: 500, value: null },
+              { at: 1000, value: 100 }
+            ]
+          }
+        ]}
+        valueMax={100}
+        valueMin={0}
+      />
     );
+    const top = Number(container.querySelector('clipPath rect')?.getAttribute('y'));
+    const ys = [
+      ...(container.querySelector('path.line-series')?.getAttribute('d') ?? '').matchAll(
+        /M [\d.]+ (-?[\d.]+)/g
+      )
+    ].map((match) => Number(match[1]));
+
+    // 101 on a 146px plot sits 1.5px over its top, past the clip's edge, so none of it shows.
+    expect(ys).toEqual([-1.5, 0]);
+    // Its stroke reaches 0.75px either side of it, so not past the clip's top.
+    expect(ys[0]! + 0.75).toBeLessThanOrEqual(top);
+    // Of the two lone values, only the one on the fixed end gets its dot.
+    expect(
+      [...container.querySelectorAll('circle.line-dot')].map((dot) => dot.getAttribute('cy'))
+    ).toEqual(['0']);
   });
 
   it('scales to the values when the fixed range is out of order or not finite', () => {

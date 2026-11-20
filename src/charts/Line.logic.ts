@@ -49,7 +49,8 @@ export function valueDomain(values: readonly (number | null)[], fixed: ValueRang
   if (range.min !== undefined && range.max !== undefined) return { min: range.min, max: range.max };
 
   let min = range.min ?? 0;
-  let max = range.min ?? 0;
+  // The free top starts from zero, as on an axis with no fixed end, or from a fixed bottom above it.
+  let max = Math.max(0, range.min ?? 0);
 
   for (const value of values) {
     if (value === null || !Number.isFinite(value)) continue;
