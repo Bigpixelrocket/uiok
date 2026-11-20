@@ -1,5 +1,6 @@
 /*
- * The geometry of the line chart (`LineChart.tsx`): the value axis's domain,
+ * The geometry of the line chart (`LineChart.tsx`): the value axis's domain
+ * (scaled to the values, or between the ends the chart fixes),
  * each series' path with its gaps, the point nearest a moment for the
  * hover's read-out, and where the time labels fit.
  */
@@ -12,19 +13,59 @@ export interface LinePoint {
   readonly value: number | null;
 }
 
+/** The ends of the value axis a chart fixes; an end left out is scaled to the values. */
+export interface ValueRange {
+  readonly min?: number;
+  readonly max?: number;
+}
+
+/**
+ * The fixed ends a chart can use: a non-finite end counts as unset, and
+ * both are dropped when the top is not above the bottom, so the axis
+ * scales to its values as if neither were given.
+ */
+export function valueRange(min: number | undefined, max: number | undefined): ValueRange {
+  const low = min !== undefined && Number.isFinite(min) ? min : undefined;
+  const high = max !== undefined && Number.isFinite(max) ? max : undefined;
+
+  if (low !== undefined && high !== undefined && high <= low) return {};
+  return {
+    ...(low === undefined ? {} : { min: low }),
+    ...(high === undefined ? {} : { max: high })
+  };
+}
+
 /**
  * The value axis's domain over every value shown: from zero, or the lowest
  * value where one is below zero, to the highest, with a tenth to spare
  * above it; the unit domain when nothing is shown or every value is zero.
+ * An end `fixed` sets (after `valueRange`'s checks) is used exactly, with
+ * nothing to spare, and the other end scales as above over the values and
+ * the fixed end; a value beyond a fixed end does not move it.
  */
-export function valueDomain(values: readonly (number | null)[]): Domain {
-  let min = 0;
-  let max = 0;
+export function valueDomain(values: readonly (number | null)[], fixed: ValueRange = {}): Domain {
+  const range = valueRange(fixed.min, fixed.max);
+
+  if (range.min !== undefined && range.max !== undefined) return { min: range.min, max: range.max };
+
+  let min = range.min ?? 0;
+  // The free top starts from zero, as on an axis with no fixed end, or from a fixed bottom above it.
+  let max = Math.max(0, range.min ?? 0);
 
   for (const value of values) {
     if (value === null || !Number.isFinite(value)) continue;
     if (value < min) min = value;
     if (value > max) max = value;
+  }
+  if (range.min !== undefined) {
+    return max > range.min
+      ? { min: range.min, max: max + (max - range.min) / 10 }
+      : { min: range.min, max: range.min + 1 };
+  }
+  if (range.max !== undefined) {
+    return min < range.max
+      ? { min: min < 0 ? min - (range.max - min) / 10 : min, max: range.max }
+      : { min: range.max - 1, max: range.max };
   }
   if (max === min) return { min, max: min + 1 };
   return { min: min < 0 ? min - (max - min) / 10 : min, max: max + (max - min) / 10 };

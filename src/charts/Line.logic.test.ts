@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { linePath, lonePoints, nearestMoment, timeTickLabels, valueDomain } from './Line.logic.js';
+import {
+  linePath,
+  lonePoints,
+  nearestMoment,
+  timeTickLabels,
+  valueDomain,
+  valueRange
+} from './Line.logic.js';
+import { ticksOf } from './Scatter.logic.js';
 
 describe('the line chart’s geometry', () => {
   it('starts the value axis at zero, below it only for negative values, with room above', () => {
@@ -8,6 +16,49 @@ describe('the line chart’s geometry', () => {
     expect(valueDomain([-10, 10])).toEqual({ min: -12, max: 12 });
     expect(valueDomain([])).toEqual({ min: 0, max: 1 });
     expect(valueDomain([0, 0])).toEqual({ min: 0, max: 1 });
+  });
+
+  it('uses a fixed end exactly and scales the other one to the values', () => {
+    expect(valueDomain([20, 140], { min: 0, max: 100 })).toEqual({ min: 0, max: 100 });
+    expect(valueDomain([60, 80], { min: 50 })).toEqual({ min: 50, max: 83 });
+    expect(valueDomain([20, 40], { max: 100 })).toEqual({ min: 0, max: 100 });
+    expect(valueDomain([-20, 40], { max: 100 })).toEqual({ min: -32, max: 100 });
+    // Every value beyond the fixed end: the free end gives the unit span.
+    expect(valueDomain([10, 20], { min: 50 })).toEqual({ min: 50, max: 51 });
+    expect(valueDomain([10, 20], { max: -5 })).toEqual({ min: -6, max: -5 });
+    // A fixed bottom below zero: the free top still starts from zero, as with no fixed end.
+    expect(valueDomain([-30, -10], { min: -50 })).toEqual({ min: -50, max: 5 });
+    expect(valueDomain([-30, 20], { min: -50 })).toEqual({ min: -50, max: 27 });
+  });
+
+  it('keeps every tick of a fixed value axis inside it', () => {
+    for (const domain of [
+      valueDomain([], { min: 0, max: 100 }),
+      valueDomain([], { min: 3, max: 97 }),
+      valueDomain([], { min: -0.5, max: 0.25 }),
+      // A narrow span far from zero, where rounding a tick to 12 digits would leave the domain.
+      valueDomain([], { min: 1_700_000_000_001, max: 1_700_000_000_004 }),
+      // A bottom whose first multiple of the step lands a float's width below it.
+      valueDomain([], { min: 1.8000000000000003, max: 2.3 })
+    ]) {
+      const ticks = ticksOf(domain, 'number', 5);
+
+      expect(ticks.length).toBeGreaterThan(1);
+      for (const tick of ticks) {
+        expect(tick).toBeGreaterThanOrEqual(domain.min);
+        expect(tick).toBeLessThanOrEqual(domain.max);
+      }
+    }
+  });
+
+  it('ignores a fixed end that is not finite, and both ends when they are out of order', () => {
+    expect(valueRange(Number.NaN, 100)).toEqual({ max: 100 });
+    expect(valueRange(0, Number.POSITIVE_INFINITY)).toEqual({ min: 0 });
+    expect(valueRange(100, 100)).toEqual({});
+    expect(valueRange(100, 0)).toEqual({});
+    expect(valueRange(undefined, undefined)).toEqual({});
+    expect(valueDomain([2, 10], { min: 10, max: 0 })).toEqual(valueDomain([2, 10]));
+    expect(valueDomain([2, 10], { min: Number.NaN, max: Number.NaN })).toEqual({ min: 0, max: 11 });
   });
 
   it('breaks a line where a value is missing, and still draws a lone value', () => {

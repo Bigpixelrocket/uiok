@@ -769,6 +769,12 @@ a {
   min-width: 0;
 }
 
+/* Line charts stacked over one time window, a little air between them. */
+.charts-stack {
+  display: grid;
+  gap: var(--space-6);
+}
+
 .charts-pair {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);

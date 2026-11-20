@@ -2,13 +2,13 @@
 
 SVG charts painted from the theme's chart tokens, so they follow light, dark, and every theme without a colour of their own:
 
-- `LineChart`: a time series per line, with a hover read-out and an optional drag to pick a time range.
+- `LineChart`: a time series per line, with a hover read-out, an optional drag to pick a time range, dashed reference lines, and an optional fixed value axis.
 - `PieChart`: slices with a legend of values and shares.
 - `ScatterChart`: points on number, time, or category axes, with drag-to-zoom and a resizable frame.
 - `ResultChart`: a table of rows drawn as bar, column, line, spline, area, pie, timeline, or scatter, stackable where it makes sense, with title, legend, and axes inside the SVG so it saves whole as a picture.
 - `tokenColour`, `svgMarkup`, `svgPng`: save a chart as SVG text or PNG bytes.
 
-Series take `--chart-1` to `--chart-8` in turn and start over after the eighth (a pie's slices then hatch; see `ResultChart` and `PieChart`). `seriesColour(index)` gives that colour as a `var()` (`seriesColour(2)` is `'var(--chart-3)'`), so a series an app draws outside these charts, in its own legend or plot, matches theirs. The chrome reads `--text`, `--text-dim`, `--row-meta-text`, `--border`, `--border-strong`, `--surface`, `--accent`, and `--hover-wash`.
+Series take `--chart-1` to `--chart-8` in turn and start over after the eighth (a pie's slices then hatch; see `ResultChart` and `PieChart`). `seriesColour(index)` gives that colour as a `var()` (`seriesColour(2)` is `'var(--chart-3)'`), so a series an app draws outside these charts, in its own legend or plot, matches theirs. A `LineSeries` may name its own `colour` instead. The chrome reads `--text`, `--text-dim`, `--row-meta-text`, `--border`, `--border-strong`, `--surface`, `--accent`, and `--hover-wash`, and a `LineChart`'s reference lines `--text-dim`, `--warning`, and `--danger`.
 
 ## Example
 
@@ -27,6 +27,25 @@ const clock = new Intl.DateTimeFormat(locale, { timeStyle: 'medium' });
   format={(value) => count.format(value)}
   timeText={(at) => clock.format(at)}
   onSelect={(from, to) => zoomTo(from, to)}
+/>
+
+<LineChart
+  label="Load"
+  series={[
+    { label: 'CPU', points: cpu },
+    { label: 'Hottest sensor', points: celsius, colour: 'var(--text)' }
+  ]}
+  references={[
+    { value: 90, label: 'Warning', tone: 'warning' },
+    { value: 98, label: 'Critical', tone: 'danger' }
+  ]}
+  valueMin={0}
+  valueMax={100}
+  valueAxisWidth={44} // the same on every chart in the stack, so their plots line up
+  from={t0}
+  to={t2}
+  format={(value) => count.format(value)}
+  timeText={(at) => clock.format(at)}
 />
 
 <PieChart label="Time per state" slices={[{ label: 'busy', value: 3 }, { label: 'idle', value: 1 }]} format={(value) => count.format(value)} />
@@ -75,17 +94,29 @@ function SavableChart({ table }: { table: Table }) {
 
 ### `LineChart` (`LineChartProps`)
 
-| Prop       | Type                                 | Meaning                                                                                             |
-| ---------- | ------------------------------------ | --------------------------------------------------------------------------------------------------- |
-| `label`    | `string`                             | The accessible name of the `<figure>`                                                               |
-| `series`   | `readonly LineSeries[]`              | `{ label, points }`, each point `{ at, value }` in time order; a `null` value breaks the line       |
-| `from`     | `number`                             | The time axis's start, Unix milliseconds                                                            |
-| `to`       | `number`                             | Its end; points outside `from` to `to` are not drawn                                                |
-| `format`   | `(value: number) => string`          | A value as the axis and the read-out write it                                                       |
-| `timeText` | `(at: number) => string`             | A moment as the axis and the read-out write it                                                      |
-| `onSelect` | `(from: number, to: number) => void` | Optional. A drag across the plot hands over the picked range, earlier end first; a click picks none |
+| Prop             | Type                                 | Meaning                                                                                                                    |
+| ---------------- | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `label`          | `string`                             | The accessible name of the `<figure>`                                                                                      |
+| `series`         | `readonly LineSeries[]`              | `{ label, points, colour? }`, each point `{ at, value }` in time order; a `null` value breaks the line                     |
+| `from`           | `number`                             | The time axis's start, Unix milliseconds                                                                                   |
+| `to`             | `number`                             | Its end; points outside `from` to `to` are not drawn                                                                       |
+| `format`         | `(value: number) => string`          | A value as the axis, the read-out, and a reference's legend entry write it                                                 |
+| `timeText`       | `(at: number) => string`             | A moment as the axis and the read-out write it                                                                             |
+| `onSelect`       | `(from: number, to: number) => void` | Optional. A drag across the plot hands over the picked range, earlier end first; a click picks none                        |
+| `references`     | `readonly LineReference[]`           | Optional. `{ value, label, tone? }` horizontal lines; `tone` is `'neutral'` (the default), `'warning'`, or `'danger'`      |
+| `valueMin`       | `number`                             | Optional. The value axis's bottom, used exactly; unset, it scales to the values                                            |
+| `valueMax`       | `number`                             | Optional. The value axis's top, used exactly; unset, it scales to the values                                               |
+| `valueAxisWidth` | `number`                             | Optional. The pixels left of the plot for the value labels, in place of the widest label's; it should fit the widest label |
 
 The chart fills its frame's width and is 55% as high, clamped to 120 to 360 pixels. Time labels are measured after the first layout so they never overlap or leave the plot.
+
+A series' `colour` is any CSS colour (`'var(--text)'`, for a series that must not read as a warning hue) and paints its line, dots, read-out swatch, and legend swatch; every other series keeps its position's `--chart-*` token, so one override shifts no other colour.
+
+A reference line is a dashed line across the plot at its `value`, under the series, in `--text-dim`, `--warning`, or `--danger` by its tone. It has no hover dot and is not in the read-out. The legend lists it after the series, a dashed swatch in its tone and its label with its value (`charts.seriesValue`, "Warning: 90 °C"), so it reads without its colour. A reference whose value is not finite is left out, and references alone, with no series value to draw, show the empty state.
+
+The value axis runs from zero (or below, for a negative value) to a tenth over the highest value, references included. `valueMin` and `valueMax` fix either end exactly, with nothing to spare; the end left unset still scales to the values. A non-finite end counts as unset, and when both are set with `valueMax` not above `valueMin` both are ignored and the axis scales as if neither were given. With a fixed end, a series line beyond it is cut at the plot's edge (an SVG clip that spares half a line's stroke, so a line on the end keeps its whole stroke), and a reference or dot beyond it is not drawn (it stays in the legend), rather than the axis stretching to fit it; the read-out still shows the true value. With only `valueMin` set, the free top starts from zero, as on an axis with no fixed end, or from `valueMin` when it is above zero.
+
+`valueAxisWidth` fixes the gutter for the value labels, so charts stacked over one time window, given the same width, put their plots at the same left edge. Unset, the gutter is the widest label's width plus 8 pixels, at least 52. A width that is not finite or not above zero is ignored.
 
 ### `PieChart` (`PieChartProps`)
 
@@ -128,7 +159,7 @@ Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for 
 
 ## Look
 
-Every chart shares one vocabulary: caption-size type with tabular figures; a 10px swatch with a 2px corner, a dash for a line series; a left axis and a baseline in `--border-strong` with grid lines in `--border-faint`, never a box; a hovered mark ringed in `--text`; a dragged range in `--accent-wash`. A `LineChart` value with no value beside it (a series of one point, or one between two gaps) is a dot at rest, since a line of one point has no length. Hovering a `LineChart` puts a dot on every line at the guide and a read-out in the tooltip's look; hovering a `ResultChart` mark puts the same read-out beside it. An axis whose ticks lie too close together for their size to tell apart in short form (epoch milliseconds on a number axis) labels the first tick in full and the rest by their offset from it (`+100M`). Area fills are faint (`--chart-area-opacity`) and lie under the grid; where unstacked areas overlap, only the front series' tint shows (a mask cuts each fill wherever a series in front has its own), so an overlap never mixes into a hue the legend lacks; the unlit pie slices step back to `--dimmed-opacity`. Hovering a pie slice or its legend row lights both and steps the other slices back.
+Every chart shares one vocabulary: caption-size type with tabular figures; a 10px swatch with a 2px corner, a dash for a line series and a dash broken in two for a reference line; a left axis and a baseline in `--border-strong` with grid lines in `--border-faint`, never a box; a hovered mark ringed in `--text`; a dragged range in `--accent-wash`. A `LineChart` value with no value beside it (a series of one point, or one between two gaps) is a dot at rest, since a line of one point has no length. Hovering a `LineChart` puts a dot on every line at the guide and a read-out in the tooltip's look; hovering a `ResultChart` mark puts the same read-out beside it. An axis whose ticks lie too close together for their size to tell apart in short form (epoch milliseconds on a number axis) labels the first tick in full and the rest by their offset from it (`+100M`). Area fills are faint (`--chart-area-opacity`) and lie under the grid; where unstacked areas overlap, only the front series' tint shows (a mask cuts each fill wherever a series in front has its own), so an overlap never mixes into a hue the legend lacks; the unlit pie slices step back to `--dimmed-opacity`. Hovering a pie slice or its legend row lights both and steps the other slices back.
 
 A chart with no values keeps its plot's place and centres one dim line in it (`charts.noValue`): a `LineChart` draws its axes only, a `PieChart` a dashed ring, a `ScatterChart` its axes and titles, and a `ResultChart` its title, axes, and titles. The rules are `.chart-empty` (an HTML plot) and `.chart-empty-text` (inside an SVG).
 
@@ -152,4 +183,4 @@ Nothing is fetched: the SVG is loaded from its own `data:` URL. Writing the byte
 
 ## Labels read
 
-`charts`: `noValue` (every chart with no values), `time` and `seriesValue` (`LineChart` read-out), `points`, `pointsShown`, and `resetZoom` (`ScatterChart` caption), `seriesValue`, `seriesCategoryValue`, `noValue`, and `chart` (`ResultChart`), `coloursUnreadable` and `drawFailed` (`tokenColour`, `svgPng`, when passed). See [labels](../labels.md).
+`charts`: `noValue` (every chart with no values), `time` and `seriesValue` (`LineChart` read-out; `seriesValue` also writes a reference's legend entry), `points`, `pointsShown`, and `resetZoom` (`ScatterChart` caption), `seriesValue`, `seriesCategoryValue`, `noValue`, and `chart` (`ResultChart`), `coloursUnreadable` and `drawFailed` (`tokenColour`, `svgPng`, when passed). See [labels](../labels.md).
