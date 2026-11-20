@@ -26,10 +26,11 @@ const MARGIN = { top: 8, right: 10, bottom: 22, left: 52 };
 
 /**
  * How far past the plot's edges the clip of a chart with a fixed end
- * reaches: half the 1.5px stroke of a series or reference line
- * (`charts.css`), so a line on a fixed end, or ending at the time axis's
- * start or end, keeps its whole stroke, and one beyond a fixed end is cut
- * there. Dots are not clipped; a dot beyond a fixed end is not drawn.
+ * reaches: half the 1.5px stroke of a series line (`charts.css`), so a
+ * line on a fixed end, or ending at the time axis's start or end, keeps
+ * its whole stroke, and one beyond a fixed end is cut there. Dots and
+ * reference lines are not clipped: one beyond a fixed end, or a dot
+ * outside the time axis, is not drawn.
  */
 const CLIP_SPARE = 0.75;
 
@@ -82,7 +83,8 @@ export interface LineChartProps {
   /**
    * The value axis's fixed top, used exactly; unset, it scales to the
    * values. A non-finite end counts as unset, and a top not above the
-   * bottom drops both. Values beyond a fixed end are cut at the plot's edge.
+   * bottom drops both. A line beyond a fixed end is cut at the plot's
+   * edge; a reference or dot beyond it is not drawn.
    */
   readonly valueMax?: number;
   /**
@@ -211,9 +213,12 @@ export function LineChart({
     return unscaled(x, time, 0, plotWidth);
   };
   const shown = hover === null ? null : nearestMoment(moments, hover);
-  /** Whether a dot at `value` is drawn: always, unless it lies beyond a fixed end. */
+  /** Whether a reference or dot at `value` is drawn: always, unless it lies beyond a fixed end. */
   const onAxis = (value: number): boolean =>
     clipPath === undefined || (value >= values.min && value <= values.max);
+  /** Whether a dot at moment `at` and `value` is drawn: with a fixed end, only inside the plot. */
+  const onPlot = (at: number, value: number): boolean =>
+    onAxis(value) && (clipPath === undefined || (at >= time.min && at <= time.max));
   /** A series' colour: its own, or its position's chart token. */
   const colourOf = (entry: LineSeries, index: number): string =>
     entry.colour ?? seriesColour(index);
@@ -272,17 +277,18 @@ export function LineChart({
                 </g>
               ))}
               <path className="line-axes" d={`M0 0V${plotHeight}H${plotWidth}`} />
-              {lines.map((reference, index) => (
-                <line
-                  className={`line-reference line-reference-${reference.tone ?? 'neutral'}`}
-                  clipPath={clipPath}
-                  key={`ref${index}:${reference.label}`}
-                  x1={0}
-                  x2={plotWidth}
-                  y1={py(reference.value)}
-                  y2={py(reference.value)}
-                />
-              ))}
+              {lines.map((reference, index) =>
+                onAxis(reference.value) ? (
+                  <line
+                    className={`line-reference line-reference-${reference.tone ?? 'neutral'}`}
+                    key={`ref${index}:${reference.label}`}
+                    x1={0}
+                    x2={plotWidth}
+                    y1={py(reference.value)}
+                    y2={py(reference.value)}
+                  />
+                ) : null
+              )}
               {series.map((entry, index) => (
                 <path
                   className="line-series"
@@ -300,7 +306,7 @@ export function LineChart({
                 lonePoints(
                   entry.points.filter((point) => point.at >= time.min && point.at <= time.max)
                 )
-                  .filter((point) => onAxis(point.value ?? 0))
+                  .filter((point) => onPlot(point.at, point.value ?? 0))
                   .map((point) => (
                     <circle
                       className="line-dot"
@@ -319,7 +325,7 @@ export function LineChart({
                 series.map((entry, index) => {
                   const value = entry.points.find((point) => point.at === shown)?.value ?? null;
 
-                  return value === null || !onAxis(value) ? null : (
+                  return value === null || !onPlot(shown, value) ? null : (
                     <circle
                       className="line-dot"
                       cx={px(shown)}

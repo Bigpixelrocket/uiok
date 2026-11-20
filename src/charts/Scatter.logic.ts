@@ -125,6 +125,9 @@ function stepTicks(domain: Domain, kind: 'number' | 'time', count: number): numb
     const rounded = Number(at.toPrecision(12));
     const tick = rounded < domain.min || rounded > domain.max ? at : rounded;
 
+    // A first multiple the division left a float's width below the domain is not on the axis.
+    if (tick < domain.min) continue;
+
     if (tick !== ticks.at(-1)) ticks.push(tick);
   }
   return ticks;

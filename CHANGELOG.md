@@ -11,13 +11,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - `LineChart` `references` (`LineReference`: `value`, `label`, `tone`; `LineReferenceTone`: `'neutral'`, `'warning'`, `'danger'`): dashed horizontal lines across the plot under the series, in `--text-dim`, `--warning`, or `--danger`. The legend lists each after the series with a dashed swatch and its value ("Warning: 90 °C"); the read-out and hover dots leave them out, and the automatic value axis grows to show them. A reference whose value is not finite is left out.
-- `LineChart` `valueMin` and `valueMax`: fix either end of the value axis exactly; an unset end still scales to the values. A non-finite end counts as unset, and a `valueMax` not above `valueMin` drops both. Lines and references beyond a fixed end are cut at the plot's edge and dots there are not drawn; the read-out still shows the true value.
+- `LineChart` `valueMin` and `valueMax`: fix either end of the value axis exactly; an unset end still scales to the values. A non-finite end counts as unset, and a `valueMax` not above `valueMin` drops both. Lines beyond a fixed end are cut at the plot's edge, and references and dots there are not drawn; the read-out still shows the true value.
 - `LineChart` `valueAxisWidth`: a fixed gutter for the value labels, so charts stacked over one time window line up.
 - `LineSeries` `colour`: a CSS colour for one series' line, dots, and swatches; the other series keep their positions' `--chart-*` tokens.
 
 ### Fixed
 
-- A number or time axis over a narrow span far from zero (a fixed `LineChart` range, a deep `ScatterChart` zoom) no longer rounds a tick to a value outside the axis.
+- A number or time axis over a narrow span far from zero (a fixed `LineChart` range, a deep `ScatterChart` zoom) no longer puts a tick outside the axis.
 
 ## [0.2.1] - 2026-11-16
 

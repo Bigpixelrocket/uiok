@@ -258,7 +258,11 @@ describe('the line chart’s references, fixed range, gutter, and colours', () =
     const { container } = render(
       <LineChart
         {...props}
-        references={[{ value: 120, label: 'Over', tone: 'danger' }]}
+        references={[
+          { value: 120, label: 'Over', tone: 'danger' },
+          { value: 100.5, label: 'Just over', tone: 'warning' },
+          { value: 100, label: 'Top' }
+        ]}
         series={[
           {
             label: 'cpu',
@@ -299,9 +303,18 @@ describe('the line chart’s references, fixed range, gutter, and colours', () =
       Number(plotWidth) + 1.5,
       Number(plotHeight) + 1.5
     ]);
-    for (const mark of container.querySelectorAll('path.line-series, line.line-reference')) {
-      expect(mark.getAttribute('clip-path')).toBe(`url(#${id})`);
-    }
+    expect(container.querySelector('path.line-series')?.getAttribute('clip-path')).toBe(
+      `url(#${id})`
+    );
+    // Only the reference on the fixed end is drawn, whole and unclipped; every one stays in the legend.
+    const lines = [...container.querySelectorAll('line.line-reference')];
+
+    expect(lines.map((line) => [line.getAttribute('y1'), line.hasAttribute('clip-path')])).toEqual([
+      ['0', false]
+    ]);
+    expect(
+      [...container.querySelectorAll('.line-legend li')].map((item) => item.textContent)
+    ).toEqual(['cpu', 'Over: 120 °C', 'Just over: 100.5 °C', 'Top: 100 °C']);
     // The 100 value sits on the plot's top edge; the 140 one is above it, cut by the clip.
     const path = container.querySelector('path.line-series')?.getAttribute('d') ?? '';
     const ys = [...path.matchAll(/[ML] [\d.]+ (-?[\d.]+)/g)].map((match) => Number(match[1]));
@@ -320,6 +333,37 @@ describe('the line chart’s references, fixed range, gutter, and colours', () =
 
     expect(dot?.getAttribute('cy')).toBe('0');
     expect(dot?.hasAttribute('clip-path')).toBe(false);
+  });
+
+  it('draws no hover dot for a moment outside the time axis on a fixed range', () => {
+    const { container } = render(
+      <LineChart
+        {...props}
+        series={[
+          {
+            label: 'cpu',
+            points: [
+              { at: -100, value: 50 },
+              { at: 500, value: 60 }
+            ]
+          }
+        ]}
+        valueMax={100}
+        valueMin={0}
+      />
+    );
+
+    // The pointer at the plot's left edge is nearest the reading before the time axis starts.
+    fireEvent.pointerMove(screen.getByTestId('line-plot'), { clientX: 0 });
+    expect(screen.getByRole('status').textContent).toContain('cpu: 50 °C');
+    // Only the 60's dot at rest (a lone value in the time axis), none in the gutter.
+    const dots = () =>
+      [...container.querySelectorAll('circle.line-dot')].map((dot) => dot.getAttribute('cx'));
+
+    expect(dots()).toHaveLength(1);
+
+    fireEvent.pointerMove(screen.getByTestId('line-plot'), { clientX: 129 });
+    expect(dots()).toEqual([dots()[0], dots()[0]]);
   });
 
   it('cuts a value just past a fixed end and leaves its dot out', () => {

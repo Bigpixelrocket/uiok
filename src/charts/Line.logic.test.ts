@@ -37,7 +37,9 @@ describe('the line chart’s geometry', () => {
       valueDomain([], { min: 3, max: 97 }),
       valueDomain([], { min: -0.5, max: 0.25 }),
       // A narrow span far from zero, where rounding a tick to 12 digits would leave the domain.
-      valueDomain([], { min: 1_700_000_000_001, max: 1_700_000_000_004 })
+      valueDomain([], { min: 1_700_000_000_001, max: 1_700_000_000_004 }),
+      // A bottom whose first multiple of the step lands a float's width below it.
+      valueDomain([], { min: 1.8000000000000003, max: 2.3 })
     ]) {
       const ticks = ticksOf(domain, 'number', 5);
 
