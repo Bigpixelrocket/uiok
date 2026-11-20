@@ -7,7 +7,13 @@
 
 export { svgMarkup, svgPng, tokenColour } from './Drawing.js';
 export type { LinePoint } from './Line.logic.js';
-export { LineChart, type LineChartProps, type LineSeries } from './LineChart.js';
+export {
+  LineChart,
+  type LineChartProps,
+  type LineReference,
+  type LineReferenceTone,
+  type LineSeries
+} from './LineChart.js';
 export type { PieSlice } from './Pie.logic.js';
 export { PieChart, type PieChartProps } from './PieChart.js';
 export { ResultChart, type ResultChartProps } from './ResultChart.js';

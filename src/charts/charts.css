@@ -4,8 +4,10 @@
 
    One vocabulary for every chart: caption-size type in the interface face
    with tabular figures; a 10px swatch with a 2px corner (a 10 by 3 dash for
-   a line series); a plot with a left axis and a baseline in --border-strong
-   and grid lines in --border-faint, never a box around it; the picked or
+   a line series, broken in two for a reference line); a plot with a left
+   axis and a baseline in --border-strong and grid lines in --border-faint,
+   never a box around it; a reference line dashed in its tone (--text-dim,
+   --warning, or --danger); the picked or
    hovered mark ringed in --text; a dragged range in the accent wash; a
    read-out in the tooltip's look; and, with nothing to draw, the plot's
    place kept with one dim line centred in it. */
@@ -151,9 +153,16 @@
   border-radius: var(--radius-xs);
 }
 
-/* LineChart: a frame as wide as its cell, the plot's grid and axes, a line
-   per series in the series colours, the hover's guide with a dot on every
-   line and the read-out, a dragged time range, and the legend under it. */
+/* A reference line's swatch: the dash broken as its line is, 4px on, 2px
+   off, 4px on, in the tone's colour. */
+.line-swatch-dashed {
+  background: repeating-linear-gradient(90deg, var(--line-reference) 0 4px, transparent 4px 6px);
+}
+
+/* LineChart: a frame as wide as its cell, the plot's grid and axes, dashed
+   reference lines under a line per series in the series colours (or the
+   colour a series names), the hover's guide with a dot on every line and
+   the read-out, a dragged time range, and the legend under it. */
 .line-chart {
   display: flex;
   flex-direction: column;
@@ -198,6 +207,27 @@
   stroke-width: 1.5;
   stroke-linejoin: round;
   stroke-linecap: round;
+}
+
+/* A reference line (a limit, a target) and its swatch take their tone's
+   colour; the dash sets it apart from a series in any hue. */
+.line-reference-neutral {
+  --line-reference: var(--text-dim);
+}
+
+.line-reference-warning {
+  --line-reference: var(--warning);
+}
+
+.line-reference-danger {
+  --line-reference: var(--danger);
+}
+
+.line-reference {
+  stroke: var(--line-reference);
+  stroke-width: 1.5;
+  stroke-dasharray: 4 2;
+  pointer-events: none;
 }
 
 .line-guide {

@@ -1,6 +1,7 @@
 /**
  * Each chart over sample series: a day of requests (drag across it to pick a
- * range), time per state, price against weight (drag to zoom), and a week of
+ * range), an hour of load pinned to 0 to 100 with warning and critical
+ * lines, two charts stacked over one hour with aligned plots, time per state, price against weight (drag to zoom), and a week of
  * sales drawn as any result chart type; then edge cases (a pie of more slices
  * than series colours, a lone point between two gaps, a scatter over a
  * time-of-day axis and a category axis, and one over dates) and each chart
@@ -47,6 +48,71 @@ const REQUESTS = (() => {
   }));
   return series;
 })();
+
+const MINUTE = 60_000;
+/** The hour the load and stacked charts share. */
+const HOUR_FROM = Date.UTC(2026, 10, 6, 14, 0);
+const HOUR_TO = HOUR_FROM + HOUR;
+
+/** An hour of a machine's load, a reading a minute: CPU in percent and its hottest sensor in °C, which runs into the warning line. */
+const LOAD = (() => {
+  const random = seeded(41);
+  const minutes = Array.from({ length: 61 }, (_, minute) => minute);
+  const busy = (minute: number) => Math.max(0, Math.sin(((minute - 15) / 40) * Math.PI));
+  return [
+    {
+      label: 'CPU (%)',
+      points: minutes.map((minute) => ({
+        at: HOUR_FROM + minute * MINUTE,
+        value: Math.round(Math.min(100, 18 + busy(minute) * 74 + random() * 9))
+      }))
+    },
+    {
+      label: 'Hottest sensor (°C)',
+      // A neutral colour, so the sensor never reads as the warning line's hue.
+      colour: 'var(--text)',
+      points: minutes.map((minute) => ({
+        at: HOUR_FROM + minute * MINUTE,
+        value: Math.round(52 + busy(minute) * 40 + random() * 4)
+      }))
+    }
+  ];
+})();
+
+const LOAD_LIMITS = [
+  { value: 90, label: 'Warning (°C)', tone: 'warning' as const },
+  { value: 98, label: 'Critical (°C)', tone: 'danger' as const }
+];
+
+/** The same hour's memory in use and disk reads, two charts stacked over one time window. */
+const MEMORY = (() => {
+  const random = seeded(43);
+  return [
+    {
+      label: 'Memory in use',
+      points: Array.from({ length: 61 }, (_, minute) => ({
+        at: HOUR_FROM + minute * MINUTE,
+        value: Math.round(9_000 + minute * 70 + random() * 600)
+      }))
+    }
+  ];
+})();
+
+const READS = (() => {
+  const random = seeded(47);
+  return [
+    {
+      label: 'Disk reads',
+      points: Array.from({ length: 61 }, (_, minute) => ({
+        at: HOUR_FROM + minute * MINUTE,
+        value: Math.round(20 + (minute % 15 < 3 ? 140 : 0) + random() * 25)
+      }))
+    }
+  ];
+})();
+
+/** The value labels' gutter both stacked charts share, wide enough for "16,000 MB". */
+const STACK_GUTTER = 76;
 
 /** An hourly series with a lone reading between two gaps, drawn as a dot. */
 const LONE_POINT = [
@@ -158,6 +224,43 @@ export function ChartsDemo() {
             </button>
           )}
         </code>
+      </section>
+      <section>
+        <h3 className="demo-subhead">LineChart: reference lines, a fixed range, a series colour</h3>
+        <LineChart
+          format={(value) => count.format(value)}
+          from={HOUR_FROM}
+          label="CPU and hottest sensor"
+          references={LOAD_LIMITS}
+          series={LOAD}
+          timeText={(at) => clock.format(at)}
+          to={HOUR_TO}
+          valueMax={100}
+          valueMin={0}
+        />
+      </section>
+      <section>
+        <h3 className="demo-subhead">LineChart: stacked over one hour, plots aligned</h3>
+        <div className="charts-stack">
+          <LineChart
+            format={(value) => `${count.format(value)} MB`}
+            from={HOUR_FROM}
+            label="Memory in use"
+            series={MEMORY}
+            timeText={(at) => clock.format(at)}
+            to={HOUR_TO}
+            valueAxisWidth={STACK_GUTTER}
+          />
+          <LineChart
+            format={(value) => `${count.format(value)} MB/s`}
+            from={HOUR_FROM}
+            label="Disk reads"
+            series={READS}
+            timeText={(at) => clock.format(at)}
+            to={HOUR_TO}
+            valueAxisWidth={STACK_GUTTER}
+          />
+        </div>
       </section>
       <div className="charts-pair">
         <section>

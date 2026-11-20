@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-20
+
+### Added
+
+- `LineChart` `references` (`LineReference`: `value`, `label`, `tone`; `LineReferenceTone`: `'neutral'`, `'warning'`, `'danger'`): dashed horizontal lines across the plot under the series, in `--text-dim`, `--warning`, or `--danger`. The legend lists each after the series with a dashed swatch and its value ("Warning: 90 °C"); the read-out and hover dots leave them out, and the automatic value axis grows to show them. A reference whose value is not finite is left out.
+- `LineChart` `valueMin` and `valueMax`: fix either end of the value axis exactly; an unset end still scales to the values. A non-finite end counts as unset, and a `valueMax` not above `valueMin` drops both. Lines, dots, and references beyond a fixed end are cut at the plot's edge; the read-out still shows the true value.
+- `LineChart` `valueAxisWidth`: a fixed gutter for the value labels, so charts stacked over one time window line up.
+- `LineSeries` `colour`: a CSS colour for one series' line, dots, and swatches; the other series keep their positions' `--chart-*` tokens.
+
 ## [0.2.1] - 2026-11-16
 
 ### Added
@@ -152,7 +161,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.2...HEAD
+[0.2.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.4...v0.2.0
 [0.1.4]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.3...v0.1.4
