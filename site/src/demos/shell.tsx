@@ -661,7 +661,7 @@ export function ShellDemo(): ReactElement {
           sub="It installs when the app next starts, or now with Restart and Update."
           title={
             <>
-              <strong>2.5.0-nightly.20261113</strong> is ready
+              <strong>2.5.0-latest.412</strong> is ready to install
             </>
           }
           tone="ready"
@@ -685,7 +685,7 @@ export function ShellDemo(): ReactElement {
 
       <h3 className="demo-subhead">Channel tag</h3>
       <div className="demo-row">
-        <span className="channel-tag">Nightly 412</span>
+        <span className="channel-tag">Latest 412</span>
         <span className="channel-tag">Local</span>
         {/* A host that colours its channels sets the hue and its words. */}
         <span
