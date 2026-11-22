@@ -1148,7 +1148,7 @@ button.crumb-label > .crumb-text {
 
 /* The bar: the state's tone, the width of the old inset bar. A row in no
    state draws none. */
-:where(.listing-root) .row:is(.cursor, .marked)::after {
+:where(.listing-root) .row:is(.cursor, .marked, .row-changed)::after {
   content: '';
   width: var(--line-strong);
   background: var(--row-bar, transparent);
@@ -1236,6 +1236,42 @@ button.crumb-label > .crumb-text {
   background: var(--row-fill);
 }
 
+/* Rows a save will change, the listing form of the grid's cell states
+   (host classes through Row's className): a changed row (.row-changed)
+   on the warning wash with a warning bar on its leading edge, and a row a
+   save will delete (.row-removed) struck out in --danger on the danger
+   wash, its quiet words in the on-surface tone floored on a state ground.
+   The cursor, a mark, and a selection paint their own fill and bar over
+   either; a removed row keeps its strike. */
+:where(.listing-root) .row.row-changed:where(:not(.cursor, .marked, .selected)) {
+  --row-fill: var(--warning-wash);
+  --row-bar: var(--warning);
+
+  background: var(--row-fill);
+}
+
+:where(.listing-root) .row.row-removed:where(:not(.cursor, .marked, .selected)) {
+  --row-fill: var(--danger-wash);
+
+  background: var(--row-fill);
+}
+
+:where(.listing-root) .row.row-removed > :is(.row-name, .row-meta) {
+  text-decoration: line-through;
+  text-decoration-color: var(--danger);
+}
+
+:where(.listing-root) .row:is(.row-changed, .row-removed):where(:not(.selected)) > .row-meta {
+  color: var(--text-on-surface);
+}
+
+/* A row something is dragged over that will take the drop (.drop-target):
+   an accent outline inside its edges, over whatever state it is in. */
+:where(.listing-root) .row.drop-target,
+:where(.listing-root) .row.drop-target:is(.cursor, .marked, .selected) {
+  box-shadow: inset 0 0 0 var(--line-strong) var(--accent);
+}
+
 /* A focusable row (`Row` `focusable`) rings inside its edges: the list
    around it scrolls, and would clip a ring drawn outside. */
 :where(.listing-root) .row:focus-visible {
@@ -1315,6 +1351,13 @@ button.crumb-label > .crumb-text {
   white-space: nowrap;
 }
 
+/* A row in a tree or a plan (Row's level, as --row-level) indents its
+   name one icon column a level, so a child's name starts under its
+   parent's. At zero weight, so a host's own rule on the name wins. */
+:where(.listing-root .row > .row-name) {
+  padding-inline-start: calc(var(--row-level, 0) * var(--icon-column));
+}
+
 /* A listing selects rows, not text, as a file manager does: a drag, a
    Shift-click, or a double-click on a row never starts a text selection,
    in its name and values included, and a row copies through the host's
@@ -1358,6 +1401,13 @@ button.crumb-label > .crumb-text {
   text-align: right;
 }
 
+/* A missing value (SQL NULL) in a cell: italic in the row-meta tone, as
+   the grid's cell-null; a state row's quiet-word rule takes it to the
+   on-surface tone. */
+:where(.listing-root) .row-meta.value-null {
+  font-style: italic;
+}
+
 /* The status line closes the pane: a summary of what the pane lists. Its
    words start, and its last control's glyph ends, on the row inset, the
    edges the path bar and the rows keep. */
@@ -1379,6 +1429,19 @@ button.crumb-label > .crumb-text {
   /* A read-out of the pane's contents, so content a user may copy. */
   -webkit-user-select: text;
   user-select: text;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* A notice as the status line's message keeps to its one line: centred on
+   the bar, its words cut with an ellipsis rather than wrapped (give its
+   notice-text cutTooltip with the whole text). */
+:where(.listing-root) .pane-summary > .notice {
+  align-items: center;
+}
+
+:where(.listing-root) .pane-summary > .notice .notice-text {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1584,6 +1647,28 @@ button.crumb-label > .crumb-text {
   color: var(--text);
 }
 
+/* A warning (.warning): the warning tone's TriangleAlert, drawn as a mask
+   in --warning as the danger line's glyph is, then the words in --text. A
+   host that draws its own glyph first (an svg) gets no second one. */
+:where(.listing-root) .pane-message.warning {
+  color: var(--text);
+}
+
+:where(.listing-root) .pane-message.warning:not(:has(> svg:first-child))::before {
+  content: '';
+  flex: none;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  background: var(--warning);
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3'/%3E%3Cpath d='M12 9v4'/%3E%3Cpath d='M12 17h.01'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+}
+
+:where(.listing-root) .pane-message.warning > svg:first-child {
+  flex: none;
+  color: var(--warning);
+}
+
 /* A line that says a listing has no rows (`.empty`, Listing's `empty`)
    reads as a quiet row in the rows' place: it starts where a row's icon
    starts, in the rows' own typeface and size (the host's, as the rows'
@@ -1628,6 +1713,12 @@ button.crumb-label > .crumb-text {
 :where(.listing-root) .pane-empty > svg {
   margin-bottom: var(--space-4);
   color: var(--text-faint);
+}
+
+/* A pane that could not load (role="alert") leads with its glyph in the
+   danger tone, as every failure's glyph is. */
+:where(.listing-root) .pane-empty[role='alert'] > svg {
+  color: var(--danger);
 }
 
 :where(.listing-root) .pane-empty :is(strong, h2) {
@@ -1744,6 +1835,14 @@ button.crumb-label > .crumb-text {
   box-shadow: inset 0 0 0 var(--line-strong) var(--accent);
 }
 
+/* A note (info): an upright accent bar, the stem of an "i", as tall as the
+   dot, so it reads apart from the busy ring in the same hue. */
+:where(.listing-root) .pane-tone-info > .pane-state-dot {
+  width: var(--line-strong);
+  background: var(--accent);
+  box-shadow: none;
+}
+
 /* The busy spinner is the shared Spinner (it turns and stands still under
    reduced motion on its own); the state only colours it. */
 :where(.listing-root) .pane-state > svg.pane-state-busy {
@@ -1781,7 +1880,7 @@ button.crumb-label > .crumb-text {
    on the accent tint whatever its hue. */
 :where(.listing-root)
   .row.marked:where(:not(.selected))
-  :is(.pane-tone-ready, .pane-tone-warning, .pane-tone-danger)
+  :is(.pane-tone-ready, .pane-tone-warning, .pane-tone-danger, .pane-tone-info)
   > .pane-state-dot {
   box-shadow: 0 0 0 var(--line) var(--text-on-surface);
 }
@@ -1796,6 +1895,10 @@ button.crumb-label > .crumb-text {
 
 :where(.listing-root) .row .pane-state.pane-tone-warning {
   color: var(--warning-text);
+}
+
+:where(.listing-root) .row .pane-state.pane-tone-info {
+  color: var(--accent-text);
 }
 
 :where(.listing-root) .row .pane-state:is(.pane-tone-muted, .pane-tone-busy) {
@@ -2207,7 +2310,7 @@ button.crumb-label > .crumb-text {
       .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
     )
   )
-  :is(.pane-tone-ready, .pane-tone-warning, .pane-tone-danger)
+  :is(.pane-tone-ready, .pane-tone-warning, .pane-tone-danger, .pane-tone-info)
   > .pane-state-dot {
   box-shadow: 0 0 0 var(--line) var(--on-selected);
 }

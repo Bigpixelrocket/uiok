@@ -31,6 +31,7 @@ import { FilterEscape, FilterIcon } from '@bigpixelrocket/uiok/filter';
 The rules apply inside the listing scope, `.listing-root`:
 
 - `.filter-field` on the row that holds the marks and the input draws the field: as tall as the path bar (`--pane-path-height`), inset like a row, mono text, a `--border` foot that turns into a 2px `--accent` edge while the field holds the keys. A host may lay out its own row instead; the marks work in either.
+- A query the field refuses: set `aria-invalid="true"` on the input (and name the reason with `aria-describedby`, a `field-problem` or a tooltip). The foot turns to `--danger`, the focus edge is drawn in `--danger` instead of the accent, and a lit `.filter-icon` takes `--danger` too.
 - `.filter-icon` is `--icon-column` (20px) wide, so the query lines up with row names. It rests in `--text-dim` and lights with the accent while the field has the focus or a query.
 - `.filter-escape .keychord` is the shared key cap (`docs/components/keychord.md`). It answers hover with the frosted wash and ring and a press with the pressed wash, and its hit area grows to `--hit-target`.
 

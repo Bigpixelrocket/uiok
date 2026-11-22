@@ -566,3 +566,92 @@ describe('CurrentDot', () => {
     expect(dot.dataset.tooltip).toBe('Open folder');
   });
 });
+
+describe('the listing’s redesign additions', () => {
+  it('describes a column label by its tip, sortable or not', () => {
+    render(
+      <div className="listing-root">
+        <Listing
+          columns={[
+            { label: 'Size', tip: 'On disk, in bytes' },
+            {
+              label: 'Rows',
+              tip: 'An estimate',
+              sort: { direction: null, onSort: () => undefined }
+            }
+          ]}
+          grid="var(--icon-column) 1fr 8ch 8ch"
+          title="Tables"
+        />
+      </div>
+    );
+
+    const size = screen.getByText('Size');
+    expect(size.getAttribute('aria-description')).toBe('On disk, in bytes');
+    expect(size.dataset.tooltip).toBe('On disk, in bytes');
+    expect(size.hasAttribute('data-tooltip-cut')).toBe(false);
+
+    const sort = screen.getByRole('button', { name: /Rows/ });
+    expect(sort.getAttribute('aria-description')).toBe('An estimate');
+    expect(screen.getByText('Rows').hasAttribute('data-tooltip')).toBe(false);
+  });
+
+  it('draws an info state, and describes a state by its tip', () => {
+    render(<StateMark tip="Logged by the server at start" tone="info" word="note" />);
+    const mark = screen.getByText('note').parentElement as HTMLElement;
+
+    expect(mark.className).toBe('pane-state pane-tone-info');
+    expect(mark.getAttribute('aria-description')).toBe('Logged by the server at start');
+    expect(screen.getByText('note').hasAttribute('data-tooltip')).toBe(false);
+  });
+
+  it('indents a row’s name by its level', () => {
+    const { container, rerender } = render(<Row level={2} name="orders" rowKey="a" />);
+    const row = container.querySelector('.row') as HTMLElement;
+
+    expect(row.style.getPropertyValue('--row-level')).toBe('2');
+    rerender(<Row name="orders" rowKey="a" />);
+    expect(row.style.getPropertyValue('--row-level')).toBe('');
+  });
+
+  it('washes changed and removed rows, outlines a drop target, and tones messages', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<div class="listing-root">
+      <div class="row row-changed"><span class="row-name">a</span><span class="row-meta value-null">NULL</span></div>
+      <div class="row row-removed"><span class="row-name">b</span></div>
+      <div class="row drop-target cursor"><span class="row-name">c</span></div>
+      <p class="pane-message warning">Slow query</p>
+      <div class="pane-empty" role="alert"><svg></svg><strong>Failed</strong></div>
+      <div class="pane-summary"><div class="notice"><p class="notice-text">x</p></div></div>
+    </div>`;
+    const get = (selector: string): Element => document.querySelector(selector) as Element;
+
+    expect(declaredValues(get('.row-changed'), '--row-fill').at(-1)).toBe('var(--warning-wash)');
+    expect(declaredValues(get('.row-changed'), '--row-bar').at(-1)).toBe('var(--warning)');
+    expect(declaredValues(get('.row-removed'), '--row-fill').at(-1)).toBe('var(--danger-wash)');
+    expect(declaredValues(get('.row-removed .row-name'), 'text-decoration').at(-1)).toBe(
+      'line-through'
+    );
+    expect(declaredValues(get('.drop-target'), 'box-shadow').at(-1)).toBe(
+      'inset 0 0 0 var(--line-strong) var(--accent)'
+    );
+    expect(declaredValues(get('.value-null'), 'font-style').at(-1)).toBe('italic');
+    expect(declaredValues(get('.pane-message.warning'), 'color').at(-1)).toBe('var(--text)');
+    expect(declaredValues(get('.pane-empty > svg'), 'color').at(-1)).toBe('var(--danger)');
+    expect(declaredValues(get('.pane-summary .notice-text'), 'white-space').at(-1)).toBe('nowrap');
+    document.body.innerHTML = '';
+  });
+
+  it('draws an invalid filter field’s foot and focus edge in the danger tone', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<div class="listing-root"><label class="filter-field">
+      <span class="filter-icon"></span><input aria-invalid="true"></label></div>`;
+    const field = document.querySelector('.filter-field') as Element;
+
+    expect(declaredValues(field, 'border-bottom-color').at(-1)).toBe('var(--danger)');
+    expect(declaredValues(document.querySelector('.filter-icon') as Element, 'color').at(-1)).toBe(
+      'var(--danger)'
+    );
+    document.body.innerHTML = '';
+  });
+});

@@ -18,6 +18,9 @@
      focus edge.
    - .switch on a checkbox with role="switch": a pill track and its knob.
    - .range on an input of type range: a thin trough, its filled part, a knob.
+   - .field-editor on a container: the field's well round an editor the
+     page brings (a code editor), with its hover, focus edge, invalid,
+     read-only, and changed looks.
    - .field-label, .field-note, .field-problem: the words around a field,
      in the interface face; .field-group stacks them, .field-choice puts a
      check or switch beside its words, .field-grid lays label and value
@@ -164,14 +167,16 @@
     inset 0 1px 0 var(--well-shade);
 }
 
-.field[data-tone] {
+.field[data-tone],
+.field-editor[data-tone] {
   --field-tone-bar: var(--line-strong);
 }
 
 /* Right to left the bar stands on the right, the leading edge. The rule
    reads the dir attribute, as the listing's do: bundlers' CSS minifiers
    rewrite the direction pseudo-class into a list of languages. */
-.field[data-tone]:where([dir='rtl'] *, [dir='rtl']) {
+.field[data-tone]:where([dir='rtl'] *, [dir='rtl']),
+.field-editor[data-tone]:where([dir='rtl'] *, [dir='rtl']) {
   --field-tone-bar: calc(-1 * var(--line-strong));
 }
 
@@ -284,6 +289,96 @@ select.field-xs:not([multiple], [size]) {
 select.field option {
   background: var(--surface);
   color: var(--text);
+}
+
+/* A list box's chosen rows, which the rule above would paint away: the
+   selection's colours while the list holds the keys, the quiet fill when
+   it does not (as a listing's selection goes quiet), and the fill with
+   quiet words when the list is off. A gradient, since a browser keeps its
+   own colour for a chosen option's background-color. */
+select.field:is([multiple], [size]:not([size='1'])) option:checked {
+  background: linear-gradient(var(--selected-bg), var(--selected-bg));
+  color: var(--on-selected);
+}
+
+select.field:is([multiple], [size]:not([size='1'])):not(:focus) option:checked {
+  background: linear-gradient(var(--fill), var(--fill));
+  color: var(--text);
+}
+
+select.field:is([multiple], [size]:not([size='1'])):disabled option:checked {
+  background: linear-gradient(var(--fill), var(--fill));
+  color: var(--text-on-surface);
+}
+
+/* A field that holds no value (SQL NULL): its placeholder in the missing
+   value's look, dim italic, as a grid's NULL cell. */
+.field.value-null::placeholder {
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* -- A field's frame round an editor -- */
+
+/* An editor the page brings (a code editor) that stands in a form as a
+   field does takes the field's well on its container: the outline,
+   corners, ground, and well shade, the hover lift, the accent focus edge
+   while anything inside holds the keys, the danger outline when invalid,
+   and the accent outline and bar of a changed value (data-tone="accent").
+   Read-only (.read-only) recesses the ground and draws no focus edge: the
+   value is there to read and copy. The editor fills the frame, which
+   clips it to the corners. */
+.field-editor {
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-md);
+  box-shadow: inset 0 1px 0 var(--well-shade);
+  background: var(--ground);
+  color: var(--text);
+  transition:
+    border-color var(--duration-fast),
+    outline-color var(--duration-fast);
+}
+
+.field-editor:hover:not(
+    :focus-within,
+    [aria-invalid='true'],
+    [data-tone],
+    .read-only,
+    [aria-disabled='true']
+  ) {
+  border-color: var(--text);
+}
+
+.field-editor:focus-within {
+  border-color: var(--accent);
+  outline: var(--line) solid var(--accent);
+  outline-offset: var(--focus-offset-flush);
+}
+
+.field-editor[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+.field-editor[aria-invalid='true']:focus-within {
+  outline-color: var(--danger);
+}
+
+.field-editor[data-tone='accent']:not([aria-invalid='true']) {
+  border-color: var(--accent);
+  box-shadow:
+    inset var(--field-tone-bar) 0 0 0 var(--accent),
+    inset 0 1px 0 var(--well-shade);
+}
+
+.field-editor.read-only,
+.field-editor.read-only:focus-within {
+  border-color: var(--border-strong);
+  outline: none;
+  box-shadow: none;
+  background: var(--surface-recessed);
 }
 
 /* -- Checkbox and radio -- */
@@ -709,6 +804,19 @@ select.field option {
   color: var(--text-dim);
   font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
     var(--font-ui);
+}
+
+/* A group whose choices stand in columns (a long list of short choices):
+   --field-columns columns of equal width, 2 unless the host sets it; the
+   legend and any note span them all. */
+.field-columns {
+  display: grid;
+  grid-template-columns: repeat(var(--field-columns, 2), minmax(0, 1fr));
+  gap: var(--space-2) var(--space-6);
+}
+
+.field-columns > :is(legend, .field-note, .field-problem) {
+  grid-column: 1 / -1;
 }
 
 /* A check, radio, or switch with its words beside it; the whole label is
