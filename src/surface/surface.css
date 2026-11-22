@@ -13,7 +13,9 @@
    - .card: a lifted panel that groups one subject's lines, framed in
      --border-strong like every framed surface (panes, menus, the grid),
      at the 12px surface inset at both ends, whatever its children's
-     margins. */
+     margins.
+   - .group-swatch (GroupSwatch): a group's colour beside its name.
+   - .tag (Tag): a small worded tag in a tone beside a name. */
 
 .notice {
   /* The tone's glyph, 3:1 on every ground by its token. */
@@ -67,6 +69,14 @@
   min-width: 0;
   margin: 0;
   overflow-wrap: anywhere;
+}
+
+/* A server's or a system's own words inside a message (an error code, a
+   statement, a host) take the code face at the notice's size, so they
+   read as quoted, never as larger or smaller than the words round them. */
+.notice code {
+  font-family: var(--font-mono);
+  font-size: inherit;
 }
 
 /* A message's words are content: a path or a server's reply in them is
@@ -151,4 +161,109 @@
 
 .card > :last-child {
   margin-block-end: 0;
+}
+
+/* ---- Group swatch and tag (GroupSwatch, Tag) ---- */
+
+/* A group's colour beside its name: the mark docs/tokens.md sizes (8px,
+   a 2px corner) in a categorical hue (--group-*), square because a round
+   dot is a state mark and a colour is not a state. With no group it is
+   faint; hollow is the same group while it is closed or off: its outline
+   alone, inside the same box. */
+.group-swatch {
+  flex: none;
+  display: inline-block;
+  width: var(--space-4);
+  height: var(--space-4);
+  border-radius: var(--radius-xs);
+  background: var(--group-swatch-hue, var(--text-faint));
+  box-shadow: var(--group-dot-ring);
+}
+
+.group-swatch.hollow {
+  background: transparent;
+  box-shadow: inset 0 0 0 var(--line-strong) var(--group-swatch-hue, var(--text-faint));
+}
+
+.group-swatch[data-group='blue'] {
+  --group-swatch-hue: var(--group-blue);
+}
+
+.group-swatch[data-group='green'] {
+  --group-swatch-hue: var(--group-green);
+}
+
+.group-swatch[data-group='purple'] {
+  --group-swatch-hue: var(--group-purple);
+}
+
+.group-swatch[data-group='orange'] {
+  --group-swatch-hue: var(--group-orange);
+}
+
+.group-swatch[data-group='teal'] {
+  --group-swatch-hue: var(--group-teal);
+}
+
+.group-swatch[data-group='pink'] {
+  --group-swatch-hue: var(--group-pink);
+}
+
+.group-swatch[data-group='yellow'] {
+  --group-swatch-hue: var(--group-yellow);
+}
+
+.group-swatch[data-group='red'] {
+  --group-swatch-hue: var(--group-red);
+}
+
+/* A small worded tag beside a name (an environment, a kind, a default): a
+   pill washed in its tone, the words in the tone's text role, which keeps
+   4.5:1 on its own wash and on every state ground, so a tag stays legible
+   on the cursor row and a marked row. The words keep their case; .caps
+   sets them as a release channel's tag. */
+.tag {
+  --tag-wash: var(--fill);
+  --tag-text: var(--text-on-surface);
+
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  box-sizing: border-box;
+  max-width: 100%;
+  padding: 1px var(--space-3);
+  overflow: hidden;
+  border-radius: var(--radius-pill);
+  background: var(--tag-wash);
+  color: var(--tag-text);
+  font: var(--font-weight-medium) var(--font-size-caption) / var(--line-height-compact)
+    var(--font-ui);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tag[data-tone='accent'] {
+  --tag-wash: var(--accent-wash);
+  --tag-text: var(--accent-text);
+}
+
+.tag[data-tone='ready'] {
+  --tag-wash: var(--success-wash);
+  --tag-text: var(--success-text);
+}
+
+.tag[data-tone='warning'] {
+  --tag-wash: var(--warning-wash);
+  --tag-text: var(--warning-text);
+}
+
+.tag[data-tone='danger'] {
+  --tag-wash: var(--danger-wash);
+  --tag-text: var(--danger-text);
+}
+
+.tag.caps {
+  font-weight: var(--font-weight-strong);
+  letter-spacing: var(--tracking-caps);
+  text-transform: uppercase;
 }

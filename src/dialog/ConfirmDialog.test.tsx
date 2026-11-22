@@ -295,3 +295,62 @@ describe('ConfirmDialog', () => {
     cleanup();
   });
 });
+
+describe('ConfirmDialog confirmDisabled', () => {
+  it('holds its verb off: the slot is disabled and Return runs nothing', () => {
+    const onConfirm = vi.fn();
+
+    const { rerender } = render(
+      <ConfirmDialog
+        confirmDisabled
+        confirmLabel="Drop"
+        icon={Trash2}
+        onCancel={() => undefined}
+        onConfirm={onConfirm}
+        title="Drop Database?"
+        tone="danger"
+      />
+    );
+
+    const dialog = screen.getByRole('dialog');
+    const drop = screen.getByRole('button', { name: 'Drop' }) as HTMLButtonElement;
+
+    expect(drop.disabled).toBe(true);
+    fireEvent.keyDown(dialog, { key: 'Enter' });
+    fireEvent.click(drop);
+    expect(onConfirm).not.toHaveBeenCalled();
+
+    rerender(
+      <ConfirmDialog
+        confirmDisabled={false}
+        confirmLabel="Drop"
+        icon={Trash2}
+        onCancel={() => undefined}
+        onConfirm={onConfirm}
+        title="Drop Database?"
+        tone="danger"
+      />
+    );
+    fireEvent.keyDown(dialog, { key: 'Enter' });
+    expect(onConfirm).toHaveBeenCalledOnce();
+  });
+
+  it('passes a statement count through to its statements block', () => {
+    render(
+      <ConfirmDialog
+        confirmLabel="Run"
+        icon={TriangleAlert}
+        onCancel={() => undefined}
+        onConfirm={() => undefined}
+        statements={{
+          label: 'Statements 1–2 of 3',
+          lines: ['SELECT 1;', 'SELECT 2;'],
+          count: null
+        }}
+        title="Run These Statements?"
+      />
+    );
+
+    expect(document.querySelector('.dialog-statements-block .dialog-items-count')).toBeNull();
+  });
+});

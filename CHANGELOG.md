@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-22
+
+### Added
+
+- `PaneTabs` (`@bigpixelrocket/uiok/pane`), the tab strip a pane hangs from: pinned, following (italic), dirty, picked, and danger-toned tabs, a mark slot and a context before the name, a pin rule, New Tab, and the strip's empty end (a double-click opens a tab). Tabs behind the front one shrink to a floor, then fold into a "+N" count with a "Folded here" menu; pinned, front, and following tabs never fold. A press brings a tab to the front and may drag it (4px slop) within its side of the pin rule, carrying any picks; Escape puts every tab back and `onReorder` gets the full order. ⌘-click and ⇧-click pick tabs (`onPick`), a middle-click closes, a double-click keeps (`onKeep`).
+- Pure helpers for a host's tab state and the strip's rules: `togglePick`, `pickRun`, `pickedTabs`, `gatherTabs`, `foldOrder`, `foldsNeeded`, `tabLabelFloor`, `draggedTabOrder`.
+- The `paneTabs` label group (`PaneTabsLabels`, `DEFAULT_PANE_TABS_LABELS`).
+- `.pane[data-tone='danger']`: a pane's frame and its front tab's outline in `--danger`, at rest, active, and in an inactive window.
+- `GroupSwatch` and `Tag` (`@bigpixelrocket/uiok/surface`, a new area): a group's colour as a filled or hollow square, and a small worded tag in a neutral, accent, ready, warning, or danger tone.
+- `DataGridProps.pinnedColumns`: leading columns stay in view while the grid scrolls sideways, with a hairline at the pin edge; a column reorder never crosses it.
+- The grid cell class `cell-removed`: struck out on the danger wash, for a row a save will delete.
+- Field looks: `.field.value-null`, the `.field-editor` frame round a foreign editor (hover, focus, invalid, read-only, changed), and `.field-columns` with `--field-columns` for a check group in columns.
+- `ListingColumn.tip`, the `info` state tone, `StateMarkProps.tip`, `RowProps.level` (an indent for a tree or a plan), the row classes `row-changed`, `row-removed`, and `drop-target`, `.row-meta.value-null`, and `.pane-message.warning`.
+- `KeyLegendStripProps.overflow`: `'more'` folds the places that do not fit into a "+N" chip whose list names each folded verb with its chord and runs the one chosen. `'drop'`, the default, keeps today's behaviour.
+- `TextLink` (`@bigpixelrocket/uiok/button`): a link in words, with an optional glyph, the code face, a tooltip, and a chord.
+- `ConfirmDialogProps.confirmDisabled`: holds the primary off and its key inert, for a typed-name confirmation.
+- `DialogStatementsProps.count` (also through `ConfirmDialog` `statements`): a host's own count words in place of the line count, or none.
+- `SegmentedChoiceProps.disabled`: holds the whole choice while it cannot change.
+- `RowIconActionProps.shortcut`: the chord written after the words in its tooltip.
+- The invalid filter field look (an `aria-invalid="true"` input draws a danger edge and focus ring), `.overline.keep-case`, and `.notice code` in the code face.
+- The `Delete` key's name and ⌦ glyph in the `keys` labels.
+- `docs/tokens.md`: italic also marks a tab whose place is not fixed yet (a following tab).
+
+### Changed
+
+- Every single place in `KeyLegendStrip` has a tooltip naming its verb and chord, as a paired cap's does.
+- Arrow, Home, and End moves in `DataGrid` scroll the cursor's column into view sideways.
+
+### Fixed
+
+- `SelectAllBar`'s default count uses thousands separators ("1,000 of 20,000 selected").
+- A chosen option in a `select.field` list box (`multiple` or `size`) is no longer painted away.
+- A failed `.pane-empty[role=alert]` draws its glyph in `--danger`.
+- A `.notice` inside `.pane-summary` is cut with an ellipsis instead of wrapping.
+
 ## [0.2.2] - 2026-11-20
 
 ### Added
@@ -165,7 +200,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.2...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.3...HEAD
+[0.2.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.1.4...v0.2.0

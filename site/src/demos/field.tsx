@@ -9,7 +9,8 @@
  * three tones; the three field heights by place; groups and the rarer
  * controls (a field on the label column, a fieldset's legend, a list box, a choice
  * in running text, controls with no class); then a working form on one label
- * column.
+ * column. Then the newer looks: a NULL placeholder, a field's frame round
+ * an editor in each state, a list box's chosen rows, and choices in columns.
  *
  * A cell that shows a pointer or focus state carries `data-force` (with
  * `data-force-sel` naming the control inside it): the screenshot harness
@@ -686,6 +687,66 @@ export function FieldDemo() {
           ))}
         </div>
       </div>
+      <h3 className="demo-subhead">NULL, an editor's frame, a list box, and columns</h3>
+      <DemoStates minCell="200px">
+        <DemoState label="NULL placeholder">
+          <input aria-label="Value" className="field field-sm value-null" placeholder="NULL" />
+        </DemoState>
+        <DemoState label="Editor frame">
+          <div className="field-editor" style={{ height: 56 }}>
+            <div
+              aria-label="SQL"
+              contentEditable
+              role="textbox"
+              style={{
+                height: '100%',
+                padding: 'var(--space-2) var(--space-4)',
+                outline: 'none',
+                fontFamily: 'var(--font-mono)'
+              }}
+              suppressContentEditableWarning
+              tabIndex={0}
+            >
+              SELECT 1;
+            </div>
+          </div>
+        </DemoState>
+        <DemoState label="Editor, invalid">
+          <div aria-invalid="true" className="field-editor" style={{ height: 56 }} />
+        </DemoState>
+        <DemoState label="Editor, changed">
+          <div className="field-editor" data-tone="accent" style={{ height: 56 }} />
+        </DemoState>
+        <DemoState label="Editor, read-only">
+          <div className="field-editor read-only" style={{ height: 56 }} />
+        </DemoState>
+        <DemoState label="List box, chosen rows">
+          <select aria-label="Partitions" className="field" defaultValue={['p1', 'p3']} multiple>
+            <option value="p0">p0</option>
+            <option value="p1">p1</option>
+            <option value="p2">p2</option>
+            <option value="p3">p3</option>
+          </select>
+        </DemoState>
+        <DemoState label="List box, disabled">
+          <select aria-label="Partitions" className="field" defaultValue={['p1']} disabled multiple>
+            <option value="p0">p0</option>
+            <option value="p1">p1</option>
+          </select>
+        </DemoState>
+      </DemoStates>
+      <fieldset
+        className="field-group field-columns"
+        style={{ '--field-columns': 3 } as CSSProperties}
+      >
+        <legend>Privileges</legend>
+        {['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP'].map((privilege) => (
+          <label className="field-choice" key={privilege}>
+            <input className="check" type="checkbox" />
+            {privilege}
+          </label>
+        ))}
+      </fieldset>
     </div>
   );
 }

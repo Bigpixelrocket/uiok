@@ -135,4 +135,199 @@ describe('KeyLegendStrip', () => {
     expect(declaredValues(key, 'background')).toContain('var(--accent)');
     expect(declaredValues(key, 'color')).toContain('var(--on-accent)');
   });
+
+  it('gives a single place a tooltip naming its verb and chord', () => {
+    render(<KeyLegendStrip verbs={verbs()} />);
+
+    const copy = screen.getByRole('button', { name: 'Command C Copy' });
+
+    expect(copy.dataset.tooltip).toBe('Copy');
+    expect(copy.dataset.tooltipShortcut).toBe('⌘C');
+  });
+
+  it('draws no overflow chip by default', () => {
+    const { container } = render(<KeyLegendStrip verbs={verbs()} />);
+
+    expect(container.querySelector('.keylegend-more')).toBeNull();
+  });
+
+  describe('with overflow="more"', () => {
+    const many = (): LegendVerb[] => [
+      verb('Open', { key: 'Enter' }),
+      verb('Copy', { key: 'c', meta: true }),
+      verb('Delete', { key: 'Backspace', meta: true }),
+      verb('Refresh', { key: 'r', meta: true })
+    ];
+
+    /** Lays the strip out as if the last `count` places wrapped off the line. */
+    const wrapLast = (count: number): (() => void) => {
+      const original = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'offsetTop');
+      Object.defineProperty(HTMLElement.prototype, 'offsetTop', {
+        configurable: true,
+        get(this: HTMLElement) {
+          const row = this.parentElement;
+          if (row?.classList.contains('keylegend-verbs') !== true) {
+            return 0;
+          }
+          const at = [...row.children].indexOf(this);
+          return at >= row.children.length - count ? 24 : 0;
+        }
+      });
+      return () => {
+        if (original !== undefined) {
+          Object.defineProperty(HTMLElement.prototype, 'offsetTop', original);
+        }
+      };
+    };
+
+    it('keeps a hidden, disabled chip while every place fits', () => {
+      const { container } = render(<KeyLegendStrip overflow="more" verbs={many()} />);
+      const chip = container.querySelector('.keylegend-more') as HTMLButtonElement;
+
+      expect(chip.disabled).toBe(true);
+      expect(chip.dataset.empty).toBe('true');
+      expect(chip.getAttribute('aria-hidden')).toBe('true');
+    });
+
+    it('counts the places that wrapped and lists their verbs with chords', () => {
+      const restore = wrapLast(2);
+      try {
+        const list = many();
+        render(
+          <>
+            <input aria-label="Field" />
+            <KeyLegendStrip overflow="more" verbs={list} />
+          </>
+        );
+        const field = screen.getByRole('textbox', { name: 'Field' });
+        field.focus();
+
+        const chip = screen.getByRole('button', { name: '2 more shortcuts' });
+        expect(fireEvent.mouseDown(chip)).toBe(false);
+        expect(chip.textContent).toBe('+2');
+        expect(chip.getAttribute('aria-haspopup')).toBe('menu');
+
+        fireEvent.click(chip);
+        const menu = screen.getByRole('menu', { name: '2 more shortcuts' });
+        const items = within(menu).getAllByRole('menuitem');
+
+        expect(items.map((item) => item.querySelector('.row-name')?.textContent)).toEqual([
+          'Delete',
+          'Refresh'
+        ]);
+        expect(chip.getAttribute('aria-expanded')).toBe('true');
+        expect(document.activeElement).toBe(menu);
+
+        fireEvent.keyDown(menu, { key: 'ArrowDown' });
+        fireEvent.keyDown(menu, { key: 'Enter' });
+
+        expect(list[3]?.run).toHaveBeenCalledOnce();
+        expect(screen.queryByRole('menu')).toBeNull();
+        expect(document.activeElement).toBe(field);
+      } finally {
+        restore();
+      }
+    });
+
+    it('opens its list above the chip, ending at its right edge', () => {
+      applyStylesheets(readStylesheet('src/styles.css'));
+      const restore = wrapLast(1);
+      try {
+        render(<KeyLegendStrip overflow="more" verbs={many()} />);
+
+        fireEvent.click(screen.getByRole('button', { name: '1 more shortcut' }));
+        const menu = screen.getByRole('menu');
+
+        expect(getComputedStyle(menu).top).toBe('auto');
+        expect(getComputedStyle(menu).left).toBe('auto');
+        expect(getComputedStyle(menu).right).toBe('0px');
+      } finally {
+        restore();
+      }
+    });
+
+    it("ends its list at the chip's left edge right to left", () => {
+      applyStylesheets(readStylesheet('src/styles.css'));
+      const restore = wrapLast(1);
+      try {
+        render(
+          <div dir="rtl">
+            <KeyLegendStrip overflow="more" verbs={many()} />
+          </div>
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: '1 more shortcut' }));
+        const menu = screen.getByRole('menu');
+
+        expect(getComputedStyle(menu).left).toBe('0px');
+        expect(getComputedStyle(menu).right).toBe('auto');
+      } finally {
+        restore();
+      }
+    });
+
+    it('keeps the left-to-right place in an LTR footer inside an RTL page', () => {
+      applyStylesheets(readStylesheet('src/styles.css'));
+      const restore = wrapLast(1);
+      try {
+        render(
+          <div dir="rtl">
+            <div dir="ltr">
+              <KeyLegendStrip overflow="more" verbs={many()} />
+            </div>
+          </div>
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: '1 more shortcut' }));
+        const menu = screen.getByRole('menu');
+
+        expect(getComputedStyle(menu).left).toBe('auto');
+        expect(getComputedStyle(menu).right).toBe('0px');
+      } finally {
+        restore();
+      }
+    });
+
+    it('closes its list on Escape without running anything', () => {
+      const restore = wrapLast(1);
+      try {
+        const list = many();
+        render(
+          <>
+            <input aria-label="Field" />
+            <KeyLegendStrip overflow="more" verbs={list} />
+          </>
+        );
+        const field = screen.getByRole('textbox', { name: 'Field' });
+        field.focus();
+
+        const chip = screen.getByRole('button', { name: '1 more shortcut' });
+        fireEvent.click(chip);
+        fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+
+        expect(screen.queryByRole('menu')).toBeNull();
+        expect(
+          list.every((entry) => !(entry.run as ReturnType<typeof vi.fn>).mock.calls.length)
+        ).toBe(true);
+        expect(document.activeElement).toBe(field);
+      } finally {
+        restore();
+      }
+    });
+
+    it('runs a folded verb on click', () => {
+      const restore = wrapLast(1);
+      try {
+        const list = many();
+        render(<KeyLegendStrip overflow="more" verbs={list} />);
+
+        fireEvent.click(screen.getByRole('button', { name: '1 more shortcut' }));
+        fireEvent.click(screen.getByRole('menuitem', { name: 'Command R Refresh' }));
+
+        expect(list[3]?.run).toHaveBeenCalledOnce();
+      } finally {
+        restore();
+      }
+    });
+  });
 });

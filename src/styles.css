@@ -28,6 +28,7 @@
 @import './palette/palette.css';
 @import './charts/charts.css';
 @import './terminal/terminal.css';
+@import './pane/panetabs.css';
 
 /* Shared looks a page puts on its own markup: form controls, notices, cards. */
 @import './field/field.css';
@@ -198,6 +199,13 @@ meter::-webkit-meter-even-less-good-value {
     var(--font-ui);
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
+}
+
+/* An overline over a group named by a name of its own (a schema, a host)
+   keeps that name's case, and the tracking that only capitals need. */
+.overline.keep-case {
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 /* A translucent layer over content that scrolls under it: the one frost

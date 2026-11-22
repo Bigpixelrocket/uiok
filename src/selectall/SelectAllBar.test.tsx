@@ -22,6 +22,16 @@ describe('SelectAllBar', () => {
     expect(screen.getByRole('button', { name: 'Delete' })).toBeDefined();
   });
 
+  it('counts with thousands separators', () => {
+    render(
+      <SelectAllBar checked={1_000} onCheckAll={() => undefined} total={20_000}>
+        <button type="button">Delete</button>
+      </SelectAllBar>
+    );
+
+    expect(screen.getByRole('toolbar').textContent).toContain('1,000 of 20,000 selected');
+  });
+
   it('ticks when every row is, mixes when some are, and clears when none are', () => {
     const { rerender } = render(
       <SelectAllBar checked={0} onCheckAll={() => undefined} total={3}>

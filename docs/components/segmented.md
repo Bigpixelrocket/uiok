@@ -29,6 +29,7 @@ import { SegmentedChoice } from '@bigpixelrocket/uiok/segmented';
 | `onChange`         | `(value: T) => void`       | Called with a new choice; not for the chosen one                                                                                      |
 | `render`           | `(choice: T) => ReactNode` | A segment's content                                                                                                                   |
 | `disabledChoices`  | `readonly T[]?`            | Choices that cannot be taken now; none by default                                                                                     |
+| `disabled`         | `boolean?`                 | Holds the whole choice (a change it started is running): every segment disabled, the chosen one still drawn chosen                    |
 | `aria-description` | `string?`                  | What the choice does, read when the group takes focus: spread `labelHelp(help).control` here and `labelHelp(help).label` on the label |
 
 ## Help

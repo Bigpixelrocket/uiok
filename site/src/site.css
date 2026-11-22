@@ -711,6 +711,13 @@ a {
   background: var(--ground);
 }
 
+/* A frame whose strip opens its overflow list above it: room for the list,
+   and nothing clipped. */
+.legend-frame-open {
+  overflow: visible;
+  margin-top: calc(var(--space-16) * 6);
+}
+
 .run-frame {
   padding: var(--space-6) var(--space-8);
 }
@@ -723,6 +730,21 @@ a {
 
 .pane-demo-sidebar {
   flex: 0 0 180px;
+}
+
+/* The Pane demo's tab strip: a pane hanging from its tabs, whose frame a
+   reader can narrow from its corner to see the tabs shrink, then fold. */
+.demo-tabs {
+  display: flex;
+  min-width: 240px;
+  max-width: 100%;
+  height: 160px;
+  overflow: hidden;
+  resize: horizontal;
+}
+
+.demo-tabs .pane-list {
+  flex: 1;
 }
 
 .pane-demo .pane-list {

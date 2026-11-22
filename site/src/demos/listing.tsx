@@ -512,6 +512,46 @@ export function ListingDemo() {
         </div>
       </div>
 
+      <h3 className="demo-subhead">Changed, removed, a drop target, a tree, and notes</h3>
+      <div className="pane demo-pane">
+        <div className="pane-list">
+          <Listing
+            columns={[
+              { label: 'State', tip: 'What a save will do' },
+              { label: 'Default', tip: 'The value a new row takes' }
+            ]}
+            grid={`var(--icon-column) minmax(0, 1fr) ${column(12)} ${column(10)}`}
+            title="Columns"
+          >
+            <Row level={0} name="orders" rowKey="t0">
+              <Cell>
+                <StateMark tip="Seen by the server at start" tone="info" word="note" />
+              </Cell>
+              <Cell className="value-null">NULL</Cell>
+            </Row>
+            <Row className="row-changed" level={1} name="status" rowKey="t1">
+              <Cell>
+                <StateMark tone="warning" word="changed" />
+              </Cell>
+              <Cell>'new'</Cell>
+            </Row>
+            <Row className="row-removed" level={1} name="legacy_id" rowKey="t2">
+              <Cell>
+                <StateMark tone="danger" word="removed" />
+              </Cell>
+              <Cell className="value-null">NULL</Cell>
+            </Row>
+            <Row className="drop-target" level={1} name="created_at" rowKey="t3">
+              <Cell>
+                <StateMark tone="muted" word="drop here" />
+              </Cell>
+              <Cell>now()</Cell>
+            </Row>
+          </Listing>
+          <p className="pane-message warning">The table is large; adding a column rewrites it.</p>
+        </div>
+      </div>
+
       <h3 className="demo-subhead">Marked rows and a pinned action</h3>
       <PinnedMarked onOpen={(name) => setDid(`opened ${name}`)} />
       <code className="demo-readout">did: {did ?? 'nothing yet'}</code>

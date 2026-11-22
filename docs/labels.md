@@ -43,19 +43,20 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | `listing`   | `ListingLabels`   | `DEFAULT_LISTING_LABELS`    | `Strip` and `Listing`, for a column label that sorts                                    |
 | `pager`     | `PagerLabels`     | `DEFAULT_PAGER_LABELS`      | `Pager`                                                                                 |
 | `palette`   | `PaletteLabels`   | `DEFAULT_PALETTE_LABELS`    | `PaletteQuery`: the level chip and a refused keystroke                                  |
+| `paneTabs`  | `PaneTabsLabels`  | `DEFAULT_PANE_TABS_LABELS`  | `PaneTabs`: New Tab, close and picked names, the folded tabs' count and menu            |
 | `selectAll` | `SelectAllLabels` | `DEFAULT_SELECT_ALL_LABELS` | `SelectAllBar`                                                                          |
 | `terminal`  | `TerminalLabels`  | `DEFAULT_TERMINAL_LABELS`   | `Terminal` (`@bigpixelrocket/uiok/terminal`): its menu, its failure line, its input     |
 
 ### `keys`
 
-| Field            | Type                              | English default                                                                                                      |
-| ---------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `modifiers`      | `Record<LayerModifier, string>`   | `ctrl` Control, `alt` Option, `shift` Shift, `meta` Command                                                          |
-| `names`          | `Partial<Record<string, string>>` | By `KeyboardEvent.key`: `ArrowUp` Up, `Enter` Return, `' '` Space, `?` Question Mark, and the rest of the named keys |
-| `modifierGlyphs` | `Record<LayerModifier, string>`   | ⌃ ⌥ ⇧ ⌘                                                                                                              |
-| `keyGlyphs`      | `Partial<Record<string, string>>` | `Enter` ↩, `Backspace` ⌫, `Escape` ⎋, arrows, `PageUp` ⇞, and so on                                                  |
-| `spaceCap`       | `string`                          | `space`                                                                                                              |
-| `escapeCap`      | `string`                          | `esc`                                                                                                                |
+| Field            | Type                              | English default                                                                                                                       |
+| ---------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `modifiers`      | `Record<LayerModifier, string>`   | `ctrl` Control, `alt` Option, `shift` Shift, `meta` Command                                                                           |
+| `names`          | `Partial<Record<string, string>>` | By `KeyboardEvent.key`: `ArrowUp` Up, `Enter` Return, `' '` Space, `?` Question Mark, `Delete` Delete, and the rest of the named keys |
+| `modifierGlyphs` | `Record<LayerModifier, string>`   | ⌃ ⌥ ⇧ ⌘                                                                                                                               |
+| `keyGlyphs`      | `Partial<Record<string, string>>` | `Enter` ↩, `Backspace` ⌫, `Delete` ⌦, `Escape` ⎋, arrows, `PageUp` ⇞, and so on                                                       |
+| `spaceCap`       | `string`                          | `space`                                                                                                                               |
+| `escapeCap`      | `string`                          | `esc`                                                                                                                                 |
 
 A key missing from `names` is spoken as its capital ("N"); one missing from `keyGlyphs` is written as its capital.
 
@@ -145,13 +146,25 @@ A folded pair's label ("Up/Down") is not a label here: the app owns its pair voc
 | `backFrom`       | `(level: string) => string` | "Back from Formats" (the level chip's accessible name)                        |
 | `nothingMatches` | `(query: string) => string` | "nothing matches “dox”" (said in the count's place after a refused keystroke) |
 
+### `paneTabs`
+
+| Field           | Type                                       | English default                                                                      |
+| --------------- | ------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `newTab`        | `string`                                   | New Tab                                                                              |
+| `close`         | `(name: string) => string`                 | "Close orders" (a tab's close control)                                               |
+| `picked`        | `(name: string) => string`                 | "orders, picked" (a picked tab's accessible name)                                    |
+| `pinned`        | `string`                                   | Pinned (a pinned tab's description and its pin's tooltip)                            |
+| `notSaved`      | `string`                                   | Changes not saved (a dirty tab's description and its mark's tooltip)                 |
+| `folded`        | `(count: number, dirty: number) => string` | "6 tabs folded here, 1 with changes not saved" (the count's tooltip and description) |
+| `foldedHeading` | `string`                                   | Folded here (the count's accessible name and its menu's heading)                     |
+
 ### `selectAll`
 
-| Field      | Type                                         | English default                                                 |
-| ---------- | -------------------------------------------- | --------------------------------------------------------------- |
-| `checkAll` | `string`                                     | Check all                                                       |
-| `selected` | `(checked: number, total: number) => string` | "3 of 8 selected" (before the bulk actions)                     |
-| `label`    | `string`                                     | With selected (the bar's accessible name when it is given none) |
+| Field      | Type                                         | English default                                                         |
+| ---------- | -------------------------------------------- | ----------------------------------------------------------------------- |
+| `checkAll` | `string`                                     | Check all                                                               |
+| `selected` | `(checked: number, total: number) => string` | "3 of 8 selected", "1,000 of 20,000 selected" (before the bulk actions) |
+| `label`    | `string`                                     | With selected (the bar's accessible name when it is given none)         |
 
 ### `terminal`
 

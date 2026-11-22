@@ -1,6 +1,6 @@
 # Buttons (`@bigpixelrocket/uiok/button`)
 
-`Button` is the one text action button; `IconButton` is its square, icon-only sibling. Both look the same wherever they render because their stylesheet sets font, size, and box model.
+`Button` is the one text action button; `IconButton` is its square, icon-only sibling. Both look the same wherever they render because their stylesheet sets font, size, and box model. `TextLink` is a link in words, for running text.
 
 ## Example
 
@@ -33,6 +33,19 @@ import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 `className` on either is for layout (width, alignment), never for look.
 
+`TextLink` (`TextLinkProps`) is a link in words inside a sentence, a section, or a status line: a manual page ("DROP DATABASE in the manual"), or a name in a sentence that opens its place.
+
+| Prop       | Type          | Default | Meaning                                                          |
+| ---------- | ------------- | ------- | ---------------------------------------------------------------- |
+| `children` | `string`      |         | The words, also its accessible name                              |
+| `onClick`  | `() => void`  |         | Opens what it names; the host decides how (a browser, a tab)     |
+| `icon`     | `LucideIcon?` |         | A glyph before the words at `ICON_SM` (a book for a manual page) |
+| `code`     | `boolean?`    | `false` | The words in the code face, for a name or value                  |
+| `tip`      | `string?`     |         | A tooltip that says more than the words (the page's address)     |
+| `shortcut` | `string?`     |         | The chord that opens it, written after the tooltip's words       |
+
+It is a `button`, never an `a`: it never navigates the page itself. It takes the focus with the shared ring and runs on Return or Space.
+
 ## Behaviour
 
 - A neutral button and an icon button are outlined in `--control-border`, the 3:1 line every control outline shares. Primary and tonal fills carry a lit top edge (`--glass-edge`) at rest.
@@ -45,7 +58,7 @@ import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 ## Styling
 
-`.button`, `.button-primary`, `.button-tonal`, `.button-danger`, `.button-neutral`, `.button-small`, `.button-xs`, `.icon-button`, `.icon-button-small`.
+`.button`, `.button-primary`, `.button-tonal`, `.button-danger`, `.button-neutral`, `.button-small`, `.button-xs`, `.icon-button`, `.icon-button-small`, `.text-link` (`.code`, with `.text-link-words`). A text link has no bezel or ground: `--accent-text`, its words underlined under the pointer and while held, its size and face those of the text round it, `--text-dim` when disabled.
 
 A toggle (a mode, a filter, a reading of a field) is not a Button: put the base sheet's `toggle-chip` class on a plain `button` with `aria-pressed`, `toggle-chip-sm` (24px) or `toggle-chip-xs` (20px, inside a row) for a smaller place. Off is borderless words in `--text-dim`, as a scope bar's item; hover and press are the quiet control's; on is the one look every `aria-pressed="true"` button wears. The host sets only the chip's place, never its faces, so every toggle chip in an app reads the same and follows the library ([surface](surface.md)).
 

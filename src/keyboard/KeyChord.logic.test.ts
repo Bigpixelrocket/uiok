@@ -33,6 +33,8 @@ describe('chord rendering', () => {
   it('writes the chord as macOS menus print it, the space bar by its name', () => {
     expect(chordGlyphs({ key: 'g', meta: true, shift: true })).toBe('⇧⌘G');
     expect(chordGlyphs({ key: 'Enter', ctrl: true })).toBe('⌃↩');
+    expect(chordGlyphs({ key: 'Delete', meta: true })).toBe('⌘⌦');
+    expect(chordSpoken({ key: 'Delete' })).toBe('Delete');
     expect(chordGlyphs({ key: ' ', meta: true })).toBe('⌘Space');
     expect(chordGlyphs({ key: '/' })).toBe('/');
   });

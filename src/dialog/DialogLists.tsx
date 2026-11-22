@@ -324,6 +324,13 @@ export interface DialogStatementsProps {
   readonly lines: readonly string[];
   /** The block's id, for a dialog that names it in its description. */
   readonly id?: string;
+  /**
+   * What the heading says beside the label in place of the line count: a
+   * host's own count ("1–100 of 101") for a block that is one page of a
+   * longer batch, or `null` for none, when the label already says it.
+   * Omitted, the block counts its lines.
+   */
+  readonly count?: string | null;
 }
 
 /**
@@ -338,8 +345,9 @@ export interface DialogStatementsProps {
  * statement. Styled by the `.dialog-statements` rules in
  * `@bigpixelrocket/uiok/styles.css`.
  */
-export function DialogStatements({ label, lines, id }: DialogStatementsProps): ReactElement {
+export function DialogStatements({ label, lines, id, count }: DialogStatementsProps): ReactElement {
   const labelId = useId();
+  const shownCount = count === undefined ? lines.length.toLocaleString() : count;
 
   return (
     <div className="dialog-statements-block" id={id}>
@@ -347,7 +355,7 @@ export function DialogStatements({ label, lines, id }: DialogStatementsProps): R
         <span className="dialog-label" id={labelId}>
           {label}
         </span>
-        <span className="dialog-items-count">{lines.length.toLocaleString()}</span>
+        {shownCount === null ? null : <span className="dialog-items-count">{shownCount}</span>}
       </div>
       {/* The frame draws the border and the focus ring, which the scroller's fade would clip. */}
       <div className="dialog-statements-frame">

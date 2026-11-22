@@ -216,6 +216,8 @@ export interface RowIconActionProps {
   readonly word?: string;
   /** A destructive action, drawn as on `QuietAction`. */
   readonly danger?: boolean;
+  /** The chord that runs it, as text ("⌘⌫"), written after the words in its tooltip as on `QuietAction`. */
+  readonly shortcut?: string;
 }
 
 /**
@@ -236,7 +238,8 @@ export function RowIconAction({
   tip = label,
   verb,
   word,
-  danger = false
+  danger = false,
+  shortcut
 }: RowIconActionProps): ReactElement {
   const inRow = useInRow();
   const chosen = useContext(RowLinkLookContext);
@@ -260,11 +263,12 @@ export function RowIconAction({
       ref={ref}
       tabIndex={inRow ? -1 : undefined}
       type="button"
-      {...(look !== 'icons' && tip === word
+      {...(look !== 'icons' && tip === word && shortcut === undefined
         ? {}
-        : tip === label
-          ? tooltip(label)
-          : describedTooltip(tip))}
+        : {
+            ...(tip === label ? tooltip(label) : describedTooltip(tip)),
+            ...(shortcut === undefined ? {} : { 'data-tooltip-shortcut': shortcut })
+          })}
     >
       {look !== 'text' && <Icon aria-hidden size={ICON_SM} />}
       {look !== 'icons' && <span>{word}</span>}

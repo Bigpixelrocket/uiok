@@ -118,3 +118,34 @@ describe('SegmentedChoice', () => {
     expect(screen.getByRole('radiogroup').hasAttribute('aria-description')).toBe(false);
   });
 });
+
+describe('SegmentedChoice disabled', () => {
+  it('holds every segment, keeps the chosen one checked, and changes on nothing', () => {
+    const onChange = vi.fn();
+
+    render(
+      <>
+        <span id="held-label">Size</span>
+        <SegmentedChoice
+          choices={SIZES}
+          disabled
+          labelId="held-label"
+          onChange={onChange}
+          render={(choice) => choice}
+          value="medium"
+        />
+      </>
+    );
+
+    const group = screen.getByRole('radiogroup', { name: 'Size' });
+    const radios = screen.getAllByRole('radio') as HTMLButtonElement[];
+
+    expect(group.getAttribute('aria-disabled')).toBe('true');
+    expect(radios.every((radio) => radio.disabled)).toBe(true);
+    expect(screen.getByRole('radio', { name: 'medium' }).getAttribute('aria-checked')).toBe('true');
+
+    fireEvent.click(screen.getByRole('radio', { name: 'large' }));
+    fireEvent.keyDown(group, { key: 'ArrowRight' });
+    expect(onChange).not.toHaveBeenCalled();
+  });
+});

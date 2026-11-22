@@ -92,3 +92,19 @@
 :where(.listing-root) :is(:focus-within, :has(> input:not(:placeholder-shown))) > .filter-icon {
   color: var(--accent);
 }
+
+/* A query the field refuses (its input aria-invalid="true", with the
+   reason in a problem line or a tooltip the input names): the field's foot
+   and its focus edge turn to --danger, and so does its lit mark, in place
+   of the divider and the accent. */
+:where(.listing-root) .filter-field:has(input[aria-invalid='true']) {
+  border-bottom-color: var(--danger);
+}
+
+:where(.listing-root) .filter-field:has(input[aria-invalid='true']):focus-within {
+  box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--danger);
+}
+
+:where(.listing-root) .filter-field:has(input[aria-invalid='true']) > .filter-icon {
+  color: var(--danger);
+}

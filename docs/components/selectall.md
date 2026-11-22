@@ -1,6 +1,6 @@
 # SelectAllBar (`@bigpixelrocket/uiok/selectall`)
 
-The footer of a list whose rows have checkboxes: Check all, then how many rows are checked ("3 of 8 selected", dim, as a status line says it) and the list's bulk actions. The checkbox is ticked when every row is, ticked and mixed when some are, clear when none are, and disabled when the list offers no row to check. `checkedAfterClick` gives the rows themselves Shift-click ranges.
+The footer of a list whose rows have checkboxes: Check all, then how many rows are checked ("3 of 8 selected", "1,000 of 20,000 selected" with thousands separators, dim, as a status line says it) and the list's bulk actions. The checkbox is ticked when every row is, ticked and mixed when some are, clear when none are, and disabled when the list offers no row to check. `checkedAfterClick` gives the rows themselves Shift-click ranges.
 
 ## Example
 

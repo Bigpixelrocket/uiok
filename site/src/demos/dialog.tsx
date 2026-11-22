@@ -44,6 +44,7 @@ type Open =
   | 'trash'
   | 'delete'
   | 'delete-all'
+  | 'typed-name'
   | 'sign-out'
   | 'grant'
   | 'quit'
@@ -452,6 +453,49 @@ function AddHostsDialog({
   );
 }
 
+/**
+ * A confirmation that asks for a name first: the primary stays off
+ * (`confirmDisabled`) until the typed name matches, and the statements
+ * block shows its own count words.
+ */
+function TypedNameDemo({
+  onCancel,
+  onConfirm
+}: {
+  readonly onCancel: () => void;
+  readonly onConfirm: () => void;
+}) {
+  const [typed, setTyped] = useState('');
+  const fieldId = useId();
+
+  return (
+    <ConfirmDialog
+      confirmDisabled={typed !== 'shop'}
+      confirmLabel="Drop"
+      icon={Trash2}
+      itemIcon={Server}
+      items={[{ name: 'shop', detail: 'shop-prod' }]}
+      message="This drops the database and every table in it."
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+      statements={{ label: 'SQL', lines: ['DROP DATABASE `shop`;'], count: null }}
+      title="Drop Database?"
+    >
+      <label className="field-label" htmlFor={fieldId}>
+        Type the name to confirm.
+      </label>
+      <input
+        autoComplete="off"
+        className="field"
+        id={fieldId}
+        onChange={(event) => setTyped(event.target.value)}
+        spellCheck={false}
+        value={typed}
+      />
+    </ConfirmDialog>
+  );
+}
+
 /** The dialog page's demo. */
 export function DialogDemo() {
   const [open, setOpen] = useState<Open>(null);
@@ -471,6 +515,7 @@ export function DialogDemo() {
         <Button onClick={() => setOpen('delete')}>Delete Now…</Button>
         <Button onClick={() => setOpen('sign-out')}>Sign Out…</Button>
         <Button onClick={() => setOpen('delete-all')}>Delete 7 Long Paths…</Button>
+        <Button onClick={() => setOpen('typed-name')}>Drop Database…</Button>
         <Button onClick={() => setOpen('grant')}>Grant Access…</Button>
         <Button onClick={() => setOpen('quit')}>Quit…</Button>
         <Button onClick={() => setOpen('long-title')}>Long Title…</Button>
@@ -544,6 +589,9 @@ export function DialogDemo() {
           onConfirm={close('deleted for good')}
           title="Delete Now?"
         />
+      ) : null}
+      {open === 'typed-name' ? (
+        <TypedNameDemo onCancel={close('cancelled')} onConfirm={close('dropped shop')} />
       ) : null}
       {open === 'delete-all' ? (
         <ConfirmDialog

@@ -6,7 +6,9 @@ import {
   gridMove,
   initialWidth,
   movedCell,
+  pinnedDropPlace,
   resizedWidth,
+  revealedScrollLeft,
   visibleRows,
   windowHolds
 } from './DataGrid.logic.js';
@@ -104,5 +106,30 @@ describe('dropPlace', () => {
     expect(editorLeft(400, 250, well, 8)).toBe(242);
     // Wider than the well: from its left edge.
     expect(editorLeft(400, 450, well, 8)).toBe(100);
+  });
+
+  it('keeps a dragged header on its side of the pin edge', () => {
+    expect(pinnedDropPlace(3, 0, 0)).toBe(3);
+    // A pinned column stays among the pinned two, the others after them.
+    expect(pinnedDropPlace(4, 0, 2)).toBe(1);
+    expect(pinnedDropPlace(1, 0, 2)).toBe(1);
+    expect(pinnedDropPlace(0, 3, 2)).toBe(2);
+    expect(pinnedDropPlace(4, 3, 2)).toBe(4);
+  });
+
+  it('scrolls a column into view past the pinned part, and leaves one in view alone', () => {
+    // Pinned part 100px, well 300px wide, scrolled 0.
+    expect(revealedScrollLeft(0, 300, 120, 200, 100)).toBe(0);
+    // Past the well's end: its end meets the well's.
+    expect(revealedScrollLeft(0, 300, 350, 420, 100)).toBe(120);
+    // Under the pinned part: its start meets the pin edge.
+    expect(revealedScrollLeft(200, 300, 150, 250, 100)).toBe(50);
+    // A pinned column never scrolls the well.
+    expect(revealedScrollLeft(200, 300, 30, 100, 100)).toBe(200);
+    // Wider than the room past the pins: its start shows.
+    expect(revealedScrollLeft(0, 300, 400, 800, 100)).toBe(300);
+    // No pinned part, and a well not laid out.
+    expect(revealedScrollLeft(50, 300, 10, 60, 0)).toBe(10);
+    expect(revealedScrollLeft(50, 0, 400, 500, 0)).toBe(50);
   });
 });

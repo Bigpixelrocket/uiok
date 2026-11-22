@@ -116,6 +116,12 @@ export interface ConfirmDialogProps {
    * deletes anything for good.
    */
   readonly forGood?: boolean;
+  /**
+   * Holds the confirm verb off: its slot is disabled and its key runs
+   * nothing, until the caller lets it go (a typed-name confirmation keeps it
+   * off until the name in its field matches).
+   */
+  readonly confirmDisabled?: boolean;
   /** The confirm verb, on Return (or ⌥⌘⌫ with `forGood`) and its slot. */
   readonly onConfirm: () => void;
   /** Escape, the leave slot, and a press outside. */
@@ -155,6 +161,7 @@ export function ConfirmDialog({
   children,
   className,
   forGood = false,
+  confirmDisabled = false,
   onConfirm,
   onCancel
 }: ConfirmDialogProps): ReactElement {
@@ -177,8 +184,13 @@ export function ConfirmDialog({
   const legend: DialogLegendModel = {
     leave: { label: cancelLabel ?? labels.cancel },
     primary: forGood
-      ? { label: confirmLabel, chord: DELETE_IMMEDIATELY, onRun: onConfirm }
-      : { label: confirmLabel, onRun: onConfirm }
+      ? {
+          label: confirmLabel,
+          chord: DELETE_IMMEDIATELY,
+          onRun: onConfirm,
+          disabled: confirmDisabled
+        }
+      : { label: confirmLabel, onRun: onConfirm, disabled: confirmDisabled }
   };
 
   return (
@@ -213,7 +225,13 @@ export function ConfirmDialog({
           ))}
         </div>
       )}
-      {hasStatements && <DialogStatements label={statements.label} lines={statements.lines} />}
+      {hasStatements && (
+        <DialogStatements
+          label={statements.label}
+          lines={statements.lines}
+          {...(statements.count === undefined ? {} : { count: statements.count })}
+        />
+      )}
       {facts.length > 0 && <DialogFacts facts={facts} id={factsId} />}
       {children}
     </ModalDialog>

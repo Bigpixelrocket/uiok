@@ -58,6 +58,10 @@ export function SelectAllDemo() {
         </Button>
       </SelectAllBar>
       {said === '' ? null : <code className="demo-readout">{said}</code>}
+      <h3 className="demo-subhead">A large table</h3>
+      <SelectAllBar checked={1_000} onCheckAll={() => undefined} total={20_000}>
+        <Button size="small">Archive</Button>
+      </SelectAllBar>
       <h3 className="demo-subhead">No rows to check</h3>
       <SelectAllBar checked={0} onCheckAll={() => undefined} total={0}>
         <Button disabled size="small">

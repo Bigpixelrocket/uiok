@@ -19,6 +19,13 @@ export interface SegmentedChoiceProps<T extends string | number | null> {
    */
   readonly disabledChoices?: readonly T[];
   /**
+   * Holds the whole choice while it cannot change (a change it started is
+   * running): every segment is disabled and the chosen one stays drawn as
+   * chosen, so the control still says what is set. Neither a click nor the
+   * arrow keys change it.
+   */
+  readonly disabled?: boolean;
+  /**
    * What the choice does, as the group's accessible description: the
    * `control` half of `labelHelp(help)` spread on the group, whose `label`
    * half is the tooltip on the element `labelId` names. A screen reader
@@ -44,11 +51,15 @@ export function SegmentedChoice<T extends string | number | null>({
   onChange,
   render,
   disabledChoices = [],
+  disabled = false,
   'aria-description': description
 }: SegmentedChoiceProps<T>): ReactElement {
   const group = useRef<HTMLDivElement>(null);
   const step = (event: KeyboardEvent, delta: number): void => {
     event.preventDefault();
+    if (disabled) {
+      return;
+    }
     const from = choices.indexOf(value);
 
     // The next choice that can be chosen, at most one lap round.
@@ -67,6 +78,7 @@ export function SegmentedChoice<T extends string | number | null>({
   return (
     <div
       aria-description={description}
+      aria-disabled={disabled || undefined}
       aria-labelledby={labelId}
       className="segmented-choice"
       onKeyDown={(event) => {
@@ -83,11 +95,11 @@ export function SegmentedChoice<T extends string | number | null>({
         <button
           aria-checked={choice === value}
           className="segmented-choice-option"
-          disabled={disabledChoices.includes(choice)}
+          disabled={disabled || disabledChoices.includes(choice)}
           key={String(choice)}
           onClick={() => {
             // The chosen segment again changes nothing, so it reads nothing.
-            if (choice !== value) {
+            if (choice !== value && !disabled) {
               onChange(choice);
             }
           }}

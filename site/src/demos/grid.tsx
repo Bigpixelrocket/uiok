@@ -6,7 +6,8 @@
  * kind (a lead checkbox, a customer value that leads to its record,
  * missing and edited values, a marked column, an inline field on
  * double-click that Return commits and Escape cancels), a grid of binary values with a node cell, a row action, and a
- * one-click edit, and a grid with no rows.
+ * one-click edit, a grid whose first column stays in view while it scrolls
+ * sideways, with rows a save will delete, and a grid with no rows.
  */
 
 import { File, FileImage, FileText, FileType, Trash2 } from 'lucide-react';
@@ -139,6 +140,26 @@ export function GridDemo() {
       <CellKinds />
       <h3 className="demo-subhead">Binary values, a row action, and click to edit</h3>
       <Attachments />
+      <h3 className="demo-subhead">A pinned column and removed rows</h3>
+      <div style={{ maxWidth: 420 }}>
+        <DataGrid
+          cell={(row, column) => {
+            const order = ORDERS[row];
+            const field = FIELDS[column];
+            if (order === undefined || field === undefined) return null;
+            return {
+              text: text(order, field.key),
+              className: row % 4 === 1 ? 'cell-removed' : undefined
+            };
+          }}
+          columns={FIELDS.map((field) => field.column)}
+          copyText={() => null}
+          label="Orders, first column pinned"
+          maxHeight={200}
+          pinnedColumns={1}
+          rowCount={20}
+        />
+      </div>
       <h3 className="demo-subhead">No rows</h3>
       <DataGrid
         cell={() => null}

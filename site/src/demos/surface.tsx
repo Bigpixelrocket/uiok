@@ -3,7 +3,10 @@
  * with the overline heading, holding a value a user may select; a list that fades where it scrolls on, two framed scrollers
  * whose frames stay solid while their contents fade, and a row that fades
  * at its inline ends; then a host's own buttons joining the quiet control
- * and track item recipes, at rest, hovered, and pressed.
+ * and track item recipes, at rest, hovered, and pressed. Last, a group's
+ * swatch in each hue, hollow and with no group, and a tag in each tone, in
+ * capitals, and with a tip; a notice quoting a server's words in code; and
+ * an overline that keeps a name's case.
  *
  * A cell that shows a pointer state carries `data-force` (with
  * `data-force-sel` naming the button inside it): the screenshot harness
@@ -17,9 +20,23 @@ import { CircleAlert, CircleCheck, Info, Pin, TriangleAlert } from 'lucide-react
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ICON_MD, ICON_SM, Spinner } from '@bigpixelrocket/uiok/icon';
+import { GroupSwatch, Tag, type TagTone } from '@bigpixelrocket/uiok/surface';
+import type { GroupHue } from '@bigpixelrocket/uiok/themes';
 import { cutTooltip } from '@bigpixelrocket/uiok/tooltip';
 
 import { DemoState, DemoStates } from '../DemoStates';
+
+const HUES: readonly GroupHue[] = [
+  'blue',
+  'green',
+  'purple',
+  'orange',
+  'teal',
+  'pink',
+  'yellow',
+  'red'
+];
+const TONES: readonly TagTone[] = ['neutral', 'accent', 'ready', 'warning', 'danger'];
 
 const LINES = Array.from({ length: 30 }, (_, index) => `line ${index + 1}`);
 
@@ -175,6 +192,41 @@ export function SurfaceDemo() {
           </DemoState>
         ))}
       </DemoStates>
+      <h3 className="demo-subhead">Group swatches</h3>
+      <DemoStates>
+        {HUES.map((hue) => (
+          <DemoState key={hue} label={hue}>
+            <GroupSwatch group={hue} /> <GroupSwatch group={hue} hollow />
+          </DemoState>
+        ))}
+        <DemoState label="No group">
+          <GroupSwatch group={null} label="No group" />
+        </DemoState>
+      </DemoStates>
+      <h3 className="demo-subhead">Tags</h3>
+      <DemoStates>
+        {TONES.map((tone) => (
+          <DemoState key={tone} label={tone}>
+            <Tag tone={tone}>Production</Tag>{' '}
+            <Tag caps tone={tone}>
+              Beta
+            </Tag>
+          </DemoState>
+        ))}
+        <DemoState label="With a tip">
+          <Tag tip="The value the server starts with">default</Tag>
+        </DemoState>
+      </DemoStates>
+      <h3 className="demo-subhead">
+        A notice quoting the server, and a heading that keeps its case
+      </h3>
+      <div className="notice notice-danger" role="alert">
+        <CircleAlert size={ICON_MD} />
+        <p className="notice-text">
+          The export stopped: <code>ERROR 1205: Lock wait timeout exceeded</code>
+        </p>
+      </div>
+      <h4 className="overline keep-case">public.orders</h4>
     </div>
   );
 }

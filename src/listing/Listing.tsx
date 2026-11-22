@@ -93,6 +93,12 @@ export interface ListingColumn {
   readonly control?: ReactNode;
   /** The label sorts the listing by its column. */
   readonly sort?: ColumnSort;
+  /**
+   * What the label's column holds, beyond its label (a unit, how a value is
+   * measured): the label's tooltip and accessible description, sortable or
+   * not.
+   */
+  readonly tip?: string;
 }
 
 /**
@@ -103,11 +109,13 @@ export interface ListingColumn {
 function SortLabel({
   label,
   sort,
-  align
+  align,
+  tip
 }: {
   readonly label: string;
   readonly sort: ColumnSort;
   readonly align?: 'right';
+  readonly tip?: string;
 }): ReactElement {
   const { sortBy } = useLabels().listing;
   const mark =
@@ -123,9 +131,11 @@ function SortLabel({
       className={sort.direction === null ? 'pane-sort sortable' : 'pane-sort sortable active'}
       onClick={sort.onSort}
       type="button"
+      {...describedTooltip(tip)}
     >
       {align === 'right' && mark}
-      <span className="pane-sort-label" {...cutTooltip(label)}>
+      {/* A tip tells more than the label; without one, a cut label shows itself whole. */}
+      <span className="pane-sort-label" {...(tip === undefined ? cutTooltip(label) : {})}>
         {label}
       </span>
       {align !== 'right' && mark}
@@ -216,12 +226,22 @@ export function Strip({
             : entry.control === undefined &&
               (entry.sort === undefined ? (
                 <span className="pane-sort">
-                  <span className="pane-sort-label" {...cutTooltip(entry.label)}>
+                  <span
+                    className="pane-sort-label"
+                    {...(entry.tip === undefined
+                      ? cutTooltip(entry.label)
+                      : describedTooltip(entry.tip))}
+                  >
                     {entry.label}
                   </span>
                 </span>
               ) : (
-                <SortLabel align={entry.align} label={entry.label} sort={entry.sort} />
+                <SortLabel
+                  align={entry.align}
+                  label={entry.label}
+                  sort={entry.sort}
+                  tip={entry.tip}
+                />
               ))}
         </span>
       ))}
@@ -490,6 +510,12 @@ export interface RowProps {
   readonly className?: string;
   /** Opens the row's item on a click anywhere but its controls. */
   readonly onOpen?: () => void;
+  /**
+   * How deep the row stands in a tree or a plan: its name is indented by one
+   * icon column a level (`--row-level`); 0, or none, is no indent. The
+   * expansion and its keys stay the host's.
+   */
+  readonly level?: number;
   /** Its controls stay in the Tab order. */
   readonly tabbable?: boolean;
   /** The row itself takes the focus: in the Tab order while it is the cursor row. */
@@ -520,6 +546,7 @@ export function Row({
   nameClass,
   className,
   onOpen,
+  level = 0,
   tabbable = false,
   focusable = false,
   entry = false,
@@ -549,6 +576,7 @@ export function Row({
             if (!current) cursor.point(rowKey);
           }}
           role="row"
+          style={level > 0 ? ({ '--row-level': level } as CSSProperties) : undefined}
           tabIndex={focusable ? (current || entry ? 0 : -1) : undefined}
         >
           <span aria-hidden className="row-icon">
@@ -595,8 +623,11 @@ export function Cell({ align, className, tip, children }: CellProps): ReactEleme
   );
 }
 
-/** The tone of a state: ready, a warning, a failure, a transition under way, or quiet. */
-export type StateTone = 'ready' | 'warning' | 'danger' | 'busy' | 'muted';
+/**
+ * The tone of a state: ready, a warning, a failure, a transition under way,
+ * quiet, or a note (`info`: an Info or Note line, in the accent).
+ */
+export type StateTone = 'ready' | 'warning' | 'danger' | 'busy' | 'muted' | 'info';
 
 /** Props for {@link StateMark}. */
 export interface StateMarkProps {
@@ -605,6 +636,8 @@ export interface StateMarkProps {
   readonly word: string;
   /** A transition under way: a spinner in place of the dot. */
   readonly busy?: boolean;
+  /** What the state means, beyond its word: the mark's tooltip and accessible description. */
+  readonly tip?: string;
 }
 
 /**
@@ -614,17 +647,18 @@ export interface StateMarkProps {
  * without its hue. Inside a row the word takes the tone too, so a failure
  * reads red and a stopped line dim. A word wider than its column ends in an
  * ellipsis and carries itself whole as its tooltip, which a word shown
- * whole does not open.
+ * whole does not open; a `tip` says what the state means instead, as the
+ * whole mark's tooltip and description.
  */
-export function StateMark({ tone, word, busy = false }: StateMarkProps): ReactElement {
+export function StateMark({ tone, word, busy = false, tip }: StateMarkProps): ReactElement {
   return (
-    <span className={`pane-state pane-tone-${tone}`}>
+    <span className={`pane-state pane-tone-${tone}`} {...describedTooltip(tip)}>
       {busy ? (
         <Spinner className="pane-state-busy" />
       ) : (
         <span aria-hidden className="pane-state-dot" />
       )}
-      <span className="pane-state-word" {...cutTooltip(word)}>
+      <span className="pane-state-word" {...(tip === undefined ? cutTooltip(word) : {})}>
         {word}
       </span>
     </span>

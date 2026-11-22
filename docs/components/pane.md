@@ -1,6 +1,6 @@
 # Pane (`@bigpixelrocket/uiok/pane`)
 
-The frame around a listing: a path bar it opens with, a status line it closes with, the compact controls inside them and in listing rows, and the keyboard of a sidebar beside a page. Styled by the listing look under `.listing-root` ([listing](listing.md)).
+The frame around a listing: the tabs it hangs from, a path bar it opens with, a status line it closes with, the compact controls inside them and in listing rows, and the keyboard of a sidebar beside a page. Styled by the listing look under `.listing-root` ([listing](listing.md)).
 
 ## Example
 
@@ -51,6 +51,73 @@ function View() {
 }
 ```
 
+## Tabs
+
+`PaneTabs` is the strip of tabs a pane hangs from. Put it as the first child of a `.pane` under `.listing-root`: the pane's frame then hangs from the tab in front, whose surface opens into the frame, and the other tabs stand behind it on the ground, shorter and fainter.
+
+```tsx
+import {
+  PaneTabs,
+  togglePick,
+  pickRun,
+  pickedTabs,
+  type TabPicks
+} from '@bigpixelrocket/uiok/pane';
+
+const [picks, setPicks] = useState<TabPicks | null>(null);
+const order = tabs.map((tab) => tab.id);
+
+<div className="pane active" data-tone={production ? 'danger' : undefined}>
+  <PaneTabs
+    front={front}
+    label="Tabs"
+    onClose={close}
+    onKeep={keep}
+    onNew={openTab}
+    onPick={(id, how) =>
+      setPicks(how === 'toggle' ? togglePick(order, front, picks, id) : pickRun(order, front, id))
+    }
+    onReorder={setOrder}
+    onSelect={(id) => {
+      setFront(id);
+      setPicks(null);
+    }}
+    picked={pickedTabs(order, front, picks).filter((id) => id !== front)}
+    tabs={tabs}
+  />
+  <PanePathBar trail={trail} />…
+</div>;
+```
+
+### Props
+
+- `PaneTabsProps`: `label` (the tablist's accessible name), `tabs` (`PaneTabItem[]` in strip order, pinned ones first), `front` (the id of the tab in front), `picked` (ids picked beside the front tab; host state), `onSelect` (a press on a tab, or a choice in the folded tabs' menu), `onClose` (the close control, or a middle click on a tab that has one), `onPick(id, 'toggle' | 'run')` (⌘-click, ⇧-click), `onKeep` (a double-click on a tab), `onReorder(order)` (after a drag drops: the full order, folded tabs included; omit it to turn dragging off), `onNew` (the New Tab button and a double-click on the strip's empty end; omit it for no button), `newChord` (New Tab's tooltip chord, ⌘T by default), `onTabContextMenu(id, event)` (a secondary click; the host prevents the browser's menu if it draws its own), `trailing` (drawn after the folded tabs' count, such as an update pill).
+- `PaneTabItem`: `id`, `name`, `context` (dim words and a slash before the name, to tell two tabs of one name apart), `mark` (a node ahead of the name: a swatch, or a lucide icon at `ICON_SM`), `tip` (the tooltip at every width, usually the whole path; also the accessible description), `following` (italic name: the next place opened takes this tab over), `dirty` (the warning mark in the close control's place; the control comes back under the pointer), `pinned` (before the pin rule, a pin instead of a close control, never shrinks), `tone: 'danger'` (a danger outline at every width), `closable` (false: no close control).
+
+### Crowding
+
+The strip never wraps or scrolls. Tabs behind the front one shrink together to a floor (eight characters of the name, three of the context, each with its ellipsis), the context giving way before the name loses a character. Past the floor they fold into a count after New Tab, farthest from the front tab first, the later of two as far; as many fold in one step as the shortfall needs. Pinned, front, and following tabs never fold; pinned and front tabs never shrink. Closing tabs, or a wider pane, gives the room back. The strip measures its header with a `ResizeObserver` and starts the folding over when the header, the trailing slot, the tab in front, or a tab's words, marks, or controls change.
+
+The count (`button.pane-tabs-folded[aria-haspopup=menu]`) reads "+N" with a chevron, with the warning mark before it while a folded tab is dirty; its accessible name is "Folded here" and its tooltip and description count the folded tabs. It opens the menu look (`.folder-menu`, marked `data-overlay`) under it, or over it when the window has room only there (a window that changes size closes it), headed "Folded here", listing the folded tabs in strip order with their mark, context and name, a warning mark when dirty, and a danger mark for a danger-toned tab. Each row is described as its tab is, by the tab's `tip` and its unsaved changes, and the keys scroll the row they reach into view.
+
+### Pointer and keyboard
+
+- A press brings a tab to the front at once. With `onReorder`, it may also start a drag once the pointer has moved 4px: the held tab lifts and follows the pointer, neighbours step aside once it covers half of them, and the gap they leave is where it lands. An unpinned tab stops at the pin rule and a pinned one moves only among the pinned; nothing drops past the last tab on show. Picked tabs on the held tab's side of the pin rule close up round it and move together. Escape (or the window losing the focus, or a cancelled pointer) puts every tab back, and that Escape reaches nothing else; release calls `onReorder`. Neighbours slide over the fast duration token, so reduced motion makes them jump.
+- A press on a picked tab waits for its release, since it may start a drag of every pick; a release without a drag calls `onSelect`.
+- ⌘-click calls `onPick(id, 'toggle')`, ⇧-click `onPick(id, 'run')`; middle click `onClose`; double-click a tab `onKeep`; double-click the empty end `onNew`.
+- Tabs take no focus (role `tab`, `aria-selected` on the front one); the host's verbs are the keyboard's way in. The close and New Tab controls stay out of the Tab order and are named from the labels. A picked tab's accessible name is "{name}, picked"; its description joins its tip, "Pinned", and "Changes not saved" as they apply.
+- The count takes the focus. Its menu holds the keys: ↑ ↓ move, Return or Space chooses (`onSelect`), Escape closes; both hand the focus back to where it was when the menu opened (the count, when the keyboard opened it). A press outside, or the focus leaving, closes it.
+
+### Logic helpers
+
+Pure, for the host's tab state: `TabPicks` (`{ front, ids }`), `togglePick(order, frontId, picks, id)`, `pickRun(order, frontId, id)`, `pickedTabs(order, frontId, picks)` (the front tab and the picks that still stand, in strip order; picks made under another front tab lapse), and `gatherTabs(order, carried, held)`. The strip's own rules are exported too: `foldOrder`, `foldsNeeded`, `tabLabelFloor`, `draggedTabOrder` with `TabBox`, and `FoldableTab`.
+
+### Styling
+
+`.pane-header` > `.pane-tabs[role=tablist]` > `.pane-tab` (`.active`, `.following`, `.dirty`, `.pinned`, `.picked`, `.dragging`, `[data-tone=danger]`, `--pane-tab-floor`) > `.pane-tab-mark`, `.pane-tab-label` > `.pane-tab-context`, `.pane-tab-slash`, `.pane-tab-name`; `.pane-tab-dirty` | `.pane-tab-pin` | `.pane-tab-close`; then `.pane-pin-rule`, `.pane-tab-new`, `.pane-tabs-rest`, `.pane-tabs-folded` (`.pane-tabs-folded-count`), `.pane-tabs-trailing`, and the menu's `.pane-tabs-folded-menu`. Tokens: `--pane-tab-height` (`--bar-height`), `--pane-tab-back` (`--surface-recessed`). A picked tab wears the marked row's edge and tint (`--marked-bar`, `--marked-bg`); a tab in the hand rides at `--z-drag` with `--shadow-popover`.
+
+A pane's tone: `<div class="pane" data-tone="danger">` draws its frame, and its front tab's outline, in `--danger`, at rest, active, and in an inactive window; a danger-toned tab keeps its edge when hovered or picked.
+
 ## Frame
 
 - `PanePathBar` (`PanePathBarProps`): `trail` (crumbs, broadest first; a string is a label, a `PaneCrumb` `{ label, onOpen, tip? }` is a button), `mark` (a glyph in the root crumb), `heading` (the last label crumb is the page's `h2`), `here` (drawn inside the last crumb, such as a `CurrentDot`), and children at the bar's end (`.path-tools`). A narrow bar gives way in the order below ("How a narrow bar gives way"). Every crumb cuts its words in an inner `.crumb-text` box, where the ellipsis draws. A crumb cut short opens its whole text as a tooltip, and a crumb shown whole opens none. A button crumb with a `tip` shows the tip instead, cut or not.
@@ -60,7 +127,7 @@ function View() {
 ## Compact controls
 
 - `QuietAction` (`QuietActionProps`): words on tools when they fit. In a path bar, in a `tabbable` row (where it keeps its Tab stop), and in any toolbar it draws its glyph and its `word` by default, so a command reached by Tab shows what it does without a hover; a path bar too tight for its words hides them and keeps the glyph, the word then its tooltip (step 5 below). Only in a row the keys reach (not `tabbable`) is it a glyph alone by default, its `word` its tooltip (followed by `shortcut`) and kept for assistive technology, with its glyph and word where `RowLinkLookContext` is `'text'` or `'both'`, which an app sets from a user's icon-or-text preference. An app sets nothing to get words on its tools. In the dim tone, lit on the cursor row or with `lit`: full words in `--text`, never the accent, so it reads as a control and not as a link (`lit` also sets the verb a weight up and keeps its glyph in `--accent`). `danger` marks a destructive one (Remove, Drop): quiet at rest, in the danger tone under the pointer, with the focus, and on the cursor row. `label` is the accessible name, `tip` the tooltip and description, `shortcut` the chord the tooltip shows. `verb` marks what the cursor row's keys run it for (`data-verb`), `pageVerb` what the page's chords run it for (`data-page-verb`), and `action` tells several controls on one verb apart. `softDisabled` keeps it focusable but inert (`aria-disabled`). `keepWord` (`data-keep-word`) keeps its word in a fitted toolbar until the other tools have stepped (below).
-- `RowIconAction` (`RowIconActionProps`): an icon control with the same `label`, `tip`, `verb`, `softDisabled`, `danger`. With a `word`, it draws as `RowLinkLookContext` says.
+- `RowIconAction` (`RowIconActionProps`): an icon control with the same `label`, `tip`, `verb`, `softDisabled`, `danger`, and `shortcut` (the chord as text, written after the words in its tooltip). With a `word`, it draws as `RowLinkLookContext` says.
 - `LinkLook` (`'icons' | 'text' | 'both'`) and `RowLinkLookContext` (icons by default): how row links and the `QuietAction`s in rows the keys reach draw, for an app with an icon-or-text preference. Path-bar tools and a `tabbable` row's actions follow it only for `'text'` and `'both'`; `'icons'` never takes their words.
 - `InRowContext` and `useInRow()`: set by `Row`. A control inside a row leaves the Tab order, since the cursor row's keys run it.
 - `ControlVerb`: a string. Several verbs on one control are separated by spaces (`enter reveal`).
@@ -161,4 +228,4 @@ The compact controls are drawn 20px high; each one's hit area reaches `--hit-tar
 
 ## Labels read
 
-None. Every word is a prop.
+`PaneTabs` reads `paneTabs` ([labels](../labels.md)): `newTab`, `close`, `picked`, `pinned`, `notSaved`, `folded`, `foldedHeading`. Every other word in this area is a prop.

@@ -47,6 +47,15 @@ export function FilterDemo() {
             <FilterEscape label="Clear filter" onEscape={() => setQuery('')} />
           )}
         </label>
+        <label className="filter-field">
+          <FilterIcon />
+          <input
+            aria-invalid="true"
+            aria-label="Filter rows"
+            defaultValue="id >"
+            spellCheck={false}
+          />
+        </label>
         <div className="pane-list demo-scroll short">
           <Listing
             columns={[{ label: 'Kind' }, { label: 'Size', align: 'right' }]}
