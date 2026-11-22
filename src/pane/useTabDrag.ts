@@ -97,9 +97,9 @@ function slideHome(tab: HTMLElement, from: string): void {
  * show, so nothing drops among the folded tabs. Picked tabs close up round
  * the held one as the drag starts (`gatherTabs`) and ride as one block.
  *
- * Escape (or the window losing the focus) puts every tab back; the Escape
- * is the drag's alone, taken on the window's capture ahead of every other
- * handler, with its repeats until it comes up. Release hands the new order
+ * Escape (or the window losing the focus, or a cancelled pointer) puts
+ * every tab back; the Escape is the drag's alone, taken on the window's
+ * capture ahead of every other handler, with its repeats until it comes up. Release hands the new order
  * to the strip's `commit` when it changed. The window follows the pointer,
  * since a reordered tab moves in the document and would drop a capture.
  */
