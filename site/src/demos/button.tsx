@@ -7,10 +7,10 @@
  * every tier at the 20px size a row or a strip takes.
  */
 
-import { Download, Plus, RefreshCw, Settings, Trash2 } from 'lucide-react';
+import { BookOpen, Download, Plus, RefreshCw, Settings, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 
-import { Button, IconButton, type ButtonVariant } from '@bigpixelrocket/uiok/button';
+import { Button, IconButton, TextLink, type ButtonVariant } from '@bigpixelrocket/uiok/button';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
@@ -107,6 +107,19 @@ export function ButtonDemo() {
           </Button>
         ))}
       </div>
+      {/* Links in words: a manual page with its glyph, and a name in a sentence. */}
+      <p className="field-note">
+        <TextLink icon={BookOpen} onClick={press('Manual')} tip="The manual page for DROP TABLE">
+          DROP TABLE in the manual
+        </TextLink>
+      </p>
+      <p className="field-note">
+        Replication reads from{' '}
+        <TextLink code onClick={press('replica_io')}>
+          replica_io
+        </TextLink>
+        , which stopped an hour ago.
+      </p>
       <code className="demo-readout">pressed: {pressed}</code>
     </div>
   );

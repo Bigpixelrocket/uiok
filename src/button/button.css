@@ -261,3 +261,51 @@
 .disclosure:is(:hover, :focus-visible):not(:disabled) {
   color: var(--text);
 }
+
+/* ---- Text link (TextLink) ----
+
+   A link in words inside running text: no bezel and no ground, the
+   accent's text colour, the words underlined under the pointer and while
+   held, and the shared focus ring. Its size and face follow the text round
+   it; `.code` sets the words in the code face for a name or value. A glyph
+   before the words takes the same colour. */
+.text-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  text-align: start;
+  cursor: default;
+}
+
+.text-link > svg {
+  flex: none;
+  align-self: center;
+}
+
+.text-link-words {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-decoration-thickness: var(--line);
+  text-underline-offset: var(--space-1);
+}
+
+.text-link.code .text-link-words {
+  font-family: var(--font-mono);
+}
+
+.text-link:is(:hover, :active):not(:disabled) .text-link-words {
+  text-decoration-line: underline;
+}
+
+.text-link:disabled {
+  color: var(--text-dim);
+}

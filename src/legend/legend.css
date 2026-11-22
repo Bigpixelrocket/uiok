@@ -171,3 +171,45 @@
   background: var(--accent-wash);
   color: var(--accent-text);
 }
+
+/* The overflow chip (overflow="more"): the places that wrapped off the
+   line, counted ("+3") at the strip's end. It keeps its room while nothing
+   is folded, so the first place to fold never moves the others; then it is
+   hidden and out of reach. Its list is the compact menu, opened above it
+   and ending at its right edge. Hover and press come from .quiet-control. */
+.keylegend-more-place {
+  position: relative;
+  flex: none;
+  margin-left: var(--space-2);
+}
+
+.keylegend-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--control-height);
+  height: var(--control-height-sm);
+  padding: 0 var(--space-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  cursor: default;
+}
+
+.keylegend-more[data-empty] {
+  visibility: hidden;
+}
+
+.keylegend-more-list {
+  top: auto;
+  bottom: calc(100% + var(--space-2));
+  left: auto;
+  right: 0;
+  width: max-content;
+  min-width: 200px;
+}

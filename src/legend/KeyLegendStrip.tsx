@@ -1,12 +1,28 @@
 import { ArrowBigUp, ChevronUp, Command, Option, type LucideIcon } from 'lucide-react';
-import { useEffect, useState, type MouseEvent, type ReactElement } from 'react';
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent,
+  type ReactElement
+} from 'react';
 
 import type { Chord } from '../keyboard/Keyboard.logic.js';
 import { chordGlyphs, chordSpoken, type LayerModifier } from '../keyboard/KeyChord.logic.js';
 import { KeyChord } from '../keychord/KeyChord.js';
+import type { KeyLabels } from '../labels/keys.js';
+import type { LegendLabels } from '../labels/legend.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
-import { legendUnits, type LegendPair, type LegendUnit } from './KeyLegend.logic.js';
+import {
+  legendUnits,
+  moreLabel,
+  moreListAction,
+  type LegendPair,
+  type LegendUnit
+} from './KeyLegend.logic.js';
 
 /**
  * One verb a key legend strip lists: its label, its chord, what a click on
@@ -28,6 +44,14 @@ export interface KeyLegendStripProps {
    * Without it no verbs fold, and each keeps a place of its own.
    */
   readonly pairLabel?: (pair: LegendPair) => string;
+  /**
+   * What the strip does with places that do not fit. `'drop'`, the default,
+   * leaves them off, so the strip ends on its last whole place. `'more'`
+   * folds them into a "+N" chip at the strip's end, its room kept whether or
+   * not anything folds, whose list names each folded verb with its whole
+   * chord and runs the one chosen.
+   */
+  readonly overflow?: 'drop' | 'more';
 }
 
 /** The dock's keys, as they sit at the keyboard's left edge: Shift on its row, then Control, Option, Command. */
@@ -96,6 +120,43 @@ const keepFocus = (event: MouseEvent): void => event.preventDefault();
 const UNPAIRED = { pairLabel: (pair: LegendPair) => pair, pairOf: () => undefined } as const;
 
 /**
+ * How many places at the tail of `row` wrapped onto the line the strip
+ * never shows: every child whose top sits below the first child's. Read
+ * again whenever the row changes size or its places change.
+ */
+function useWrappedCount(row: HTMLElement | null, places: string): number {
+  const [count, setCount] = useState(0);
+
+  useLayoutEffect(() => {
+    if (row === null) {
+      return undefined;
+    }
+
+    const read = (): void => {
+      const children = [...row.children] as HTMLElement[];
+      const top = children[0]?.offsetTop ?? 0;
+      const wrapped = children.filter((child) => child.offsetTop > top).length;
+
+      setCount((current) => (current === wrapped ? current : wrapped));
+    };
+
+    read();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
+
+    const observer = new ResizeObserver(read);
+
+    observer.observe(row);
+
+    return () => observer.disconnect();
+  }, [row, places]);
+
+  return count;
+}
+
+/**
  * A key legend strip along a window's bottom edge: a dock of fn and the four
  * modifiers at the left, lit while held, then the verbs the keyboard offers
  * now, each under its whole chord, since the strip lists every layer at once.
@@ -107,10 +168,21 @@ const UNPAIRED = { pairLabel: (pair: LegendPair) => pair, pairOf: () => undefine
  * them. Its own name, its verb group's name, and a paired cap's name come
  * from `UiokLabels.legend`, chords in words from `UiokLabels.keys`.
  */
-export function KeyLegendStrip({ verbs, pairLabel }: KeyLegendStripProps): ReactElement {
+export function KeyLegendStrip({
+  verbs,
+  pairLabel,
+  overflow = 'drop'
+}: KeyLegendStripProps): ReactElement {
   const { keys, legend } = useLabels();
   const held = useHeldModifiers();
   const units = legendUnits(verbs, pairLabel === undefined ? UNPAIRED : { pairLabel });
+  const [row, setRow] = useState<HTMLSpanElement | null>(null);
+  const placesKey = units
+    .map((unit) => unit.label + chordGlyphs(unit.entries[0].chord, keys))
+    .join('\n');
+  const wrapped = useWrappedCount(overflow === 'more' ? row : null, placesKey);
+  const folded = overflow === 'more' && wrapped > 0 ? units.slice(units.length - wrapped) : [];
+  const foldedVerbs = folded.flatMap((unit) => unit.entries);
 
   const place = (unit: LegendUnit<LegendVerb>): ReactElement => {
     const [first, second] = unit.entries;
@@ -123,6 +195,7 @@ export function KeyLegendStrip({ verbs, pairLabel }: KeyLegendStripProps): React
           onMouseDown={keepFocus}
           tabIndex={-1}
           type="button"
+          {...tooltip(first.label, first.chord)}
         >
           {/* The space separates the chord from the verb in the button's accessible name. */}
           <KeyChord chord={first.chord} /> {first.label}
@@ -165,10 +238,148 @@ export function KeyLegendStrip({ verbs, pairLabel }: KeyLegendStripProps): React
         ))}
       </span>
       <span className="keylegend-row">
-        <span aria-label={legend.verbs} className="keylegend-verbs" role="group">
+        <span aria-label={legend.verbs} className="keylegend-verbs" ref={setRow} role="group">
           {units.map(place)}
         </span>
+        {overflow === 'more' ? (
+          <LegendMore keys={keys} legend={legend} verbs={foldedVerbs} />
+        ) : null}
       </span>
     </footer>
+  );
+}
+
+/** Props for the overflow chip: the folded verbs and the label groups it speaks with. */
+interface LegendMoreProps {
+  readonly verbs: readonly LegendVerb[];
+  readonly keys: KeyLabels;
+  readonly legend: LegendLabels;
+}
+
+/**
+ * The "+N" chip at a folding strip's end and its list above it. The chip
+ * keeps its room while nothing is folded (hidden, so the strip never jumps
+ * when the first place folds). Its list is a compact menu: the keys of
+ * `moreListAction`, a click or Return runs the verb and closes the list, and
+ * the focus goes back to the chip.
+ */
+function LegendMore({ verbs, keys, legend }: LegendMoreProps): ReactElement {
+  const [open, setOpen] = useState(false);
+  const [cursor, setCursor] = useState(0);
+  const chip = useRef<HTMLButtonElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const label = moreLabel(verbs.length, legend);
+  const shown = verbs.length > 0;
+
+  useEffect(() => {
+    if (!shown) {
+      setOpen(false);
+    }
+  }, [shown]);
+
+  useEffect(() => {
+    if (open) {
+      list.current?.focus();
+    }
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) {
+      return undefined;
+    }
+
+    const away = (event: PointerEvent): void => {
+      const target = event.target as Node | null;
+
+      if (target !== null && !list.current?.contains(target) && !chip.current?.contains(target)) {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', away);
+
+    return () => document.removeEventListener('pointerdown', away);
+  }, [open]);
+
+  const close = (): void => {
+    setOpen(false);
+    chip.current?.focus();
+  };
+
+  const run = (verb: LegendVerb | undefined): void => {
+    close();
+    verb?.run();
+  };
+
+  const onKeyDown = (event: ReactKeyboardEvent): void => {
+    const action = moreListAction(event.nativeEvent, cursor, verbs.length);
+
+    if (action === null) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (action.kind === 'close') {
+      close();
+    } else if (action.kind === 'cursor') {
+      setCursor(action.row);
+    } else {
+      run(verbs[action.row]);
+    }
+  };
+
+  return (
+    <span className="keylegend-more-place">
+      <button
+        aria-expanded={open}
+        aria-haspopup="menu"
+        aria-label={label.spoken}
+        aria-hidden={shown ? undefined : true}
+        className="keylegend-more quiet-control"
+        data-empty={shown ? undefined : 'true'}
+        disabled={!shown}
+        onClick={() => {
+          setCursor(0);
+          setOpen((now) => !now);
+        }}
+        ref={chip}
+        tabIndex={-1}
+        type="button"
+        {...tooltip(label.spoken)}
+      >
+        {label.text}
+      </button>
+      {open && shown ? (
+        <div
+          aria-label={label.spoken}
+          className="folder-menu folder-menu-compact keylegend-more-list"
+          data-overlay
+          onKeyDown={onKeyDown}
+          ref={list}
+          role="menu"
+          tabIndex={-1}
+        >
+          {verbs.map((verb, index) => (
+            <button
+              aria-label={`${chordSpoken(verb.chord, keys)} ${verb.label}`}
+              className={index === cursor ? 'folder-menu-option cursor' : 'folder-menu-option'}
+              key={verb.label + chordGlyphs(verb.chord, keys)}
+              onClick={() => run(verb)}
+              onMouseDown={keepFocus}
+              onPointerEnter={() => setCursor(index)}
+              role="menuitem"
+              tabIndex={-1}
+              type="button"
+            >
+              <span aria-hidden className="row-icon" />
+              <span className="row-name">{verb.label}</span>
+              <KeyChord chord={verb.chord} />
+            </button>
+          ))}
+        </div>
+      ) : null}
+    </span>
   );
 }

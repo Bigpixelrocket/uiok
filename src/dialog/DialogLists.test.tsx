@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
-import { DialogFacts, DialogItems } from './DialogLists.js';
+import { DialogFacts, DialogItems, DialogStatements } from './DialogLists.js';
 
 describe('DialogItems', () => {
   it('draws names as the framed item list, exactly as written', () => {
@@ -69,5 +69,29 @@ describe('DialogFacts', () => {
     render(<DialogFacts facts={[{ label: 'Files', count: 9, more: 9 }]} />);
 
     expect(screen.getByRole('definition').textContent).toBe('9+9 more');
+  });
+});
+
+describe('DialogStatements count', () => {
+  const count = (): string | null | undefined =>
+    document.querySelector('.dialog-statements-block .dialog-items-count')?.textContent;
+
+  it('counts its lines unless told otherwise', () => {
+    render(<DialogStatements label="SQL" lines={['SELECT 1;', 'SELECT 2;']} />);
+
+    expect(count()).toBe('2');
+  });
+
+  it('shows a host count in place of its own', () => {
+    render(<DialogStatements count="1–100 of 101" label="SQL" lines={['SELECT 1;']} />);
+
+    expect(count()).toBe('1–100 of 101');
+  });
+
+  it('shows no count for null', () => {
+    render(<DialogStatements count={null} label="Statements 1–100 of 101" lines={['SELECT 1;']} />);
+
+    expect(count()).toBeUndefined();
+    expect(screen.getByRole('region', { name: 'Statements 1–100 of 101' })).toBeTruthy();
   });
 });

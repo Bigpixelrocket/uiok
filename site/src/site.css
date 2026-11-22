@@ -711,6 +711,13 @@ a {
   background: var(--ground);
 }
 
+/* A frame whose strip opens its overflow list above it: room for the list,
+   and nothing clipped. */
+.legend-frame-open {
+  overflow: visible;
+  margin-top: calc(var(--space-16) * 6);
+}
+
 .run-frame {
   padding: var(--space-6) var(--space-8);
 }

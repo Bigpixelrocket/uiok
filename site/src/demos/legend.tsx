@@ -2,7 +2,8 @@
  * A key legend whose verbs run on a click; hold a modifier to light its key
  * in the dock. The site's own legend runs along the window's bottom edge.
  * The narrow strip below shows the overflow: places that do not fit are left
- * out whole, so the strip ends on a complete key and verb.
+ * out whole, so the strip ends on a complete key and verb. The last strip
+ * folds them into a "+N" chip whose list runs them.
  */
 
 import { useState, type CSSProperties } from 'react';
@@ -44,6 +45,9 @@ export function LegendDemo() {
       </div>
       <div className="legend-frame" style={NARROW}>
         <KeyLegendStrip pairLabel={pairLabel} verbs={verbs} />
+      </div>
+      <div className="legend-frame legend-frame-open" style={NARROW}>
+        <KeyLegendStrip overflow="more" pairLabel={pairLabel} verbs={verbs} />
       </div>
       <code className="demo-readout">ran: {ran}</code>
     </div>

@@ -32,6 +32,7 @@ export function SegmentedDemo() {
   const sizeLabel = useId();
   const iconLabel = useId();
   const plainLabel = useId();
+  const heldLabel = useId();
   const [columns, setColumns] = useState<(typeof COLUMNS)[number]>('2');
   const [view, setView] = useState<(typeof VIEWS)[number]>('list');
   const [size, setSize] = useState<(typeof SIZES)[number]>('m');
@@ -49,6 +50,19 @@ export function SegmentedDemo() {
           value={view}
         />
         <Button size="small">Apply</Button>
+      </div>
+      <div className="demo-row">
+        <span className="demo-label" id={heldLabel}>
+          Held
+        </span>
+        <SegmentedChoice
+          choices={VIEWS}
+          disabled
+          labelId={heldLabel}
+          onChange={setView}
+          render={(choice) => VIEW_WORDS[choice]}
+          value={view}
+        />
       </div>
       <div className="demo-row" style={REGULAR}>
         <span className="demo-label" id={regularLabel}>

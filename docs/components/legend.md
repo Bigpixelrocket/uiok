@@ -31,10 +31,11 @@ const verbs: LegendVerb[] = [
 
 ## Props (`KeyLegendStripProps`)
 
-| Prop        | Type                           | Meaning                                                                                       |
-| ----------- | ------------------------------ | --------------------------------------------------------------------------------------------- |
-| `verbs`     | `readonly LegendVerb[]`        | The verbs, left to right, as the strip draws them; the app decides which and in which order   |
-| `pairLabel` | `(pair: LegendPair) => string` | The shared label of a folded pair ("Up/Down"), in the language in use. Without it, none folds |
+| Prop        | Type                           | Meaning                                                                                                          |
+| ----------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `verbs`     | `readonly LegendVerb[]`        | The verbs, left to right, as the strip draws them; the app decides which and in which order                      |
+| `pairLabel` | `(pair: LegendPair) => string` | The shared label of a folded pair ("Up/Down"), in the language in use. Without it, none folds                    |
+| `overflow`  | `'drop' \| 'more'`             | What happens to places that do not fit: `'drop'` (default) leaves them off; `'more'` folds them into a "+N" chip |
 
 A `LegendVerb` is `{ label, chord, run, pair? }`: the words, the `Chord` that runs it, what a click runs, and the pair it is one direction of.
 
@@ -53,13 +54,19 @@ A pair's label is a message of its own in every language ("Up/Down", "Haut/Bas")
 ## Behaviour
 
 - Every verb button is out of the Tab order (`tabIndex={-1}`); its chord is the keyboard's way to it. A press keeps the focus where it was, so a click leaves the keyboard on whatever it was driving.
-- A plain place's accessible name is the chord in words, then the verb ("Command C Copy"). A paired cap shows no label of its own, so its name comes from `legend.capName` ("Up Move Up") and its tooltip names the verb and the chord.
+- A plain place's accessible name is the chord in words, then the verb ("Command C Copy"); its tooltip names the verb and the chord. A paired cap shows no label of its own, so its name comes from `legend.capName` ("Up Move Up") and its tooltip names the verb and the chord.
 - The dock reads the modifiers from every key down and up on the window and lets go of all of them when the window loses focus, since a switch to another app never sends the key up.
 - The strip lists every layer at once, so each verb shows its whole chord. A legend that shows one layer at a time sets `data-layer` and `data-fn` on `.keylegend` itself so its caps take the accent with the held layer; `KeyLegendStrip` leaves them at rest (`none`, `false`).
 
+## Overflow
+
+By default `KeyLegendStrip` drops whole places that do not fit: the verbs wrap onto a second line the strip never shows, so it always ends on a complete key and verb.
+
+With `overflow="more"` the places that wrap are counted in a chip at the strip's end, `button.keylegend-more` ("+3", named "3 more shortcuts" by `legend.more`, `aria-haspopup="menu"`). The chip keeps its room while nothing folds (hidden and disabled then), so the first place to fold moves nothing. A click opens its list above it: the compact menu (`.folder-menu.folder-menu-compact.keylegend-more-list`, `role="menu"`, `data-overlay`), one row per folded verb with its whole chord. The list takes the focus and has `moreListAction`'s keys (↑ ↓ Home End, Return or Space runs the row and closes, Escape or Tab closes); a click on a row runs it; a press outside closes it; closing gives the focus back to the chip.
+
 ## Overflow helpers
 
-`KeyLegendStrip` drops whole places that do not fit: the verbs wrap onto a second line the strip never shows, so it always ends on a complete key and verb. A legend of the app's own that collapses the tail into a chip can use:
+A legend of the app's own that collapses the tail into a chip can use:
 
 - `fittingUnits(widths, available, chipWidth)`: how many places fit from the left, beside a chip of `chipWidth` once they do not all fit.
 - `moreLabel(count, labels.legend)`: the chip's text (`+3`) and spoken name ("3 more shortcuts").
@@ -67,7 +74,7 @@ A pair's label is a message of its own in every language ("Up/Down", "Haut/Bas")
 
 ## Styling
 
-The strip is 34px tall on `--surface-header` with a top border, inset 8px on both sides to line up with pane rows. Its caps and dock keys are the shared key cap (`docs/components/keychord.md`); with a layer held, the caps take `--accent-text` on `--accent-wash` in a `--current-ring` frame (3:1, the cap's only edge). Slots answer hover and press with the base sheet's quiet control recipe; a pair's caps, each its own button and opaque, answer on the cap itself (the wash over the cap's ground, the frosted ring, then the pressed wash and shadow), as the filter's escape key does. A held dock key fills with `--accent` and keeps its foot in `--key-foot-shade`. The fn key is set as every key word is (10px semibold mono). A chord in a pair cap's tooltip is drawn with the same key glyphs. Classes: `.keylegend`, `.keylegend-dock` with `.keylegend-key` (`.held` while down) and `.keylegend-dock-fn`, `.keylegend-row`, `.keylegend-verbs`, `.keylegend-pair` with `.keylegend-cap` and `.keylegend-pair-label`. The rules are unscoped, so the strip looks the same inside or outside the listing scope. The dock draws macOS's modifier icons in this version.
+The strip is 34px tall on `--surface-header` with a top border, inset 8px on both sides to line up with pane rows. Its caps and dock keys are the shared key cap (`docs/components/keychord.md`); with a layer held, the caps take `--accent-text` on `--accent-wash` in a `--current-ring` frame (3:1, the cap's only edge). Slots answer hover and press with the base sheet's quiet control recipe; a pair's caps, each its own button and opaque, answer on the cap itself (the wash over the cap's ground, the frosted ring, then the pressed wash and shadow), as the filter's escape key does. A held dock key fills with `--accent` and keeps its foot in `--key-foot-shade`. The fn key is set as every key word is (10px semibold mono). A chord in a pair cap's tooltip is drawn with the same key glyphs. Classes: `.keylegend`, `.keylegend-dock` with `.keylegend-key` (`.held` while down) and `.keylegend-dock-fn`, `.keylegend-row`, `.keylegend-verbs`, `.keylegend-pair` with `.keylegend-cap` and `.keylegend-pair-label`, and with `overflow="more"` `.keylegend-more-place`, `.keylegend-more` (`[data-empty]` while nothing folds), and `.keylegend-more-list`. The rules are unscoped, so the strip looks the same inside or outside the listing scope. The dock draws macOS's modifier icons in this version.
 
 ## Labels read
 
