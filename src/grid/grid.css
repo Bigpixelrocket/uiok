@@ -11,7 +11,12 @@
    The frame fills the width it is given, as a desktop table view fills its
    pane: the header band and the rows run on past the last column, which
    leaves the slack as an empty filler. A grid that is a pane's whole body
-   drops the frame with one scoped rule of the host's (docs/components/grid.md). */
+   drops the frame with one scoped rule of the host's (docs/components/grid.md).
+
+   Pinned columns (pinnedColumns) stick to the well's start while the rest
+   scroll under them, so each paints its row's tint over the bare ground
+   (--data-grid-row-tint, which each row state sets), and a hairline in
+   --border-strong marks the pin edge. */
 .data-grid {
   position: relative;
   display: flex;
@@ -194,6 +199,8 @@
 }
 
 .data-grid-row:nth-child(even) {
+  --data-grid-row-tint: var(--row-zebra);
+
   background: var(--row-zebra);
 }
 
@@ -221,6 +228,37 @@
 
 .data-grid-cell:last-child {
   border-right: none;
+}
+
+/* A pinned column, and the lead before it, stand over the columns that
+   scroll under them, on an opaque ground: the header's, or the bare ground
+   under the row's tint. Each cell state below paints over it. */
+.data-grid-header > .pinned,
+.data-grid-row > .pinned {
+  position: sticky;
+  z-index: var(--z-raised);
+}
+
+.data-grid-header > .pinned {
+  background: var(--surface-header);
+}
+
+.data-grid-row > .pinned {
+  background: linear-gradient(
+      var(--data-grid-row-tint, transparent),
+      var(--data-grid-row-tint, transparent)
+    )
+    var(--ground);
+}
+
+/* The pin edge: a stronger hairline than a column's, down the header and
+   every row, so what scrolls is seen to pass under the pinned columns. */
+.data-grid-row > .pin-edge {
+  border-right-color: var(--border-strong);
+}
+
+.data-grid-heading.pin-edge .data-grid-resize:not(:hover, :active) {
+  border-right-color: var(--border-strong);
 }
 
 .data-grid-cell.align-right,
@@ -328,10 +366,14 @@
    from the cursor cell's ring and from the zebra rows; the bar is drawn
    over the lead and the first cell, whatever fills them. */
 .data-grid.pointer .data-grid-row:not(.marked):hover {
+  --data-grid-row-tint: var(--row-hover);
+
   background: var(--row-hover);
 }
 
 .data-grid-row.marked {
+  --data-grid-row-tint: var(--marked-bg);
+
   background: var(--marked-bg);
 }
 
@@ -399,6 +441,34 @@
   content: '';
 }
 
+/* With pinned columns the bar stays in view on the row's first part (its
+   lead or first pinned cell), which would cover a bar on the row itself;
+   on a cursor cell there it joins the cursor's ring. */
+.data-grid-row.marked:has(> .pinned)::before {
+  content: none;
+}
+
+.data-grid-row.marked > .pinned:first-child {
+  box-shadow: inset var(--line-strong) 0 0 var(--data-grid-bar, var(--marked-bar));
+}
+
+.data-grid-row.marked > .data-grid-cell.pinned.cursor:first-child {
+  box-shadow:
+    inset var(--line-strong) 0 0 var(--data-grid-bar, var(--marked-bar)),
+    inset 0 0 0 var(--line) var(--data-grid-ring, var(--accent));
+}
+
+.data-grid-row.marked > .pinned:first-child:where([dir='rtl'] *, [dir='rtl']) {
+  box-shadow: inset calc(-1 * var(--line-strong)) 0 0 var(--data-grid-bar, var(--marked-bar));
+}
+
+.data-grid-row.marked
+  > .data-grid-cell.pinned.cursor:first-child:where([dir='rtl'] *, [dir='rtl']) {
+  box-shadow:
+    inset calc(-1 * var(--line-strong)) 0 0 var(--data-grid-bar, var(--marked-bar)),
+    inset 0 0 0 var(--line) var(--data-grid-ring, var(--accent));
+}
+
 /* A cell whose state replaces its row's paints its tint over the bare
    ground, not over the row's tint, so the text sits on the one ground its
    colour is floored on. */
@@ -414,13 +484,29 @@
   background: var(--accent-wash);
 }
 
+/* A pinned marked column lays the same tint over its opaque ground. */
+.data-grid-cell.marked:where(.pinned) {
+  background:
+    linear-gradient(var(--accent-wash), var(--accent-wash)),
+    linear-gradient(var(--data-grid-row-tint, transparent), var(--data-grid-row-tint, transparent))
+      var(--ground);
+}
+
+.data-grid-heading.marked:where(.pinned) {
+  background: linear-gradient(var(--accent-wash), var(--accent-wash)) var(--surface-header);
+}
+
 .data-grid-heading.marked {
   box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--accent);
   color: var(--text);
 }
 
-.data-grid-row.marked .data-grid-cell.marked:not(.cursor, .cell-edited) {
+.data-grid-row.marked .data-grid-cell.marked:not(.cursor, .cell-edited, .cell-removed) {
   background: none;
+}
+
+.data-grid-row.marked .data-grid-cell.marked.pinned:not(.cursor, .cell-edited, .cell-removed) {
+  background: linear-gradient(var(--data-grid-row-tint), var(--data-grid-row-tint)) var(--ground);
 }
 
 /* A header that drags to a new place, and where it lands. The pointer
@@ -454,6 +540,10 @@
     .listing-root:has(.pane.active) .pane:not(.active, .active .pane) .data-grid
   )
   :is(.data-grid-row.marked, .data-grid-cell.marked, .data-grid-heading.marked) {
+  --data-grid-row-tint: var(--fill);
+  --data-grid-bar: var(--control-border-strong);
+  --data-grid-ring: var(--control-border-strong);
+
   background: var(--fill);
 }
 
@@ -478,9 +568,22 @@
     .listing-root:has(.pane.active) .pane:not(.active, .active .pane) .data-grid
   )
   .data-grid-row
-  .data-grid-cell.cursor:not(.cell-edited) {
+  .data-grid-cell.cursor:not(.cell-edited, .cell-removed) {
   background: transparent;
   box-shadow: inset 0 0 0 var(--line) var(--control-border-strong);
+}
+
+:where(
+    :root[data-window-inactive] .data-grid,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane) .data-grid
+  )
+  .data-grid-row
+  .data-grid-cell.cursor.pinned:not(.cell-edited, .cell-removed) {
+  background: linear-gradient(
+      var(--data-grid-row-tint, transparent),
+      var(--data-grid-row-tint, transparent)
+    )
+    var(--ground);
 }
 
 :where(
@@ -600,6 +703,18 @@
     linear-gradient(var(--warning-wash-strong), var(--warning-wash-strong)) var(--ground);
 }
 
+/* A row a save will delete (a cell whose className holds cell-removed),
+   the fourth of the cell-state family: each cell struck out, quiet, on the
+   danger wash over the bare ground, whatever row it sits in. The cursor's
+   ring and a marked row's bar draw over it. */
+.data-grid-cell.cell-removed,
+.data-grid-row.marked .data-grid-cell.cell-removed {
+  background: linear-gradient(var(--danger-wash), var(--danger-wash)) var(--ground);
+  color: var(--text-on-surface);
+  text-decoration: line-through;
+  text-decoration-color: var(--danger);
+}
+
 /* Values that are not text: a missing value (SQL NULL) set apart from the
    word, and bytes shown by their kind and size. The classes are hooks a
    caller sets through a cell's className. On a row or cell in a state the
@@ -612,7 +727,7 @@
 
 .data-grid.pointer .data-grid-row:hover .data-grid-cell.cell-null,
 .data-grid-row.marked .data-grid-cell.cell-null,
-.data-grid-cell.cell-null:is(.cursor, .marked, .cell-edited) {
+.data-grid-cell.cell-null:is(.cursor, .marked, .cell-edited, .cell-removed) {
   color: var(--text-on-surface);
 }
 
@@ -628,4 +743,13 @@
   background: none;
   box-shadow: none;
   color: transparent;
+}
+
+/* A pinned cell under an editor keeps its opaque ground. */
+.data-grid .data-grid-row .data-grid-cell.cursor.editing.pinned {
+  background: linear-gradient(
+      var(--data-grid-row-tint, transparent),
+      var(--data-grid-row-tint, transparent)
+    )
+    var(--ground);
 }

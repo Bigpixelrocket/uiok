@@ -673,3 +673,163 @@ describe('the data grid’s selection', () => {
     document.body.innerHTML = '';
   });
 });
+
+describe('the data grid’s pinned columns', () => {
+  const columns: DataGridColumn[] = [
+    { label: 'id' },
+    { label: 'name' },
+    { label: 'size' },
+    { label: 'kind' }
+  ];
+  /** Each column's width as the header's template draws it, the lead's first. */
+  const widths = (): number[] =>
+    (document.querySelector<HTMLElement>('.data-grid-header')?.style.gridTemplateColumns ?? '')
+      .split(' ')
+      .map((width) => parseFloat(width));
+  const renderPinned = (onReorder?: (from: number, to: number) => void) =>
+    render(
+      <DataGrid
+        cell={(row, column) => ({ text: `${row}:${column}` })}
+        columns={columns}
+        copyText={() => null}
+        label="Files"
+        leadWidth={30}
+        onReorder={onReorder}
+        pinnedColumns={1}
+        rowCount={3}
+        rowLead={() => <input aria-label="Mark" type="checkbox" />}
+      />
+    );
+
+  it('sticks the lead and the first columns at their offsets, the last pinned one at the edge', () => {
+    applyStylesheets(readStylesheet('src/grid/grid.css'));
+    renderPinned();
+
+    const row = document.querySelector('.data-grid-row') as HTMLElement;
+    const [lead, first, second] = [...row.children] as HTMLElement[];
+
+    expect(lead?.className).toBe('data-grid-lead pinned');
+    expect(lead?.style.insetInlineStart).toBe('0px');
+    expect(first?.classList.contains('pinned')).toBe(true);
+    expect(first?.classList.contains('pin-edge')).toBe(true);
+    expect(first?.style.insetInlineStart).toBe('30px');
+    expect(second?.classList.contains('pinned')).toBe(false);
+    expect(second?.style.insetInlineStart).toBe('');
+
+    const heading = screen.getAllByRole('columnheader')[0] as HTMLElement;
+
+    expect(heading.classList.contains('pin-edge')).toBe(true);
+    expect(heading.style.insetInlineStart).toBe('30px');
+
+    // Sticky on an opaque ground, so what scrolls under them never shows.
+    expect(declaredValues(first as Element, 'position')).toEqual(['sticky']);
+    expect(declaredValues(first as Element, 'background').at(-1)).toContain('var(--ground)');
+    expect(declaredValues(heading, 'background').at(-1)).toBe('var(--surface-header)');
+    document.body.innerHTML = '';
+  });
+
+  it('pins nothing without the prop, and no more columns than there are', () => {
+    const { rerender } = render(
+      <DataGrid
+        cell={() => null}
+        columns={columns}
+        copyText={() => null}
+        label="Files"
+        rowCount={1}
+      />
+    );
+
+    expect(document.querySelector('.pinned')).toBeNull();
+    rerender(
+      <DataGrid
+        cell={() => null}
+        columns={columns}
+        copyText={() => null}
+        label="Files"
+        pinnedColumns={9}
+        rowCount={1}
+      />
+    );
+    expect(screen.getAllByRole('columnheader').map((heading) => heading.className)).toEqual([
+      'data-grid-heading pinned',
+      'data-grid-heading pinned',
+      'data-grid-heading pinned',
+      'data-grid-heading pinned pin-edge'
+    ]);
+  });
+
+  it('scrolls a cell the keys reach into view past the pinned columns', () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(200);
+    renderPinned();
+
+    const [lead = 0, id = 0, name = 0, size = 0, kind = 0] = widths();
+    const pinnedWidth = lead + id;
+    const grid = screen.getByRole('grid');
+
+    grid.focus();
+    fireEvent.keyDown(grid, { key: 'ArrowDown' });
+    fireEvent.keyDown(grid, { key: 'End' });
+    // The last column, past the well's end: its end meets the well's.
+    expect(grid.scrollLeft).toBe(pinnedWidth + name + size + kind - 200);
+
+    // Back to the pinned column: the well stays where it is.
+    const scrolled = grid.scrollLeft;
+
+    fireEvent.keyDown(grid, { key: 'Home' });
+    expect(grid.scrollLeft).toBe(scrolled);
+
+    // One to the right, hidden under the pinned part: its start meets the pin edge.
+    fireEvent.keyDown(grid, { key: 'ArrowRight' });
+    expect(grid.scrollLeft).toBe(0);
+  });
+
+  it('keeps a dragged header on its side of the pin edge', () => {
+    const onReorder = vi.fn();
+
+    renderPinned(onReorder);
+    // Columns side by side, 100px each from x 30.
+    vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element
+    ) {
+      const index = Number(this.getAttribute('aria-colindex') ?? 1) - 1;
+
+      return { left: 30 + index * 100, right: 130 + index * 100, top: 0, bottom: 22 } as DOMRect;
+    });
+    const drag = (from: number, toX: number): void => {
+      const heading = screen.getAllByRole('columnheader')[from] as HTMLElement;
+
+      // jsdom has no pointer capture.
+      Object.assign(heading, { setPointerCapture: () => undefined });
+      fireEvent.pointerDown(heading, { button: 0, clientX: 80 + from * 100, pointerId: 1 });
+      fireEvent.pointerMove(heading, { clientX: toX, pointerId: 1 });
+      fireEvent.pointerUp(heading, { clientX: toX, pointerId: 1 });
+    };
+
+    // The pinned id dragged over kind stays first: nothing moves.
+    drag(0, 350);
+    expect(onReorder).not.toHaveBeenCalled();
+    // Size dragged over the pinned id lands just after it.
+    drag(2, 60);
+    expect(onReorder).toHaveBeenCalledWith(2, 1);
+  });
+
+  it('strikes out a removed cell on the danger wash', () => {
+    applyStylesheets(readStylesheet('src/grid/grid.css'));
+    render(
+      <DataGrid
+        cell={() => ({ text: 'gone', className: 'cell-removed' })}
+        columns={[{ label: 'name' }]}
+        copyText={() => null}
+        label="Files"
+        rowCount={1}
+      />
+    );
+    const removed = screen.getByRole('gridcell');
+
+    expect(declaredValues(removed, 'text-decoration').at(-1)).toBe('line-through');
+    expect(declaredValues(removed, 'background').at(-1)).toBe(
+      'linear-gradient(var(--danger-wash), var(--danger-wash)) var(--ground)'
+    );
+    document.body.innerHTML = '';
+  });
+});

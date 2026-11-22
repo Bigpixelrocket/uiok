@@ -21,7 +21,9 @@ import {
   gridMove,
   initialWidth,
   movedCell,
+  pinnedDropPlace,
   resizedWidth,
+  revealedScrollLeft,
   visibleRows,
   windowHolds,
   type GridCell,
@@ -151,6 +153,13 @@ export interface DataGridProps {
   readonly rowLead?: (row: number) => ReactNode;
   /** The width of the lead's column, the same on every row, in pixels. */
   readonly leadWidth?: number;
+  /**
+   * How many leading columns stay in view while the grid scrolls sideways
+   * (a key, a name), after the row's lead, which stays with them; a hairline
+   * marks the pin edge, and a header dragged to a new place never crosses
+   * it. None when absent or 0.
+   */
+  readonly pinnedColumns?: number;
   /** A control at a row's end, after its cells (Stop on a list of running jobs). */
   readonly rowAction?: (row: number) => ReactNode;
   /** The width of the row's end column, in pixels; as wide as it asks when absent. */
@@ -221,7 +230,8 @@ export interface DataGridProps {
  * What a caller adds, each only where it passes its handler: headers that
  * sort (Shift adds a column to the sort, Option or Control takes it out),
  * that drag to a new place, that copy their name on a double-click, and
- * that mark their column on a click; controls at each row's start and end;
+ * that mark their column on a click; leading columns pinned in view while
+ * the rest scroll sideways (`pinnedColumns`); controls at each row's start and end;
  * rows that mark on a click or Space; the row under the pointer lit; and
  * inline edit: a click or a double-click on an editable cell (`editTrigger`),
  * or Return on the cursor cell when it holds no link, asks to edit it
@@ -238,6 +248,7 @@ export function DataGrid({
   onNeedRows,
   rowLead,
   leadWidth = 0,
+  pinnedColumns = 0,
   rowAction,
   actionWidth,
   sort,
@@ -353,6 +364,27 @@ export function DataGrid({
     .filter((part) => part !== null)
     .join(' ');
   const page = Math.max(1, Math.floor(viewportHeight / ROW_HEIGHT) - 1);
+  /** The columns pinned, never more than there are. */
+  const pinned = Math.max(0, Math.min(Math.floor(pinnedColumns), columns.length));
+  /** Where each column starts from the rows' start, the lead included, and where the last ends. */
+  const starts = columns.reduce<number[]>(
+    (edges, column, index) => [...edges, (edges[index] ?? 0) + widthOf(column, index)],
+    [rowLead === undefined ? 0 : leadWidth]
+  );
+  /** How wide the part that stays in view is: the lead and the pinned columns. */
+  const pinnedWidth = pinned === 0 ? 0 : (starts[pinned] ?? 0);
+  /** A pinned column's or lead's class and sticky offset; nothing for one that scrolls. */
+  const pinning = (
+    index: number | 'lead'
+  ): { readonly className: string; readonly style?: CSSProperties } => {
+    if (pinned === 0 || (index !== 'lead' && index >= pinned)) return { className: '' };
+
+    return {
+      className: index === pinned - 1 ? 'pinned pin-edge' : 'pinned',
+      style: { insetInlineStart: index === 'lead' ? 0 : starts[index] }
+    };
+  };
+  const leadPin = pinning('lead');
   // A column that does not sort shows no mark, whatever the sort names, and is not counted.
   const marks: readonly DataGridSortMark[] = (
     sorts ?? (sort === null || sort === undefined ? [] : [{ ...sort, position: 1 }])
@@ -517,11 +549,22 @@ export function DataGrid({
     setEditorShift((held) => (held === next ? held : next));
   }, [editorBox, editor]);
 
-  /** Scrolls a row into the viewport, below the header. */
-  const reveal = (row: number): void => {
+  /**
+   * Scrolls a cell into the viewport: its row below the header, its column
+   * past the pinned ones.
+   */
+  const reveal = (row: number, column: number): void => {
     const element = viewport.current;
 
     if (element === null) return;
+
+    element.scrollLeft = revealedScrollLeft(
+      element.scrollLeft,
+      element.clientWidth,
+      starts[column] ?? 0,
+      starts[column + 1] ?? 0,
+      pinnedWidth
+    );
 
     const top = row * ROW_HEIGHT;
     const shown = element.clientHeight - ROW_HEIGHT;
@@ -560,7 +603,7 @@ export function DataGrid({
     if (next === null) return;
     event.preventDefault();
     setCursor(next);
-    reveal(next.row);
+    reveal(next.row, next.column);
   };
 
   const onResizeStart = (event: ReactPointerEvent<HTMLSpanElement>, column: number): void => {
@@ -612,7 +655,10 @@ export function DataGrid({
         moving = true;
         target.setPointerCapture(event.pointerId);
       }
-      setDragging({ from: column, to: dropPlace(move.clientX, headingEdges(), column) });
+      setDragging({
+        from: column,
+        to: pinnedDropPlace(dropPlace(move.clientX, headingEdges(), column), column, pinned)
+      });
     };
     const onUp = (up: PointerEvent): void => {
       target.removeEventListener('pointermove', onMove);
@@ -622,7 +668,7 @@ export function DataGrid({
       dragged.current = true;
       setDragging(null);
 
-      const place = dropPlace(up.clientX, headingEdges(), column);
+      const place = pinnedDropPlace(dropPlace(up.clientX, headingEdges(), column), column, pinned);
 
       if (place !== column) onReorder(column, place);
     };
@@ -661,9 +707,17 @@ export function DataGrid({
         role="row"
         style={{ gridTemplateColumns: template, transform: `translateY(${row * ROW_HEIGHT}px)` }}
       >
-        {rowLead !== undefined && <div className="data-grid-lead">{rowLead(row)}</div>}
+        {rowLead !== undefined && (
+          <div
+            className={['data-grid-lead', leadPin.className].filter(Boolean).join(' ')}
+            style={leadPin.style}
+          >
+            {rowLead(row)}
+          </div>
+        )}
         {columns.map((column, index) => {
           const shown = cell(row, index);
+          const pin = pinning(index);
           const current = cursor?.row === row && cursor.column === index;
           const editing = editor !== null && editor.row === row && editor.column === index;
           const edits = canEdit(row, index);
@@ -678,6 +732,7 @@ export function DataGrid({
                 current ? 'cursor' : '',
                 markedColumns?.has(index) === true ? 'marked' : '',
                 editing ? 'editing' : '',
+                pin.className,
                 shown?.className ?? ''
               ]
                 .filter(Boolean)
@@ -696,6 +751,7 @@ export function DataGrid({
               }}
               onPointerDown={() => setCursor({ row, column: index })}
               role="gridcell"
+              style={pin.style}
               {...describedTooltip(shown?.tip ?? null)}
             >
               {shown?.content !== undefined ? (
@@ -799,9 +855,15 @@ export function DataGrid({
           role="row"
           style={{ gridTemplateColumns: template }}
         >
-          {rowLead !== undefined && <div className="data-grid-lead" />}
+          {rowLead !== undefined && (
+            <div
+              className={['data-grid-lead', leadPin.className].filter(Boolean).join(' ')}
+              style={leadPin.style}
+            />
+          )}
           {columns.map((column, index) => {
             const sortable = sortsBy(column);
+            const pin = pinning(index);
             const mark = marks.find((entry) => entry.column === index);
 
             return (
@@ -818,7 +880,8 @@ export function DataGrid({
                       ? 'drop-before'
                       : 'drop-after'
                     : '',
-                  onReorder === undefined ? '' : 'draggable'
+                  onReorder === undefined ? '' : 'draggable',
+                  pin.className
                 ]
                   .filter(Boolean)
                   .join(' ')}
@@ -830,6 +893,7 @@ export function DataGrid({
                 onDoubleClick={() => onHeaderDoubleClick?.(index)}
                 onPointerDown={(event) => onHeadingPointerDown(event, index)}
                 role="columnheader"
+                style={pin.style}
                 // A caller's tip tells more than the label; without one, a
                 // label cut by its column shows itself whole, only while cut.
                 {...(column.tip === undefined

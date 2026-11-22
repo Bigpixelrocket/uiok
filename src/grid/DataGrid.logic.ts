@@ -194,6 +194,38 @@ export function dropPlace(
 }
 
 /**
+ * Where a header dragged from `from` may land, given `place` under the
+ * pointer, in a grid whose first `pinned` columns stay in view: a pinned
+ * column stays among the pinned ones and any other among the rest, so a
+ * reorder never crosses the pin edge.
+ */
+export function pinnedDropPlace(place: number, from: number, pinned: number): number {
+  if (pinned <= 0) return place;
+  return from < pinned ? Math.min(place, pinned - 1) : Math.max(place, pinned);
+}
+
+/**
+ * Where a well scrolled sideways to `scrollLeft`, `width` pixels wide, scrolls
+ * to show a column spanning `left` to `right` (from the rows' start), when
+ * the first `pinned` pixels stay in view over whatever scrolls under them:
+ * the least scroll that shows the column whole past the pinned ones, its
+ * start first when it is wider than the room. A column inside the pinned
+ * part, or one already in view, leaves the scroll where it is.
+ */
+export function revealedScrollLeft(
+  scrollLeft: number,
+  width: number,
+  left: number,
+  right: number,
+  pinned = 0
+): number {
+  if (width <= 0 || left < pinned) return scrollLeft;
+  if (left < scrollLeft + pinned) return Math.max(0, left - pinned);
+  if (right > scrollLeft + width) return Math.max(0, Math.min(left - pinned, right - width));
+  return scrollLeft;
+}
+
+/**
  * Where the inline editor's layer starts, in window pixels: over its cell
  * (`left`), unless a layer wider than the cell would cross the well's right
  * edge, when it moves left to end `margin` inside it, never past the well's
