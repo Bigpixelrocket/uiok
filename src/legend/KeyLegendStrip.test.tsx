@@ -246,6 +246,26 @@ describe('KeyLegendStrip', () => {
       }
     });
 
+    it("ends its list at the chip's left edge right to left", () => {
+      applyStylesheets(readStylesheet('src/styles.css'));
+      const restore = wrapLast(1);
+      try {
+        render(
+          <div dir="rtl">
+            <KeyLegendStrip overflow="more" verbs={many()} />
+          </div>
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: '1 more shortcut' }));
+        const menu = screen.getByRole('menu');
+
+        expect(getComputedStyle(menu).left).toBe('0px');
+        expect(getComputedStyle(menu).right).toBe('auto');
+      } finally {
+        restore();
+      }
+    });
+
     it('closes its list on Escape without running anything', () => {
       const restore = wrapLast(1);
       try {

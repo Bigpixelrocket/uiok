@@ -460,6 +460,26 @@ describe('PaneTabs folding', () => {
     }
   });
 
+  it('opens its menu over the count when the window has no room below', () => {
+    layout(350);
+    strip({ front: 'e', tabs: FOLDING });
+
+    const count = screen.getByRole('button', { name: 'Folded here' });
+    const at = (top: number): DOMRect =>
+      ({ top, bottom: top + 20, left: 0, right: 40, width: 40, height: 20 }) as DOMRect;
+
+    vi.spyOn(count, 'getBoundingClientRect').mockReturnValue(at(350));
+    vi.spyOn(HTMLElement.prototype, 'offsetHeight', 'get').mockReturnValue(200);
+    vi.spyOn(window, 'innerHeight', 'get').mockReturnValue(400);
+    fireEvent.click(count);
+    expect(screen.getByRole('menu').style.top).toBe('150px');
+
+    fireEvent.click(count);
+    vi.spyOn(count, 'getBoundingClientRect').mockReturnValue(at(40));
+    fireEvent.click(count);
+    expect(screen.getByRole('menu').style.top).toBe('60px');
+  });
+
   it('closes its menu on Escape and hands the focus back to the count', () => {
     layout(350);
     const { onSelect } = strip({ front: 'e', tabs: FOLDING });

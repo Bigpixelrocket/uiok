@@ -215,3 +215,9 @@
   width: max-content;
   min-width: 200px;
 }
+
+/* Right to left, the chip ends the strip on the left: the list ends there too. */
+.keylegend-more-place > .keylegend-more-list:where([dir='rtl'] *, [dir='rtl']) {
+  left: 0;
+  right: auto;
+}

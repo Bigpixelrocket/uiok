@@ -166,7 +166,9 @@ function FoldedTabs({ folded, labels, onSelect }: FoldedProps): ReactElement {
     closeRef.current = close;
   });
 
-  // Placed under the count, its trailing edge on the count's, and given the keys.
+  // Placed under the count, its trailing edge on the count's, and given the
+  // keys; over the count instead when the window has no room for it below
+  // and has room above, so no row the keys reach falls out of the window.
   useLayoutEffect(() => {
     const menu = menuRef.current;
     const button = buttonRef.current;
@@ -178,8 +180,11 @@ function FoldedTabs({ folded, labels, onSelect }: FoldedProps): ReactElement {
     const box = button.getBoundingClientRect();
     const gap = parseFloat(getComputedStyle(menu).getPropertyValue('--space-2')) || 0;
     const width = menu.offsetWidth;
+    const height = menu.offsetHeight;
+    const above = box.top - gap - height;
+    const below = box.bottom + gap;
 
-    menu.style.top = `${box.bottom + gap}px`;
+    menu.style.top = `${below + height > window.innerHeight - gap && above >= gap ? above : below}px`;
     menu.style.left = `${Math.max(gap, Math.min(box.right - width, window.innerWidth - width - gap))}px`;
     menu.focus({ preventScroll: true });
   }, [host]);
