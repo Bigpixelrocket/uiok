@@ -117,4 +117,27 @@ describe('draggedTabOrder', () => {
       draggedTabOrder(['a', 'b', 'c', 'd', 'e'], { id: 'b', left: 360, width: 100 }, boxes, 1)
     ).toEqual(['a', 'c', 'd', 'b', 'e']);
   });
+
+  it('keeps the order while no tab on show is crossed, folded tabs between them included', () => {
+    const order = ['a', 'b', 'c', 'd', 'e', 'f'];
+    const far = [{ id: 'f', left: 200, width: 100 }];
+
+    expect(draggedTabOrder(order, { id: 'c', left: 5, width: 100 }, far, 1)).toBe(order);
+    expect(draggedTabOrder(order, { id: 'c', left: 160, width: 100 }, far, 1)).toEqual([
+      'a',
+      'b',
+      'd',
+      'e',
+      'f',
+      'c'
+    ]);
+    expect(
+      draggedTabOrder(
+        order,
+        { id: 'f', left: -10, width: 100 },
+        [{ id: 'c', left: 0, width: 100 }],
+        -1
+      )
+    ).toEqual(['a', 'b', 'f', 'c', 'd', 'e']);
+  });
 });

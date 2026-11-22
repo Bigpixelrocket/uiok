@@ -263,7 +263,7 @@ export function RowIconAction({
       ref={ref}
       tabIndex={inRow ? -1 : undefined}
       type="button"
-      {...(look !== 'icons' && tip === word
+      {...(look !== 'icons' && tip === word && shortcut === undefined
         ? {}
         : {
             ...(tip === label ? tooltip(label) : describedTooltip(tip)),

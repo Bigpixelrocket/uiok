@@ -194,7 +194,9 @@ export interface TabBox {
  * layout has them, and `order` every tab, folded ones included. A neighbour
  * steps aside once the tab coming toward it covers half of it; one the tab
  * is moving away from stays put, so a tab resting on the line between two
- * places cannot flicker between them. `direction` is the sign of the
+ * places cannot flicker between them. Folded tabs keep their places: a tab
+ * that crosses no neighbour returns `order` itself, and one that crosses
+ * lands beside the last neighbour it passed. `direction` is the sign of the
  * pointer's last move.
  */
 export function draggedTabOrder(
@@ -220,10 +222,19 @@ export function draggedTabOrder(
       ? !(direction < 0 && held.left < centre)
       : direction > 0 && right > centre;
   }).length;
-  const before = shown[passed];
-  const last = shown[shown.length - 1];
+  const stayed = shown.filter((id) => order.indexOf(id) < mine).length;
+
+  // Nothing crossed: the tab keeps its place among the folded tabs too.
+  if (passed === stayed) {
+    return order;
+  }
+
+  // Past a neighbour, the tab lands beside it: folded tabs on the far side
+  // of that neighbour stay where they were.
   const at =
-    before !== undefined ? rest.indexOf(before) : last !== undefined ? rest.indexOf(last) + 1 : 0;
+    passed > stayed
+      ? rest.indexOf(shown[passed - 1] as string) + 1
+      : rest.indexOf(shown[passed] as string);
 
   return [...rest.slice(0, at), held.id, ...rest.slice(at)];
 }

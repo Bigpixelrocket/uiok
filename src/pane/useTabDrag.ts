@@ -254,7 +254,7 @@ export function useTabDrag(): TabDrag {
     const stop = (): void => {
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', end);
-      window.removeEventListener('pointercancel', end);
+      window.removeEventListener('pointercancel', cancel);
       window.removeEventListener('keydown', escape, true);
       window.removeEventListener('blur', cancel);
       stopRef.current = null;
@@ -366,7 +366,7 @@ export function useTabDrag(): TabDrag {
         stopRef.current = stop;
         window.addEventListener('pointermove', move);
         window.addEventListener('pointerup', end);
-        window.addEventListener('pointercancel', end);
+        window.addEventListener('pointercancel', cancel);
         window.addEventListener('blur', cancel);
       },
       tabRef: (id: string) => {

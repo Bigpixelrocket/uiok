@@ -301,6 +301,29 @@ describe('PaneTabs dragging', () => {
     );
   });
 
+  it('puts every tab back when the pointer is cancelled, and reports nothing', () => {
+    layout(1000);
+    const { onReorder } = strip({ front: 'a', tabs: PLAIN });
+
+    fireEvent.pointerDown(tab('b'), { button: 0, clientX: 150 });
+    act(() => {
+      fireEvent.pointerMove(window, { clientX: 160 });
+      fireEvent.pointerMove(window, { clientX: 260 });
+    });
+    act(() => {
+      fireEvent.pointerCancel(window);
+    });
+    act(() => {
+      fireEvent.pointerUp(window);
+    });
+
+    expect(onReorder).not.toHaveBeenCalled();
+    expect(has(tab('b'), 'dragging')).toBe(false);
+    expect(screen.getAllByRole('tab').map((element) => element.textContent)).toEqual(
+      PLAIN.map((item) => item.id)
+    );
+  });
+
   it('stops an unpinned tab at the pin rule', () => {
     layout(1000);
     const tabs = [{ id: 'p', name: 'p', pinned: true }, ...PLAIN.slice(0, 3)];
@@ -403,6 +426,38 @@ describe('PaneTabs folding', () => {
     expect(onSelect).toHaveBeenCalledWith('b');
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(count);
+  });
+
+  it('scrolls the row the keys move to into view, and describes a row by its tip', () => {
+    layout(350);
+    const scrolled: Element[] = [];
+
+    Object.defineProperty(Element.prototype, 'scrollIntoView', {
+      configurable: true,
+      value(this: Element) {
+        scrolled.push(this);
+      }
+    });
+
+    try {
+      strip({
+        front: 'e',
+        tabs: FOLDING.map((item) => (item.id === 'c' ? { ...item, tip: 'local / c' } : item))
+      });
+      fireEvent.click(screen.getByRole('button', { name: 'Folded here' }));
+
+      const menu = screen.getByRole('menu');
+
+      fireEvent.keyDown(menu, { key: 'ArrowDown' });
+      fireEvent.keyDown(menu, { key: 'ArrowDown' });
+
+      const c = within(menu).getByRole('menuitem', { name: 'c' });
+
+      expect(scrolled.at(-1)).toBe(c);
+      expect(c.getAttribute('aria-description')).toBe('local / c');
+    } finally {
+      delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
   });
 
   it('closes its menu on Escape and hands the focus back to the count', () => {

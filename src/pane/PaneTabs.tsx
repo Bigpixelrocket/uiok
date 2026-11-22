@@ -184,6 +184,18 @@ function FoldedTabs({ folded, labels, onSelect }: FoldedProps): ReactElement {
     menu.focus({ preventScroll: true });
   }, [host]);
 
+  // The row the keys move to scrolls into the list's view, so Return never
+  // chooses a row out of sight. Optional call: jsdom has no scrollIntoView.
+  useLayoutEffect(() => {
+    if (host === null || cursor === null) {
+      return;
+    }
+
+    menuRef.current
+      ?.querySelector('.pane-tabs-folded-option.cursor')
+      ?.scrollIntoView?.({ block: 'nearest' });
+  }, [host, cursor]);
+
   // A press outside closes it; the press goes on to whatever it landed on.
   useEffect(() => {
     if (host === null) {
@@ -298,7 +310,11 @@ function FoldedTabs({ folded, labels, onSelect }: FoldedProps): ReactElement {
               <div className="folder-menu-options" role="none">
                 {folded.map((tab, index) => (
                   <div
-                    aria-description={tab.dirty === true ? labels.notSaved : undefined}
+                    aria-description={
+                      [tab.tip, tab.dirty === true ? labels.notSaved : undefined]
+                        .filter((part) => part !== undefined && part !== '')
+                        .join(', ') || undefined
+                    }
                     aria-label={spokenTab(tab)}
                     className={
                       index === cursor
