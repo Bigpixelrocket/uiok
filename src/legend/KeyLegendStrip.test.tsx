@@ -266,6 +266,28 @@ describe('KeyLegendStrip', () => {
       }
     });
 
+    it('keeps the left-to-right place in an LTR footer inside an RTL page', () => {
+      applyStylesheets(readStylesheet('src/styles.css'));
+      const restore = wrapLast(1);
+      try {
+        render(
+          <div dir="rtl">
+            <div dir="ltr">
+              <KeyLegendStrip overflow="more" verbs={many()} />
+            </div>
+          </div>
+        );
+
+        fireEvent.click(screen.getByRole('button', { name: '1 more shortcut' }));
+        const menu = screen.getByRole('menu');
+
+        expect(getComputedStyle(menu).left).toBe('auto');
+        expect(getComputedStyle(menu).right).toBe('0px');
+      } finally {
+        restore();
+      }
+    });
+
     it('closes its list on Escape without running anything', () => {
       const restore = wrapLast(1);
       try {

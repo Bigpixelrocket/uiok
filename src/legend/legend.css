@@ -216,8 +216,10 @@
   min-width: 200px;
 }
 
-/* Right to left, the chip ends the strip on the left: the list ends there too. */
-.keylegend-more-place > .keylegend-more-list:where([dir='rtl'] *, [dir='rtl']) {
+/* Right to left, the chip ends the strip on the left: the list ends there
+   too. :dir() follows the nearest direction, so an LTR footer inside an RTL
+   page keeps the left-to-right place. */
+.keylegend-more-place > .keylegend-more-list:dir(rtl) {
   left: 0;
   right: auto;
 }

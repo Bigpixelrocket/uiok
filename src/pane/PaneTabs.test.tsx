@@ -480,6 +480,23 @@ describe('PaneTabs folding', () => {
     expect(screen.getByRole('menu').style.top).toBe('60px');
   });
 
+  it('closes its menu when the window changes size, the focus back on the count', () => {
+    layout(350);
+    const { onSelect } = strip({ front: 'e', tabs: FOLDING });
+    const count = screen.getByRole('button', { name: 'Folded here' });
+
+    count.focus();
+    fireEvent.click(count);
+    expect(screen.getByRole('menu')).toBeTruthy();
+    act(() => {
+      window.dispatchEvent(new Event('resize'));
+    });
+
+    expect(screen.queryByRole('menu')).toBeNull();
+    expect(document.activeElement).toBe(count);
+    expect(onSelect).not.toHaveBeenCalled();
+  });
+
   it('closes its menu on Escape and hands the focus back to the count', () => {
     layout(350);
     const { onSelect } = strip({ front: 'e', tabs: FOLDING });

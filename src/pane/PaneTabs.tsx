@@ -216,9 +216,17 @@ function FoldedTabs({ folded, labels, onSelect }: FoldedProps): ReactElement {
       }
     };
 
-    document.addEventListener('mousedown', listener, true);
+    // A window that changes size moves the count out from under the menu:
+    // the menu closes, and the keys go back to where they were.
+    const resized = (): void => closeRef.current('keyboard');
 
-    return () => document.removeEventListener('mousedown', listener, true);
+    document.addEventListener('mousedown', listener, true);
+    window.addEventListener('resize', resized);
+
+    return () => {
+      document.removeEventListener('mousedown', listener, true);
+      window.removeEventListener('resize', resized);
+    };
   }, [host]);
 
   const choose = (tab: PaneTabItem | undefined): void => {
