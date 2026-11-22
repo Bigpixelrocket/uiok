@@ -28,6 +28,7 @@
 @import './palette/palette.css';
 @import './charts/charts.css';
 @import './terminal/terminal.css';
+@import './pane/panetabs.css';
 
 /* Shared looks a page puts on its own markup: form controls, notices, cards. */
 @import './field/field.css';

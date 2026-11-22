@@ -1,0 +1,408 @@
+/* ---- Pane tabs ---------------------------------------------------------------
+   The tabs a pane hangs from (PaneTabs): the tab row over the pane's frame,
+   the frame hanging from the tab in front, the tabs and their states (in
+   front, following, dirty, pinned, picked, in the hand, a danger tone), the
+   pin rule, New Tab, the strip's empty end, the folded tabs' count and its
+   menu; then a pane's tone. Scoped by :where(.listing-root) as the listing
+   look is, so an app adjusts a piece with one scoped selector. */
+
+.listing-root {
+  /* The tab row's height: the path bar's, so a strip and a bar share a line. */
+  --pane-tab-height: var(--bar-height);
+  /* A tab behind the one in front. */
+  --pane-tab-back: var(--surface-recessed);
+}
+
+/* A pane with tabs is its tab row and the frame that hangs from the tab in
+   front. The row paints nothing, so the ground shows beside and behind the
+   tabs; the content sits inside the frame's hairline under the row. */
+:where(.listing-root) .pane:has(> .pane-header) {
+  padding: 0 1px 1px;
+}
+
+:where(.listing-root) .pane:has(> .pane-header)::before {
+  /* Up under the tab's foot by the hairline, so the tab's surface interrupts
+     the frame's top edge and its sides run into the frame's. */
+  inset: calc(var(--pane-tab-height) - 1px) 0 0;
+  border-radius: 0 var(--radius-md) var(--radius-md);
+}
+
+/* The row the tabs stand in. It runs out over the frame's hairline so the
+   first tab's near edge meets the frame's, and stops short of the frame's
+   rounded far corner. */
+:where(.listing-root) .pane-header {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  height: var(--pane-tab-height);
+  flex: 0 0 var(--pane-tab-height);
+  min-width: 0;
+  margin: 0 -1px;
+  padding-right: var(--space-6);
+  font: var(--font-size-small) / var(--line-height-compact) var(--font-mono);
+}
+
+/* The strip never wraps and never scrolls: its tabs shrink to their floors,
+   then fold into the count. */
+:where(.listing-root) .pane-tabs {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+/* A tab wears its place's name. The one in front joins the pane's frame;
+   the others stand behind it on the ground, shorter and fainter. A tab takes
+   no focus: a press shows it, and the host's verbs are the keyboard's way
+   in. It shrinks no narrower than its label's floor (--pane-tab-floor, in
+   characters, which PaneTabs sets) past its insets, its border, and the
+   room it keeps for its close control. */
+:where(.listing-root) .pane-tab {
+  position: relative;
+  flex: 0 1 auto;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-sizing: border-box;
+  min-width: calc(
+    var(--pane-tab-floor, 0ch) + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) +
+      2 * var(--line)
+  );
+  max-width: calc(
+    32ch + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) + 2 * var(--line)
+  );
+  /* Shorter than the tab in front, and clear of the frame's top hairline. */
+  height: calc(var(--pane-tab-height) - var(--space-2));
+  margin-bottom: 1px;
+  /* The close control sits in room every tab keeps for it. */
+  padding: 0 var(--space-2) 0 var(--space-4);
+  border: var(--line) solid var(--border);
+  border-bottom: none;
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  background: var(--pane-tab-back);
+  color: var(--text-dim);
+  white-space: nowrap;
+  cursor: default;
+}
+
+/* A mark ahead of the name takes its own room on top of the floor. */
+:where(.listing-root) .pane-tab:has(> .pane-tab-mark) {
+  min-width: calc(
+    var(--pane-tab-floor, 0ch) + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) +
+      2 * var(--line) + var(--icon-md) + var(--space-2)
+  );
+}
+
+/* A tab with no close control, pin, or mark of its own has nothing to keep room for. */
+:where(.listing-root) .pane-tab:not(:has(> :is(.pane-tab-close, .pane-tab-pin, .pane-tab-dirty))) {
+  padding-right: var(--space-4);
+}
+
+:where(.listing-root) .pane-tab:hover {
+  border-color: var(--border-strong);
+  background: linear-gradient(var(--hover-wash), var(--hover-wash)) var(--surface);
+  color: var(--text);
+}
+
+/* A tab behind, held down: it sinks before it comes to the front. */
+:where(.listing-root) .pane-tab:not(.active, .picked):active {
+  background: linear-gradient(var(--pressed-wash), var(--pressed-wash)) var(--surface);
+  box-shadow: var(--press-frost);
+  color: var(--text);
+}
+
+/* The tab in front: full height, open at the foot where its surface
+   interrupts the frame's top edge, and never the one that gives up its name
+   to a crowded strip. */
+:where(.listing-root) .pane-tab.active {
+  flex-shrink: 0;
+  height: var(--pane-tab-height);
+  margin-bottom: 0;
+  border-color: var(--border-strong);
+  background: var(--surface);
+  box-shadow: none;
+  color: var(--text);
+  font-weight: var(--font-weight-strong);
+}
+
+/* The active pane wears the accent on its frame and on the tab in front;
+   in a window that is not in front both go to the strong hairline. */
+:where(.listing-root) .pane.active .pane-tab.active {
+  border-color: var(--accent);
+}
+
+:where(:root[data-window-inactive] .listing-root) .pane.active .pane-tab.active,
+:where(:root[data-window-inactive] .listing-root) .pane.active:has(> .pane-header)::before {
+  border-color: var(--border-strong);
+}
+
+/* A tab picked beside the one in front, to close or move with it, wears
+   the tint and edge a marked row does, so it never reads as the tab in
+   front, which keeps its outline. Hovered, it keeps the mark. */
+:where(.listing-root) .pane-tab.picked,
+:where(.listing-root) .pane-tab.picked:hover {
+  border-color: var(--marked-bar);
+  background: linear-gradient(var(--marked-bg), var(--marked-bg)) var(--surface);
+  color: var(--text);
+}
+
+/* A tab in the hand rides over its neighbours and over a menu's level. */
+:where(.listing-root) .pane-tab.dragging {
+  z-index: var(--z-drag);
+  box-shadow: var(--shadow-popover);
+}
+
+/* What the tab is, ahead of its name: a group's swatch or a kind's glyph. */
+:where(.listing-root) .pane-tab-mark {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--icon-md);
+  height: var(--icon-md);
+}
+
+:where(.listing-root) .pane-tab-label {
+  display: flex;
+  min-width: 0;
+}
+
+:where(.listing-root) .pane-tab-label > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The name gives way last: it is what the eye looks for. */
+:where(.listing-root) .pane-tab-name {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* What stands above the name, shown only to tell two tabs of one name
+   apart. It gives way to an ellipsis before the name loses a character. */
+:where(.listing-root) .pane-tab-context {
+  flex: 0 1000000 auto;
+  color: var(--text-dim);
+  font-weight: var(--font-weight-regular);
+}
+
+:where(.listing-root) .pane-tab-slash {
+  flex: none;
+}
+
+/* A following tab shows the place opened last, and the next place opened
+   takes it over. Its name is italic, as editors set a preview tab's, until
+   something keeps it (docs/tokens.md, italic). */
+:where(.listing-root) .pane-tab.following .pane-tab-name {
+  font-style: italic;
+}
+
+/* A tab's close control: at rest on the tab in front, under the pointer on
+   the others, so a tab never changes width. It joins the quiet control's
+   hover and press by class (`quiet-control`). */
+:where(.listing-root) .pane-tab-close {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: default;
+}
+
+:where(.listing-root :is(.pane-tab-close, .pane-tab-new, .pane-tabs-folded)) {
+  background: transparent;
+  color: var(--text-dim);
+}
+
+:where(.listing-root) .pane-tab:not(.active, :hover) .pane-tab-close {
+  visibility: hidden;
+}
+
+/* A dirty tab holds changes not saved. The warning state mark stands where
+   the close control does and gives that place back to it under the
+   pointer, so the tab keeps its width. A pinned tab has no control to give
+   it to, so its mark stays. */
+:where(.listing-root) .pane-tab-dirty {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+}
+
+:where(.listing-root) .pane-tab.dirty:not(:hover) .pane-tab-close,
+:where(.listing-root) .pane-tab.dirty:has(> .pane-tab-close):hover .pane-tab-dirty {
+  display: none;
+}
+
+/* A pinned tab stands before the pin rule, keeps its width however crowded
+   the strip, and carries a pin where a tab's close control is. */
+:where(.listing-root) .pane-tab.pinned {
+  flex: none;
+}
+
+:where(.listing-root) .pane-tab-pin {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  color: var(--text-dim);
+}
+
+:where(.listing-root) .pane-tab.pinned.active .pane-tab-pin > svg {
+  color: var(--accent);
+}
+
+/* The hairline between the pinned tabs and the others. */
+:where(.listing-root) .pane-pin-rule {
+  flex: none;
+  align-self: center;
+  width: var(--line);
+  height: var(--icon-md);
+  margin: 0 var(--space-1) var(--space-1);
+  background: var(--border-strong);
+}
+
+/* Centred on the row's height, so its hover wash stands clear of the
+   frame's line below it. */
+:where(.listing-root) .pane-tab-new {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--control-height-xs);
+  height: var(--control-height-xs);
+  margin: 0 0 var(--space-1) var(--space-1);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: default;
+}
+
+:where(.listing-root) :is(.pane-tab-close, .pane-tab-new, .pane-tabs-folded):focus-visible {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset-inset);
+}
+
+/* The strip's empty end: a double-click there opens a new tab. */
+:where(.listing-root) .pane-tabs-rest {
+  flex: 1 1 0;
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* The folded tabs' count, after New Tab: the warning mark while a folded
+   tab is dirty, "+N" in tabular figures, and a chevron. Its hover, press,
+   and open looks are the quiet control's. */
+:where(.listing-root) .pane-tabs-folded {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  box-sizing: border-box;
+  height: var(--control-height-xs);
+  margin: 0 0 var(--space-1);
+  padding: 0 var(--space-2);
+  border: none;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  cursor: default;
+}
+
+:where(.listing-root) .pane-tabs-folded > .pane-tab-dirty {
+  width: auto;
+}
+
+:where(.listing-root) .pane-tabs-folded-count {
+  font-variant-numeric: tabular-nums;
+}
+
+/* What the host puts at the strip's end (an update pill), on the controls' line. */
+:where(.listing-root) .pane-tabs-trailing {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  align-self: center;
+}
+
+/* The folded tabs' menu: the menu look, placed under the count by
+   PaneTabs (fixed, so the pane's frame does not clip it), as wide as its
+   longest row. */
+.folder-menu.pane-tabs-folded-menu {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: max-content;
+  min-width: 24ch;
+  max-width: 60ch;
+}
+
+.pane-tabs-folded-option {
+  grid-template-columns: var(--icon-column) minmax(0, 1fr) auto;
+}
+
+.pane-tabs-folded-mark {
+  display: inline-grid;
+  place-items: center start;
+}
+
+.pane-tabs-folded-label {
+  display: flex;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+.pane-tabs-folded-label > * {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pane-tabs-folded-label > .pane-tab-context {
+  flex: 0 1000000 auto;
+  color: var(--text-dim);
+}
+
+.pane-tabs-folded-label > .pane-tab-slash {
+  flex: none;
+}
+
+.folder-menu-option.cursor .pane-tabs-folded-label > .pane-tab-context {
+  color: var(--text-on-surface);
+}
+
+.pane-tabs-folded-marks {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pane-tabs-folded-marks:not(:empty) {
+  margin-left: var(--space-5);
+}
+
+/* ---- A pane's tone ----
+   `data-tone="danger"` on a .pane draws its frame, and its tabs' outlines,
+   in the danger colour, whether or not the pane holds the keys and whether
+   or not the window is in front: the tone says where the pane is, not who
+   has the keys. A danger tab keeps its edge when it is picked or hovered. */
+:where(.listing-root) .pane[data-tone='danger']::before,
+:where(.listing-root) .pane.active[data-tone='danger']::before,
+:where(:root[data-window-inactive] .listing-root)
+  .pane.active[data-tone='danger']:has(> .pane-header)::before {
+  border-color: var(--danger);
+}
+
+:where(.listing-root) .pane-tab[data-tone='danger'],
+:where(.listing-root) .pane-tab[data-tone='danger']:is(:hover, .picked),
+:where(.listing-root) .pane.active .pane-tab.active[data-tone='danger'],
+:where(.listing-root) .pane[data-tone='danger'] .pane-tab.active,
+:where(.listing-root) .pane.active[data-tone='danger'] .pane-tab.active,
+:where(:root[data-window-inactive] .listing-root) .pane.active[data-tone='danger'] .pane-tab.active,
+:where(:root[data-window-inactive] .listing-root)
+  .pane.active
+  .pane-tab.active[data-tone='danger'] {
+  border-color: var(--danger);
+}

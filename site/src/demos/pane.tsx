@@ -9,7 +9,8 @@
  * the fact cuts its words with the whole fact as a tooltip. Then a trail
  * deeper than a 300px row can hold, which keeps its last crumbs and fades its
  * start, a fact whose mark is a host's own glyph, a hand-written trail with a
- * home crumb and a brief one, and the three looks a row link takes.
+ * home crumb and a brief one, and the three looks a row link takes. Above
+ * the path facts, a pane hanging from its tabs (paneTabs.tsx).
  */
 
 import {
@@ -57,6 +58,8 @@ import {
   type Pane,
   type PaneKeyAction
 } from '@bigpixelrocket/uiok/pane';
+
+import { PaneTabsDemo } from './paneTabs';
 
 type Action = PaneKeyAction | { readonly kind: 'focus'; readonly pane: Pane };
 
@@ -610,6 +613,10 @@ export function PaneDemo() {
       <code className="demo-readout">
         {said === '' ? 'click into the panes, then use the keys' : said}
       </code>
+
+      <h3 className="demo-subhead">Tabs</h3>
+      <PaneTabsDemo say={setSaid} />
+      <code className="demo-readout">{said === '' ? 'press, drag, or pick a tab' : said}</code>
 
       <h3 className="demo-subhead">Path facts</h3>
       <PathFacts say={setSaid} />

@@ -8,6 +8,7 @@ export { DEFAULT_LEGEND_LABELS, type LegendLabels } from './legend.js';
 export { DEFAULT_LISTING_LABELS, type ListingLabels, type SortDirection } from './listing.js';
 export { DEFAULT_PAGER_LABELS, type PagerLabels, type PagerStep } from './pager.js';
 export { DEFAULT_PALETTE_LABELS, type PaletteLabels } from './palette.js';
+export { DEFAULT_PANE_TABS_LABELS, type PaneTabsLabels } from './paneTabs.js';
 export { DEFAULT_SELECT_ALL_LABELS, type SelectAllLabels } from './selectAll.js';
 export { DEFAULT_TERMINAL_LABELS, type TerminalLabels } from './terminal.js';
 export { DEFAULT_LABELS, type UiokLabels } from './UiokLabels.js';

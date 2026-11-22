@@ -3,7 +3,9 @@
  * compact controls inside them, in listing rows, and in a toolbar that
  * fits its tools to one line (`useToolbarFit`), and the keyboard of a
  * sidebar beside a page (`usePaneKeys`) with the pure key mapping and DOM
- * readers it is built on. Styled by the listing look under `.listing-root`.
+ * readers it is built on, and the tab strip a pane hangs from (`PaneTabs`)
+ * with the pure rules it and its host keep tab state by. Styled by the
+ * listing look under `.listing-root`.
  */
 
 export {
@@ -49,5 +51,19 @@ export {
   type PaneKeyStroke,
   type PaneMove
 } from './PaneKeys.logic.js';
+export { PaneTabs, type PaneTabItem, type PaneTabsProps } from './PaneTabs.js';
+export {
+  draggedTabOrder,
+  foldOrder,
+  foldsNeeded,
+  gatherTabs,
+  pickedTabs,
+  pickRun,
+  tabLabelFloor,
+  togglePick,
+  type FoldableTab,
+  type TabBox,
+  type TabPicks
+} from './PaneTabs.logic.js';
 export { useToolbarFit } from './useToolbarFit.js';
 export { usePaneKeys, type Pane, type PaneKeys, type PaneKeysOptions } from './usePaneKeys.js';
