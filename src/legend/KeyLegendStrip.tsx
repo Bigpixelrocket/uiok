@@ -261,13 +261,15 @@ interface LegendMoreProps {
  * keeps its room while nothing is folded (hidden, so the strip never jumps
  * when the first place folds). Its list is a compact menu: the keys of
  * `moreListAction`, a click or Return runs the verb and closes the list, and
- * the focus goes back to the chip.
+ * the focus goes back to where it was before the list opened, as a verb
+ * button's press keeps it, so the keyboard stays on what it was driving.
  */
 function LegendMore({ verbs, keys, legend }: LegendMoreProps): ReactElement {
   const [open, setOpen] = useState(false);
   const [cursor, setCursor] = useState(0);
   const chip = useRef<HTMLButtonElement>(null);
   const list = useRef<HTMLDivElement>(null);
+  const returnRef = useRef<Element | null>(null);
   const label = moreLabel(verbs.length, legend);
   const shown = verbs.length > 0;
 
@@ -302,8 +304,14 @@ function LegendMore({ verbs, keys, legend }: LegendMoreProps): ReactElement {
   }, [open]);
 
   const close = (): void => {
+    const back = returnRef.current;
+
+    returnRef.current = null;
     setOpen(false);
-    chip.current?.focus();
+
+    if (back instanceof HTMLElement && back.isConnected) {
+      back.focus({ preventScroll: true });
+    }
   };
 
   const run = (verb: LegendVerb | undefined): void => {
@@ -341,9 +349,18 @@ function LegendMore({ verbs, keys, legend }: LegendMoreProps): ReactElement {
         data-empty={shown ? undefined : 'true'}
         disabled={!shown}
         onClick={() => {
+          if (open) {
+            close();
+
+            return;
+          }
+
+          returnRef.current = document.activeElement;
           setCursor(0);
-          setOpen((now) => !now);
+          setOpen(true);
         }}
+        // A press must not take the focus from what the keyboard was driving.
+        onMouseDown={keepFocus}
         ref={chip}
         tabIndex={-1}
         type="button"

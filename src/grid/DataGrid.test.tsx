@@ -783,6 +783,27 @@ describe('the data grid’s pinned columns', () => {
     expect(grid.scrollLeft).toBe(0);
   });
 
+  it('scrolls a right-to-left well with its scrollLeft running below 0', () => {
+    vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(200);
+    renderPinned();
+
+    const [lead = 0, id = 0, name = 0, size = 0, kind = 0] = widths();
+    const grid = screen.getByRole('grid');
+
+    grid.style.direction = 'rtl';
+    grid.focus();
+    fireEvent.keyDown(grid, { key: 'ArrowDown' });
+    fireEvent.keyDown(grid, { key: 'End' });
+    expect(grid.scrollLeft).toBe(-(lead + id + name + size + kind - 200));
+
+    // A move inside the view, Up and Down included, leaves the scroll alone.
+    const scrolled = grid.scrollLeft;
+
+    fireEvent.keyDown(grid, { key: 'ArrowUp' });
+    fireEvent.keyDown(grid, { key: 'ArrowDown' });
+    expect(grid.scrollLeft).toBe(scrolled);
+  });
+
   it('keeps a dragged header on its side of the pin edge', () => {
     const onReorder = vi.fn();
 

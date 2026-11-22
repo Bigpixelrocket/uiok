@@ -551,20 +551,26 @@ export function DataGrid({
 
   /**
    * Scrolls a cell into the viewport: its row below the header, its column
-   * past the pinned ones.
+   * past the pinned ones. The sideways scroll is measured from the rows'
+   * start: a right-to-left well's scrollLeft runs from 0 down, so it is
+   * read and written with its sign turned.
    */
   const reveal = (row: number, column: number): void => {
     const element = viewport.current;
 
     if (element === null) return;
 
-    element.scrollLeft = revealedScrollLeft(
-      element.scrollLeft,
+    const sign = getComputedStyle(element).direction === 'rtl' ? -1 : 1;
+    const from = sign * element.scrollLeft;
+    const to = revealedScrollLeft(
+      from,
       element.clientWidth,
       starts[column] ?? 0,
       starts[column + 1] ?? 0,
       pinnedWidth
     );
+
+    if (to !== from) element.scrollLeft = sign * to;
 
     const top = row * ROW_HEIGHT;
     const shown = element.clientHeight - ROW_HEIGHT;

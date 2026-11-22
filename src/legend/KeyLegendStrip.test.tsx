@@ -193,9 +193,17 @@ describe('KeyLegendStrip', () => {
       const restore = wrapLast(2);
       try {
         const list = many();
-        render(<KeyLegendStrip overflow="more" verbs={list} />);
+        render(
+          <>
+            <input aria-label="Field" />
+            <KeyLegendStrip overflow="more" verbs={list} />
+          </>
+        );
+        const field = screen.getByRole('textbox', { name: 'Field' });
+        field.focus();
 
         const chip = screen.getByRole('button', { name: '2 more shortcuts' });
+        expect(fireEvent.mouseDown(chip)).toBe(false);
         expect(chip.textContent).toBe('+2');
         expect(chip.getAttribute('aria-haspopup')).toBe('menu');
 
@@ -215,7 +223,7 @@ describe('KeyLegendStrip', () => {
 
         expect(list[3]?.run).toHaveBeenCalledOnce();
         expect(screen.queryByRole('menu')).toBeNull();
-        expect(document.activeElement).toBe(chip);
+        expect(document.activeElement).toBe(field);
       } finally {
         restore();
       }
@@ -242,7 +250,14 @@ describe('KeyLegendStrip', () => {
       const restore = wrapLast(1);
       try {
         const list = many();
-        render(<KeyLegendStrip overflow="more" verbs={list} />);
+        render(
+          <>
+            <input aria-label="Field" />
+            <KeyLegendStrip overflow="more" verbs={list} />
+          </>
+        );
+        const field = screen.getByRole('textbox', { name: 'Field' });
+        field.focus();
 
         const chip = screen.getByRole('button', { name: '1 more shortcut' });
         fireEvent.click(chip);
@@ -252,7 +267,7 @@ describe('KeyLegendStrip', () => {
         expect(
           list.every((entry) => !(entry.run as ReturnType<typeof vi.fn>).mock.calls.length)
         ).toBe(true);
-        expect(document.activeElement).toBe(chip);
+        expect(document.activeElement).toBe(field);
       } finally {
         restore();
       }
