@@ -29,6 +29,7 @@ export * from './run/index.js';
 export * from './segmented/index.js';
 export * from './selectall/index.js';
 export * from './store/index.js';
+export * from './surface/index.js';
 export * from './tabs/index.js';
 export * from './text/index.js';
 export * from './themes/index.js';

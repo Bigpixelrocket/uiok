@@ -1534,7 +1534,15 @@ const BASE_TOKEN_NAMES = [
   '--pager-height',
   '--menu-font-size',
   '--channel-tag-bg',
-  '--line-reference'
+  '--line-reference',
+  '--group-swatch-hue',
+  '--tag-wash',
+  '--tag-text',
+  '--data-grid-row-tint',
+  '--data-grid-bar',
+  '--data-grid-ring',
+  '--row-level',
+  '--field-columns'
 ] as const;
 
 /** Every token name uiok defines: the fixed tokens, those a theme sets, and the stylesheet's own. */

@@ -1,6 +1,54 @@
-# Notices, cards, selection, and shared recipes
+# Notices, cards, swatches, tags, selection, and shared recipes (`@bigpixelrocket/uiok/surface`)
 
-Looks a page puts on its own markup, shipped in `@bigpixelrocket/uiok/styles.css`. None is a component: the words are the page's.
+Looks a page puts on its own markup, shipped in `@bigpixelrocket/uiok/styles.css`, and two small components, `GroupSwatch` and `Tag`. The notice and the card are classes, not components: the words are the page's.
+
+## GroupSwatch
+
+A group's colour beside its name (a tab, a tree row, a menu entry): an 8px square (`--space-4`, `--radius-xs` corners) in the theme's `--group-<hue>`, with the `--group-dot-ring` hairline. A square, because a round dot is a state mark (`StateMark`) and a group's colour is a category, never a status.
+
+```tsx
+import { GroupSwatch } from '@bigpixelrocket/uiok/surface';
+
+<GroupSwatch group="purple" />
+<GroupSwatch group="teal" hollow />
+<GroupSwatch group={null} label="No group" />
+```
+
+| Prop     | Type               | Meaning                                                                                                                                                                     |
+| -------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `group`  | `GroupHue \| null` | The hue (`GroupHue` from `@bigpixelrocket/uiok/themes`: `blue`, `green`, `purple`, `orange`, `teal`, `pink`, `yellow`, `red`); `null` for no group, drawn in `--text-faint` |
+| `hollow` | `boolean`          | Its outline alone (a 2px inner ring in the hue): a group that is closed or off                                                                                              |
+| `label`  | `string`           | Given, the swatch is an image with that name and tooltip; omitted, it is hidden from assistive technology, since the name beside it says it                                 |
+
+Classes: `.group-swatch[data-group]`, `.hollow`.
+
+## Tag
+
+A small worded tag beside a name: an environment ("Production", "Staging", "Local"), a kind ("Template", "System"), a default, a pending state ("Restart pending"). A pill washed in its tone with the words in the tone's text role, in the caption size, its words kept in their case unless `caps`. Each tone's words keep 4.5:1 on its wash and on the listing's cursor and marked rows.
+
+```tsx
+import { Tag } from '@bigpixelrocket/uiok/surface';
+
+<Tag tone="danger">Production</Tag>
+<Tag tip="The value the server starts with">default</Tag>
+```
+
+| Prop       | Type      | Meaning                                                            |
+| ---------- | --------- | ------------------------------------------------------------------ |
+| `children` | `string`  | The words                                                          |
+| `tone`     | `TagTone` | `neutral` (default), `accent`, `ready`, `warning`, `danger`        |
+| `caps`     | `boolean` | Small capitals with the caps tracking, as a release channel's tag  |
+| `tip`      | `string`  | More than the words say, as its tooltip and accessible description |
+
+| Tone      | Wash             | Words               |
+| --------- | ---------------- | ------------------- |
+| `neutral` | `--fill`         | `--text-on-surface` |
+| `accent`  | `--accent-wash`  | `--accent-text`     |
+| `ready`   | `--success-wash` | `--success-text`    |
+| `warning` | `--warning-wash` | `--warning-text`    |
+| `danger`  | `--danger-wash`  | `--danger-text`     |
+
+Which tone an environment takes is the app's call; a common choice is Production `danger`, Staging `warning`, Local `ready`. Classes: `.tag[data-tone]`, `.caps`. A tag cut by its column ends in an ellipsis.
 
 ## Notice
 
@@ -24,6 +72,7 @@ A message about something on the page, drawn as a desktop application's status t
 | `notice-text`                                       | The message; wraps (one line in a `notice-card`); its words can be selected and copied                                                                                                                                |
 | `notice-glyph`                                      | A glyph that is not the first `svg`                                                                                                                                                                                   |
 | `notice-actions`                                    | A small button or two right after the words, centred on the first line                                                                                                                                                |
+| `code` inside a notice                              | The server's or system's own words (an error code, a statement) in the code face at the notice's size                                                                                                                 |
 
 A notice that reports a failure the user should act on takes `role="alert"`; one that reports a state takes `role="status"`.
 
@@ -66,7 +115,7 @@ Inside selectable text the pointer is the I-beam (the browser draws it only over
 
 | Class or rule    | What it does                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `overline`       | The small uppercase heading over a group (a menu's `entry-menu-heading` wears it too): caption size, strong weight, `--tracking-caps`, `--text-dim`, interface face, no margin                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| `overline`       | The small uppercase heading over a group (a menu's `entry-menu-heading` wears it too): caption size, strong weight, `--tracking-caps`, `--text-dim`, interface face, no margin; with `keep-case`, a heading that is a name of its own (a schema, a host) keeps its case and drops the caps tracking                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | `scroll-fade`    | On a scrolling element: its top and bottom edge fade over `--scroll-fade-size` (12px) while more content lies past that edge. `scroll-fade-end` fades the bottom edge only, for a scroller with a sticky header at its top; `scroll-fade-x` fades the inline edges and combines with either. The fade covers the padding box only: the element's own border, corners, and scrollbar stay solid, so a framed scroller keeps its frame. What scrolls fades with the element's own background, so a scroller whose ground differs from what is behind it paints that ground on a wrapper (frame outside, fade inside). A list of whole rows sets `--scroll-fade-size: var(--row-height)` so its last row fades through its words. A mask clips `position: fixed` children too (a popover's panel, a full-screen surface), so a scroller that can hold an open popover drops the class while it is open, or the popover mounts outside it                                                                                                                                                                                                                                                                                     |
 | `frost`          | The one frost recipe (`backdrop-filter: var(--frost)`) for a translucent layer over scrolling content; its wash is the layer's own (`--scrim` for a backdrop)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | Hover and press  | Quiet controls (pager steps, legend slots and verbs, quiet and icon actions, the path star, crumbs, a strip's actions) hover with the frosted wash and ring; tabs, segments, day cells, sort labels, and the Settings sidebar's page and subsection rows with the wash alone; all of them and the grid-sort and palette-level controls press with `--pressed-wash` and `--press-frost` (`--shadow-pressed` and an inner `--border-strong` hairline), words in `--text`. A quiet control or track item whose menu or popover is open (`aria-expanded="true"` together with `aria-haspopup`, or on a crumb, which only ever opens its menu) keeps its hovered face, from the same rule, so a host writes no open state of its own; a host gives every pop-up trigger `aria-haspopup`. A fold or disclosure that is open (`aria-expanded="true"` without `aria-haspopup`) keeps its rest face, since its glyph already says it is open. Hover and press each weigh one pseudo-class, so press wins while held and a component's state rule wins over both; a component must not give its own hover more weight. The chosen item (`aria-selected="true"`, `aria-checked="true"`, `aria-current` naming a place) takes neither |

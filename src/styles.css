@@ -201,6 +201,13 @@ meter::-webkit-meter-even-less-good-value {
   text-transform: uppercase;
 }
 
+/* An overline over a group named by a name of its own (a schema, a host)
+   keeps that name's case, and the tracking that only capitals need. */
+.overline.keep-case {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
 /* A translucent layer over content that scrolls under it: the one frost
    recipe (--frost), with the layer's own translucent fill. */
 .frost {

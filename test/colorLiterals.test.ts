@@ -65,6 +65,11 @@ const THEME_SOURCES = new Set([
  */
 const PALETTE_IMPORTERS: readonly { file: string; reason: string }[] = [
   {
+    file: 'src/surface/GroupSwatch.tsx',
+    reason:
+      'Imports the GroupHue type alone, which names a group and holds no colour; the swatch paints through --group-* tokens.'
+  },
+  {
     file: 'src/index.ts',
     reason: 'The public API re-exports the catalog, so an app can generate a stylesheet of its own.'
   }
