@@ -290,4 +290,64 @@ describe('An open tooltip', () => {
     await act(async () => undefined);
     expect(shown()).toBeNull();
   });
+
+  it('stays closed when a wheel closes it in the task its words changed in', async () => {
+    render(
+      <>
+        <button type="button" {...tooltip('Copy')}>
+          c
+        </button>
+        <TooltipLayer />
+      </>
+    );
+    const button = screen.getByRole('button');
+
+    fireEvent.mouseOver(button);
+    rest();
+    expect(shown()).toBe('Copy');
+
+    await act(async () => {
+      button.setAttribute('data-tooltip', 'Copy again');
+      document.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
+    });
+    expect(shown()).toBeNull();
+  });
+
+  it('keeps one watch on its control while its words change', async () => {
+    const Original = globalThis.MutationObserver;
+    let made = 0;
+
+    vi.stubGlobal(
+      'MutationObserver',
+      class extends Original {
+        constructor(callback: MutationCallback) {
+          super(callback);
+          made += 1;
+        }
+      }
+    );
+    try {
+      render(
+        <>
+          <button type="button" {...tooltip('Copy')}>
+            c
+          </button>
+          <TooltipLayer />
+        </>
+      );
+      const button = screen.getByRole('button');
+
+      fireEvent.mouseOver(button);
+      rest();
+      const watching = made;
+
+      for (const words of ['Copy once', 'Copy twice']) {
+        await act(async () => button.setAttribute('data-tooltip', words));
+        expect(shown()).toBe(words);
+      }
+      expect(made).toBe(watching);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
 });

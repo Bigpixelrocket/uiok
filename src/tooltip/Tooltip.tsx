@@ -193,19 +193,28 @@ export function TooltipLayer(): ReactElement | null {
   // An open tooltip follows its control's words: a host that renames the
   // control, or a name read again (a row's name in markup), changes its
   // attributes, and the tooltip reads them again, or closes when they go.
+  // One observer for as long as the tooltip stays open on the same control.
+  // Its update keeps whatever stands when it lands: a tooltip a wheel, a
+  // key, or a press closed in the same task, or one that moved to another
+  // control, is never brought back by a reading queued before.
+  const shownAnchor = shown?.anchor ?? null;
+  const shownPointerX = shown?.pointerX ?? 0;
+
   useEffect(() => {
-    if (!shown) {
+    if (shownAnchor === null) {
       return undefined;
     }
 
-    const { anchor, pointerX } = shown;
+    const anchor = shownAnchor;
     const observer = new MutationObserver(() => {
-      setShown(anchor.isConnected ? read(anchor, pointerX) : null);
+      const refreshed = anchor.isConnected ? read(anchor, shownPointerX) : null;
+
+      setShown((now) => (now?.anchor === anchor ? refreshed : now));
     });
 
     observer.observe(anchor, { attributeFilter: TOOLTIP_ATTRIBUTES });
     return () => observer.disconnect();
-  }, [shown]);
+  }, [shownAnchor, shownPointerX]);
 
   // Placed from the drawn box, before the first paint, so the tooltip never shows out of place.
   useLayoutEffect(() => {
