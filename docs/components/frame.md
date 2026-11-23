@@ -9,7 +9,7 @@ The window every app of the family draws its content in: one grid with a top ban
 - `StatusNotice`: a message about the window in a pane's status line.
 - `Dock`, `DockLog`, `DockLogEntry`, `DockInput`: the dock under the main pane.
 - `usePaneSplit`, `PaneSplitter`, `SplitDetail`: a page's list over the pane under it.
-- `PageSlot`, `PanePage`, `Toolbar`, `ToolbarGrow`, `ToolbarGap`, `PageFilter`, `PageNote`, `EmptyAction`, `SectionHead`, `FootBar`, `ShowSidebarButton`: a page's parts.
+- `PageSlot`, `PanePage`, `Toolbar`, `ToolbarGrow`, `ToolbarGap`, `PageFilter`, `PageNote`, `EmptyAction`, `SectionHead`, `SideBySide`, `FootBar`, `ShowSidebarButton`: a page's parts.
 
 The panes themselves are `PaneBox` and `PaneList` from [Pane](pane.md).
 
@@ -154,8 +154,27 @@ Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`
 | `PageNote`          | A loading or empty line, or a note after a listing (`icon`, or `busy` for the spinner and a status); outside every listing scope it carries the scope itself                              |
 | `EmptyAction`       | The one command that answers an empty list, under its `PageNote`                                                                                                                          |
 | `SectionHead`       | A heading over one of a page's listings, as an overline (`level`, 3 unless given)                                                                                                         |
+| `SideBySide`        | Two listings or sections side by side from a width of the pair's own room, stacked in less (below)                                                                                        |
 | `FootBar`           | A bar at a pane's foot under its list (a select-all bar, a form's actions)                                                                                                                |
 | `ShowSidebarButton` | Shows the hidden sidebar again (`label`, `onShow`, `icon`), leading a path bar's tools                                                                                                    |
+
+### Two listings side by side
+
+```tsx
+<SideBySide
+  first={<Listing title="Settings">…</Listing>}
+  firstLabel="Settings"
+  from={640}
+  second={<Listing title="Extensions">…</Listing>}
+  secondLabel="Extensions"
+/>
+```
+
+`SideBySide` (`from`, `first`, `firstLabel`, `second`, `secondLabel`) puts two of a page's listings or sections in two equal columns while the room the pair itself is given is `from` pixels wide or more, and the second under the first in less, with a hairline between them either way. Each part is a `group` named by its label.
+
+- **Its own width, not the window's.** A pane narrowed by its sidebar, a split, or a dock stacks the pair though the window is wide. The component measures its own width with a `ResizeObserver` before the first paint and says the layout in `data-layout` (`side-by-side` or `stacked`), which the stylesheet reads. A container query cannot do it: its condition reads no custom property, so a per-instance `from` could not reach it. A width of 0 (a page held out of sight) keeps the layout it had, and stacked is the layout until the first measure.
+- **One cursor, in reading order.** The pair holds no cursor and answers no key. Under `usePaneKeys` the page keeps its one cursor and its one home: put the pair inside the page's `PaneList home`, never a `home` on each side, since the keys hand the focus to the first home they find. ↑ and ↓ walk the first part's rows, then the second's (`data-row-key` in document order), side by side as stacked, so ↓ on the first part's last row lands on the second's first; every row key is unique across both. Tab walks the first part's controls before the second's.
+- **A cursor on each side.** To give each side a cursor of its own, give each its own `RowCursorContext` and its own focusable list with its own keys; each is then a Tab stop of its own, and the arrows move the cursor of the side holding the focus.
 
 ## Keyboard
 

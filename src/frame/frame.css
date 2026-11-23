@@ -781,6 +781,36 @@
   margin: var(--space-4) var(--pane-row-inset) var(--space-2);
 }
 
+/* Two of a page's listings or sections (SideBySide): one over the other
+   until the pair's own room reaches its threshold, then in two equal
+   columns; the component measures the room and says which in
+   data-layout. A hairline parts them, under the first stacked and after
+   it side by side, where the first stretches to the taller one's height so
+   the line runs the pair's whole height. */
+.side-by-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.side-by-side[data-layout='side-by-side'] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.side-by-side-part {
+  min-width: 0;
+}
+
+.side-by-side-part:first-child {
+  border-block-end: var(--line) solid var(--border);
+}
+
+.side-by-side[data-layout='side-by-side'] > .side-by-side-part:first-child {
+  align-self: stretch;
+  border-block-end: none;
+  border-inline-end: var(--line) solid var(--border);
+}
+
 /* A bar at a pane's foot, under its list: a select-all bar, a form's
    actions. */
 .pane-foot-bar {

@@ -7,8 +7,9 @@
  * and its `PaneWarning`, a pane status line's `StatusNotice`, the `Dock`
  * with its log and input, the splitter between a list and the pane under
  * it (`usePaneSplit`, `PaneSplitter`, `SplitDetail`), and a page's parts
- * (`PageSlot`, `PanePage`, `Toolbar`, `PageNote`, `SectionHead`, and the
- * rest). Their look is `frame.css` in `@bigpixelrocket/uiok/styles.css`.
+ * (`PageSlot`, `PanePage`, `Toolbar`, `PageNote`, `SectionHead`,
+ * `SideBySide`, and the rest). Their look is `frame.css` in
+ * `@bigpixelrocket/uiok/styles.css`.
  */
 
 export {
@@ -59,6 +60,7 @@ export {
   type PaneSplitterProps,
   type SplitDetailProps
 } from './PaneSplit.js';
+export { SideBySide, type SideBySideProps } from './SideBySide.js';
 export { draggedWidth, SidebarResizer, type SidebarResizerProps } from './SidebarResizer.js';
 export { StatusNotice, type StatusNoticeProps, type StatusNoticeTone } from './StatusNotice.js';
 export {
