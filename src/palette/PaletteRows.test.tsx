@@ -11,6 +11,7 @@ import {
   PaletteNotes,
   PaletteOption
 } from './PaletteRows.js';
+import { KeyChord } from '../keychord/KeyChord.js';
 import { MarkedText } from '../text/MarkedText.js';
 
 describe('PaletteOption', () => {
@@ -22,7 +23,6 @@ describe('PaletteOption', () => {
           context="JavaScript runtime and toolkit"
           current="Installed"
           cursor
-          description="JavaScript runtime and toolkit, 1.3.2 installed"
           id="bun"
           name="Bun"
           onPick={() => undefined}
@@ -30,14 +30,13 @@ describe('PaletteOption', () => {
         />
       </PaletteList>
     );
-    const option = screen.getByRole('option', { name: 'Bun' });
+    const option = screen.getByRole('option', {
+      name: 'Bun JavaScript runtime and toolkit 1.3.2 Installed'
+    });
 
     expect(screen.getByRole('listbox', { name: 'Runtimes' }).id).toBe('list');
     expect(option.className).toBe('folder-menu-option cursor');
     expect(option.getAttribute('aria-selected')).toBe('true');
-    expect(option.getAttribute('aria-description')).toBe(
-      'JavaScript runtime and toolkit, 1.3.2 installed'
-    );
     expect(option.querySelector('.palette-context.palette-sentence')?.textContent).toBe(
       'JavaScript runtime and toolkit'
     );
@@ -46,7 +45,7 @@ describe('PaletteOption', () => {
     expect(screen.getByText('Languages').getAttribute('role')).toBe('presentation');
   });
 
-  it('reads its context, a trail in words, and its current state after its name unless told otherwise', () => {
+  it('names itself by every word it draws, in the order drawn, and describes only what it does not draw', () => {
     const { rerender } = render(
       <PaletteOption
         context="The PostgreSQL server"
@@ -57,11 +56,14 @@ describe('PaletteOption', () => {
         trail="18.1"
       />
     );
-    const option = screen.getByRole('option', { name: 'PostgreSQL' });
+    const option = screen.getByRole('option');
+    /** The option named exactly `name`, which must be this one. */
+    const named = (name: string): HTMLElement => screen.getByRole('option', { name });
 
-    expect(option.getAttribute('aria-description')).toBe('The PostgreSQL server, 18.1, Installed');
+    expect(named('PostgreSQL The PostgreSQL server 18.1 Installed')).toBe(option);
+    expect(option.hasAttribute('aria-description')).toBe(false);
 
-    // A trail that is not words reads nothing; the context still does.
+    // A chord in the trail reads by its words, where it is drawn.
     rerender(
       <PaletteOption
         context="~/shop"
@@ -69,11 +71,12 @@ describe('PaletteOption', () => {
         id="pg"
         name="PostgreSQL"
         onPick={() => undefined}
-        trail={<kbd>K</kbd>}
+        trail={<KeyChord chord={{ key: 'k', meta: true, shift: true }} />}
       />
     );
-    expect(option.getAttribute('aria-description')).toBe('~/shop');
+    expect(named('PostgreSQL ~/shop Shift Command K')).toBe(option);
 
+    // What it does not draw, such as why it cannot be picked, is its description.
     rerender(
       <PaletteOption
         context="The PostgreSQL server"
@@ -84,10 +87,25 @@ describe('PaletteOption', () => {
         onPick={() => undefined}
       />
     );
+    expect(named('PostgreSQL The PostgreSQL server')).toBe(option);
     expect(option.getAttribute('aria-description')).toBe('Already added');
 
     rerender(<PaletteOption id="pg" name="PostgreSQL" onPick={() => undefined} />);
+    expect(named('PostgreSQL')).toBe(option);
     expect(option.hasAttribute('aria-description')).toBe(false);
+
+    // A label stands in for the drawn name's words; the context and trail still follow.
+    rerender(
+      <PaletteOption
+        context="The PostgreSQL server"
+        id="pg"
+        label="PostgreSQL"
+        name={<MarkedText positions={[0, 1]} text="PostgreSQL" />}
+        onPick={() => undefined}
+        trail="18.1"
+      />
+    );
+    expect(named('PostgreSQL The PostgreSQL server 18.1')).toBe(option);
   });
 
   it('picks on a press and points on a move, and refuses both while disabled', () => {
@@ -137,7 +155,7 @@ describe('PaletteOption', () => {
     expect(command?.className).toBe('palette-context palette-command');
   });
 
-  it('names a row with a marked name by its name alone, its context and trail described', () => {
+  it('names a row with a marked name by its words, then its context and trail', () => {
     render(
       <PaletteOption
         context="The PostgreSQL server"
@@ -148,9 +166,12 @@ describe('PaletteOption', () => {
         trail="18.1"
       />
     );
-    const option = screen.getByRole('option', { name: 'PostgreSQL' });
 
-    expect(option.getAttribute('aria-description')).toBe('The PostgreSQL server, 18.1, Installed');
+    expect(
+      screen
+        .getByRole('option', { name: 'PostgreSQL The PostgreSQL server 18.1 Installed' })
+        .hasAttribute('aria-description')
+    ).toBe(false);
   });
 
   it('ticks a row picked with others, its check mark in the icon column, and toggles on a press', () => {
