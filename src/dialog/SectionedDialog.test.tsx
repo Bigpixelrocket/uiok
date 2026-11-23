@@ -259,6 +259,47 @@ describe('SectionedDialog', () => {
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Add Dependency' }));
   });
 
+  it("brings a section's first Tab stop into view when it lies past the column's end", () => {
+    const shown: Element[] = [];
+    // jsdom has no scrollIntoView; this one records what asked to be shown.
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: function (this: HTMLElement) {
+        shown.push(this);
+      }
+    });
+
+    try {
+      render(
+        <SectionedDialog
+          labelId="edit"
+          onCancel={vi.fn()}
+          sections={[
+            SECTIONS[0]!,
+            {
+              id: 'depends',
+              title: 'Depends on',
+              children: <button type="button">Add Dependency</button>
+            }
+          ]}
+          title="Edit Command"
+        />
+      );
+      layOut(column());
+      const add = screen.getByRole('button', { name: 'Add Dependency' });
+
+      // The column shows 0 to 300; the button sits at 650, under a long list.
+      column().getBoundingClientRect = () => ({ top: 0, bottom: 300 }) as DOMRect;
+      add.getBoundingClientRect = () => ({ top: 650, bottom: 670 }) as DOMRect;
+      fireEvent.click(screen.getByRole('button', { name: 'Depends on' }), { detail: 0 });
+
+      expect(document.activeElement).toBe(add);
+      expect(shown).toEqual([add]);
+    } finally {
+      delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
   it('keeps its notice outside the scrolling column', () => {
     render(
       <SectionedDialog

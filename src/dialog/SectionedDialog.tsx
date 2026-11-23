@@ -29,8 +29,9 @@ const FOCUSABLE = 'input:not([type="hidden"]), select, textarea, button, [href],
  * `tabIndex` -1, is the cursor row's keys' to run), not disabled (by itself
  * or a disabled fieldset), not hidden, and, should the browser still refuse
  * one, the next. So Tab goes on from it as the dialog's Tab cycle expects.
+ * Returns the control it focused, null for none.
  */
-const focusFirstControl = (section: Element): void => {
+const focusFirstControl = (section: Element): HTMLElement | null => {
   for (const control of section.querySelectorAll<HTMLElement>(FOCUSABLE)) {
     if (
       control.tabIndex < 0 ||
@@ -42,8 +43,10 @@ const focusFirstControl = (section: Element): void => {
 
     control.focus({ preventScroll: true });
 
-    if (control.ownerDocument.activeElement === control) return;
+    if (control.ownerDocument.activeElement === control) return control;
   }
+
+  return null;
 };
 
 /** One headed group of a `SectionedDialog`. */
@@ -147,7 +150,21 @@ export function SectionedDialog({
         (candidate) => candidate.getAttribute(SECTION_ATTRIBUTE) === id
       );
 
-      if (section !== undefined) focusFirstControl(section);
+      const control = section === undefined ? null : focusFirstControl(section);
+
+      // A control past the column's end (a long list above it in its
+      // section) comes into view, the scroll keeping the section marked.
+      if (control !== null) {
+        const view = column.getBoundingClientRect();
+        const box = control.getBoundingClientRect();
+
+        if (box.top < view.top || box.bottom > view.bottom) {
+          const before = column.scrollTop;
+
+          control.scrollIntoView({ block: 'nearest' });
+          chosenScrollRef.current = chosenScrollRef.current || column.scrollTop !== before;
+        }
+      }
     }
   };
 
