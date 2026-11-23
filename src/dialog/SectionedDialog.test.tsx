@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { DialogLayer } from './DialogLayer.js';
 import { SectionedDialog, type DialogSection } from './SectionedDialog.js';
 
 const SECTIONS: readonly DialogSection[] = [
@@ -138,6 +139,71 @@ describe('SectionedDialog', () => {
     } finally {
       restore.forEach((spy) => spy.mockRestore());
     }
+  });
+
+  it('opens at its section under a DialogLayer, which mounts the frame after the first commit', () => {
+    const spy = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element
+    ) {
+      const at: Record<string, number> = { depends: 200, health: 400 };
+      const top = at[this.getAttribute('data-dialog-section') ?? ''] ?? 0;
+      const sections = this.closest('.sectioned-dialog-sections');
+
+      return {
+        top: sections === this || sections === null ? 0 : top - sections.scrollTop
+      } as DOMRect;
+    });
+
+    try {
+      render(
+        <DialogLayer>
+          <SectionedDialog
+            labelId="edit"
+            onCancel={vi.fn()}
+            openAt="depends"
+            sections={SECTIONS}
+            title="Edit Command"
+          />
+        </DialogLayer>
+      );
+
+      expect(column().scrollTop).toBe(200 - 14);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
+  it('moves the keyboard focus to the first control that takes it, past disabled ones', () => {
+    render(
+      <SectionedDialog
+        labelId="edit"
+        onCancel={vi.fn()}
+        sections={[
+          SECTIONS[0]!,
+          {
+            id: 'depends',
+            title: 'Depends on',
+            children: (
+              <>
+                <button disabled tabIndex={0} type="button">
+                  Unavailable
+                </button>
+                <fieldset disabled>
+                  <input aria-label="Locked" />
+                </fieldset>
+                <input aria-label="Waits for" />
+              </>
+            )
+          }
+        ]}
+        title="Edit Command"
+      />
+    );
+    layOut(column());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Depends on' }), { detail: 0 });
+
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Waits for' }));
   });
 
   it('keeps its notice outside the scrolling column', () => {

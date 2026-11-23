@@ -22,7 +22,22 @@ const SECTION_ATTRIBUTE = 'data-dialog-section';
 
 /** What can take the focus inside a section: its first control, for a section chosen from the keyboard. */
 const FOCUSABLE =
-  'input:not([type="hidden"]):not(:disabled), select:not(:disabled), textarea:not(:disabled), button:not(:disabled), [href], [tabindex]:not([tabindex="-1"])';
+  'input:not([type="hidden"]), select, textarea, button, [href], [tabindex]:not([tabindex="-1"])';
+
+/**
+ * Moves the focus to the first control of `section` that takes it: one not
+ * disabled (by itself or a disabled fieldset) or hidden, and, should the
+ * browser still refuse one, the next.
+ */
+const focusFirstControl = (section: Element): void => {
+  for (const control of section.querySelectorAll<HTMLElement>(FOCUSABLE)) {
+    if (control.matches(':disabled') || control.closest('[hidden], [inert]') !== null) continue;
+
+    control.focus({ preventScroll: true });
+
+    if (control.ownerDocument.activeElement === control) return;
+  }
+};
 
 /** One headed group of a `SectionedDialog`. */
 export interface DialogSection {
@@ -85,7 +100,10 @@ export function SectionedDialog({
 }: SectionedDialogProps): ReactElement {
   const labels = useLabels().dialog;
   const prefix = useId();
-  const columnRef = useRef<HTMLDivElement>(null);
+  // The scrolling column, as state: a dialog under a `DialogLayer` mounts
+  // its frame only once the layer's element exists, after this component's
+  // first commit, so the effects below wait for the column, not the mount.
+  const [column, setColumn] = useState<HTMLDivElement | null>(null);
   // Set while the column scrolls to the section a sidebar row chose, so that
   // scroll keeps the choice marked even where the column cannot bring it to
   // the top (a short last section).
@@ -111,8 +129,6 @@ export function SectionedDialog({
   };
 
   const show = (id: string, focus: boolean): void => {
-    const column = columnRef.current;
-
     setCurrent(id);
 
     if (column === null) return;
@@ -120,16 +136,17 @@ export function SectionedDialog({
     scrollTo(column, id);
 
     if (focus) {
-      [...column.querySelectorAll<HTMLElement>(`[${SECTION_ATTRIBUTE}]`)]
-        .find((section) => section.getAttribute(SECTION_ATTRIBUTE) === id)
-        ?.querySelector<HTMLElement>(FOCUSABLE)
-        ?.focus({ preventScroll: true });
+      const section = [...column.querySelectorAll<HTMLElement>(`[${SECTION_ATTRIBUTE}]`)].find(
+        (candidate) => candidate.getAttribute(SECTION_ATTRIBUTE) === id
+      );
+
+      if (section !== undefined) focusFirstControl(section);
     }
   };
 
-  // Opens on the section asked for, or marks the one in view.
+  // Opens on the section asked for, or marks the one in view, once the
+  // column is in the document.
   useLayoutEffect(() => {
-    const column = columnRef.current;
     const first = openAtRef.current;
 
     if (column === null) return;
@@ -139,13 +156,12 @@ export function SectionedDialog({
     } else {
       scrollTo(column, first);
     }
-  }, []);
+    // Runs once per column: a later openAt does not scroll an open dialog.
+  }, [column]);
 
   // A section that grows or shrinks as it is filled in (a dependency added)
   // moves the one in view without a scroll, so the mark follows the content.
   useLayoutEffect(() => {
-    const column = columnRef.current;
-
     if (column === null || typeof MutationObserver === 'undefined') return undefined;
 
     const observer = new MutationObserver(() => {
@@ -155,7 +171,7 @@ export function SectionedDialog({
     observer.observe(column, { childList: true, subtree: true });
 
     return () => observer.disconnect();
-  }, []);
+  }, [column]);
 
   const classes = className === undefined ? 'sectioned-dialog' : `sectioned-dialog ${className}`;
 
@@ -189,7 +205,7 @@ export function SectionedDialog({
                 spy(event.currentTarget);
               }
             }}
-            ref={columnRef}
+            ref={setColumn}
           >
             {sections.map((section) => (
               <section
