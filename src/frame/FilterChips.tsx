@@ -50,6 +50,10 @@ export function FilterChips<Id extends string>({
     if (row === null) return undefined;
 
     const onWheel = (event: WheelEvent): void => {
+      // Shift turns a wheel sideways and Control (or Command) zooms on their
+      // own; the row leaves both to the browser.
+      if (event.shiftKey || event.ctrlKey || event.metaKey) return;
+
       const delta = sidewaysWheel(event, row, getComputedStyle(row).direction === 'rtl');
 
       if (delta === null) return;

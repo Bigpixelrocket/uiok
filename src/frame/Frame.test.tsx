@@ -157,8 +157,19 @@ describe("FilterChips' one line", () => {
     row.scrollLeft = left;
   };
 
-  const turn = (row: HTMLElement, deltaY: number, deltaX = 0): WheelEvent => {
-    const event = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaX, deltaY });
+  const turn = (
+    row: HTMLElement,
+    deltaY: number,
+    deltaX = 0,
+    keys: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean } = {}
+  ): WheelEvent => {
+    const event = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaX,
+      deltaY,
+      ...keys
+    });
     row.dispatchEvent(event);
     return event;
   };
@@ -172,6 +183,11 @@ describe("FilterChips' one line", () => {
     expect(row.scrollLeft).toBe(40);
     // A sideways gesture is the browser's own, and so is a wheel past the end.
     expect(turn(row, 10, 30).defaultPrevented).toBe(false);
+    // Shift's sideways wheel and Control's or Command's zoom are the browser's.
+    for (const keys of [{ shiftKey: true }, { ctrlKey: true }, { metaKey: true }]) {
+      expect(turn(row, 40, 0, keys).defaultPrevented).toBe(false);
+    }
+    expect(row.scrollLeft).toBe(40);
     overflow(row, 300);
     expect(turn(row, 40).defaultPrevented).toBe(false);
     expect(row.scrollLeft).toBe(300);
@@ -197,6 +213,16 @@ describe("FilterChips' one line", () => {
     }
   });
 
+  it('fades the edge with more past it in a right-to-left row too', () => {
+    // The inline fade starts where the scroll timeline does: the right edge
+    // of a right-to-left box.
+    const sheet = readStylesheet('src/styles.css');
+
+    expect(sheet).toMatch(/\.scroll-fade-x \{\s*--scroll-fade-inline-to: to right;\s*\}/);
+    expect(sheet).toMatch(/\.scroll-fade-x:dir\(rtl\) \{\s*--scroll-fade-inline-to: to left;\s*\}/);
+    expect(sheet).toMatch(/linear-gradient\(\s*var\(--scroll-fade-inline-to\),/);
+  });
+
   it('keeps to one line that scrolls sideways under the edge fade, with no scrollbar and no smooth scroll', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     mount();
@@ -207,6 +233,10 @@ describe("FilterChips' one line", () => {
     expect(declaredValues(row, 'overflow-x').at(-1)).toBe('auto');
     expect(declaredValues(row, 'scrollbar-width').at(-1)).toBe('none');
     expect(declaredValues(row, 'scroll-behavior').at(-1)).toBe('auto');
+    // A chip brought into view stops clear of the fade and its focus ring.
+    expect(declaredValues(row, 'scroll-padding-inline').at(-1)).toMatch(
+      /^calc\(\s*var\(--scroll-fade-size, var\(--space-6\)\) \+ var\(--focus-ring-width\) \+ var\(--focus-offset\)\s*\)$/
+    );
     // jsdom spells flex: none out in full.
     expect(declaredValues(chip, 'flex').at(-1)).toBe('0 0 auto');
     expect(declaredValues(chip, 'white-space').at(-1)).toBe('nowrap');

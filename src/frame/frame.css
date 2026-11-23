@@ -546,6 +546,11 @@
   overflow-x: auto;
   overflow-y: hidden;
   scroll-behavior: auto;
+  /* A chip the keys bring into view stops clear of the edge fade and with
+     room for its focus ring. */
+  scroll-padding-inline: calc(
+    var(--scroll-fade-size, var(--space-6)) + var(--focus-ring-width) + var(--focus-offset)
+  );
   scrollbar-width: none;
 }
 
