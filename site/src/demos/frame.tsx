@@ -382,8 +382,10 @@ function FrameWindowDemo() {
                         ))
                       : null}
                     {open ? (
+                      // Dim while the tool services need is missing: it still opens, to say why.
                       <TreeRow
                         add
+                        dim
                         level={1}
                         name="Add service…"
                         onOpen={() => undefined}
