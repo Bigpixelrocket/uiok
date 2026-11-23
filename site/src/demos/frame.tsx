@@ -6,7 +6,8 @@
  * sideways under an edge fade when the sidebar is too narrow for them all,
  * a mouse wheel over it scrolling it sideways), a band, a group, rows
  * stepped in by level with a state and a switch, a service's own menu on a
- * secondary click (or the Menu key, Shift-F10, on the tree), a note, the edge that
+ * secondary click (or the Menu key, Shift-F10, on the tree, which a button
+ * under the window focuses), a note, the edge that
  * resizes it, and a Hide/Show panel toggle; a main pane whose page holds a
  * list over the pane under it with the splitter between them, and a status
  * notice in its status line; a console docked under it at the height it
@@ -29,7 +30,7 @@ import {
   Square,
   Trash2
 } from 'lucide-react';
-import { useState, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { Range, Switch } from '@bigpixelrocket/uiok/field';
@@ -184,6 +185,9 @@ function FrameWindowDemo() {
   // the tree's Menu key opens it.
   const [menu, setMenu] = useState<{ name: string; x: number; y: number } | null>(null);
   const [said, setSaid] = useState('');
+  // The tree's home takes the focus by script only, so the keys reach it
+  // through the button under the window.
+  const treeList = useRef<HTMLDivElement>(null);
   const menuEntries = (name: string): readonly MenuEntry[] => [
     running.includes(name)
       ? { id: 'stop', label: 'Stop', icon: Square }
@@ -324,7 +328,7 @@ function FrameWindowDemo() {
                   }
                 />
                 <RowCursorContext value={tree.cursor}>
-                  <TreeList label="Stack" onKeyDown={tree.onKeyDown}>
+                  <TreeList label="Stack" onKeyDown={tree.onKeyDown} ref={treeList}>
                     <TreeRow
                       glyph={<Layers size={ICON_MD} />}
                       kind="band"
@@ -414,9 +418,16 @@ function FrameWindowDemo() {
           }}
         />
       )}
-      <code className="demo-readout">
-        {said === '' ? 'secondary-click a service in the tree, or press Shift-F10 on it' : said}
-      </code>
+      <div className="demo-row">
+        <Button onClick={() => treeList.current?.focus()} size="small">
+          Focus the tree
+        </Button>
+        <code className="demo-readout">
+          {said === ''
+            ? 'secondary-click a service in the tree; or focus the tree, move to a service with ↑ ↓, and press the Menu key or Shift-F10'
+            : said}
+        </code>
+      </div>
     </>
   );
 }
