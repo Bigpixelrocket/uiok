@@ -10,7 +10,14 @@ import { Listing, Row, RowCursorContext, type RowCursor } from '../listing/Listi
 import { PaneMessage } from '../listing/PaneMessage.js';
 import { AppRoot, PageSlot, SpacePanel } from './AppRoot.js';
 import { Dock, dockHeight, DockLog, DockLogEntry } from './Dock.js';
-import { PageNote, SectionHead, ShowSidebarButton, Toolbar, ToolbarGap } from './PageParts.js';
+import {
+  PageNote,
+  PanePage,
+  SectionHead,
+  ShowSidebarButton,
+  Toolbar,
+  ToolbarGap
+} from './PageParts.js';
 import { heldSplitHeight, SplitDetail, usePaneSplit } from './PaneSplit.js';
 import { TreeFilterInput, TreeList, TreePane, TreeRow, TreeTool } from './Tree.js';
 import { PaneBox, PaneList } from '../pane/Pane.js';
@@ -804,6 +811,39 @@ describe('page parts', () => {
     render(<SectionHead level={2}>Needs attention</SectionHead>);
 
     expect(screen.getByRole('heading', { level: 2, name: 'Needs attention' })).toBeTruthy();
+  });
+
+  it('insets a toolbar set straight in a pane’s body from its edges, and nowhere else', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const tools = (name: string) => (
+      <Toolbar>
+        <button type="button">{name}</button>
+      </Toolbar>
+    );
+    render(
+      <div className="listing-root">
+        <PaneBox>
+          <PanePage>{tools('In a page')}</PanePage>
+        </PaneBox>
+        <PaneBox>
+          <PaneList label="List">{tools('In a list')}</PaneList>
+        </PaneBox>
+        <PaneBox>
+          <PageSlot shown>{tools('In a slot')}</PageSlot>
+        </PaneBox>
+        <div>{tools('Elsewhere')}</div>
+      </div>
+    );
+    const inset = (name: string) =>
+      declaredValues(
+        screen.getByRole('button', { name }).parentElement as HTMLElement,
+        'padding-inline'
+      ).at(-1);
+
+    expect(inset('In a page')).toBe('var(--pane-row-inset)');
+    expect(inset('In a list')).toBe('var(--pane-row-inset)');
+    expect(inset('In a slot')).toBe('var(--pane-row-inset)');
+    expect(inset('Elsewhere')).toBeUndefined();
   });
 
   it('stands a toolbar’s end group at its far end', () => {
