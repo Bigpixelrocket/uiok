@@ -19,7 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `TextLink`'s `tone` (`danger`): a link to something failing (a log file whose writes fail) in the danger tone, its `tip` (the reason) its accessible description too.
 - `KeyChords` (`@bigpixelrocket/uiok/keychord`): several chords for one verb, parted by the new `keys` label `or`, drawn and read between them, so two chords never run together; `ShortcutRow` draws its chords with it.
 - `usePaneKeys`'s `tabOrder` and `nextTabStop`'s `order` (`TabOrder`): `listing` walks each pane's listing first, then its other controls, then the other pane's listing, over the pure rule `listingFirstStop` (`WalkPane`).
-- `Row`'s `onContextMenu(event, rowKey)` and `PaneBox`'s `onContextMenu(event)`: a secondary click for a row's menu and for a pane's. The row moves the pane's cursor to itself before calling its handler; each cancels the browser's own menu, and the pane passes by a click a row (or a terminal, or a menu) inside it already cancelled, so one click opens one menu.
+- `Row`'s `onContextMenu(event, rowKey)`: a secondary click for the row's menu. The row moves the pane's cursor to itself before calling it, and cancels the browser's own menu.
+- `RegionHandlers`' `onContextMenu`, so every part that takes the region handlers (`PaneBox`, `PaneList`, `SpacePanel`, `WindowFrame`'s `group`, `Dock`, `TreePane`, `TreeList`) takes a secondary click for its own menu. The innermost menu wins: a row's, then its pane's, then the region's around it, each running only for a click nothing inside cancelled, so one click never opens two menus.
 - `BUDGETED_TERMINALS_PER_PAGE` (`@bigpixelrocket/uiok/terminal`): how many terminals one page's shared engine memory is budgeted for (17), so an app can test how many it opens against it; past it, terminals that fill their histories to the ceiling can exhaust the shared memory.
 
 ### Changed

@@ -1,6 +1,6 @@
 import type { ReactElement, ReactNode, Ref } from 'react';
 
-import type { RegionHandlers } from '../pane/Pane.js';
+import { regionHandlers, type RegionHandlers } from '../pane/Pane.js';
 
 /** Props for {@link AppRoot}. */
 export interface AppRootProps {
@@ -41,7 +41,7 @@ export interface SpacePanelProps extends RegionHandlers {
  */
 export function SpacePanel({ ref, children, ...handlers }: SpacePanelProps): ReactElement {
   return (
-    <div className="space-panel" ref={ref} tabIndex={-1} {...handlers}>
+    <div className="space-panel" ref={ref} tabIndex={-1} {...regionHandlers(handlers)}>
       {children}
     </div>
   );

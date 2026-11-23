@@ -8,7 +8,7 @@ import {
   type Ref
 } from 'react';
 
-import type { RegionHandlers } from '../pane/Pane.js';
+import { regionHandlers, type RegionHandlers } from '../pane/Pane.js';
 import { useSharedRef } from './sharedRef.js';
 import { drawn } from './WindowFrame.js';
 
@@ -193,7 +193,7 @@ export function Dock({
       data-tone={tone}
       ref={attach}
       style={{ height: shown }}
-      {...handlers}
+      {...regionHandlers(handlers)}
     >
       {onResize === undefined ? null : (
         <div
