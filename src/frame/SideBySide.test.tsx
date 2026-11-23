@@ -1,4 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
+import { Activity } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
@@ -145,6 +146,34 @@ describe('SideBySide', () => {
     expect(root.dataset.layout).toBe('side-by-side');
     widen(root, 675);
     act(() => observers.at(-1)?.());
+    expect(root.dataset.layout).toBe('side-by-side');
+  });
+
+  it('keeps the hold through a hide and a reveal by <Activity> when the threshold has not changed', () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          observers.push(callback);
+        }
+        observe() {}
+        disconnect() {}
+      }
+    );
+    const shown = (mode: 'visible' | 'hidden') => <Activity mode={mode}>{pair(640)}</Activity>;
+    const { container, rerender } = render(shown('visible'));
+    const root = container.querySelector('.side-by-side') as HTMLElement;
+
+    widen(root, 650);
+    act(() => observers.at(-1)?.());
+    expect(root.dataset.layout).toBe('side-by-side');
+    // Within the scrollbar's hold under the threshold: still side by side.
+    widen(root, 630);
+    act(() => observers.at(-1)?.());
+    expect(root.dataset.layout).toBe('side-by-side');
+
+    rerender(shown('hidden'));
+    rerender(shown('visible'));
     expect(root.dataset.layout).toBe('side-by-side');
   });
 

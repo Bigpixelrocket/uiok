@@ -51,6 +51,8 @@ export function SideBySide({
 }: SideBySideProps): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const [sideBySide, setSideBySide] = useState(false);
+  // The `from` the last laid-out width was measured against.
+  const measuredFrom = useRef<number | null>(null);
 
   // Measured before the first paint, so the pair never draws in the other
   // layout first. A threshold a prop gives cannot reach a container query,
@@ -64,16 +66,17 @@ export function SideBySide({
     // keeps its layout. The hold is for a scrollbar the layout itself
     // brought, so the first width measured against a new `from` (as it
     // mounts, as `from` changes, or when a page hidden through the change
-    // comes into view) decides without it.
-    let held = false;
+    // comes into view) decides without it. The `from` last measured lives
+    // in a ref, not in this effect, so an effect that runs again with the
+    // same `from` (a page shown again through <Activity>) keeps the hold.
     const measure = (): void => {
       const width = element.clientWidth;
 
       if (width === 0) return;
 
-      const hold = held;
+      const hold = measuredFrom.current === from;
 
-      held = true;
+      measuredFrom.current = from;
       setSideBySide((now) => width >= (now && hold ? from - SCROLLBAR_HOLD : from));
     };
 
