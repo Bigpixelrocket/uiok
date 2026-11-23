@@ -114,7 +114,7 @@ The frame is the space's root in the listing look: a column the panel's height t
 | `focusable`     | `boolean`                     | `false` | The row itself takes the focus: in the Tab order while it is the cursor row                                                                                                         |
 | `add`           | `boolean`                     | `false` | The row adds one under its parent ("Add runtime…"): an accent plus in the glyph's slot unless `glyph` gives another, dim words that turn full on hover and the cursor (`.pane-add`) |
 
-Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`): the cursor row wears the cursor's look and `aria-current`, and the pointer moving over a row or the focus entering it moves the cursor there. On a cursor or marked row the quiet words (the glyph, the detail) take `--text-on-surface`. A `dim` row reads as a listing's dim `Row`: its name in `--row-meta-text` at rest, `--text-on-surface` on the cursor, a mark, or under the pointer; it is a look only, so the row still takes the cursor, opens, and opens its menu, and the host says why it is dim (a `TreeTool` note under it) and what opening it does. A band's quiet cursor (another pane focused, the window behind) keeps the strip's ground. Its controls leave the Tab order, since the tree's keys run them; the expansion and its keys stay the host's. While the `TreeList` holds the focus, its `aria-activedescendant` is the cursor row, so a screen reader follows the keys.
+Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`): the cursor row wears the cursor's look and `aria-current`, and the pointer moving over a row or the focus entering it moves the cursor there. On a cursor or marked row the quiet words (the glyph, the detail) take `--text-on-surface`. A `dim` row reads as a listing's dim `Row` (a dim add row as one, its plus faded and out of the accent, [Listing](listing.md)): its name in `--row-meta-text` at rest, `--text-on-surface` on the cursor, a mark, or under the pointer; it is a look only, so the row still takes the cursor, opens, and opens its menu, and the host says why it is dim (a `TreeTool` note under it) and what opening it does. A band's quiet cursor (another pane focused, the window behind) keeps the strip's ground. Its controls leave the Tab order, since the tree's keys run them; the expansion and its keys stay the host's. While the `TreeList` holds the focus, its `aria-activedescendant` is the cursor row, so a screen reader follows the keys.
 
 A tree row's menu works as a listing `Row`'s ([Listing](listing.md)): `onContextMenu(event, rowKey)` takes a secondary click (the right button, a Control-click), moves the pane's cursor to the row first (`RowCursorContext`'s `point`), cancels the browser's own menu, and hands the event (open the menu at `clientX` and `clientY`) and the row's key to the host, so one handler serves every row and the menu's verbs act on the cursor row. A click a control inside the row already cancelled passes the row by. The row's handler wins: the `TreeList` and `TreePane` around it open their own menus (their `onContextMenu`, the region handlers) only for a click nothing inside took. From the keyboard, the focus sits on the `TreeList`, the tree's home: right after the Menu key or Shift-F10 (with no other modifier) goes down on it, it hands the browser's resulting secondary click to the cursor row when that row has an `onContextMenu` (it carries `data-row-menu`), its event placed under the row's leading edge, as a page's `PaneList` with `home` does; a cursor row without one, and a pointer's click on the list's empty space, stay the list's.
 
@@ -139,12 +139,13 @@ With `wrap`, the row is a multi-choice control for a narrow cell instead: chips 
 <FilterChips label="Extensions" chips={extensions} on={picked} onToggle={toggle} wrap />
 ```
 
-| Prop       | Type                    | Purpose                                  |
-| ---------- | ----------------------- | ---------------------------------------- |
-| `chips`    | `readonly FilterChip[]` | `{ id, label, icon?, count? }`, in order |
-| `on`       | `readonly Id[]`         | The filters that are on                  |
-| `onToggle` | `(id) => void`          | Turns one on or off                      |
-| `label`    | `string`                | The row's accessible name ("Filters")    |
+| Prop       | Type                    | Purpose                                                                                                                   |
+| ---------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `chips`    | `readonly FilterChip[]` | `{ id, label, icon?, count? }`, in order                                                                                  |
+| `on`       | `readonly Id[]`         | The filters that are on                                                                                                   |
+| `onToggle` | `(id) => void`          | Turns one on or off                                                                                                       |
+| `label`    | `string`                | The row's accessible name ("Filters")                                                                                     |
+| `wrap`     | `boolean`               | Chips wrap onto further lines instead of scrolling sideways (a multi-choice control in a narrow cell); `false` by default |
 
 `PaneWarning` is a warning line under a pane's path bar, over its rows, read as a status.
 
