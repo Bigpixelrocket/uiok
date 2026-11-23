@@ -369,9 +369,12 @@
    controls open menus too. As wide as its longest item, within reason, and
    never taller than the window less placeMenu's margin at either edge
    (MENU_MARGIN, --space-2): a longer menu scrolls, and the keys bring the
-   cursor's item into view. */
+   cursor's item into view. The cap holds its padding and border too
+   (border-box), and no entry shrinks to fit it (a row keeps its height, a
+   separator its line): the menu scrolls instead. */
 .folder-menu.menu-popup {
   position: fixed;
+  box-sizing: border-box;
   top: 0;
   left: 0;
   z-index: var(--z-dialog-popover);
@@ -381,6 +384,10 @@
   max-height: calc(100vh - 2 * var(--space-2));
   overflow-y: auto;
   overscroll-behavior: contain;
+}
+
+.folder-menu.menu-popup > * {
+  flex-shrink: 0;
 }
 
 /* Its icons in the quiet tone, at a weight the cursor row's and a

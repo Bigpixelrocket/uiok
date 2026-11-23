@@ -81,6 +81,13 @@ describe('ansiSegments', () => {
     ]);
   });
 
+  it('reads an extended colour mode written with a leading zero', () => {
+    expect(ansiSegments(`${ESC}[38;02;1;2;3mx${ESC}[48;05;3my`)).toEqual([
+      { text: 'x' },
+      { text: 'y' }
+    ]);
+  });
+
   it('reads hostile input in linear time', () => {
     const started = performance.now();
     expect(ansiSegments(`${ESC}[`.repeat(100_000) + 'mend')).toEqual([{ text: 'end' }]);

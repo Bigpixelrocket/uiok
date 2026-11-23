@@ -132,8 +132,9 @@ function applySgr(style: Style, parameters: string): Style {
     const code = Number(group || 0);
     if (code === 38 || code === 48 || code === 58) {
       // 38;5;n or 38;2;r;g;b: the colour is the theme's to choose, so it is skipped whole.
-      const mode = groups[index + 1];
-      index += mode === '5' ? 2 : mode === '2' ? 4 : 1;
+      // The mode is a number, so `02` is `2`.
+      const mode = Number(groups[index + 1] ?? '');
+      index += mode === 5 ? 2 : mode === 2 ? 4 : 1;
       continue;
     }
     if (code === 0) next = {};

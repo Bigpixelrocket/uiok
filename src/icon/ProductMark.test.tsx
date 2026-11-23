@@ -63,13 +63,21 @@ describe('ProductMark', () => {
               <ProductMark fallback={Database} />
             </span>
           </div>
+          <div className="row cursor">
+            <span className="tree-glyph">
+              <ProductMark fallback={Database} />
+            </span>
+          </div>
         </div>
         <ProductMark fallback={Database} />
       </div>
     );
-    const [inRow, alone] = [...container.querySelectorAll('.product-mark')] as HTMLElement[];
+    const [inRow, inTree, alone] = [
+      ...container.querySelectorAll('.product-mark')
+    ] as HTMLElement[];
 
     expect(getComputedStyle(inRow as HTMLElement).color).toBe('var(--text-on-surface)');
+    expect(getComputedStyle(inTree as HTMLElement).color).toBe('var(--text-on-surface)');
     expect(getComputedStyle(alone as HTMLElement).color).toBe('var(--text-dim)');
   });
 });

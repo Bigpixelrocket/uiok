@@ -21,7 +21,7 @@
   color: var(--text-dim);
 }
 
-:where(.row-icon) > .product-mark {
+:where(.row-icon, .tree-glyph) > .product-mark {
   color: inherit;
 }
 
