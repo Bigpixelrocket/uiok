@@ -724,7 +724,7 @@ export function Row({
   const [drawnName, setDrawnName] = useState<string | null>(null);
   const nameText = typeof name === 'string' ? name : drawnName;
   const tipped = nameTip !== undefined && nameTip !== '';
-  // Read where the focus lands (a focusable or tabbable row, a radio) and in
+  // Read where the focus lands (a focusable row, or a row whose controls take it, a radio) and in
   // the name's cell for a table's navigation.
   const described = nameDescribed(nameDescription, nameTip);
 
