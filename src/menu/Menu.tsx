@@ -224,6 +224,11 @@ function MenuSurface({
     cursorRef.current = cursor;
   });
 
+  // Placed again when its menu moves or turns direction: a submenu is given
+  // its menu's point and anchor too, so it follows the item it stands beside,
+  // and turns sides with the direction, which places a menu itself nowhere new.
+  const turn = besideId === undefined ? undefined : dir;
+
   useLayoutEffect(() => {
     const menu = surfaceRef.current;
     if (menu === null) return;
@@ -256,7 +261,7 @@ function MenuSurface({
     revealItem(itemId, cursorRef.current);
     window.addEventListener('resize', replace);
     return () => window.removeEventListener('resize', replace);
-  }, [at, anchor, besideId, itemId, surfaceRef]);
+  }, [at, anchor, besideId, turn, itemId, surfaceRef]);
 
   let index = -1;
 
@@ -587,7 +592,7 @@ export function Menu({
   return (
     <>
       {/* Where it is rendered, so it reads in that place's direction. */}
-      <span hidden ref={originRef} />
+      {dirGiven === undefined && anchor === null ? <span hidden ref={originRef} /> : null}
       <MenuSurface
         anchor={anchor}
         at={at}
@@ -629,7 +634,8 @@ export function Menu({
       />
       {subEntry === null ? null : (
         <MenuSurface
-          anchor={null}
+          anchor={anchor}
+          at={at}
           besideId={`${itemId}-${subPlace}`}
           compact={compact}
           cursor={subCursor}

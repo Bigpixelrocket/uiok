@@ -70,11 +70,14 @@ describe("a text field's secondary click", () => {
         <input aria-label="Path" readOnly />
         <textarea aria-label="Notes" />
         <div aria-label="Query" contentEditable role="textbox" suppressContentEditableWarning />
+        <div contentEditable suppressContentEditableWarning>
+          <span aria-label="Inherited" contentEditable="inherit" role="textbox" />
+        </div>
         <input aria-label="Ready" type="checkbox" />
       </PaneBox>
     );
 
-    for (const name of ['Name', 'Path', 'Notes', 'Query']) {
+    for (const name of ['Name', 'Path', 'Notes', 'Query', 'Inherited']) {
       expect(secondaryClick(screen.getByRole('textbox', { name })).defaultPrevented).toBe(false);
     }
     expect(onPane).not.toHaveBeenCalled();
@@ -148,5 +151,73 @@ describe("the keyboard's menu key on a pane's home", () => {
     secondaryClick(plain);
     expect(onPane).toHaveBeenCalledTimes(2);
     expect(onRow).not.toHaveBeenCalled();
+  });
+});
+
+describe("the keyboard's menu key, told from a pointer's click", () => {
+  const cursorOn = (key: string): RowCursor => ({
+    current: () => key,
+    subscribe: () => () => undefined,
+    point: () => undefined
+  });
+
+  const mount = (onRow: () => void, onPane: () => void) =>
+    render(
+      <PaneBox onContextMenu={onPane}>
+        <PaneList home label="Files">
+          <RowCursorContext value={cursorOn('file')}>
+            <Listing columns={[]} grid="20px 1fr" title="Files">
+              <Row name="file" onContextMenu={onRow} rowKey="file" />
+            </Listing>
+          </RowCursorContext>
+        </PaneList>
+      </PaneBox>
+    );
+
+  const pointerMenu = (target: Element, pointerType: string): void => {
+    fireEvent(
+      target,
+      new PointerEvent('contextmenu', { bubbles: true, cancelable: true, button: 2, pointerType })
+    );
+  };
+
+  it("leaves a mouse's secondary click to the pane though no press came before it", () => {
+    const onRow = vi.fn();
+    const onPane = vi.fn();
+    mount(onRow, onPane);
+
+    pointerMenu(screen.getByLabelText('Files', { selector: '.pane-list' }), 'mouse');
+    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([1, 0]);
+  });
+
+  it('leaves a touch to the pane though a key came during the press', () => {
+    const onRow = vi.fn();
+    const onPane = vi.fn();
+    mount(onRow, onPane);
+    const home = screen.getByLabelText('Files', { selector: '.pane-list' });
+
+    home.focus();
+    fireEvent.pointerDown(home, { pointerType: 'touch' });
+    fireEvent.keyDown(home, { key: 'Shift' });
+    pointerMenu(home, 'touch');
+    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([1, 0]);
+  });
+
+  it("takes a menu as the keyboard's only right after the menu key, once", () => {
+    const onRow = vi.fn();
+    const onPane = vi.fn();
+    mount(onRow, onPane);
+    const home = screen.getByLabelText('Files', { selector: '.pane-list' });
+
+    // Another key is no menu key.
+    fireEvent.keyDown(home, { key: 'a' });
+    secondaryClick(home);
+    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([1, 0]);
+    fireEvent.keyDown(home, { key: 'F10', shiftKey: true });
+    secondaryClick(home);
+    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([1, 1]);
+    // The menu key spent, the next secondary click is the pane's again.
+    secondaryClick(home);
+    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([2, 1]);
   });
 });

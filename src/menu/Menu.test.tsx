@@ -502,3 +502,57 @@ describe("Menu's submenu as its host changes it", () => {
     expect(named('Copy As')).toBeTruthy();
   });
 });
+
+describe("Menu's submenu as its menu moves", () => {
+  const ENTRIES_WITH_SUB: readonly MenuEntry[] = [
+    { kind: 'submenu', id: 'copy', label: 'Copy As', entries: [{ id: 'path', label: 'Path' }] },
+    { id: 'open', label: 'Open' }
+  ];
+  const mount = (x: number, y: number, dir: 'ltr' | 'rtl' = 'ltr') => (
+    <Menu
+      at={{ x, y }}
+      dir={dir}
+      entries={ENTRIES_WITH_SUB}
+      label="Actions"
+      onClose={vi.fn()}
+      onPick={vi.fn()}
+    />
+  );
+  const named = (name: string) => screen.getByRole('menu', { name });
+
+  it('follows its item when the menu moves', () => {
+    const { rerender } = render(mount(260, 80));
+    const root = named('Actions');
+    const item = screen.getByRole('menuitem', { name: 'Copy As' });
+    // The item stands where its menu does, a margin in.
+    item.getBoundingClientRect = () =>
+      DOMRect.fromRect({
+        x: parseInt(root.style.left),
+        y: parseInt(root.style.top) + 4,
+        width: 120,
+        height: 30
+      });
+
+    fireEvent.keyDown(root, { key: 'ArrowRight' });
+    const submenu = named('Copy As');
+    expect([submenu.style.left, submenu.style.top]).toEqual(['380px', '80px']);
+    rerender(mount(460, 180));
+    expect(document.activeElement).toBe(submenu);
+    expect([submenu.style.left, submenu.style.top]).toEqual(['580px', '180px']);
+  });
+
+  it('changes sides when the menu turns right to left, and needs no marker of its place', () => {
+    const { container, rerender } = render(mount(260, 80));
+    const root = named('Actions');
+    screen.getByRole('menuitem', { name: 'Copy As' }).getBoundingClientRect = () =>
+      DOMRect.fromRect({ x: 260, y: 84, width: 120, height: 30 });
+
+    // Given its direction, it reads none from where it is rendered.
+    expect(container.querySelector('span[hidden]')).toBe(null);
+    fireEvent.keyDown(root, { key: 'ArrowRight' });
+    expect(named('Copy As').style.left).toBe('380px');
+    rerender(mount(260, 80, 'rtl'));
+    expect(named('Copy As').getAttribute('dir')).toBe('rtl');
+    expect(named('Copy As').style.left).toBe('260px');
+  });
+});

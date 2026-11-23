@@ -161,9 +161,10 @@ export function PaneList({
   ...handlers
 }: PaneListProps): ReactElement {
   const region = regionHandlers(handlers);
-  // Whether the pointer pressed since the last key: a secondary click
-  // follows a press, the keyboard's menu key a key.
-  const pressed = useRef(false);
+  // Whether the keyboard's menu key (the Menu key, Shift-F10) was the last
+  // thing pressed: only it makes a menu the keyboard's, until the menu it
+  // asks for, another key, or a press of the pointer.
+  const menuKey = useRef(false);
 
   return (
     <div
@@ -174,23 +175,27 @@ export function PaneList({
       tabIndex={home ? -1 : undefined}
       {...region}
       onContextMenu={(event) => {
-        if (home && !pressed.current && event.target === event.currentTarget) {
-          menuOnCursorRow(event);
-        }
+        const fromKeys = menuKey.current && !fromPointer(event.nativeEvent);
+        menuKey.current = false;
+        if (home && fromKeys && event.target === event.currentTarget) menuOnCursorRow(event);
         region.onContextMenu?.(event);
       }}
       onKeyDownCapture={(event) => {
-        pressed.current = false;
+        menuKey.current = event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey);
         region.onKeyDownCapture?.(event);
       }}
       onPointerDownCapture={() => {
-        pressed.current = true;
+        menuKey.current = false;
       }}
     >
       {children}
     </div>
   );
 }
+
+/** Whether a secondary click says it came from a mouse, a pen, or a touch. */
+const fromPointer = (event: Event): boolean =>
+  'pointerType' in event && ['mouse', 'pen', 'touch'].includes(String(event.pointerType));
 
 /**
  * The keyboard's menu key aimed at a pane's home, which holds the focus

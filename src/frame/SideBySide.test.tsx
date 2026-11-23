@@ -53,7 +53,7 @@ describe('SideBySide', () => {
     widen(root, 640);
     act(() => observers.at(-1)?.());
     expect(root.dataset.layout).toBe('side-by-side');
-    widen(root, 639);
+    widen(root, 619);
     act(() => observers.at(-1)?.());
     expect(root.dataset.layout).toBe('stacked');
     // A page held out of sight measures 0 and keeps its layout.
@@ -65,6 +65,33 @@ describe('SideBySide', () => {
     widen(root, 639);
     rerender(pair(480));
     expect(root.dataset.layout).toBe('side-by-side');
+  });
+
+  it('settles when the scrollbar two columns bring narrows the pair under the threshold', () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          observers.push(callback);
+        }
+        observe() {}
+        disconnect() {}
+      }
+    );
+    const { container } = render(pair(640));
+    const root = container.querySelector('.side-by-side') as HTMLElement;
+    // A classic scrollbar shows only while the two stand side by side (taller than stacked).
+    Object.defineProperty(root, 'clientWidth', {
+      configurable: true,
+      get: () => (root.dataset.layout === 'side-by-side' ? 625 : 640)
+    });
+    const layouts: string[] = [];
+
+    for (let turn = 0; turn < 4; turn += 1) {
+      act(() => observers.at(-1)?.());
+      layouts.push(root.dataset.layout ?? '');
+    }
+    expect(layouts).toEqual(['side-by-side', 'side-by-side', 'side-by-side', 'side-by-side']);
   });
 
   it('draws two columns with the hairline after the first side by side, and one under it stacked', () => {

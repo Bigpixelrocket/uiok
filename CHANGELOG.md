@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - Tab from a pane's listing (`usePaneKeys`) no longer stops on a control the stylesheet hides, which refused the focus and held Tab in place, nor on a hidden input: the walk goes on past such a stop in the same direction, and ends on the pane's home if none takes the focus.
+- `isTextEditingTarget` resolves inherited editability as the browser does (`isContentEditable`, else the nearest `contenteditable` that is not `inherit`), so editable content inside an editable parent counts as a text field and keeps its native menu and keys.
 
 ## [0.5.0] - 2026-11-23
 

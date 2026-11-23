@@ -1,5 +1,15 @@
 import { useLayoutEffect, useRef, useState, type ReactElement, type ReactNode } from 'react';
 
+/**
+ * How far under `from` a pair already side by side stays so, in pixels:
+ * wider than a classic scrollbar (15px on macOS, 17px on Windows). Two
+ * columns can be taller than one stack, so side by side a scrollbar may
+ * appear in the pane and narrow the pair under `from`; stacking then would
+ * take the scrollbar away and stand them side by side again, back and
+ * forth. Holding the layout through a scrollbar's width keeps it still.
+ */
+const SCROLLBAR_HOLD = 20;
+
 /** Props for {@link SideBySide}. */
 export interface SideBySideProps {
   /**
@@ -21,7 +31,9 @@ export interface SideBySideProps {
 /**
  * Two of a page's listings or sections, side by side in equal columns while
  * the room the pair is given is `from` pixels wide or more, one over the
- * other in less, a hairline between them either way. The room is the
+ * other in less, a hairline between them either way. Once side by side, it
+ * stacks only under `from` less a scrollbar's width, so a scrollbar the
+ * two columns bring cannot flip it back and forth. The room is the
  * pair's own, measured as it resizes (`data-layout`: `side-by-side` or
  * `stacked`), so a pane narrowed by its sidebar or a split stacks them
  * though the window is wide. It is a layout alone: each part is a group
@@ -51,7 +63,7 @@ export function SideBySide({
     const measure = (): void => {
       const width = element.clientWidth;
 
-      if (width > 0) setSideBySide(width >= from);
+      if (width > 0) setSideBySide((now) => width >= (now ? from - SCROLLBAR_HOLD : from));
     };
 
     measure();
