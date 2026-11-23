@@ -430,6 +430,38 @@ describe('a row', () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
+  it('shows a host’s tip under the whole name and reads it, with its description, after the name', () => {
+    render(
+      <RowCursorContext value={cursorOn('a', [])}>
+        <Listing columns={[]} grid="20px 1fr" title="Services">
+          <Row name="postgres" nameDescription="Database" nameTip={'running · 5432'} rowKey="a" />
+          <Row name="redis" nameTip="stopped" rowKey="b" />
+          <Row name="mailpit" nameDescription="Mail catcher" rowKey="c" />
+          <Row name="meilisearch" rowKey="d" />
+        </Listing>
+      </RowCursorContext>
+    );
+    const name = (words: string) => screen.getByText(words);
+
+    // The tip shows at every width, under the whole name, which a cut name still reads in.
+    expect(name('postgres').dataset.tooltip).toBe('postgres\nrunning · 5432');
+    expect(name('postgres').hasAttribute('data-tooltip-cut')).toBe(false);
+    // Read after the name: the description, then the tip, never the name again.
+    expect(name('postgres').getAttribute('aria-description')).toBe('Database, running · 5432');
+    expect(name('redis').getAttribute('aria-description')).toBe('stopped');
+    expect(screen.getByRole('cell', { name: 'postgres' })).toBe(name('postgres'));
+
+    // A description alone is read, not shown: a cut name keeps its own tooltip.
+    expect(name('mailpit').getAttribute('aria-description')).toBe('Mail catcher');
+    expect(name('mailpit').dataset.tooltip).toBe('mailpit');
+    expect(name('mailpit').hasAttribute('data-tooltip-cut')).toBe(true);
+
+    // Neither: the name as it always was, its tooltip only while cut.
+    expect(name('meilisearch').dataset.tooltip).toBe('meilisearch');
+    expect(name('meilisearch').hasAttribute('data-tooltip-cut')).toBe(true);
+    expect(name('meilisearch').hasAttribute('aria-description')).toBe(false);
+  });
+
   it('takes the cursor on a secondary click, then hands the click and its key to the app', () => {
     const order: string[] = [];
     const onContextMenu = vi.fn((_event: unknown, key: string) => {

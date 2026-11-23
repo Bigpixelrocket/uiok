@@ -25,7 +25,7 @@ import {
   type ControlVerb,
   type LinkLook
 } from '../pane/PaneActions.js';
-import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
+import { cutTooltip, describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
 import { ListingScopeContext } from './ListingScope.js';
 import { pathParts } from './PathParts.logic.js';
 
@@ -544,6 +544,20 @@ export interface RowProps {
   readonly name: ReactNode;
   /** The name cell's own class, beside `row-name`. */
   readonly nameClass?: string;
+  /**
+   * More than the name says, in the host's words: what a narrow pane's
+   * dropped columns held ("running · 5432"). The name's tooltip at every
+   * width, under the whole name (so a cut name still reads whole), in
+   * place of the tooltip a cut name shows alone; its words are read after
+   * the name too, as the name's description.
+   */
+  readonly nameTip?: string;
+  /**
+   * Read after the name by assistive technology, before `nameTip`'s words,
+   * and never shown: what kind of item the row is ("Database"). Never the
+   * name itself, which the row already reads.
+   */
+  readonly nameDescription?: string;
   readonly className?: string;
   /**
    * The row's item is not there yet (a version not installed, a product
@@ -603,6 +617,31 @@ export interface RowProps {
 }
 
 /**
+ * The tooltip and description of a row's name. With neither a host tip nor
+ * a description, a name in words shows itself whole only while a narrow
+ * column cuts it. A host tip shows at every width under the whole name and
+ * is read with the host's description after the name, never repeating it.
+ */
+function nameHelp(
+  name: ReactNode,
+  tip: string | undefined,
+  description: string | undefined
+): Record<string, string> {
+  const described = [description, tip].filter((part) => part !== undefined && part !== '');
+  const shown =
+    tip === undefined || tip === '' ? null : typeof name === 'string' ? `${name}\n${tip}` : tip;
+
+  return {
+    ...(shown === null
+      ? typeof name === 'string'
+        ? cutTooltip(name)
+        : {}
+      : tooltip(shown, null, { value: true })),
+    ...(described.length === 0 ? {} : { 'aria-description': described.join(', ') })
+  };
+}
+
+/**
  * One row of a listing: its mark, its name, then its cells. `rowKey` names
  * it to the pane's cursor (`RowCursorContext`), which it wears as the
  * listing's cursor row (`.cursor`, `aria-current`); the pointer moving over
@@ -616,6 +655,9 @@ export interface RowProps {
  * keeps them in it, for a listing whose rows no key runs. A `focusable` row
  * is a stop of its own: the cursor row in the Tab order (or, while no row
  * is, the one marked `entry`), the others reached by the keys that move it.
+ * `nameTip` puts the host's words under the whole name in its tooltip (a
+ * narrow pane's dropped columns), and with `nameDescription` they are read
+ * after the name.
  */
 export function Row({
   rowKey,
@@ -623,6 +665,8 @@ export function Row({
   radio,
   name,
   nameClass,
+  nameTip,
+  nameDescription,
   className,
   dim = false,
   add = false,
@@ -697,8 +741,8 @@ export function Row({
                 className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
                 role="cell"
                 // A name in words carries itself whole as its tooltip while a
-                // narrow name column cuts it with an ellipsis.
-                {...(typeof name === 'string' ? cutTooltip(name) : {})}
+                // narrow name column cuts it, or the host's tip under it.
+                {...nameHelp(name, nameTip, nameDescription)}
               >
                 {name}
               </span>
@@ -730,7 +774,7 @@ export function Row({
               <span
                 className="row-pick-name"
                 id={nameId}
-                {...(typeof name === 'string' ? cutTooltip(name) : {})}
+                {...nameHelp(name, nameTip, nameDescription)}
               >
                 {name}
               </span>
