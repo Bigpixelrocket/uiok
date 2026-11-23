@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
  * source is set here rather than as an attribute, so that unmounting (a
  * switch to hex, a fallback, a reload's new generation) can pause the
  * element and drop its source, which ends playback and cancels any range
- * request still streaming from the media scheme at once rather than when
+ * request still streaming from the media URL at once rather than when
  * the element is collected. Returns the ref callback for the element and the
  * element once mounted.
  */

@@ -71,8 +71,8 @@ async function hasNaturalSize(image: HTMLImageElement): Promise<boolean> {
 }
 
 /**
- * The image view: Chromium decodes the file straight from the read-only
- * media scheme (`info.mediaUrl`) into an `<img>`, so animated GIF, APNG, and
+ * The image view: Chromium decodes the file straight from its media URL
+ * (`info.mediaUrl`) into an `<img>`, so animated GIF, APNG, and
  * WebP play, and nothing here parses the format. An SVG shows the same way,
  * and as an image Chromium runs none of its scripts and loads nothing it
  * references. It opens fitted to the window, over a checkerboard that shows

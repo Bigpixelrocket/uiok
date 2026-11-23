@@ -11,8 +11,8 @@ import type { ViewerViewProps } from './ViewerViews.js';
 const STAGE_GLYPH = 64;
 
 /**
- * The audio view: Chromium plays the file straight from the read-only media
- * scheme (`info.mediaUrl`) in an `<audio>` element, under the player's
+ * The audio view: Chromium plays the file straight from its media URL
+ * (`info.mediaUrl`) in an `<audio>` element, under the player's
  * control bar (`MediaControls`), and nothing here decodes a format. Only
  * the metadata loads when the window opens, and nothing plays until the
  * user asks; a seek reads from the new position through a range request,

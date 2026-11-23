@@ -108,7 +108,7 @@ interface MediaControlsProps {
  * adds, mute and volume, and for a video full screen. Every control drives
  * `media`, the element the view renders, and the bar shows what the element
  * reports, so Chromium does all the playing and seeking (through range
- * requests on the media scheme). Nothing starts playback but the user. The
+ * requests on the media URL). Nothing starts playback but the user. The
  * player's keys (Space, ← and →, Home and End, and F for a video:
  * `mediaKeyAction`) work while focus is inside the player or on nothing a
  * key operates, except that the volume slider keeps its own arrows, Home,

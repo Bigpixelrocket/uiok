@@ -34,8 +34,8 @@ const pictureOf = (video: HTMLVideoElement): Picture => {
 const PICTURE_EVENTS = ['loadedmetadata', 'resize', 'emptied'] as const;
 
 /**
- * The video view: Chromium plays the file straight from the read-only media
- * scheme (`info.mediaUrl`) in a `<video>` fitted to the window with its
+ * The video view: Chromium plays the file straight from its media URL
+ * (`info.mediaUrl`) in a `<video>` fitted to the window with its
  * aspect kept, under the player's control bar (`MediaControls`), and nothing
  * here decodes or demuxes a format. Only the metadata loads when the window
  * opens, and nothing plays until the user asks; a seek reads from the new

@@ -7,22 +7,21 @@ import type { ViewerViewProps } from './ViewerViews.js';
 /**
  * Where the PDF view loads the document: the file's media URL with its name
  * as a last segment, which Chromium's PDF viewer shows as the toolbar's
- * title (a document's own title metadata wins). The media scheme ignores
- * the segment, so it names nothing a page could load, and the page already
- * holds the name.
+ * title (a document's own title metadata wins). The reader's media URL must
+ * therefore serve the file whatever segment follows it (`ViewerFileInfo`'s
+ * `mediaUrl`); a `blob:` URL cannot, since its path is fixed.
  */
 export function pdfDocumentUrl(info: ViewerFileInfo): string {
   return `${info.mediaUrl}/${encodeURIComponent(info.name)}`;
 }
 
 /**
- * The PDF view: Chromium's built-in PDF viewer, in a frame loaded from the
- * read-only media scheme. The viewer brings Preview-style browsing (page
- * thumbnails, continuous scroll, the page number and go to page, zoom and
- * fit, text selection and copy) and its own message for a file it cannot
- * open; nothing here parses or renders PDF. Its toolbar's Download is
- * refused by the viewer session (`ViewerWindows.ts`), so nothing writes a
- * file.
+ * The PDF view: the browser's built-in PDF viewer, in a frame loaded from
+ * the file's media URL (`pdfDocumentUrl`). In Chromium that viewer brings
+ * page thumbnails, continuous scroll, go to page, zoom and fit, and text
+ * selection and copy, and its own message for a file it cannot open;
+ * nothing here parses or renders PDF. Whether its toolbar's Download may
+ * save a file is the host's decision, not the view's.
  */
 function PdfView({ info }: ViewerViewProps): ReactElement {
   return (
