@@ -1,5 +1,13 @@
-import type { DOMAttributes, MouseEvent, ReactElement, ReactNode, Ref } from 'react';
+import {
+  useRef,
+  type DOMAttributes,
+  type MouseEvent,
+  type ReactElement,
+  type ReactNode,
+  type Ref
+} from 'react';
 
+import { isTextEditingTarget } from '../keyboard/Keyboard.logic.js';
 import { useBellBeat } from '../menu/useBellBeat.js';
 
 /**
@@ -30,9 +38,11 @@ export type RegionHandlers = Pick<
  * A secondary-click handler that runs only for a click nothing inside its
  * element took: a click whose default is already cancelled (a row's menu, a
  * terminal's, a `Menu` opened from inside, whose events reach its owner
- * through React) passes it by. It cancels the browser's own menu before it
- * runs, so the parts around it pass the click by in turn, and one click
- * opens one menu, the innermost's.
+ * through React) passes it by, and so does one in a text field (a text
+ * input, a textarea, editable content, read-only ones too), which keeps the
+ * browser's own Cut, Copy, and Paste. It cancels the browser's own menu
+ * before it runs, so the parts around it pass the click by in turn, and one
+ * click opens one menu, the innermost's.
  */
 export const unclaimedContextMenu = <Target extends Element>(
   handler: ((event: MouseEvent<Target>) => void) | undefined
@@ -40,7 +50,7 @@ export const unclaimedContextMenu = <Target extends Element>(
   handler === undefined
     ? undefined
     : (event) => {
-        if (event.nativeEvent.defaultPrevented) return;
+        if (event.nativeEvent.defaultPrevented || isTextEditingTarget(event.target)) return;
         event.preventDefault();
         handler(event);
       };
@@ -137,7 +147,10 @@ export interface PaneListProps extends RegionHandlers {
 
 /**
  * The scrolling body of a pane, between its path bar and its status line:
- * the listings and notes the pane shows.
+ * the listings and notes the pane shows. As the pane's home, which holds
+ * the focus while the keys move its cursor, it hands the keyboard's menu
+ * key (the Menu key, Shift-F10) to the cursor row's `onContextMenu`, so a
+ * row's menu is reached from the keys too.
  */
 export function PaneList({
   home = false,
@@ -147,6 +160,11 @@ export function PaneList({
   children,
   ...handlers
 }: PaneListProps): ReactElement {
+  const region = regionHandlers(handlers);
+  // Whether the pointer pressed since the last key: a secondary click
+  // follows a press, the keyboard's menu key a key.
+  const pressed = useRef(false);
+
   return (
     <div
       aria-label={label}
@@ -154,9 +172,49 @@ export function PaneList({
       data-pane-home={home ? '' : undefined}
       ref={ref}
       tabIndex={home ? -1 : undefined}
-      {...regionHandlers(handlers)}
+      {...region}
+      onContextMenu={(event) => {
+        if (home && !pressed.current && event.target === event.currentTarget) {
+          menuOnCursorRow(event);
+        }
+        region.onContextMenu?.(event);
+      }}
+      onKeyDownCapture={(event) => {
+        pressed.current = false;
+        region.onKeyDownCapture?.(event);
+      }}
+      onPointerDownCapture={() => {
+        pressed.current = true;
+      }}
     >
       {children}
     </div>
   );
+}
+
+/**
+ * The keyboard's menu key aimed at a pane's home, which holds the focus
+ * while its cursor row does not: the cursor row with a menu of its own
+ * (`Row`'s `onContextMenu`, `data-row-menu`) takes it, as a secondary click
+ * on it, placed under the row's leading edge rather than wherever the
+ * keyboard's event says, and the home's own claims none.
+ */
+function menuOnCursorRow(event: MouseEvent<HTMLElement>): void {
+  const row = event.currentTarget.querySelector<HTMLElement>(
+    '[data-row-key][aria-current="true"][data-row-menu]'
+  );
+
+  if (row === null || event.nativeEvent.defaultPrevented) return;
+
+  const box = row.getBoundingClientRect();
+  const rtl = getComputedStyle(row).direction === 'rtl';
+  const click = new globalThis.MouseEvent('contextmenu', {
+    bubbles: true,
+    cancelable: true,
+    clientX: rtl ? box.right : box.left,
+    clientY: box.bottom
+  });
+
+  row.dispatchEvent(click);
+  if (click.defaultPrevented) event.preventDefault();
 }

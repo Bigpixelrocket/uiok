@@ -65,7 +65,7 @@ const FOCUSABLE = 'a[href], button, input, select, textarea, summary, [tabindex]
 
 /**
  * Whether Tab would stop on an element: focusable, not taken out of the
- * order, not disabled, not hidden or inert, not inside a closed disclosure
+ * order, not disabled, not a hidden input, not hidden or inert, not inside a closed disclosure
  * (its summary aside), and, of a radio group, only its checked radio, or
  * its first while none is.
  */
@@ -73,6 +73,8 @@ function tabbable(element: HTMLElement): boolean {
   // `:disabled` also covers a control inside a disabled fieldset, which
   // refuses the focus though its own `disabled` is false.
   if (element.tabIndex < 0 || element.matches(':disabled')) return false;
+  // A hidden input is never drawn, so it never takes the focus, whatever its tabindex.
+  if (element instanceof HTMLInputElement && element.type === 'hidden') return false;
   if (element.closest('[hidden], [inert], [aria-hidden="true"]') !== null) return false;
 
   const details = element.closest('details');

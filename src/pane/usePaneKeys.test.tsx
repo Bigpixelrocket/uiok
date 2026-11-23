@@ -1,6 +1,6 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { memo, Profiler, useState, useSyncExternalStore, type ReactElement } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
 import { paneRow, verbControl } from './PaneKeys.js';
@@ -19,6 +19,7 @@ function Panes({
   sidebar = true,
   held = false,
   locked = false,
+  hiddenStops = false,
   tabOrder
 }: {
   readonly sidebarStops: boolean;
@@ -30,6 +31,11 @@ function Panes({
   readonly held?: boolean;
   /** A disabled fieldset's control follows Edit, refusing the focus. */
   readonly locked?: boolean;
+  /**
+   * A hidden input with a tabindex, and a button the stylesheet hides
+   * (display: none, which jsdom does not apply), follow Manual.
+   */
+  readonly hiddenStops?: boolean;
 }): ReactElement {
   const panes = usePaneKeys<PaneKeyAction, object>({
     shown: true,
@@ -89,6 +95,12 @@ function Panes({
           <div data-row-key="second">
             <select aria-label="Collation" />
             <button type="button">Manual</button>
+            {hiddenStops ? (
+              <>
+                <input aria-label="Token" tabIndex={0} type="hidden" />
+                <button type="button">Folded</button>
+              </>
+            ) : null}
           </div>
         </div>
         <button type="button">Log</button>
@@ -171,6 +183,26 @@ describe('usePaneKeys Tab, listing first', () => {
     expect(tab()).toBe('Page');
     expect(tab()).toBe('Edit');
   });
+});
+
+describe('usePaneKeys Tab past a stop that refuses the focus', () => {
+  /** Makes Folded refuse the focus, as a browser does for an element the stylesheet hides. */
+  const refuseFolded = (): void => {
+    const folded = screen.getByRole('button', { name: 'Folded' });
+    vi.spyOn(folded, 'focus').mockImplementation(() => undefined);
+  };
+
+  it.each(['document', 'listing'] as const)(
+    'goes on past a hidden input and a hidden control, both ways, in %s order',
+    (tabOrder) => {
+      render(<Panes hiddenStops sidebar={false} sidebarStops={false} tabOrder={tabOrder} />);
+      refuseFolded();
+      focus('Manual');
+
+      expect(tab()).toBe('Log');
+      expect(tab(true)).toBe('Manual');
+    }
+  );
 });
 
 describe('usePaneKeys Tab', () => {

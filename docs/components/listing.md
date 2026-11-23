@@ -106,6 +106,8 @@ The radio is a native `input type="radio"` in the shared `.check` disc, named by
 <Row name={file.name} onContextMenu={(event, key) => openMenu(key, event)} rowKey={file.path} />
 ```
 
+From the keyboard, the focus sits on the pane's home (`PaneList` with `home`), not on a row, so the Menu key or Shift-F10 aims at the home. The home hands it to the cursor row: when that row has an `onContextMenu` (it carries `data-row-menu`), the row's handler runs as for a click on the row, its event's `clientX` and `clientY` under the row's leading edge, so the menu opens at the row, and no pane or region menu runs. A cursor row without one, and a pointer's click on the home's empty space, stay the pane's. Open the menu at the event's `clientX` and `clientY` either way.
+
 ## Column widths
 
 A listing with rows lays its strip and every row on one grid (CSS subgrid), so a track sized by its content (`auto`, `max-content`) takes its widest cell across all rows and the strip, and every label stands over its values.

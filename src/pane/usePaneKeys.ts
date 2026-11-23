@@ -21,6 +21,7 @@ import {
   paneRows,
   showRow,
   shownHome,
+  tabStops,
   type TabStop
 } from './PaneKeys.js';
 import { movedIndex, sameVerbs, type PaneMove, type TabOrder } from './PaneKeys.logic.js';
@@ -475,21 +476,38 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
               ? 'page'
               : (node as HTMLElement);
       const back = 'back' in action && action.back === true;
-      const to = nextTabStop(
-        main,
-        home,
-        from,
-        back,
-        walked,
-        sidebar === null,
-        listingFirst ? 'listing' : 'document'
-      );
+      const after = (stop: TabStop): TabStop =>
+        nextTabStop(
+          main,
+          home,
+          stop,
+          back,
+          walked,
+          sidebar === null,
+          listingFirst ? 'listing' : 'document'
+        );
 
       event.preventDefault();
       event.stopPropagation();
 
-      if (to === 'sidebar' || to === 'page') focusPane(to === 'sidebar' ? 'sidebar' : 'main');
-      else to.focus();
+      // A stop the stylesheet hides (display: none) refuses the focus, so
+      // the walk goes on past it the same way, once round the stops at
+      // most, and ends on the pane's home when none takes it.
+      let to = after(from);
+
+      for (let left = tabStops(root).length; ; left -= 1) {
+        if (to === 'sidebar' || to === 'page') {
+          focusPane(to === 'sidebar' ? 'sidebar' : 'main');
+          break;
+        }
+        to.focus();
+        if (document.activeElement === to) break;
+        if (left <= 0) {
+          focusPane(pane);
+          break;
+        }
+        to = after(to);
+      }
 
       return;
     }

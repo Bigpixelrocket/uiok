@@ -1,8 +1,8 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
-import { Listing, Row } from '../listing/Listing.js';
-import { PaneBox } from './Pane.js';
+import { Listing, Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
+import { PaneBox, PaneList } from './Pane.js';
 
 /** A secondary click on `target`, cancelable as the browser's is; returns the event. */
 const secondaryClick = (target: Element): MouseEvent => {
@@ -58,5 +58,95 @@ describe("PaneBox's secondary click", () => {
     expect(secondaryClick(container.querySelector('.pane') as HTMLElement).defaultPrevented).toBe(
       false
     );
+  });
+});
+
+describe("a text field's secondary click", () => {
+  it("keeps the browser's own menu in a text field, read-only too, and calls no pane menu", () => {
+    const onPane = vi.fn();
+    render(
+      <PaneBox onContextMenu={onPane}>
+        <input aria-label="Name" />
+        <input aria-label="Path" readOnly />
+        <textarea aria-label="Notes" />
+        <div aria-label="Query" contentEditable role="textbox" suppressContentEditableWarning />
+        <input aria-label="Ready" type="checkbox" />
+      </PaneBox>
+    );
+
+    for (const name of ['Name', 'Path', 'Notes', 'Query']) {
+      expect(secondaryClick(screen.getByRole('textbox', { name })).defaultPrevented).toBe(false);
+    }
+    expect(onPane).not.toHaveBeenCalled();
+    // A checkbox is no text field: the pane takes it.
+    expect(secondaryClick(screen.getByRole('checkbox', { name: 'Ready' })).defaultPrevented).toBe(
+      true
+    );
+    expect(onPane).toHaveBeenCalledOnce();
+  });
+});
+
+describe("the keyboard's menu key on a pane's home", () => {
+  const cursorOn = (key: string): RowCursor => ({
+    current: () => key,
+    subscribe: () => () => undefined,
+    point: () => undefined
+  });
+
+  const mount = (
+    cursor: string,
+    onRow: (event: { clientX: number; clientY: number }, key: string) => void,
+    onPane: () => void
+  ) =>
+    render(
+      <PaneBox onContextMenu={onPane}>
+        <PaneList home label="Files">
+          <RowCursorContext value={cursorOn(cursor)}>
+            <Listing columns={[]} grid="20px 1fr" title="Files">
+              <Row name="a" onContextMenu={onRow} rowKey="a" />
+              <Row name="b" onContextMenu={onRow} rowKey="b" />
+              <Row name="c" rowKey="c" />
+            </Listing>
+          </RowCursorContext>
+        </PaneList>
+      </PaneBox>
+    );
+
+  it("opens the cursor row's menu under the row, not the pane's", () => {
+    const onRow = vi.fn();
+    const onPane = vi.fn();
+    mount('b', onRow, onPane);
+    const home = screen.getByLabelText('Files', { selector: '.pane-list' });
+    const b = screen.getAllByRole('row')[2] as HTMLElement;
+    b.getBoundingClientRect = () =>
+      ({ left: 40, top: 100, right: 400, bottom: 124, width: 360, height: 24 }) as DOMRect;
+
+    home.focus();
+    fireEvent.keyDown(home, { key: 'ContextMenu' });
+    expect(secondaryClick(home).defaultPrevented).toBe(true);
+    expect(onRow).toHaveBeenCalledOnce();
+    expect(onRow.mock.calls[0]?.[1]).toBe('b');
+    expect(onRow.mock.calls[0]?.[0]).toMatchObject({ clientX: 40, clientY: 124 });
+    expect(onPane).not.toHaveBeenCalled();
+  });
+
+  it("leaves a pointer's click on the home's empty space, and a cursor row with no menu, to the pane", () => {
+    const onRow = vi.fn();
+    const onPane = vi.fn();
+    const { unmount } = mount('b', onRow, onPane);
+    const home = screen.getByLabelText('Files', { selector: '.pane-list' });
+
+    fireEvent.pointerDown(home, { button: 2 });
+    secondaryClick(home);
+    expect(onPane).toHaveBeenCalledOnce();
+    expect(onRow).not.toHaveBeenCalled();
+    unmount();
+
+    mount('c', onRow, onPane);
+    const plain = screen.getByLabelText('Files', { selector: '.pane-list' });
+    fireEvent.keyDown(plain, { key: 'F10', shiftKey: true });
+    secondaryClick(plain);
+    expect(onPane).toHaveBeenCalledTimes(2);
+    expect(onRow).not.toHaveBeenCalled();
   });
 });

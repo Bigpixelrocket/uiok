@@ -19,8 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `TextLink`'s `tone` (`danger`): a link to something failing (a log file whose writes fail) in the danger tone, its `tip` (the reason) its accessible description too.
 - `KeyChords` (`@bigpixelrocket/uiok/keychord`): several chords for one verb, parted by the new `keys` label `or`, drawn and read between them, so two chords never run together; `ShortcutRow` draws its chords with it.
 - `usePaneKeys`'s `tabOrder` and `nextTabStop`'s `order` (`TabOrder`): `listing` walks each pane's listing first, then its other controls, then the other pane's listing, over the pure rule `listingFirstStop` (`WalkPane`).
-- `Row`'s `onContextMenu(event, rowKey)`: a secondary click for the row's menu. The row moves the pane's cursor to itself before calling it, and cancels the browser's own menu.
-- `RegionHandlers`' `onContextMenu`, so every part that takes the region handlers (`PaneBox`, `PaneList`, `SpacePanel`, `WindowFrame`'s `group`, `Dock`, `TreePane`, `TreeList`) takes a secondary click for its own menu. The innermost menu wins: a row's, then its pane's, then the region's around it, each running only for a click nothing inside cancelled, so one click never opens two menus.
+- `Row`'s `onContextMenu(event, rowKey)`: a secondary click for the row's menu. The row moves the pane's cursor to itself before calling it, and cancels the browser's own menu. From the keyboard, the Menu key or Shift-F10 on a pane's home (`PaneList` with `home`) runs the cursor row's, its event placed under the row.
+- `RegionHandlers`' `onContextMenu`, so every part that takes the region handlers (`PaneBox`, `PaneList`, `SpacePanel`, `WindowFrame`'s `group`, `Dock`, `TreePane`, `TreeList`) takes a secondary click for its own menu. The innermost menu wins: a row's, then its pane's, then the region's around it, each running only for a click nothing inside cancelled, so one click never opens two menus. A secondary click in a text field is never claimed, so the field keeps the browser's own Cut, Copy, and Paste menu.
 - `Menu`'s submenus (`MenuSubmenuEntry`, `{ kind: 'submenu', id, label, entries }`), one level deep (`MenuLeafEntry`): an item that opens a second menu beside it, on its inline-end side or the other with no room there (`placeMenu`'s `{ beside, rtl }`, `MenuFrom`). → (← right to left), Return, or Space opens it with the keys on its first item, ← goes back to its item, Escape closes it alone and Tab the whole menu; resting on or pressing its item opens it for the pointer, which may cross other items on its way in. The item is a `menuitem` with `aria-haspopup="menu"` and `aria-expanded`, the submenu a `menu` labelled by it.
 - `PaletteOption`'s `checked`: a row picked with others (the scripts a project includes), an `option` with `aria-checked` and the menu's check mark in its icon column while ticked. A press, or Return on the cursor row, toggles it through `onPick`; Space stays in the query.
 - `SideBySide` (`@bigpixelrocket/uiok/frame`): two of a page's listings or sections side by side while the room the pair itself is given is `from` pixels wide or more, stacked in less, each a group named by its label. It measures its own width (`data-layout`), so a narrowed pane stacks them in a wide window, and holds no cursor: the page's one cursor walks the first part's rows, then the second's.
@@ -33,6 +33,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `DialogLabels` takes `sections` ("Sections" in English), the name of a `SectionedDialog`'s sidebar. An app that builds a whole `dialog` group of its own adds it.
 - `PaneMessage` draws its words in one `.pane-message-text`, so inline code flows with them.
 - `PaneMessage` and `PageNote` drawn outside every listing scope carry the scope themselves (a `.listing-root` around them), as `Listing` does, so a note after a listing keeps its look anywhere.
+
+### Fixed
+
+- Tab from a pane's listing (`usePaneKeys`) no longer stops on a control the stylesheet hides, which refused the focus and held Tab in place, nor on a hidden input: the walk goes on past such a stop in the same direction, and ends on the pane's home if none takes the focus.
 
 ## [0.5.0] - 2026-11-23
 

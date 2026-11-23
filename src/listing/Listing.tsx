@@ -668,6 +668,7 @@ export function Row({
             .filter(Boolean)
             .join(' ')}
           data-row-key={rowKey}
+          data-row-menu={onContextMenu === undefined ? undefined : ''}
           onClick={onOpen}
           onContextMenu={unclaimedContextMenu(
             onContextMenu &&
