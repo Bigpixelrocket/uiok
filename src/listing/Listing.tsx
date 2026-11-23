@@ -17,6 +17,7 @@ import {
 import { ICON_MD, ICON_SM, Spinner } from '../icon/index.js';
 import type { SortDirection } from '../labels/listing.js';
 import { useLabels } from '../labels/UiokProvider.js';
+import { unclaimedContextMenu } from '../pane/Pane.js';
 import {
   InListingRowContext,
   InRowContext,
@@ -577,6 +578,15 @@ export interface RowProps {
   /** Opens the row's item on a click anywhere but its controls. */
   readonly onOpen?: () => void;
   /**
+   * A secondary click (the right button, a Control-click, the menu key) on
+   * the row, with the row's key, for the row's menu: open it at
+   * `event.clientX` and `event.clientY`. The row moves the pane's cursor to
+   * itself first, as a file manager does, so the menu acts on the cursor row,
+   * and cancels the browser's own menu; a cancelled event is one the
+   * `PaneBox` around it leaves alone, so one click never opens both menus.
+   */
+  readonly onContextMenu?: (event: MouseEvent<HTMLElement>, rowKey: string) => void;
+  /**
    * How deep the row stands in a tree or a plan: its name is indented by one
    * icon column a level (`--row-level`); 0, or none, is no indent. The
    * expansion and its keys stay the host's.
@@ -597,7 +607,9 @@ export interface RowProps {
  * it to the pane's cursor (`RowCursorContext`), which it wears as the
  * listing's cursor row (`.cursor`, `aria-current`); the pointer moving over
  * it or the focus entering it moves the cursor there. A row with `onOpen`
- * opens its item on a click anywhere but its controls. Controls that say
+ * opens its item on a click anywhere but its controls; one with
+ * `onContextMenu` takes the cursor on a secondary click, then hands the
+ * click and its key to the app for the row's menu. Controls that say
  * what the keys run mark it with `data-verb` (`QuietAction`,
  * `RowIconAction`), and the app reads them off the cursor row
  * (`verbControl`); such controls leave the Tab order, unless `tabbable`
@@ -619,6 +631,7 @@ export function Row({
   change = null,
   emphasis = false,
   onOpen,
+  onContextMenu,
   level = 0,
   tabbable = false,
   focusable = false,
@@ -656,6 +669,14 @@ export function Row({
             .join(' ')}
           data-row-key={rowKey}
           onClick={onOpen}
+          onContextMenu={unclaimedContextMenu(
+            onContextMenu &&
+              ((event) => {
+                // The menu acts on the row it opened over, so that row is the cursor first.
+                if (!current) cursor.point(rowKey);
+                onContextMenu(event, rowKey);
+              })
+          )}
           onFocus={() => cursor.point(rowKey)}
           // Movement, not entry: a row scrolled under a still pointer as the
           // keys move the cursor must not take the cursor back.

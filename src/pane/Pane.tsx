@@ -1,4 +1,4 @@
-import type { DOMAttributes, ReactElement, ReactNode, Ref } from 'react';
+import type { DOMAttributes, MouseEvent, ReactElement, ReactNode, Ref } from 'react';
 
 import { useBellBeat } from '../menu/useBellBeat.js';
 
@@ -19,6 +19,25 @@ export type RegionHandlers = Pick<
   | 'onMouseDown'
   | 'onPointerDown'
 >;
+
+/**
+ * A secondary-click handler that runs only for a click nothing inside its
+ * element took: a click whose default is already cancelled (a row's menu, a
+ * terminal's, a `Menu` opened from inside, whose events reach its owner
+ * through React) passes it by. It cancels the browser's own menu before it
+ * runs, so the parts around it pass the click by in turn, and one click
+ * opens one menu, the innermost's.
+ */
+export const unclaimedContextMenu = <Target extends Element>(
+  handler: ((event: MouseEvent<Target>) => void) | undefined
+): ((event: MouseEvent<Target>) => void) | undefined =>
+  handler === undefined
+    ? undefined
+    : (event) => {
+        if (event.nativeEvent.defaultPrevented) return;
+        event.preventDefault();
+        handler(event);
+      };
 
 /** Props for {@link PaneBox}. */
 export interface PaneBoxProps extends RegionHandlers {
@@ -41,6 +60,15 @@ export interface PaneBoxProps extends RegionHandlers {
    * nothing; only its change rings.
    */
   readonly bell?: number;
+  /**
+   * A secondary click anywhere in the pane that nothing inside it handled,
+   * for the pane's own menu: open it at `event.clientX` and `event.clientY`.
+   * The pane cancels the browser's own menu and calls it; a click whose
+   * default is already cancelled (a `Row` with its own `onContextMenu`, a
+   * terminal, a `Menu` opened from inside) passes it by, so one click opens
+   * one menu.
+   */
+  readonly onContextMenu?: (event: MouseEvent<HTMLElement>) => void;
   readonly ref?: Ref<HTMLElement>;
   /** Its tabs (`PaneTabs`), path bar, list, and status line, top to bottom. */
   readonly children?: ReactNode;
@@ -51,7 +79,8 @@ export interface PaneBoxProps extends RegionHandlers {
  * wears): a framed column of its tab strip or path bar, its list, and its
  * status line. `active` marks the pane that holds the keyboard; the others
  * show their cursor row quietly. `bell` rings on its cursor row
- * (`useBellBeat`; `.bell-0`, `.bell-1`).
+ * (`useBellBeat`; `.bell-0`, `.bell-1`). `onContextMenu` takes a secondary
+ * click no row or part inside it took.
  */
 export function PaneBox({
   active = false,
@@ -59,6 +88,7 @@ export function PaneBox({
   tone,
   as: Element = 'section',
   bell = 0,
+  onContextMenu,
   ref,
   children,
   ...handlers
@@ -72,6 +102,7 @@ export function PaneBox({
         .filter(Boolean)
         .join(' ')}
       data-tone={tone}
+      onContextMenu={unclaimedContextMenu(onContextMenu)}
       ref={ref}
       {...handlers}
     >

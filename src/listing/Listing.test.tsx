@@ -430,6 +430,48 @@ describe('a row', () => {
     expect(onOpen).toHaveBeenCalledTimes(1);
   });
 
+  it('takes the cursor on a secondary click, then hands the click and its key to the app', () => {
+    const order: string[] = [];
+    const onContextMenu = vi.fn((_event: unknown, key: string) => {
+      order.push(`menu ${key}`);
+    });
+    const cursor = cursorOn('a', []);
+    render(
+      <RowCursorContext value={{ ...cursor, point: (to) => order.push(`point ${to}`) }}>
+        <Listing columns={[]} grid="20px 1fr" title="Files">
+          <Row name="a" onContextMenu={onContextMenu} rowKey="a" />
+          <Row name="b" onContextMenu={onContextMenu} rowKey="b" />
+          <Row name="c" rowKey="c" />
+        </Listing>
+      </RowCursorContext>
+    );
+    const [a, b, c] = screen.getAllByRole('row').slice(1) as [
+      HTMLElement,
+      HTMLElement,
+      HTMLElement
+    ];
+
+    const click = new MouseEvent('contextmenu', {
+      bubbles: true,
+      cancelable: true,
+      clientX: 30,
+      clientY: 40
+    });
+    act(() => b.dispatchEvent(click));
+    // The cursor moves before the menu opens, and the browser's own menu is cancelled.
+    expect(order).toEqual(['point b', 'menu b']);
+    expect(click.defaultPrevented).toBe(true);
+    expect(onContextMenu.mock.calls[0]?.[0]).toMatchObject({ clientX: 30, clientY: 40 });
+
+    // The cursor row is already the cursor; a row with no handler leaves the click alone.
+    act(() => a.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })));
+    expect(order).toEqual(['point b', 'menu b', 'menu a']);
+    const plain = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    act(() => c.dispatchEvent(plain));
+    expect(plain.defaultPrevented).toBe(false);
+    expect(onContextMenu).toHaveBeenCalledTimes(2);
+  });
+
   it('keeps its controls in the Tab order when tabbable, and is a stop of its own when focusable', () => {
     render(
       <RowCursorContext value={cursorOn('a', [])}>
