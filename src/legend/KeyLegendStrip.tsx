@@ -15,7 +15,7 @@ import { KeyChord } from '../keychord/KeyChord.js';
 import type { KeyLabels } from '../labels/keys.js';
 import type { LegendLabels } from '../labels/legend.js';
 import { useLabels } from '../labels/UiokProvider.js';
-import { tooltip } from '../tooltip/Tooltip.logic.js';
+import { cutTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
 import {
   legendUnits,
   moreLabel,
@@ -52,6 +52,20 @@ export interface KeyLegendStripProps {
    * chord and runs the one chosen.
    */
   readonly overflow?: 'drop' | 'more';
+  /**
+   * A short alert beside the verbs, in the host's words: why the last key
+   * did nothing ("Nothing to open here"). Spoken politely by a screen
+   * reader, cut with an ellipsis (whole in its tooltip) when the strip is
+   * narrow. Null or absent shows none.
+   */
+  readonly alert?: string | null;
+  /**
+   * Called on the next key pressed after the alert shows (a modifier alone
+   * is no key), so the host clears it; the key that raised the alert never
+   * clears it. The host owns the alert, so without this it stays until the
+   * host clears it.
+   */
+  readonly onAlertDismiss?: () => void;
 }
 
 /** The dock's keys, as they sit at the keyboard's left edge: Shift on its row, then Control, Option, Command. */
@@ -113,6 +127,32 @@ function useHeldModifiers(): ReadonlySet<LayerModifier> {
   return held;
 }
 
+/** The keys that are modifiers alone, which neither press a key nor clear an alert. */
+const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'Fn', 'CapsLock', 'OS']);
+
+/**
+ * Calls `dismiss` on the next key pressed while `alert` shows. The listener
+ * is on the window's capture phase, which the key that raised the alert has
+ * already passed, so only a later key reaches it.
+ */
+function useDismissOnKey(alert: string | null, dismiss: (() => void) | undefined): void {
+  const latest = useRef(dismiss);
+
+  latest.current = dismiss;
+
+  useEffect(() => {
+    if (alert === null) return undefined;
+
+    const onKey = (event: KeyboardEvent): void => {
+      if (!MODIFIER_KEYS.has(event.key)) latest.current?.();
+    };
+
+    window.addEventListener('keydown', onKey, true);
+
+    return () => window.removeEventListener('keydown', onKey, true);
+  }, [alert]);
+}
+
 /** Keeps the focus where it was on a press, so a click on a slot leaves the keys where they were. */
 const keepFocus = (event: MouseEvent): void => event.preventDefault();
 
@@ -165,16 +205,24 @@ function useWrappedCount(row: HTMLElement | null, places: string): number {
  * Every verb is a button that runs it, kept out of the Tab order (the chord
  * is the keyboard's way to it) and leaving the focus where it was. The
  * caller decides which verbs are listed and in which order; the strip draws
- * them. Its own name, its verb group's name, and a paired cap's name come
- * from `UiokLabels.legend`, chords in words from `UiokLabels.keys`.
+ * them. An `alert` from the host (why the last key did nothing) shows at
+ * the strip's end in a polite live region until the next key, when the
+ * strip calls `onAlertDismiss`. Its own name, its verb group's name, and a
+ * paired cap's name come from `UiokLabels.legend`, chords in words from
+ * `UiokLabels.keys`.
  */
 export function KeyLegendStrip({
   verbs,
   pairLabel,
-  overflow = 'drop'
+  overflow = 'drop',
+  alert = null,
+  onAlertDismiss
 }: KeyLegendStripProps): ReactElement {
   const { keys, legend } = useLabels();
   const held = useHeldModifiers();
+  const shownAlert = alert === '' ? null : alert;
+
+  useDismissOnKey(shownAlert, onAlertDismiss);
   const units = legendUnits(verbs, pairLabel === undefined ? UNPAIRED : { pairLabel });
   const [row, setRow] = useState<HTMLSpanElement | null>(null);
   const placesKey = units
@@ -244,6 +292,14 @@ export function KeyLegendStrip({
         {overflow === 'more' ? (
           <LegendMore keys={keys} legend={legend} verbs={foldedVerbs} />
         ) : null}
+      </span>
+      {/* Always in the document, so a screen reader hears each alert put in it. */}
+      <span className="keylegend-alert" role="status">
+        {shownAlert === null ? null : (
+          <span className="keylegend-alert-text" {...cutTooltip(shownAlert)}>
+            {shownAlert}
+          </span>
+        )}
       </span>
     </footer>
   );

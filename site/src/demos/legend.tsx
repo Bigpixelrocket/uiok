@@ -3,7 +3,8 @@
  * in the dock. The site's own legend runs along the window's bottom edge.
  * The narrow strip below shows the overflow: places that do not fit are left
  * out whole, so the strip ends on a complete key and verb. The last strip
- * folds them into a "+N" chip whose list runs them.
+ * folds them into a "+N" chip whose list runs them. Under it, a strip
+ * whose Delete is refused: it says why beside the verbs until the next key.
  */
 
 import { useState, type CSSProperties } from 'react';
@@ -22,6 +23,7 @@ const pairLabel = (pair: LegendPair): string => PAIR_LABELS[pair] ?? pair;
 /** The key legend page's demo. */
 export function LegendDemo() {
   const [ran, setRan] = useState('nothing yet');
+  const [alert, setAlert] = useState<string | null>(null);
   const verb = (label: string, chord: LegendVerb['chord'], pair?: LegendPair): LegendVerb => ({
     label,
     chord,
@@ -50,6 +52,21 @@ export function LegendDemo() {
         <KeyLegendStrip overflow="more" pairLabel={pairLabel} verbs={verbs} />
       </div>
       <code className="demo-readout">ran: {ran}</code>
+      <div className="legend-frame">
+        <KeyLegendStrip
+          alert={alert}
+          onAlertDismiss={() => setAlert(null)}
+          pairLabel={pairLabel}
+          verbs={verbs.map((each) =>
+            each.label === 'Delete'
+              ? { ...each, run: () => setAlert('Nothing to delete: the folder is read-only') }
+              : each
+          )}
+        />
+      </div>
+      <code className="demo-readout">
+        {alert === null ? 'click Delete for its refusal' : 'press any key to clear the refusal'}
+      </code>
     </div>
   );
 }
