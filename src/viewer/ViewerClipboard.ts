@@ -86,7 +86,7 @@ export function deliverCopy(
     )
     .then(
       (written) => {
-        if (written) say(null);
+        if (written && current()) say(null);
       },
       (error: unknown) => {
         if (current()) say(error instanceof Error ? error.message : labels.copyFailed);

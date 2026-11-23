@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { createRoot } from 'react-dom/client';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { ViewerFileInfo, ViewerReader, ViewerResult } from './types.js';
@@ -299,6 +300,90 @@ describe('ViewerWindow', () => {
 
     expect(screen.getByRole('status').textContent).toContain('The file was moved or deleted.');
     expect(screen.queryByRole('button', { name: 'Reload' })).toBeNull();
+  });
+
+  it('lets a check of the open generation speak though a newer one answered for an older', async () => {
+    const reader = bridgeWith({ inspect: () => ok({ ...opened, change: 'modified' }) });
+    render(<ViewerWindow onClose={noop} reader={reader} />);
+    const notice = await screen.findByRole('status');
+    reader.reload.mockImplementation(() => ok({ ...opened, generation: 1, change: 'none' }));
+    fireEvent.click(within(notice).getByRole('button', { name: 'Reload' }));
+    await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+
+    const answers: ((info: ViewerFileInfo) => void)[] = [];
+    reader.inspect.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answers.push((info) => resolve({ ok: true, value: info }));
+        })
+    );
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    await act(async () => {
+      answers[1]?.({ ...opened, generation: 0, change: 'modified' });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      answers[0]?.({ ...opened, generation: 1, change: 'removed' });
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('status').textContent).toContain('The file was moved or deleted.');
+  });
+
+  it('closes on Escape inside an open shadow root', async () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const mount = document.createElement('div');
+    host.attachShadow({ mode: 'open' }).append(mount);
+    const root = createRoot(mount);
+    const close = vi.fn();
+
+    act(() => root.render(<ViewerWindow onClose={close} reader={bridgeWith()} />));
+    await waitFor(() => expect(mount.querySelector('.viewer-name')).not.toBeNull());
+    const name = mount.querySelector('.viewer-name') as HTMLElement;
+    act(() => {
+      name.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, composed: true })
+      );
+    });
+
+    expect(close).toHaveBeenCalledTimes(1);
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it('drops a copy of its own still reading once the page copies', async () => {
+    const writeText = vi.fn(() => Promise.resolve());
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    render(
+      <>
+        <input aria-label="Search" />
+        <ViewerWindow onClose={noop} reader={bridgeWith()} />
+      </>
+    );
+    await screen.findByRole('heading', { name: 'app.ts' });
+    fireEvent.click(within(modes()).getByRole('radio', { name: 'Hex' }));
+    const bytes = await screen.findByRole('textbox', { name: 'Bytes of app.ts' });
+    await waitFor(() => expect(document.querySelector('.hex-line')).not.toBeNull());
+    fireEvent.keyDown(bytes, { key: 'a', metaKey: true });
+
+    fireEvent.click(screen.getByRole('button', { name: 'Copy Text' }));
+    const pageCopy = new Event('copy', { bubbles: true, cancelable: true });
+    act(() => {
+      screen.getByRole('textbox', { name: 'Search' }).dispatchEvent(pageCopy);
+    });
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(pageCopy.defaultPrevented).toBe(false);
+    expect(writeText).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it("leaves the page's own controls their Escape and Copy", async () => {

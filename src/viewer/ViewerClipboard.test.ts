@@ -45,4 +45,33 @@ describe('copy tickets', () => {
     await Promise.resolve();
     expect(writeText).toHaveBeenCalledTimes(1);
   });
+
+  it("never clears a newer copy's message when an older write finishes", async () => {
+    let finishWrite: () => void = () => undefined;
+    const writeText = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finishWrite = resolve;
+        })
+    );
+    vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } });
+    const say = vi.fn();
+    const { result } = renderHook(() => useCopyTickets());
+
+    deliverCopy({ text: 'older' }, null, say, DEFAULT_VIEWER_LABELS, result.current());
+    await vi.waitFor(() => expect(writeText).toHaveBeenCalledWith('older'));
+    deliverCopy(
+      { error: 'Selection too large.' },
+      null,
+      say,
+      DEFAULT_VIEWER_LABELS,
+      result.current()
+    );
+    finishWrite();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(say.mock.calls).toEqual([['Selection too large.']]);
+  });
 });

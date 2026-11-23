@@ -41,7 +41,7 @@ import { useElementHeight } from './useElementHeight.js';
 import { useEscapeToClear } from './useEscapeToClear.js';
 import { useHexDocument } from './useHexDocument.js';
 import { deliverCopy, useCopyTickets } from './ViewerClipboard.js';
-import { isViewerEventTarget } from './ViewerScope.js';
+import { isViewerEvent } from './ViewerScope.js';
 import type { ViewerViewProps } from './ViewerViews.js';
 
 /** One row's height in pixels; the stylesheet's row height and line height match it. */
@@ -174,8 +174,17 @@ function HexView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): Re
   // the jump field keeps its own copy.
   useEffect(() => {
     const onCopy = (event: ClipboardEvent): void => {
-      if (selection === null || document.activeElement === jumpField.current) return;
-      if (!isViewerEventTarget(event.target)) return;
+      // A copy the page makes itself (the jump field, a field beside the
+      // viewer, nothing selected here) is the newest: a copy of ours still
+      // reading must not land on the clipboard after it.
+      if (
+        selection === null ||
+        document.activeElement === jumpField.current ||
+        !isViewerEvent(event)
+      ) {
+        takeCopyTicket();
+        return;
+      }
 
       event.preventDefault();
       deliverCopy(

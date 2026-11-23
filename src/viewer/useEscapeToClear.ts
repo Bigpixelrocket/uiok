@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-import { isViewerEventTarget } from './ViewerScope.js';
+import { isViewerEvent } from './ViewerScope.js';
 
 /**
  * Lets a bare Escape clear what a view holds (its selection) wherever focus
@@ -16,7 +16,7 @@ export function useEscapeToClear(active: boolean, clear: () => void): void {
     const onKeyDown = (event: KeyboardEvent): void => {
       const bare = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
       if (event.defaultPrevented || event.key !== 'Escape' || !bare) return;
-      if (!isViewerEventTarget(event.target)) return;
+      if (!isViewerEvent(event)) return;
 
       event.preventDefault();
       clear();

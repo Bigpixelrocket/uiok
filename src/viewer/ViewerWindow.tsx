@@ -18,7 +18,7 @@ import { useLabels } from '../labels/UiokProvider.js';
 import { Notice } from '../surface/Notice.js';
 import { VisuallyHidden } from '../VisuallyHidden.js';
 import { isViewerCloseKey, type ViewerKeyStroke } from './ViewerKeys.js';
-import { isViewerEventTarget } from './ViewerScope.js';
+import { isViewerEvent } from './ViewerScope.js';
 import {
   openSyntaxWorker,
   SyntaxWorkerContext,
@@ -141,7 +141,7 @@ const readerKey = (reader: ViewerReader | null): number => {
  * the file hands over to its kind's fallback (source for an SVG, hex
  * otherwise) with a note saying why. Its keys and Copy listen on the window
  * and answer when aimed inside it or at nothing, leaving the page's own
- * controls theirs (`isViewerEventTarget`), so mount one per window or
+ * controls theirs (`isViewerEvent`), so mount one per window or
  * document; a new `reader` starts it afresh on that file.
  */
 export function ViewerWindow(props: ViewerWindowProps): ReactElement {
@@ -232,32 +232,34 @@ function ViewerWindowFor({
   useEffect(() => {
     if (!reader) return;
 
-    // Checks can answer out of order; only the newest one answered speaks.
+    // Checks can answer out of order: of those that answer for the open
+    // generation, only one asked after the last applied speaks.
     let asked = 0;
-    let heard = 0;
+    let applied = { generation: -1, ticket: 0 };
     const check = (): void => {
       asked += 1;
       const ticket = asked;
 
       void settleRead(noAnswer.current, () => reader.inspect()).then((result) => {
-        if (!result.ok || ticket < heard) return;
-        heard = ticket;
+        if (!result.ok) return;
 
         // A disk that matches the open file again leaves nothing for an
         // earlier failed reload to explain. A check that answers for an
         // earlier generation (a reload overtook it) says nothing of the
-        // file open now.
-        setState((current) =>
-          current.kind === 'ready' &&
-          !current.reloading &&
-          current.info.generation === result.value.generation
-            ? {
-                ...current,
-                change: result.value.change,
-                reloadFailure: result.value.change === 'none' ? null : current.reloadFailure
-              }
-            : current
-        );
+        // file open now, and moves nothing.
+        setState((current) => {
+          const { generation } = result.value;
+          if (current.kind !== 'ready' || current.reloading) return current;
+          if (current.info.generation !== generation) return current;
+          if (applied.generation === generation && ticket < applied.ticket) return current;
+
+          applied = { generation, ticket };
+          return {
+            ...current,
+            change: result.value.change,
+            reloadFailure: result.value.change === 'none' ? null : current.reloadFailure
+          };
+        });
       });
     };
 
@@ -272,7 +274,7 @@ function ViewerWindowFor({
   // full screen, Escape is the browser's, to leave it; other close keys still close.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.defaultPrevented || !isViewerEventTarget(event.target)) return;
+      if (event.defaultPrevented || !isViewerEvent(event)) return;
       if (!isCloseKeyRef.current(event)) return;
       if (event.key === 'Escape' && document.fullscreenElement) return;
 

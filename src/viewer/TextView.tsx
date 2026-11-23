@@ -34,7 +34,7 @@ import { useEscapeToClear } from './useEscapeToClear.js';
 import { useSyntaxHighlight } from './useSyntaxHighlight.js';
 import { useTextDocument, type ScreenRow, type TextScreen } from './useTextDocument.js';
 import { deliverCopy, useCopyTickets } from './ViewerClipboard.js';
-import { isViewerEventTarget } from './ViewerScope.js';
+import { isViewerEvent } from './ViewerScope.js';
 import type { ViewerViewProps } from './ViewerViews.js';
 
 /** One row's height in pixels; the stylesheet's row height and line height match it. */
@@ -344,8 +344,13 @@ function TextView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): R
   // Copy answers the Edit menu, whose Copy item copies natively in the page.
   useEffect(() => {
     const onCopy = (event: ClipboardEvent): void => {
-      if (selection === null || isCollapsed(selection)) return;
-      if (!isViewerEventTarget(event.target)) return;
+      // A copy the page makes itself (a field beside the viewer, nothing
+      // selected here) is the newest: a copy of ours still reading must
+      // not land on the clipboard after it.
+      if (selection === null || isCollapsed(selection) || !isViewerEvent(event)) {
+        takeCopyTicket();
+        return;
+      }
 
       event.preventDefault();
       deliverCopy(

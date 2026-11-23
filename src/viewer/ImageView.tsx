@@ -24,7 +24,7 @@ import {
 } from './ImageZoom.logic.js';
 import { useElementSize } from './useElementSize.js';
 import type { ViewerViewProps } from './ViewerViews.js';
-import { isViewerEventTarget } from './ViewerScope.js';
+import { isViewerEvent } from './ViewerScope.js';
 
 /** How far an arrow key moves a zoomed image. */
 const ARROW_PAN_PX = 48;
@@ -185,7 +185,7 @@ function ImageView({ info, onFallback }: ViewerViewProps): ReactElement {
   // focused; a control of the page beside it keeps its own keys.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (!isViewerEventTarget(event.target)) return;
+      if (!isViewerEvent(event)) return;
       const command = event.metaKey && !event.ctrlKey && !event.altKey;
       const plain = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
       const arrow = ARROWS[event.key];

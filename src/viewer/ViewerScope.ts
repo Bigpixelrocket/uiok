@@ -7,10 +7,13 @@ const VIEWER_ROOTS = '.viewer-window, .text-view, .hex-view, .image-view, .audio
  * page's body or root), as in a window that shows only the viewer with
  * nothing focused. An event aimed at a control of the host's page beside
  * the viewer (a search field, a drawer) stays the page's, so the viewer
- * neither closes on its Escape nor copies over its Copy.
+ * neither closes on its Escape nor copies over its Copy. The aim is read
+ * from the event's composed path, so a viewer inside an open shadow root,
+ * whose events reach the window retargeted to the shadow host, still knows
+ * them for its own.
  */
-export function isViewerEventTarget(target: EventTarget | null): boolean {
-  const element = target as Element | null;
+export function isViewerEvent(event: Event): boolean {
+  const element = (event.composedPath().at(0) ?? event.target) as Element | null;
   if (element === null || typeof element.closest !== 'function') return true;
 
   const page = element.ownerDocument;
