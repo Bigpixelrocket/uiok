@@ -29,7 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `RowProps.nameDescription`'s docs: it describes the row when it or its controls take the focus (`focusable`, `tabbable`).
 - `PaneTabs`' folded tabs' count is named by what it shows and opens ("6 more tabs"), not "Folded here", which stays its menu's heading.
 - A cut tab name or context in `PaneTabs`, and a `Cell` whose text its column cuts, shows its whole words as a tooltip while cut, as a row's name does. A tab's `tip` and a cell's `tip` still name them whole at every width, and a cell's `tip` of `null` or `''` still means no tooltip at all.
-- Neighbouring actions in a row's or a strip's cell meet edge to edge: an action with another after it is no longer pulled under its neighbour, so their click areas do not overlap, and a worded action's words stand as far from the next control as before.
+- Neighbouring actions in a row's or a strip's cell meet edge to edge: an action with another after it is no longer pulled under its neighbour, so their click areas do not overlap, and a worded action's words stand as far from the next control as before. A strip column's hidden label now comes before its control, so the control's last action is its cell's last and reaches the edge.
 - `FilterEscape` is named by what it does and the key it shows ("Clear filter, Escape"), with `aria-keyshortcuts="Escape"`.
 - A `StateMark` with no word stands on the middle of its line of text, not at the top of a row's cell.
 

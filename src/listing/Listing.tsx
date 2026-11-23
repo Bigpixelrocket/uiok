@@ -225,7 +225,8 @@ export function Strip({
           key={entry.label}
           role={table ? 'columnheader' : undefined}
         >
-          {entry.control}
+          {/* The hidden label first, so the control is the column's last
+              child and keeps the edge rules a cell's last action wears. */}
           {entry.hidden === true
             ? table && <span className="visually-hidden">{entry.label}</span>
             : entry.control === undefined &&
@@ -248,6 +249,7 @@ export function Strip({
                   tip={entry.tip}
                 />
               ))}
+          {entry.control}
         </span>
       ))}
     </div>

@@ -518,6 +518,36 @@ describe('a row', () => {
     );
   });
 
+  it('draws a hidden column label before its control, so the control’s last action is the last child', () => {
+    render(
+      <Listing
+        columns={[
+          {
+            label: 'Actions',
+            hidden: true,
+            control: (
+              <>
+                <QuietAction
+                  icon={Trash2}
+                  label="Copy Path"
+                  onClick={() => undefined}
+                  word="Copy Path"
+                />
+                <QuietAction icon={Trash2} label="Clear" onClick={() => undefined} word="Clear" />
+              </>
+            )
+          }
+        ]}
+        grid="20px 1fr auto"
+        title="Files"
+      />
+    );
+    const column = screen.getByRole('columnheader', { name: /Actions/ });
+
+    expect(column.firstElementChild?.className).toBe('visually-hidden');
+    expect(column.lastElementChild?.textContent).toBe('Clear');
+  });
+
   it('shows a cell’s words whole in a tooltip only while its column cuts them, a host’s tip at every width', () => {
     render(
       <RowCursorContext value={cursorOn('a', [])}>
