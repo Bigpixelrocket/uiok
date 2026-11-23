@@ -52,7 +52,7 @@ import {
 <Switch checked={sharing} label="Sharing" onChange={setSharing} />;
 ```
 
-`FieldRow` wires the one control inside it: the control takes the label's id, the problem and note as its `aria-describedby`, `aria-invalid` while a problem stands, and the help as its `aria-description`, with no ids written by the app. A row whose value is several choices takes `group`: its label then names the group (`role="group"`) instead of one control.
+`FieldRow` wires the one control inside it: the control takes the label's id (the row's `id` when given, over any the control sets), the problem, note, and help as its `aria-describedby`, and `aria-invalid` while a problem stands, with no ids written by the app. `Range` and `Meter` in a row take its label, so their own `label` is then optional. A row whose value is several choices takes `group`: its label then names the group (`role="group"`) instead of one control.
 
 ## Components
 

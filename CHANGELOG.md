@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - The `viewer` label group (`ViewerLabels`, `ViewerModeLabels`, `ViewerContentLabels`, `DEFAULT_VIEWER_LABELS`), its number, size, and date formats included.
 - Form components (`@bigpixelrocket/uiok/field`), so an app draws a form with no class name or raw element: `TextField`, `TextArea`, `Select` (`SelectOption`, `SelectOptionGroup`), `FieldBox`, `FieldEditor`, `Radio`, `Range`, `Meter`, `RestoreDefault`; the layout `FieldGrid`, `FieldRow` (wires its control's id, note, problem, invalid state, and help on its own; `useFieldWiring` for a control of the app's), `FieldOption`, `FieldGroup`, `FieldNote`, `FieldProblem`. `Check` takes a `label` and a `tone`.
 - `Notice` and `Card` (`@bigpixelrocket/uiok/surface`), and `PaneMessage` (`@bigpixelrocket/uiok/listing`): the `.notice`, `.card`, and `.pane-message` looks as components.
-- `TreeTool` takes a `rowKey`, which joins it to the pane's row cursor as a `TreeRow` is.
+- `TreeTool` takes a `rowKey`, which joins it to the pane's row cursor as a `TreeRow` is, as a `treeitem`.
 - `ProgressDialog`, `ConfirmDialog`, and `TypedNameDialog` take a `container`; `TypedNameDialog` takes `groups`.
 - Theme token `--letterbox` (a video's letterbox, black in every theme).
 
@@ -25,7 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
-- `TreeList` mounted inside a shadow root keeps its `aria-activedescendant`: it finds the cursor row in its own root, not the document.
+- `TreeList` mounted inside a shadow root keeps its `aria-activedescendant`: it finds the cursor row in its own root, not the document. A tree mounted in an element not yet attached no longer throws.
 
 ## [0.3.0] - 2026-11-23
 

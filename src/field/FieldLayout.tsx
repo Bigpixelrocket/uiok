@@ -7,27 +7,29 @@ import {
   type ReactNode
 } from 'react';
 
+import { VisuallyHidden } from '../VisuallyHidden.js';
 import { labelHelp } from './labelHelp.js';
 
 /**
  * What a `FieldRow` tells the one control it holds: the id its label names,
- * the ids of the note and problem under it, whether its value is wrong, and
- * the help a screen reader reads as the control takes focus.
+ * the ids of what describes it (the problem, the note, and the help a
+ * screen reader reads as the control takes focus), and whether its value is
+ * wrong.
  */
 export interface FieldRowWiring {
   readonly id: string;
   readonly describedBy: string | undefined;
   readonly invalid: boolean;
-  readonly description: string | undefined;
 }
 
 /** The wiring of the row a control stands in; null outside a `FieldRow`. */
 const FieldRowContext = createContext<FieldRowWiring | null>(null);
 
 /**
- * The attributes a control takes from the `FieldRow` it stands in, under
- * any it sets itself: its id, `aria-describedby` (its own ids first),
- * `aria-invalid`, and `aria-description`.
+ * The attributes a control takes from the `FieldRow` it stands in, with
+ * any it sets itself: its id (the row's, which its label names, so in a row
+ * give the id to `FieldRow`), `aria-describedby` (its own ids first), and
+ * `aria-invalid`.
  */
 export function useFieldWiring(own: {
   readonly id?: string | undefined;
@@ -37,17 +39,15 @@ export function useFieldWiring(own: {
   readonly id: string | undefined;
   readonly 'aria-describedby': string | undefined;
   readonly 'aria-invalid': true | undefined;
-  readonly 'aria-description': string | undefined;
 } {
   const row = use(FieldRowContext);
   const describedBy = [own.describedBy, row?.describedBy].filter(Boolean).join(' ');
   const invalid = own.invalid ?? row?.invalid ?? false;
 
   return {
-    id: own.id ?? row?.id,
+    id: row?.id ?? own.id,
     'aria-describedby': describedBy === '' ? undefined : describedBy,
-    'aria-invalid': invalid ? true : undefined,
-    'aria-description': row?.description
+    'aria-invalid': invalid ? true : undefined
   };
 }
 
@@ -106,15 +106,18 @@ export interface FieldRowProps {
    * becomes the group's name, not a `<label>` for one control.
    */
   readonly group?: boolean;
-  /** The control's id, when the app must know it; one is made otherwise. */
+  /**
+   * The control's id, when the app must know it; one is made otherwise. The
+   * row's id wins over one the control sets, so its label always names it.
+   */
   readonly id?: string;
 }
 
 /**
  * One row of a `FieldGrid`: the label, then the value with its note and
- * problem under it. The one control inside takes the label's id, the note
- * and problem as its description, `aria-invalid` while a problem stands, and
- * the help as its accessible description, with no wiring by the app. Draws
+ * problem under it. The one control inside takes the label's id, the
+ * problem, note, and help as its description, and `aria-invalid` while a
+ * problem stands, with no wiring by the app. Draws
  * `.field-label` and `.field-value` with `.field-note` and `.field-problem`.
  */
 export function FieldRow({
@@ -132,17 +135,19 @@ export function FieldRow({
   const labelId = `${made}-label`;
   const noteId = `${made}-note`;
   const problemId = `${made}-problem`;
+  const helpId = `${made}-help`;
   const hasNote = note !== undefined && note !== null && note !== false;
   const hasProblem = problem !== undefined && problem !== null && problem !== false;
   const helpParts = labelHelp(help);
-  const describedBy = [hasProblem ? problemId : '', hasNote ? noteId : '']
+  // The help is read through aria-describedby with the note and problem, not
+  // as aria-description, which aria-describedby would override.
+  const describedBy = [hasProblem ? problemId : '', hasNote ? noteId : '', help ? helpId : '']
     .filter(Boolean)
     .join(' ');
   const wiring: FieldRowWiring = {
     id: controlId,
     describedBy: describedBy === '' ? undefined : describedBy,
-    invalid: hasProblem,
-    description: help
+    invalid: hasProblem
   };
   const labelBody = (
     <>
@@ -173,6 +178,7 @@ export function FieldRow({
         <FieldRowContext value={group ? null : wiring}>{children}</FieldRowContext>
         {hasProblem ? <FieldProblem id={problemId}>{problem}</FieldProblem> : null}
         {hasNote ? <FieldNote id={noteId}>{note}</FieldNote> : null}
+        {help ? <VisuallyHidden id={helpId}>{help}</VisuallyHidden> : null}
       </div>
     </>
   );

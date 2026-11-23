@@ -21,7 +21,9 @@ export function pdfDocumentUrl(info: ViewerFileInfo): string {
  * page thumbnails, continuous scroll, go to page, zoom and fit, and text
  * selection and copy, and its own message for a file it cannot open;
  * nothing here parses or renders PDF. Whether its toolbar's Download may
- * save a file is the host's decision, not the view's.
+ * save a file is the host's decision, not the view's. The frame is not
+ * sandboxed (the PDF viewer does not run in one), so the reader's URL must
+ * answer only with the PDF itself (`docs/components/viewer.md`).
  */
 function PdfView({ info }: ViewerViewProps): ReactElement {
   return (

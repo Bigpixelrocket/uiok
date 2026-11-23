@@ -1,5 +1,5 @@
 import { CircleAlert } from 'lucide-react';
-import { useCallback, useEffect, useRef, useState, type ReactElement } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactElement } from 'react';
 
 import {
   settleRead,
@@ -57,9 +57,6 @@ type FrameState =
       readonly reloadFailure: string | null;
     };
 
-/** The hidden words that name the mode switch for assistive technology. */
-const MODES_LABEL_ID = 'viewer-modes-label';
-
 /**
  * The mode on screen, and why the window shows its kind's fallback view
  * (source for an SVG, hex otherwise) in place of the view it opens in (null
@@ -111,6 +108,27 @@ export interface ViewerWindowProps {
 }
 
 /**
+ * A number per reader the viewer has been given, so a new reader remounts
+ * the viewer: nothing a read, reload, or check of the old file answers late
+ * can reach the new file's state.
+ */
+const readerKeys = new WeakMap<ViewerReader, number>();
+let nextReaderKey = 1;
+
+const readerKey = (reader: ViewerReader | null): number => {
+  if (reader === null) return 0;
+
+  let key = readerKeys.get(reader);
+  if (key === undefined) {
+    key = nextReaderKey;
+    nextReaderKey += 1;
+    readerKeys.set(reader, key);
+  }
+
+  return key;
+};
+
+/**
  * A read-only file viewer filling its window: a header with the file's
  * name, size, kind, and modification date and a switch between the modes
  * its kind offers, and the view for the chosen mode (text with syntax
@@ -120,9 +138,16 @@ export interface ViewerWindowProps {
  * front; when its source no longer matches, a notice says so and offers
  * Reload, while the view keeps what it has. A native view that cannot show
  * the file hands over to its kind's fallback (source for an SVG, hex
- * otherwise) with a note saying why.
+ * otherwise) with a note saying why. It owns its document's keyboard and
+ * clipboard (its keys and Copy listen on the window), so mount one per
+ * window or document; a new `reader` starts it afresh on that file.
  */
-export function ViewerWindow({
+export function ViewerWindow(props: ViewerWindowProps): ReactElement {
+  return <ViewerWindowFor key={readerKey(props.reader)} {...props} />;
+}
+
+/** The viewer bound to one reader for its whole life. */
+function ViewerWindowFor({
   reader,
   onClose,
   isCloseKey = isViewerCloseKey,
@@ -130,7 +155,13 @@ export function ViewerWindow({
   syntaxWorker
 }: ViewerWindowProps): ReactElement {
   const labels = useLabels().viewer;
-  const noAnswer = labels.noAnswer;
+  const modesLabelId = useId();
+  // Read when a call settles, so a new translation of the words neither
+  // inspects the file again nor resets what the viewer shows.
+  const noAnswer = useRef(labels.noAnswer);
+  useEffect(() => {
+    noAnswer.current = labels.noAnswer;
+  });
   const [state, setState] = useState<FrameState>(
     reader ? { kind: 'loading' } : { kind: 'failed', message: null }
   );
@@ -169,7 +200,7 @@ export function ViewerWindow({
     if (!reader) return;
     let cancelled = false;
 
-    void settleRead(noAnswer, () => reader.inspect()).then((result) => {
+    void settleRead(noAnswer.current, () => reader.inspect()).then((result) => {
       if (cancelled) return;
 
       if (!result.ok) {
@@ -191,7 +222,7 @@ export function ViewerWindow({
     return () => {
       cancelled = true;
     };
-  }, [noAnswer, reader]);
+  }, [reader]);
 
   // Nothing watches the file, so the check runs when the user comes back to
   // the window, the moment a change made elsewhere could matter. A failed
@@ -200,13 +231,17 @@ export function ViewerWindow({
     if (!reader) return;
 
     const check = (): void => {
-      void settleRead(noAnswer, () => reader.inspect()).then((result) => {
+      void settleRead(noAnswer.current, () => reader.inspect()).then((result) => {
         if (!result.ok) return;
 
         // A disk that matches the open file again leaves nothing for an
-        // earlier failed reload to explain.
+        // earlier failed reload to explain. A check that answers for an
+        // earlier generation (a reload overtook it) says nothing of the
+        // file open now.
         setState((current) =>
-          current.kind === 'ready' && !current.reloading
+          current.kind === 'ready' &&
+          !current.reloading &&
+          current.info.generation === result.value.generation
             ? {
                 ...current,
                 change: result.value.change,
@@ -220,7 +255,7 @@ export function ViewerWindow({
     window.addEventListener('focus', check);
 
     return () => window.removeEventListener('focus', check);
-  }, [noAnswer, reader]);
+  }, [reader]);
 
   // Escape, ⌘Y, and F3 close the window as ⌘W does (`isViewerCloseKey`),
   // whatever it shows, a failure included. A key a view took first is the
@@ -246,7 +281,7 @@ export function ViewerWindow({
     setState((current) =>
       current.kind === 'ready' ? { ...current, reloading: true, reloadFailure: null } : current
     );
-    const result = await settleRead(noAnswer, () => reader.reload());
+    const result = await settleRead(noAnswer.current, () => reader.reload());
     if (result.ok) latestGeneration.current += 1;
     const next = latestGeneration.current;
 
@@ -268,7 +303,7 @@ export function ViewerWindow({
     if (result.ok) {
       setShown((current) => shownAfterOpen(result.value.content.kind, current));
     }
-  }, [noAnswer, reader]);
+  }, [reader]);
 
   if (state.kind !== 'ready' || reader === null || shown === null) {
     const failureText = state.kind === 'failed' ? (state.message ?? labels.unreachable) : null;
@@ -322,10 +357,10 @@ export function ViewerWindow({
         {/* A kind with one way to show it has nothing to switch between. */}
         {modes.length > 1 ? (
           <div className="viewer-modes">
-            <VisuallyHidden id={MODES_LABEL_ID}>{labels.modesLabel}</VisuallyHidden>
+            <VisuallyHidden id={modesLabelId}>{labels.modesLabel}</VisuallyHidden>
             <SegmentedChoice
               choices={modes.map((mode) => mode.view)}
-              labelId={MODES_LABEL_ID}
+              labelId={modesLabelId}
               onChange={chooseView}
               render={(choice) => {
                 const mode = modes.find((entry) => entry.view === choice);

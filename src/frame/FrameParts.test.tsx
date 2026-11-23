@@ -198,6 +198,8 @@ describe('TreeRow', () => {
     fireEvent.pointerMove(tool);
     expect(tool.classList.contains('cursor')).toBe(true);
     expect(screen.getByRole('tree').getAttribute('aria-activedescendant')).toBe(tool.id);
+    expect(tool.getAttribute('role')).toBe('treeitem');
+    expect(tool.getAttribute('aria-level')).toBe('1');
     expect(screen.getByText('Loose note').closest('.tree-tool')?.classList.contains('cursor')).toBe(
       true
     );
@@ -230,6 +232,25 @@ describe('TreeRow', () => {
     expect(list?.getAttribute('aria-activedescendant')).toBe(second?.id);
     act(() => root.unmount());
     host.remove();
+  });
+
+  it('mounts with a cursor row in an element not yet attached to a document', () => {
+    const mount = document.createElement('div');
+    const root = createRoot(mount);
+
+    expect(() =>
+      act(() =>
+        root.render(
+          <RowCursorContext value={cursorAt('a')}>
+            <TreeList label="Services">
+              <TreeRow name="PostgreSQL" rowKey="a" />
+            </TreeList>
+          </RowCursorContext>
+        )
+      )
+    ).not.toThrow();
+    expect(mount.querySelector('[role="tree"]')?.hasAttribute('aria-activedescendant')).toBe(false);
+    act(() => root.unmount());
   });
 
   it('names no active descendant once a filter takes the cursor row away', () => {

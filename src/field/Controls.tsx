@@ -55,7 +55,10 @@ interface FieldLook {
 export interface TextFieldProps
   extends
     FieldLook,
-    Omit<ComponentPropsWithRef<'input'>, 'className' | 'style' | 'size' | 'onChange' | 'value'> {
+    Omit<
+      ComponentPropsWithRef<'input'>,
+      'className' | 'style' | 'size' | 'onChange' | 'value' | 'defaultValue'
+    > {
   /** The text it holds. */
   readonly value: string;
   /** Hears the text as typed. */
@@ -107,7 +110,10 @@ export function TextField({
 export interface TextAreaProps
   extends
     FieldLook,
-    Omit<ComponentPropsWithRef<'textarea'>, 'className' | 'style' | 'onChange' | 'value'> {
+    Omit<
+      ComponentPropsWithRef<'textarea'>,
+      'className' | 'style' | 'onChange' | 'value' | 'defaultValue'
+    > {
   /** The text it holds. */
   readonly value: string;
   /** Hears the text as typed. */
@@ -166,7 +172,14 @@ export interface SelectProps
     FieldLook,
     Omit<
       ComponentPropsWithRef<'select'>,
-      'className' | 'style' | 'onChange' | 'value' | 'children' | 'multiple' | 'size'
+      | 'className'
+      | 'style'
+      | 'onChange'
+      | 'value'
+      | 'defaultValue'
+      | 'children'
+      | 'multiple'
+      | 'size'
     > {
   /** The chosen item's value. */
   readonly value: string;
@@ -243,14 +256,15 @@ export function FieldBox({
   ...props
 }: FieldBoxProps): ReactElement {
   const wiring = useFieldWiring({ id, describedBy, invalid });
-  const { 'aria-invalid': boxInvalid, ...inputWiring } = wiring;
 
+  // The frame draws the danger outline; the input is what a screen reader
+  // hears as invalid.
   return (
-    <label aria-invalid={boxInvalid} className={classes('field-box', SIZE_CLASS[size])}>
+    <label aria-invalid={wiring['aria-invalid']} className={classes('field-box', SIZE_CLASS[size])}>
       <Glyph aria-hidden size={ICON_SM} />
       <input
         {...props}
-        {...inputWiring}
+        {...wiring}
         onChange={
           onChange === undefined ? undefined : (event) => onChange(event.target.value, event)
         }
@@ -359,16 +373,17 @@ export interface RangeProps {
   readonly max?: number;
   /** The step between values; any value unless given. */
   readonly step?: number | 'any';
-  /** Its accessible name: "Volume". */
-  readonly label: string;
+  /** Its accessible name ("Volume"); in a `FieldRow` the row's label names it. */
+  readonly label?: string;
   /** The value as words, read by assistive technology ("1:05 of 3:20"). */
   readonly valueText?: string;
   readonly disabled?: boolean;
 }
 
 /**
- * A slider: a trough filled in the accent up to the knob. Draws
- * `input.range` with `--range-fill` set from the value.
+ * A slider: a trough filled in the accent up to the knob. In a `FieldRow` it
+ * takes the row's label and description. Draws `input.range` with
+ * `--range-fill` set from the value.
  */
 export function Range({
   value,
@@ -382,9 +397,11 @@ export function Range({
 }: RangeProps): ReactElement {
   const span = max - min;
   const fill = span > 0 ? Math.min(100, Math.max(0, ((value - min) / span) * 100)) : 0;
+  const wiring = useFieldWiring({});
 
   return (
     <input
+      {...wiring}
       aria-label={label}
       aria-valuetext={valueText}
       className="range"
@@ -412,14 +429,15 @@ export interface MeterProps {
   readonly high: number;
   /** A value in the range that is good: low, middle, or high. */
   readonly optimum: number;
-  /** Its accessible name: "Strength". */
-  readonly label: string;
+  /** Its accessible name ("Strength"); in a `FieldRow` the row's label names it. */
+  readonly label?: string;
 }
 
 /**
  * A measure in a pill trough, filled in the success tone in its optimum
  * range, the warning tone one range away, and the danger tone at the least
- * good. Draws a themed `<meter>`.
+ * good. In a `FieldRow` it takes the row's label and description. Draws a
+ * themed `<meter>`.
  */
 export function Meter({
   value,
@@ -430,9 +448,13 @@ export function Meter({
   optimum,
   label
 }: MeterProps): ReactElement {
+  const { id, 'aria-describedby': describedBy } = useFieldWiring({});
+
   return (
     <meter
+      aria-describedby={describedBy}
       aria-label={label}
+      id={id}
       high={high}
       low={low}
       max={max}

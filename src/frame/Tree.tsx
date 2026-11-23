@@ -115,9 +115,13 @@ export function TreeList({ label, ref, children, ...handlers }: TreeListProps): 
     const id = key === null ? null : rowId(tree, key);
     // One lookup by id in the tree's own root (the document, or the shadow
     // root it is mounted in, where the document cannot see), never a scan
-    // of the rows; the tree's prefix makes the id unique there.
-    const root = element.getRootNode() as Document | ShadowRoot;
-    const row = id === null ? null : root.getElementById(id);
+    // of the rows; the tree's prefix makes the id unique there. A tree not
+    // yet attached has no such root, and nothing to name.
+    const root = element.getRootNode();
+    const row =
+      id === null || !(root instanceof Document || root instanceof ShadowRoot)
+        ? null
+        : root.getElementById(id);
     const drawnRow = row !== null && element.contains(row);
 
     if (drawnRow && id !== null) element.setAttribute('aria-activedescendant', id);
@@ -388,7 +392,13 @@ export function TreeTool({
               if (!current) cursor.point(rowKey);
             }
       }
-      role={kind === 'danger' ? 'alert' : undefined}
+      // A row the cursor walks is one of the tree's items, as a TreeRow is,
+      // so the tree can name it as its active descendant; a danger row
+      // keeps announcing itself as it appears.
+      aria-atomic={rowKey !== undefined && kind === 'danger' ? true : undefined}
+      aria-level={rowKey === undefined ? undefined : level + 1}
+      aria-live={rowKey !== undefined && kind === 'danger' ? 'assertive' : undefined}
+      role={rowKey !== undefined ? 'treeitem' : kind === 'danger' ? 'alert' : undefined}
       style={levelStyle(level)}
     >
       {Icon === undefined ? null : (

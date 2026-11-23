@@ -35,8 +35,10 @@ describe('FieldRow', () => {
 
     expect(field.classList.contains('field')).toBe(true);
     expect(field.getAttribute('aria-invalid')).toBe('true');
-    expect(field.getAttribute('aria-describedby')).toBe(`${problem.id} ${note.id}`);
-    expect(field.getAttribute('aria-description')).toBe('A name this computer can reach.');
+    const help = screen.getByText('A name this computer can reach.');
+
+    expect(field.getAttribute('aria-describedby')).toBe(`${problem.id} ${note.id} ${help.id}`);
+    expect(field.hasAttribute('aria-description')).toBe(false);
     expect(problem.classList.contains('field-problem')).toBe(true);
     expect(note.classList.contains('field-note')).toBe(true);
     expect(screen.getByText('Host').hasAttribute('data-label-help')).toBe(true);
@@ -52,6 +54,43 @@ describe('FieldRow', () => {
 
     expect(field.hasAttribute('aria-invalid')).toBe(false);
     expect(field.getAttribute('aria-describedby')?.startsWith('own ')).toBe(true);
+  });
+
+  it("names the control by the row's id over one the control sets", () => {
+    render(
+      <FieldRow id="host-field" label="Host">
+        <TextField id="ignored" onChange={vi.fn()} value="db" />
+      </FieldRow>
+    );
+
+    expect(screen.getByLabelText('Host').id).toBe('host-field');
+  });
+
+  it('labels and describes a slider, a meter, and a boxed field from their rows', () => {
+    render(
+      <FieldGrid>
+        <FieldRow label="Volume" note="Applies to every window.">
+          <Range onChange={vi.fn()} value={40} />
+        </FieldRow>
+        <FieldRow label="Strength">
+          <Meter high={0.75} low={0.4} optimum={1} value={0.6} />
+        </FieldRow>
+        <FieldRow label="Filter" problem="No table matches.">
+          <FieldBox glyph={Search} onChange={vi.fn()} value="zz" />
+        </FieldRow>
+      </FieldGrid>
+    );
+    const volume = screen.getByLabelText('Volume');
+    const filter = screen.getByLabelText('Filter');
+
+    expect(volume.getAttribute('type')).toBe('range');
+    expect(volume.getAttribute('aria-describedby')).toBe(
+      screen.getByText('Applies to every window.').id
+    );
+    expect(screen.getByLabelText('Strength').tagName).toBe('METER');
+    expect(filter.tagName).toBe('INPUT');
+    expect(filter.getAttribute('aria-invalid')).toBe('true');
+    expect(filter.closest('.field-box')?.getAttribute('aria-invalid')).toBe('true');
   });
 
   it('names a group of choices instead of one control', () => {
@@ -114,7 +153,7 @@ describe('the field controls', () => {
     expect(onChange).toHaveBeenCalledWith('latin-1', expect.anything());
   });
 
-  it('frames a glyph and a bare input in a field box, invalid on the box', () => {
+  it('frames a glyph and a bare input in a field box, the box outlined and the input invalid', () => {
     render(
       <FieldBox aria-label="Filter" glyph={Search} invalid onChange={vi.fn()} size="sm" value="" />
     );
@@ -123,7 +162,7 @@ describe('the field controls', () => {
 
     expect(box?.className).toBe('field-box field-sm');
     expect(box?.getAttribute('aria-invalid')).toBe('true');
-    expect(input.hasAttribute('aria-invalid')).toBe(false);
+    expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.className).toBe('');
   });
 

@@ -52,8 +52,10 @@ export interface ViewerFileOrigin {
  * the open file; `content` is the kind detected when this generation opened;
  * `change` compares the source with the open file; `mediaUrl` is where a
  * native view (image, audio, video, PDF) has the browser load the file from,
- * good for this generation only (the PDF view appends `/<name>` to it, so a
- * PDF's URL must serve the file whatever last segment follows); `origin` is set only for a copy.
+ * good for this generation only and revoked by the reader after it (the PDF
+ * view appends `/<name>` to it, so a PDF's URL must serve the file whatever
+ * last segment follows, and frames it unsandboxed, so it must answer with
+ * the PDF alone); `origin` is set only for a copy.
  */
 export interface ViewerFileInfo {
   readonly generation: number;

@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ViewerFileInfo, ViewerReader, ViewerResult } from './types.js';
 
 import type { ViewerViewProps } from './ViewerViews.js';
+import { UiokProvider } from '../labels/UiokProvider.js';
 import { isViewerCloseKey, type ViewerKeyStroke } from './ViewerKeys.js';
 import { ViewerWindow } from './ViewerWindow.js';
 
@@ -195,6 +196,79 @@ describe('ViewerWindow', () => {
     });
 
     await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+  });
+
+  it('ignores a check that a reload overtook', async () => {
+    const reader = bridgeWith({ inspect: () => ok({ ...opened, change: 'modified' }) });
+    render(<ViewerWindow onClose={noop} reader={reader} />);
+    const notice = await screen.findByRole('status');
+
+    let answerCheck: (info: ViewerFileInfo) => void = noop;
+    reader.inspect.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answerCheck = (info) => resolve({ ok: true, value: info });
+        })
+    );
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+    });
+    reader.reload.mockImplementation(() => ok({ ...opened, generation: 1, change: 'none' }));
+    fireEvent.click(within(notice).getByRole('button', { name: 'Reload' }));
+    await waitFor(() => expect(screen.queryByRole('status')).toBeNull());
+
+    // The check began on generation 0 and answers after the reload.
+    await act(async () => {
+      answerCheck({ ...opened, change: 'modified' });
+      await Promise.resolve();
+    });
+    expect(screen.queryByRole('status')).toBeNull();
+  });
+
+  it('starts afresh on a new reader, deaf to the old one answering late', async () => {
+    let answerReload: (info: ViewerFileInfo) => void = noop;
+    const first = bridgeWith({
+      inspect: () => ok({ ...opened, change: 'modified' }),
+      reload: () =>
+        new Promise((resolve) => {
+          answerReload = (info) => resolve({ ok: true, value: info });
+        })
+    });
+    const second = bridgeWith({ inspect: () => ok({ ...opened, name: 'next.ts' }) });
+    const { rerender } = render(<ViewerWindow onClose={noop} reader={first} />);
+    fireEvent.click(
+      within(await screen.findByRole('status')).getByRole('button', { name: 'Reload' })
+    );
+
+    rerender(<ViewerWindow onClose={noop} reader={second} />);
+    expect(await screen.findByRole('heading', { name: 'next.ts' })).toBeTruthy();
+
+    await act(async () => {
+      answerReload({ ...opened, generation: 1, name: 'stale.ts' });
+      await Promise.resolve();
+    });
+    expect(screen.getByRole('heading', { name: 'next.ts' })).toBeTruthy();
+    expect(screen.queryByRole('heading', { name: 'stale.ts' })).toBeNull();
+  });
+
+  it('keeps what it shows when only its words change', async () => {
+    const reader = bridgeWith();
+    const { rerender } = render(
+      <UiokProvider labels={{}}>
+        <ViewerWindow onClose={noop} reader={reader} />
+      </UiokProvider>
+    );
+    await screen.findByRole('heading', { name: 'app.ts' });
+    fireEvent.click(within(modes()).getByRole('radio', { name: 'Hex' }));
+
+    rerender(
+      <UiokProvider labels={{ viewer: { noAnswer: 'Keine Antwort.' } }}>
+        <ViewerWindow onClose={noop} reader={reader} />
+      </UiokProvider>
+    );
+
+    expect(reader.inspect).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('textbox', { name: 'Bytes of app.ts' })).toBeTruthy();
   });
 
   it('offers no Reload for a file that is gone from its path', async () => {
