@@ -530,17 +530,24 @@ describe('a row', () => {
             <Cell>not part of this Start</Cell>
             <Cell>{42}</Cell>
             <Cell tip="not part of this Start, nor the next">not part…</Cell>
+            <Cell tip={null}>no tooltip asked</Cell>
+            <Cell tip="">none either</Cell>
           </Row>
         </Listing>
       </RowCursorContext>
     );
-    const [words, number, tipped] = screen.getAllByRole('cell').slice(1);
+    const [words, number, tipped, nulled, emptied] = screen.getAllByRole('cell').slice(1);
 
     expect(words?.dataset.tooltip).toBe('not part of this Start');
     expect(words?.hasAttribute('data-tooltip-cut')).toBe(true);
     expect(number?.dataset.tooltip).toBe('42');
     expect(tipped?.dataset.tooltip).toBe('not part of this Start, nor the next');
     expect(tipped?.hasAttribute('data-tooltip-cut')).toBe(false);
+    // null and '' ask for no tooltip at all, cut or not.
+    for (const cell of [nulled, emptied]) {
+      expect(cell?.hasAttribute('data-tooltip')).toBe(false);
+      expect(cell?.hasAttribute('aria-description')).toBe(false);
+    }
   });
 
   describe('a marked-up name’s words in the tip’s tooltip', () => {

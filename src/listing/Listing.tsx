@@ -939,8 +939,9 @@ export interface CellProps {
   readonly className?: string;
   /**
    * The cell's whole text, for one cut short, as its tooltip and description
-   * at every width; none when null. Without it, a cell whose children are
-   * text shows that text whole as its tooltip only while the column cuts it.
+   * at every width. `null` or `''`: no tooltip at all. Left out
+   * (`undefined`): a cell whose children are text or a number shows them
+   * whole as its tooltip only while the column cuts them.
    */
   readonly tip?: string | null;
   readonly children?: ReactNode;
@@ -972,13 +973,16 @@ export function Cell({
         .filter(Boolean)
         .join(' ')}
       role="cell"
-      // The host's tip at every width; else words given as text carry
-      // themselves whole as the tooltip, only while the column cuts them.
-      {...(tip === undefined || tip === null
+      // The host's tip at every width; none for null or ''; and with no
+      // tip at all, words given as text carry themselves whole as the
+      // tooltip, only while the column cuts them.
+      {...(tip === undefined
         ? typeof children === 'string' || typeof children === 'number'
           ? cutTooltip(String(children))
           : {}
-        : describedTooltip(tip))}
+        : tip === null || tip === ''
+          ? {}
+          : describedTooltip(tip))}
     >
       {children}
     </span>
