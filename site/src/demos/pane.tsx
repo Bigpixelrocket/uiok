@@ -4,7 +4,8 @@
  * switch panes, Return opens a server or a service's logs, ⌘⏎ starts or
  * stops the cursor's service. Tab keeps the browser's order, or, with
  * Listing first chosen, walks each pane's listing before its controls
- * (`tabOrder: 'listing'`). The legend under it reads what the cursor
+ * (`tabOrder: 'listing'`); Escape from the panes gives the focus back to
+ * that choice. The legend under it reads what the cursor
  * row offers. Click into the demo to give it the keys; they return to the
  * page when the focus leaves it. Under it, path bars with a fact in each
  * tone, at full width and in a 300px pane, where the trail gives way and
@@ -29,7 +30,7 @@ import {
   Star,
   Trash2
 } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 import { KeyLegendStrip, type LegendVerb } from '@bigpixelrocket/uiok/legend';
@@ -109,7 +110,7 @@ const readVerbs = (main: Element | null, cursor: string | null): MainVerbs => {
 /**
  * How Tab walks the demo: the browser's own order, which can always leave
  * it, or `usePaneKeys`' listing-first walk (`tabOrder: 'listing'`), which
- * cycles inside the panes until a click elsewhere takes the focus out.
+ * cycles inside the panes until Escape gives the focus back to the choice.
  */
 type TabWalk = 'browser' | 'listing';
 
@@ -383,6 +384,9 @@ export function PaneDemo() {
   const [said, setSaid] = useState('');
   const [walk, setWalk] = useState<TabWalk>('browser');
   const walkLabel = useId();
+  // Escape from the panes gives the focus back to the Tab choice, the
+  // demo's way out once Tab cycles inside the panes.
+  const walkChoice = useRef<HTMLDivElement>(null);
   const rows = services[open] ?? [];
 
   const toggle = (id: string) =>
@@ -469,7 +473,7 @@ export function PaneDemo() {
 
   return (
     <div className="demo-stack">
-      <div className="demo-row">
+      <div className="demo-row" ref={walkChoice}>
         <span className="demo-label" id={walkLabel}>
           Tab
         </span>
@@ -484,6 +488,13 @@ export function PaneDemo() {
       <div
         className="listing-root pane-demo"
         onFocus={() => setShown(true)}
+        onKeyDown={(event) => {
+          if (event.key !== 'Escape' || event.nativeEvent.isComposing) return;
+          const chosen = walkChoice.current?.querySelector<HTMLElement>('[aria-checked="true"]');
+          if (chosen == null) return;
+          event.preventDefault();
+          chosen.focus();
+        }}
         onPointerDown={() => setShown(true)}
         // A press on a part that takes no focus (a path bar, the status line) would move the
         // focus out to the page and take the keys with it; it keeps them in the active pane.
@@ -662,7 +673,7 @@ export function PaneDemo() {
         {said !== ''
           ? said
           : walk === 'listing'
-            ? 'click into the panes, then Tab: each pane’s listing comes before its controls; click outside to leave'
+            ? 'click into the panes, then Tab: each pane’s listing comes before its controls; Escape takes the focus back to the Tab choice'
             : 'click into the panes, then use the keys'}
       </code>
 
