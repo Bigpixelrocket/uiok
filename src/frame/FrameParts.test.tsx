@@ -399,24 +399,28 @@ describe('TreeRow', () => {
     const cursor = cursorAt('r999');
     const queued = vi.spyOn(globalThis, 'queueMicrotask');
 
-    await act(async () => {
-      render(
-        <RowCursorContext value={cursor}>
-          <TreeList label="Many">
-            {Array.from({ length: 1000 }, (_, index) => (
-              <TreeRow key={index} name={`r${index}`} rowKey={`r${index}`} />
-            ))}
-          </TreeList>
-        </RowCursorContext>
-      );
-    });
+    // Restored however the case ends, so a failure leaks no spy into later cases.
+    try {
+      await act(async () => {
+        render(
+          <RowCursorContext value={cursor}>
+            <TreeList label="Many">
+              {Array.from({ length: 1000 }, (_, index) => (
+                <TreeRow key={index} name={`r${index}`} rowKey={`r${index}`} />
+              ))}
+            </TreeList>
+          </RowCursorContext>
+        );
+      });
 
-    // One for the tree, the rest React's own; a microtask per row would be 1,000.
-    expect(queued.mock.calls.length).toBeLessThan(10);
-    expect(screen.getByRole('tree').getAttribute('aria-activedescendant')).toBe(
-      screen.getByText('r999').closest('[role="treeitem"]')?.id
-    );
-    queued.mockRestore();
+      // One for the tree, the rest React's own; a microtask per row would be 1,000.
+      expect(queued.mock.calls.length).toBeLessThan(10);
+      expect(screen.getByRole('tree').getAttribute('aria-activedescendant')).toBe(
+        screen.getByText('r999').closest('[role="treeitem"]')?.id
+      );
+    } finally {
+      queued.mockRestore();
+    }
   });
 
   it('runs the cleanup a host’s callback ref returns when the tree or dock goes', () => {
