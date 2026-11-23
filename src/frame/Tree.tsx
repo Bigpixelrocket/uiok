@@ -5,7 +5,7 @@ import {
   useContext,
   useId,
   useLayoutEffect,
-  useRef,
+  useMemo,
   useSyncExternalStore,
   type ChangeEvent,
   type CSSProperties,
@@ -20,10 +20,20 @@ import { RowCursorContext } from '../listing/Listing.js';
 import type { RegionHandlers } from '../pane/Pane.js';
 import { InListingRowContext, InRowContext } from '../pane/PaneActions.js';
 import { cutTooltip } from '../tooltip/Tooltip.logic.js';
+import { useSharedRef } from './sharedRef.js';
 import { TreeToggle } from './TreeToggle.js';
 
-/** The id prefix of the tree a row is in, which names each row for the tree's active descendant. */
-const TreeIdContext = createContext<string | null>(null);
+/**
+ * The tree a row is in: its id prefix, which names each row for the tree's
+ * active descendant, and the way a row says it came or went, so the tree
+ * names its active row again whoever drew or removed it.
+ */
+interface TreeScope {
+  readonly id: string;
+  readonly rowsChanged: () => void;
+}
+
+const TreeIdContext = createContext<TreeScope | null>(null);
 
 /** A row's element id in its tree: the tree's prefix and the row's key, made safe for an id. */
 const rowId = (tree: string, rowKey: string): string => `${tree}-${encodeURIComponent(rowKey)}`;
@@ -90,39 +100,38 @@ export interface TreeListProps extends RegionHandlers {
 export function TreeList({ label, ref, children, ...handlers }: TreeListProps): ReactElement {
   const tree = useId();
   const cursor = useContext(RowCursorContext);
-  const list = useRef<HTMLDivElement | null>(null);
-  const attach = useCallback(
-    (element: HTMLDivElement | null) => {
-      list.current = element;
-      if (typeof ref === 'function') ref(element);
-      else if (ref !== null && ref !== undefined) ref.current = element;
-    },
-    [ref]
-  );
+  const [list, attach] = useSharedRef(ref);
 
   // Names the cursor row only while it is drawn here: a row a filter took
   // away, or a cursor on another pane's row, leaves no active descendant
-  // pointing at nothing. Run after every render, since rows come and go
-  // with the host's, and on every cursor move.
+  // pointing at nothing.
+  const sync = useCallback((): void => {
+    const element = list.current;
+
+    if (element === null) return;
+
+    const key = cursor.current();
+    const id = key === null ? null : rowId(tree, key);
+    const drawnRow =
+      id !== null &&
+      [...element.querySelectorAll('[role="treeitem"]')].some((row) => row.id === id);
+
+    if (drawnRow) element.setAttribute('aria-activedescendant', id);
+    else element.removeAttribute('aria-activedescendant');
+  }, [cursor, list, tree]);
+
+  // After every render and on every cursor move; and a microtask after a
+  // row mounts or unmounts, by whatever state drew it, once React has put
+  // it in or taken it out of the list.
   useLayoutEffect(() => {
-    const sync = (): void => {
-      const element = list.current;
-
-      if (element === null) return;
-
-      const key = cursor.current();
-      const id = key === null ? null : rowId(tree, key);
-      const drawnRow =
-        id !== null &&
-        [...element.querySelectorAll('[role="treeitem"]')].some((row) => row.id === id);
-
-      if (drawnRow) element.setAttribute('aria-activedescendant', id);
-      else element.removeAttribute('aria-activedescendant');
-    };
-
     sync();
     return cursor.subscribe(sync);
   });
+
+  const scope = useMemo<TreeScope>(
+    () => ({ id: tree, rowsChanged: () => queueMicrotask(sync) }),
+    [tree, sync]
+  );
 
   return (
     <div
@@ -134,7 +143,7 @@ export function TreeList({ label, ref, children, ...handlers }: TreeListProps): 
       tabIndex={-1}
       {...handlers}
     >
-      <TreeIdContext.Provider value={tree}>{children}</TreeIdContext.Provider>
+      <TreeIdContext.Provider value={scope}>{children}</TreeIdContext.Provider>
     </div>
   );
 }
@@ -209,9 +218,13 @@ export function TreeRow({
 
   useLayoutEffect(() => {
     cursor.rowsChanged?.();
+    tree?.rowsChanged();
 
-    return () => cursor.rowsChanged?.();
-  }, [cursor, rowKey]);
+    return () => {
+      cursor.rowsChanged?.();
+      tree?.rowsChanged();
+    };
+  }, [cursor, rowKey, tree]);
 
   const classes = [
     'row',
@@ -233,7 +246,7 @@ export function TreeRow({
           aria-selected={marked}
           className={classes}
           data-row-key={rowKey}
-          id={tree === null ? undefined : rowId(tree, rowKey)}
+          id={tree === null ? undefined : rowId(tree.id, rowKey)}
           onClick={onOpen}
           onFocus={() => cursor.point(rowKey)}
           onPointerMove={() => {

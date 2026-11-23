@@ -55,16 +55,16 @@ const upperFloor = (top: HTMLElement): number => {
 /**
  * The lower pane's height under a dragged split: the height dragged, less
  * what the upper list must keep of the two regions' room (`floor`), and
- * never under the lower pane's own least (`least`), in whole pixels; the
- * height dragged stands alone while there is no room (a page held out of
- * sight).
+ * never under the lower pane's own least (`least`), in whole pixels, none
+ * left included; the height dragged stands alone only while the split is
+ * not laid out (`room` null: a page held out of sight).
  */
 export const heldSplitHeight = (
   held: number,
-  room: number,
+  room: number | null,
   bounds: { readonly floor: number; readonly least: number }
 ): number =>
-  room <= 0
+  room === null
     ? Math.round(Math.max(bounds.least, held))
     : Math.round(Math.max(bounds.least, Math.min(held, room - bounds.floor)));
 
@@ -72,10 +72,15 @@ export const heldSplitHeight = (
  * The room the upper list and the lower pane share: from the list's top to
  * the end of their container's content box, less whatever follows the
  * lower pane, measured from the container so a lower pane held taller than
- * the room (and overflowing it) is not counted as room.
+ * the room (and overflowing it) is not counted as room; null while the
+ * container is not laid out.
  */
-const splitRoom = (top: HTMLElement, pane: HTMLElement): number => {
+const splitRoom = (top: HTMLElement, pane: HTMLElement): number | null => {
   const parent = top.parentElement;
+
+  // Not laid out (a page held out of sight): no room to fit to, which is
+  // not the same as a page with no room left.
+  if ((parent ?? top).getClientRects().length === 0) return null;
 
   if (parent === null)
     return top.getBoundingClientRect().height + pane.getBoundingClientRect().height;

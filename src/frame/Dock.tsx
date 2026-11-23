@@ -1,8 +1,6 @@
 import {
   Children,
-  useCallback,
   useLayoutEffect,
-  useRef,
   useState,
   type PointerEvent,
   type ReactElement,
@@ -11,20 +9,22 @@ import {
 } from 'react';
 
 import type { RegionHandlers } from '../pane/Pane.js';
+import { useSharedRef } from './sharedRef.js';
 import { drawn } from './WindowFrame.js';
 
 /**
  * The height a dock takes: the height its host keeps, between `min` and
  * the room under the band less what the main pane keeps (`pageMin`), in
- * whole pixels; `min` alone wins when the room is smaller still, and the
- * kept height stands alone before the room is laid out.
+ * whole pixels; `min` alone wins when the room is smaller still, none left
+ * included. The kept height stands alone only while the frame is not laid
+ * out (`room` null: hidden, or not yet drawn).
  */
 export function dockHeight(
   kept: number,
-  room: number,
+  room: number | null,
   bounds: { readonly min: number; readonly pageMin: number }
 ): number {
-  if (room <= 0) return Math.round(Math.max(bounds.min, kept));
+  if (room === null) return Math.round(Math.max(bounds.min, kept));
 
   return Math.round(Math.max(bounds.min, Math.min(kept, room - bounds.pageMin)));
 }
@@ -41,14 +41,16 @@ const outerHeight = (element: Element | null): number =>
  * the end of the frame's content, less the tray, the legend, and the gaps
  * under the main pane and the dock. Measured from the frame, so a dock held
  * taller than a shrunken window (and squashing the main pane) is not
- * counted as room.
+ * counted as room; null while the frame is not laid out (hidden or not
+ * yet drawn), never mistaken for a frame with no room left.
  */
-const sharedRoom = (dock: HTMLElement): number => {
+const sharedRoom = (dock: HTMLElement): number | null => {
   const slot = dock.closest('.window-frame-dock');
   const frame = dock.closest('.window-frame');
   const main = slot?.parentElement?.querySelector<HTMLElement>(':scope > .window-frame-main');
 
-  if (slot === null || frame === null || main === null || main === undefined) return 0;
+  if (slot === null || frame === null || main === null || main === undefined) return null;
+  if (frame.getClientRects().length === 0) return null;
 
   const box = frame.getBoundingClientRect();
   const end =
@@ -124,19 +126,10 @@ export function Dock({
   children,
   ...handlers
 }: DockProps): ReactElement {
-  const self = useRef<HTMLElement | null>(null);
-  const [room, setRoom] = useState(0);
+  const [self, attach] = useSharedRef(ref);
+  const [room, setRoom] = useState<number | null>(null);
   const bounds = { min: DOCK_MIN, pageMin };
   const shown = dockHeight(height, room, bounds);
-
-  const attach = useCallback(
-    (element: HTMLElement | null) => {
-      self.current = element;
-      if (typeof ref === 'function') ref(element);
-      else if (ref !== null && ref !== undefined) ref.current = element;
-    },
-    [ref]
-  );
 
   useLayoutEffect(() => {
     const element = self.current;
@@ -160,7 +153,7 @@ export function Dock({
     observer.observe(frame);
     if (main !== null && main !== undefined) observer.observe(main);
     return () => observer.disconnect();
-  }, [open]);
+  }, [open, self]);
 
   const start = (event: PointerEvent<HTMLDivElement>): void => {
     if (event.button !== 0 || onResize === undefined || self.current === null) return;

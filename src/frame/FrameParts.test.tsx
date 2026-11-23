@@ -1,5 +1,5 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { CircleAlert, Server } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -201,6 +201,48 @@ describe('TreeRow', () => {
     expect(list.getAttribute('aria-activedescendant')).toBe(screen.getByRole('treeitem').id);
   });
 
+  it('names no active descendant once a child’s own state takes the cursor row away', async () => {
+    const cursor = cursorAt('a');
+    let hide: () => void = () => undefined;
+
+    function Rows(): ReactNode {
+      const [keys, setKeys] = useState(['a', 'b']);
+
+      hide = () => setKeys(['b']);
+      return keys.map((key) => <TreeRow key={key} name={key} rowKey={key} />);
+    }
+
+    render(
+      <RowCursorContext value={cursor}>
+        <TreeList label="Services">
+          <Rows />
+        </TreeList>
+      </RowCursorContext>
+    );
+    const list = screen.getByRole('tree');
+
+    expect(list.hasAttribute('aria-activedescendant')).toBe(true);
+    await act(async () => hide());
+    expect(list.hasAttribute('aria-activedescendant')).toBe(false);
+  });
+
+  it('runs the cleanup a host’s callback ref returns when the tree or dock goes', () => {
+    const cleanups: string[] = [];
+    const { unmount } = render(
+      <>
+        <TreeList label="Services" ref={() => () => void cleanups.push('tree')}>
+          {null}
+        </TreeList>
+        <Dock height={120} label="Console" open ref={() => () => void cleanups.push('dock')}>
+          body
+        </Dock>
+      </>
+    );
+
+    unmount();
+    expect(cleanups.sort()).toEqual(['dock', 'tree']);
+  });
+
   it('toggles its children from the chevron without opening the row', () => {
     const onToggle = vi.fn();
     const onOpen = vi.fn();
@@ -376,7 +418,12 @@ describe('dockHeight', () => {
 
   it('keeps the host’s height while the main pane keeps its least', () => {
     expect(dockHeight(200, 600, bounds)).toBe(200);
-    expect(dockHeight(200.4, 0, bounds)).toBe(200);
+    expect(dockHeight(200.4, null, bounds)).toBe(200);
+  });
+
+  it('takes its least, not the kept height, in a laid-out frame with no room left', () => {
+    expect(dockHeight(318, 0, bounds)).toBe(64);
+    expect(dockHeight(318, -20, bounds)).toBe(64);
   });
 
   it('gives way in a short window so the main pane keeps its least, never under its own least', () => {
@@ -421,8 +468,9 @@ describe('heldSplitHeight', () => {
     expect(heldSplitHeight(340, 60, bounds)).toBe(40);
   });
 
-  it('keeps the dragged height while a held page has no room', () => {
-    expect(heldSplitHeight(200, 0, bounds)).toBe(200);
+  it('keeps the dragged height while a held page is not laid out, never in a page with no room left', () => {
+    expect(heldSplitHeight(200, null, bounds)).toBe(200);
+    expect(heldSplitHeight(200, 0, bounds)).toBe(40);
   });
 });
 
