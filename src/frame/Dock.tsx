@@ -259,7 +259,7 @@ export function DockLogEntry({ children, actions }: DockLogEntryProps): ReactEle
   return (
     <li className="dock-log-entry">
       {children}
-      {actions === undefined ? null : <div className="dock-log-actions">{actions}</div>}
+      {drawn(actions) ? <div className="dock-log-actions">{actions}</div> : null}
     </li>
   );
 }

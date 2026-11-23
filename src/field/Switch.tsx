@@ -1,9 +1,9 @@
 import type { MouseEvent, ReactElement } from 'react';
 
+import { useInRow, type ControlVerb } from '../pane/PaneActions.js';
+
 /** A press on the switch or its words toggles it alone, never also opening the row it stands in. */
 const keepToSelf = (event: MouseEvent): void => event.stopPropagation();
-
-import { useInRow, type ControlVerb } from '../pane/PaneActions.js';
 
 /** Props for {@link Switch}. */
 export interface SwitchProps {

@@ -1,6 +1,7 @@
 import { CircleAlert, type LucideIcon } from 'lucide-react';
 import type { ReactElement, ReactNode } from 'react';
 
+import { drawn } from '../frame/WindowFrame.js';
 import { ICON_XL } from '../icon/sizes.js';
 
 /** Props for {@link LoadFailure}. */
@@ -33,7 +34,7 @@ export function LoadFailure({
     <div className="space-load-failure" role="alert">
       <Icon aria-hidden size={ICON_XL} />
       <strong>{title}</strong>
-      {reason === undefined ? null : <p>{reason}</p>}
+      {drawn(reason) ? <p>{reason}</p> : null}
       {action}
     </div>
   );

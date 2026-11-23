@@ -513,7 +513,6 @@ function ExitConfirmation({ onClose }: { readonly onClose: () => void }): ReactE
   return (
     <ConfirmDialog
       cancelLabel="Keep Running"
-      className="exit-confirmation"
       confirmLabel="Quit"
       groups={[
         {
@@ -551,7 +550,7 @@ function SettingsAlert({ onClose }: { readonly onClose: () => void }): ReactElem
   return (
     <ConfirmDialog
       cancelLabel="Close"
-      className="settings-alert dialog-size-md"
+      size="md"
       confirmLabel="Show Problems"
       facts={[
         {

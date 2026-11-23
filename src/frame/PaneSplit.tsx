@@ -55,13 +55,18 @@ const upperFloor = (top: HTMLElement): number => {
 /**
  * The lower pane's height under a dragged split: the height dragged, less
  * what the upper list must keep of the two regions' room (`floor`), and
- * never under the lower pane's own least (`least`), in whole pixels.
+ * never under the lower pane's own least (`least`), in whole pixels; the
+ * height dragged stands alone while there is no room (a page held out of
+ * sight).
  */
 export const heldSplitHeight = (
   held: number,
   room: number,
   bounds: { readonly floor: number; readonly least: number }
-): number => Math.round(Math.max(bounds.least, Math.min(held, room - bounds.floor)));
+): number =>
+  room <= 0
+    ? Math.round(Math.max(bounds.least, held))
+    : Math.round(Math.max(bounds.least, Math.min(held, room - bounds.floor)));
 
 /**
  * The room the upper list and the lower pane share: from the list's top to

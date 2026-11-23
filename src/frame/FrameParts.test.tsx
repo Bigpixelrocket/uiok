@@ -417,6 +417,10 @@ describe('heldSplitHeight', () => {
     expect(heldSplitHeight(340, 200, bounds)).toBe(152);
     expect(heldSplitHeight(340, 60, bounds)).toBe(40);
   });
+
+  it('keeps the dragged height while a held page has no room', () => {
+    expect(heldSplitHeight(200, 0, bounds)).toBe(200);
+  });
 });
 
 describe('page parts', () => {
