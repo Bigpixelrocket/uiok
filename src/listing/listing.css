@@ -1713,12 +1713,16 @@ button.crumb-label.crumb-siblings > svg {
 
 /* A warning (.warning): the warning tone's TriangleAlert, drawn as a mask
    in --warning as the danger line's glyph is, then the words in --text. A
-   host that draws its own glyph first (an svg) gets no second one. */
+   host that draws its own glyph first (an svg, inside a PaneMessage's
+   words too) gets no second one. */
 :where(.listing-root) .pane-message.warning {
   color: var(--text);
 }
 
-:where(.listing-root) .pane-message.warning:not(:has(> svg:first-child))::before {
+:where(.listing-root)
+  .pane-message.warning:not(
+    :has(> svg:first-child, > .pane-message-text > svg:first-child)
+  )::before {
   content: '';
   flex: none;
   width: var(--icon-md);
@@ -1728,7 +1732,8 @@ button.crumb-label.crumb-siblings > svg {
     center / contain no-repeat;
 }
 
-:where(.listing-root) .pane-message.warning > svg:first-child {
+:where(.listing-root) .pane-message.warning > svg:first-child,
+:where(.listing-root) .pane-message.warning > .pane-message-text > svg:first-child {
   flex: none;
   color: var(--warning);
 }
@@ -1744,9 +1749,17 @@ button.crumb-label.crumb-siblings > svg {
 }
 
 /* A message's words in one box (PaneMessage), so text and inline code
-   flow as a sentence beside the glyph instead of as separate flex items. */
+   flow as a sentence beside the glyph instead of as separate flex items.
+   A glyph the host leads the words with lands in that box too: it keeps
+   the glyph's place, the message's gap before the words, on the text's
+   middle. */
 :where(.listing-root) .pane-message-text {
   min-width: 0;
+}
+
+:where(.listing-root) .pane-message-text > svg:first-child {
+  margin-inline-end: var(--space-4);
+  vertical-align: middle;
 }
 
 :where(.listing-root) .pane-message code {
