@@ -140,10 +140,13 @@
    (each group and each row a subgrid of it), so the chord column stands at
    the index's end at one width from the first group to the last. A verb
    takes the room left; its chords sit at the column's end, several
-   wrapping within it. A hairline parts the groups. */
+   wrapping within it. The column is as wide as its longest chords but
+   never more than half the index, so a verb with many chords wraps them
+   instead of squeezing every verb to nothing. A hairline parts the
+   groups. */
 .shortcut-index {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) max-content;
+  grid-template-columns: minmax(0, 1fr) fit-content(50%);
   column-gap: var(--space-8);
   font: var(--font-size-small) / var(--line-height-compact) var(--font-ui);
 }
