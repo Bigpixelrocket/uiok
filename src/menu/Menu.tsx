@@ -336,11 +336,21 @@ function MenuSurface({
             </span>
             <span className="menu-label">
               <span className="menu-label-text">{entry.label}</span>
+              {/* Spaces the grid and flex rows do not draw keep the label,
+                  the dot's words, and the chord's apart in the item's name. */}
               {submenu || entry.current === undefined || entry.current === null ? null : (
-                <CurrentDot label={entry.current} />
+                <>
+                  {' '}
+                  <CurrentDot label={entry.current} />
+                </>
               )}
             </span>
-            {submenu || entry.chord === undefined ? null : <KeyChord chord={entry.chord} />}
+            {submenu || entry.chord === undefined ? null : (
+              <>
+                {' '}
+                <KeyChord chord={entry.chord} />
+              </>
+            )}
           </div>
         );
       })}

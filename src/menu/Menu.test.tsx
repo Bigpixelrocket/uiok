@@ -102,13 +102,25 @@ describe('Menu', () => {
       )
     });
 
-    expect(menu.querySelector('.cursor')?.textContent).toBe('Remove…');
+    expect(menu.querySelector('.cursor')?.textContent?.trim()).toBe('Remove…');
     expect(screen.getByRole('img', { name: 'Shown' })).toBeTruthy();
     expect(menu.style.left).toBe('40px');
     expect(menu.style.top).toBe('34px');
     fireEvent.mouseDown(anchor);
     expect(onClose).not.toHaveBeenCalled();
     anchor.remove();
+  });
+
+  it('names each item by its label, then its current mark’s and its chord’s words, apart', () => {
+    open({
+      entries: ENTRIES.map((entry) =>
+        'id' in entry && entry.id === 'remove' ? { ...entry, current: 'Shown' } : entry
+      )
+    });
+
+    expect(screen.getByRole('menuitem', { name: 'Copy Path Option Command C' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Remove… Shown' })).toBeTruthy();
+    expect(screen.getByRole('menuitem', { name: 'Stop' })).toBeTruthy();
   });
 
   it("keeps the page's own keys out while open, as every surface that holds its keys does", () => {

@@ -458,6 +458,15 @@ describe('Terminal', () => {
       expect(screen.getByRole('menuitem', { name: /^Einsetzen/ })).toBeTruthy();
     });
 
+    it('names each item by its label, then its chord’s words, apart', async () => {
+      render(<Terminal ariaLabel="Shell" onInput={() => {}} />);
+      const surface = await ready();
+      openMenu(surface);
+
+      expect(screen.getByRole('menuitem', { name: 'Copy Command C' })).toBeTruthy();
+      expect(screen.getByRole('menuitem', { name: 'Paste Command V' })).toBeTruthy();
+    });
+
     it('opens through a portal on the body, in the menu look, so no box around the terminal clips it', async () => {
       const { container } = render(<Terminal ariaLabel="Shell" onInput={() => {}} />);
       const surface = await ready();

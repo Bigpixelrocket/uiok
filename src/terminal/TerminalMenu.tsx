@@ -159,6 +159,8 @@ export function TerminalMenu({
               <Icon aria-hidden size={ICON_MD} />
             </span>
             <span className="terminal-menu-label">{item.label}</span>
+            {/* A space the grid row does not draw keeps the label and the
+                chord's words apart in the item's name. */}{' '}
             <KeyChord chord={item.chord} />
           </div>
         );
