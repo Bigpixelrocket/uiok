@@ -12,7 +12,9 @@
  * box opens the same menu at the pointer. Last, a pane of files: a
  * secondary click on a file moves the cursor to it and opens its menu, whose
  * Copy As opens a submenu (→ or the pointer opens it, ← or Escape closes
- * it), and one on the pane's empty space opens the pane's own menu.
+ * it), and one on the pane's empty space opens the pane's own menu. From
+ * the keys: click the list, ↑ ↓ move the cursor, and the Menu key or
+ * Shift-F10 opens the cursor file's menu under it.
  */
 
 import {
@@ -404,7 +406,8 @@ const PANE_MENU: readonly MenuEntry[] = [
 /**
  * A pane of files whose rows and empty space each open their own `Menu` on
  * a secondary click: the row's moves the cursor to it first, and the pane's
- * takes only a click no row took.
+ * takes only a click no row took. The list is the pane's home, so the Menu
+ * key or Shift-F10 there opens the cursor row's menu, placed under the row.
  */
 function FilePaneDemo({ onPick }: { readonly onPick: (name: string) => void }) {
   const { cursor, onKeyDown } = useDemoCursor(PANE_FILES.map(([name]) => name));
@@ -424,7 +427,7 @@ function FilePaneDemo({ onPick }: { readonly onPick: (name: string) => void }) {
     >
       <PaneList
         home
-        label="Files: secondary-click a file or the space under them"
+        label="Files: secondary-click a file or the space under them, or press the Menu key for the cursor file"
         onKeyDown={onKeyDown}
         ref={list}
       >
