@@ -19,6 +19,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `TextLink`'s `tone` (`danger`): a link to something failing (a log file whose writes fail) in the danger tone, its `tip` (the reason) its accessible description too.
 - `KeyChords` (`@bigpixelrocket/uiok/keychord`): several chords for one verb, parted by the new `keys` label `or`, drawn and read between them, so two chords never run together; `ShortcutRow` draws its chords with it.
 - `usePaneKeys`'s `tabOrder` and `nextTabStop`'s `order` (`TabOrder`): `listing` walks each pane's listing first, then its other controls, then the other pane's listing, over the pure rule `listingFirstStop` (`WalkPane`).
+- `BUDGETED_TERMINALS_PER_PAGE` (`@bigpixelrocket/uiok/terminal`): how many terminals one page's shared engine memory is budgeted for (17), so an app can test how many it opens against it; past it, terminals that fill their histories to the ceiling can exhaust the shared memory.
 
 ### Changed
 

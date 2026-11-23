@@ -79,6 +79,8 @@ describe('the terminal entry, beside the root', () => {
   it('exports the terminal, which the root barrel leaves out', () => {
     expect(names).toContain('Terminal');
     expect(publicExports().map(({ name }) => name)).not.toContain('Terminal');
+    // An app tests how many terminals it opens against the engine memory's budget.
+    expect(names).toContain('BUDGETED_TERMINALS_PER_PAGE');
   });
 
   it('documents every export with a docblock', () => {
