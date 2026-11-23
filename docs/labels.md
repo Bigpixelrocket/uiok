@@ -45,6 +45,7 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | `palette`   | `PaletteLabels`   | `DEFAULT_PALETTE_LABELS`    | `PaletteQuery`: the level chip and a refused keystroke                                  |
 | `paneTabs`  | `PaneTabsLabels`  | `DEFAULT_PANE_TABS_LABELS`  | `PaneTabs`: New Tab, close and picked names, the folded tabs' count and menu            |
 | `selectAll` | `SelectAllLabels` | `DEFAULT_SELECT_ALL_LABELS` | `SelectAllBar`                                                                          |
+| `settings`  | `SettingsLabels`  | `DEFAULT_SETTINGS_LABELS`   | `SettingsDialog`: its title, sidebar, and Done; `AppearanceSettings`                    |
 | `terminal`  | `TerminalLabels`  | `DEFAULT_TERMINAL_LABELS`   | `Terminal` (`@bigpixelrocket/uiok/terminal`): its menu, its failure line, its input     |
 
 ### `keys`
@@ -97,15 +98,21 @@ Counts arrive as numbers, so the app formats them for its locale and picks the p
 
 ### `dialog`
 
-| Field           | Type                        | English default  |
-| --------------- | --------------------------- | ---------------- |
-| `cancel`        | `string`                    | `Cancel`         |
-| `clear`         | `string`                    | `Clear`          |
-| `affectedItems` | `(count: number) => string` | `Affected items` |
-| `moreItems`     | `(count: number) => string` | `+3 more`        |
-| `itemCount`     | `(count: number) => string` | `3 items`        |
+| Field             | Type                        | English default             |
+| ----------------- | --------------------------- | --------------------------- |
+| `cancel`          | `string`                    | `Cancel`                    |
+| `clear`           | `string`                    | `Clear`                     |
+| `affectedItems`   | `(count: number) => string` | `Affected items`            |
+| `moreItems`       | `(count: number) => string` | `+3 more`                   |
+| `itemCount`       | `(count: number) => string` | `3 items`                   |
+| `ok`              | `string`                    | `OK`                        |
+| `close`           | `string`                    | `Close`                     |
+| `stop`            | `string`                    | `Stop`                      |
+| `tryAgain`        | `string`                    | `Try Again`                 |
+| `runInBackground` | `string`                    | `Run in Background`         |
+| `typeName`        | `string`                    | `Type the name to confirm.` |
 
-`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's item list (one without a group label), given how many it holds. `moreItems` is that list's last row when it stops short, given how many items it leaves out (`DialogItems`). `itemCount` is the count a screen reader hears after the lead and before the names.
+`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's item list (one without a group label), given how many it holds. `moreItems` is that list's last row when it stops short, given how many items it leaves out (`DialogItems`). `itemCount` is the count a screen reader hears after the lead and before the names. `ok`, `stop`, `tryAgain`, and `runInBackground` are `ProgressDialog`'s verbs, `close` the leave verb of an alert that asks nothing, and `typeName` the note under `TypedNameDialog`'s field.
 
 ### `legend`
 
@@ -165,6 +172,17 @@ A folded pair's label ("Up/Down") is not a label here: the app owns its pair voc
 | `checkAll` | `string`                                     | Check all                                                               |
 | `selected` | `(checked: number, total: number) => string` | "3 of 8 selected", "1,000 of 20,000 selected" (before the bulk actions) |
 | `label`    | `string`                                     | With selected (the bar's accessible name when it is given none)         |
+
+### `settings`
+
+| Field        | Type               | English default                     |
+| ------------ | ------------------ | ----------------------------------- |
+| `title`      | `string`           | Settings (the dialog's title)       |
+| `sidebar`    | `string`           | Settings pages (the sidebar's name) |
+| `done`       | `string`           | Done (the dialog's one verb)        |
+| `appearance` | `AppearanceLabels` | The Appearance page's words, below  |
+
+`AppearanceLabels`: `title` (Theme), `mode` (Appearance), `modes` (`system` System, `light` Light, `dark` Dark), `modeNote(mode, systemDark)` ("Follows the system, which is light now.", "Light whatever the system uses."), `lightTheme` (Light theme), `lightNote` (Shown while the appearance is light.), `darkTheme` (Dark theme), `darkNote`, and `inUse` (In use now). `AppearanceMode` is `'system' | 'light' | 'dark'`.
 
 ### `terminal`
 

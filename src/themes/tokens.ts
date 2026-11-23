@@ -48,6 +48,9 @@ import { THEME_ATTRIBUTES, THEME_PREVIEW_ATTRIBUTE, type ThemeAppearance } from 
 const WHITE: Hex = '#ffffff';
 const BLACK: Hex = '#000000';
 
+/** The brand mark's constant plate: Catppuccin Mocha's crust in every theme. */
+const BRAND_PLATE: Hex = '#11111b';
+
 /** Body text and anything read as words. */
 const TEXT_CONTRAST = 4.5;
 /** Marks read by shape alone: a dot, a glyph, a control's outline, a chart line. */
@@ -856,6 +859,30 @@ function derivedTokens(
   };
   const shadow = look.shadow;
 
+  // The channel marker's tones (see '--channel-name' below).
+  const channelRamp: readonly Hex[] = [
+    palette.overlay0,
+    palette.overlay1,
+    palette.overlay2,
+    palette.subtext0,
+    palette.subtext1,
+    palette.text
+  ];
+  const channelName = contrast(rowMeta, header) >= TEXT_CONTRAST ? rowMeta : textDim;
+  const channelQuieter = channelRamp[channelRamp.indexOf(channelName) - 1];
+  const channelDetail =
+    channelQuieter !== undefined && contrast(channelQuieter, header) >= TEXT_CONTRAST
+      ? channelQuieter
+      : channelName;
+  const channelText = (channel: Hex): Hex =>
+    legibleOn(
+      channel,
+      [ground, panel].map((on) => mix(channel, on, 14)),
+      TEXT_CONTRAST
+    );
+  const channelLatest = tuned('--channel-latest', palette.mauve);
+  const channelLocal = tuned('--channel-local', palette.peach);
+
   return {
     '--bg': ground,
     '--bg-panel': panel,
@@ -1090,6 +1117,21 @@ function derivedTokens(
       ? `inset 0 0 0 1px ${translucent(palette.text, 28)}`
       : 'none',
 
+    // A title bar's channel marker after the lockup: the channel's name in
+    // the row-meta tone where it keeps 4.5:1 on the bar (else --text-dim),
+    // then its build number or branch a step quieter on the neutral ramp
+    // where that keeps 4.5:1 too, else the name's tone.
+    '--channel-name': channelName === rowMeta ? 'var(--row-meta-text)' : 'var(--text-dim)',
+    '--channel-detail': channelDetail === channelName ? 'var(--channel-name)' : channelDetail,
+    // The release channels a build wears (`data-channel`): mauve for a
+    // prerelease (latest), peach for a local build, each with its tag's
+    // words moved until they keep 4.5:1 on the channel's 14% tint over the
+    // ground and a panel.
+    '--channel-latest': channelLatest,
+    '--channel-latest-text': tuned('--channel-latest-text', channelText(channelLatest)),
+    '--channel-local': channelLocal,
+    '--channel-local-text': tuned('--channel-local-text', channelText(channelLocal)),
+
     // The chart series colours, in the order a chart assigns them
     // (chartSeries): eight hues of the palette, pairwise distinct, each at
     // 3:1 on a panel and the ground.
@@ -1101,6 +1143,18 @@ function derivedTokens(
     '--chart-6': series[5] ?? palette.red,
     '--chart-7': series[6] ?? palette.yellow,
     '--chart-8': series[7] ?? palette.pink,
+
+    // The words of a log's sources (a process's prefix in a combined log),
+    // one hue each in turn: the palette's hue moved until it keeps 4.5:1 as
+    // text on a panel and the ground, so a prefix reads as words.
+    ...(Object.fromEntries(
+      [palette.green, palette.pink, palette.blue, palette.peach, palette.teal, palette.mauve].map(
+        (hue, index) => [
+          `--log-source-${index + 1}`,
+          legibleOn(hue, [panel, ground], TEXT_CONTRAST)
+        ]
+      )
+    ) as Record<`--log-source-${1 | 2 | 3 | 4 | 5 | 6}`, Hex>),
 
     // A terminal, which a terminal engine reads as literal colours, so each
     // is hex or rgb(): the theme's own terminal palette over its base, and
@@ -1204,6 +1258,14 @@ export function themeTokens(theme: Theme): ThemeTokens {
  * they play.
  */
 export const FIXED_TOKENS: Readonly<Record<string, string>> = {
+  // A brand mark (BrandMark): the white its glyph and check are drawn in,
+  // the same in every theme as an app icon draws them, and the plate's
+  // constant dark tone, toward which a dark appearance deepens the plate and
+  // the badge so the white keeps its contrast on a light accent.
+  '--brand-white': WHITE,
+  '--brand-plate': BRAND_PLATE,
+  '--brand-plate-dark': 'color-mix(in srgb, var(--accent) 70%, var(--brand-plate))',
+  '--brand-badge-dark': 'color-mix(in srgb, var(--success) 70%, var(--brand-plate))',
   // Surfaces: the three grounds by role. The body paints the ground once, a
   // panel paints --surface, and what sits inside a panel paints no ground of
   // its own. Surfaces that float over other content add --frost (the base
@@ -1420,6 +1482,8 @@ const BASE_TOKEN_NAMES = [
   '--font-weight-regular',
   '--font-weight-medium',
   '--font-weight-strong',
+  '--font-weight-light',
+  '--font-weight-heavy',
   '--tracking-caps',
   '--space-1',
   '--space-2',
@@ -1453,6 +1517,9 @@ const BASE_TOKEN_NAMES = [
   '--bar-height',
   '--bar-height-lg',
   '--hit-target',
+  '--shell-header-height',
+  '--traffic-light-inset',
+  '--sidebar-width',
   '--focus-ring-width',
   '--focus-offset',
   '--focus-offset-flush',
@@ -1542,7 +1609,17 @@ const BASE_TOKEN_NAMES = [
   '--data-grid-bar',
   '--data-grid-ring',
   '--row-level',
-  '--field-columns'
+  '--field-columns',
+  '--channel',
+  '--channel-text',
+  '--lockup-size',
+  '--brand-mark-plate',
+  '--brand-mark-badge',
+  '--window-band-width',
+  '--tree-level',
+  '--tree-indent',
+  '--log-source',
+  '--log-source-width'
 ] as const;
 
 /** Every token name uiok defines: the fixed tokens, those a theme sets, and the stylesheet's own. */

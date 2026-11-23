@@ -1690,13 +1690,17 @@ button.crumb-label > .crumb-text {
    where there is one (.pane-empty-detail). The pane keeps its path bar and
    status line around it. A list that is merely empty (a folder with no
    entries, a filter that matches nothing) says so with the quiet line
-   `.pane-message.empty` instead. */
+   `.pane-message.empty` instead. In a pane shorter than the block, the
+   block scrolls between the path bar and the status line, never pushing
+   the status line out, and its top stays reachable (safe centring). */
 :where(.listing-root) .pane-empty {
   display: flex;
   flex: 1;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: safe center;
+  min-height: 0;
+  overflow-y: auto;
   gap: var(--space-2);
   padding: var(--space-16);
   color: var(--text-dim);
@@ -1756,6 +1760,66 @@ button.crumb-label > .crumb-text {
   margin-top: var(--space-4);
   font-family: var(--font-mono);
   overflow-wrap: anywhere;
+}
+
+/* A host's own mark (a brand mark) in the glyph's place, at the glyph's
+   scale: the mark is 1.4em, so the glyph's size sets its em. */
+:where(.listing-root) .pane-empty > .brand-mark {
+  font-size: var(--icon-xl);
+}
+
+/* A quiet line under the actions (EmptyState's note). */
+:where(.listing-root) .pane-empty p.pane-empty-note {
+  margin-top: var(--space-3);
+}
+
+/* The way in as numbered steps side by side under the rest, each number in
+   a small key-like box beside its words, its detail dim under its title. */
+:where(.listing-root) .pane-empty-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-4) var(--space-12);
+  max-width: 620px;
+  margin: var(--space-12) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-prose);
+  text-align: left;
+}
+
+:where(.listing-root) .pane-empty-step {
+  display: flex;
+  gap: var(--space-3);
+  max-width: 180px;
+}
+
+:where(.listing-root) .pane-empty-step-number {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--icon-lg);
+  height: var(--icon-lg);
+  margin-top: var(--space-1);
+  border: var(--line) solid var(--control-border);
+  border-radius: var(--radius-xs);
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-caption);
+  line-height: var(--line-height-compact);
+}
+
+:where(.listing-root) .pane-empty-step-text {
+  display: flex;
+  flex-direction: column;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+:where(.listing-root) .pane-empty-step-title {
+  color: var(--text);
 }
 
 /* A state (StateMark): its mark, or its spinner for a transition, and its

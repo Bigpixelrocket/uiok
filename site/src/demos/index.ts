@@ -14,11 +14,13 @@ import { DateTimeDemo } from './datetime';
 import { DialogDemo } from './dialog';
 import { FieldDemo } from './field';
 import { FilterDemo } from './filter';
+import { FrameDemo } from './frame';
 import { GridDemo } from './grid';
 import { IconDemo } from './icon';
 import { KeyChordDemo } from './keychord';
 import { LegendDemo } from './legend';
 import { ListingDemo } from './listing';
+import { LogDemo } from './log';
 import { MenuDemo } from './menu';
 import { NameCutDemo } from './namecut';
 import { PagerDemo } from './pager';
@@ -45,11 +47,13 @@ export const DEMOS: Readonly<Record<string, ComponentType>> = {
   dialog: DialogDemo,
   field: FieldDemo,
   filter: FilterDemo,
+  frame: FrameDemo,
   grid: GridDemo,
   icon: IconDemo,
   keychord: KeyChordDemo,
   legend: LegendDemo,
   listing: ListingDemo,
+  log: LogDemo,
   menu: MenuDemo,
   namecut: NameCutDemo,
   pager: PagerDemo,

@@ -10,6 +10,12 @@ export { DEFAULT_PAGER_LABELS, type PagerLabels, type PagerStep } from './pager.
 export { DEFAULT_PALETTE_LABELS, type PaletteLabels } from './palette.js';
 export { DEFAULT_PANE_TABS_LABELS, type PaneTabsLabels } from './paneTabs.js';
 export { DEFAULT_SELECT_ALL_LABELS, type SelectAllLabels } from './selectAll.js';
+export {
+  DEFAULT_SETTINGS_LABELS,
+  type AppearanceLabels,
+  type AppearanceMode,
+  type SettingsLabels
+} from './settings.js';
 export { DEFAULT_TERMINAL_LABELS, type TerminalLabels } from './terminal.js';
 export { DEFAULT_LABELS, type UiokLabels } from './UiokLabels.js';
 export {

@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-23
+
+### Added
+
+- The shell's components (`@bigpixelrocket/uiok/shell`, now an area with a module): `TitleBar`, `Lockup`, `BrandMark` (the family's plate, the app's glyph, and the check badge), `ChannelMarker`, `UpdatePill`, `AboutWindow`, `SettingsDialog` with `SettingsSubsection`, `SettingsSaveFailure`, page keys (`useSettingsPageKeys`, `settingsLegend`, `SettingsPageKeysContext`), and the scroll rules `spiedSubsection` and `subsectionScrollTop`, and the shared pages `AppearanceSettings` over `ThemeChoices` and `ThemePreview`, `LanguageChoice`, `UpdatesPage` with `UpdateChecks`, `UpdateCard`, and `UpdateNotes`, and `SettingsFiles`; the sign-in prompts `SignInDialog` and `HostKeyDialog`; `useSystemDark`, `appearanceInUse`, `steppedIndex`, `themesOf`.
+- The window frame (`@bigpixelrocket/uiok/frame`, a new area), every part a component so an app draws its window with no class or element of its own: `AppRoot`, `SpacePanel`, `WindowFrame` (the title band, sidebar, main pane, tray, dock, and key legend in one grid, the space's listing root, with a `group` for a host's handlers and a band `trailing` part; a part given `false` draws no slot), `SidebarResizer` and `draggedWidth`; the sidebar tree's `TreePane`, `TreeList`, `TreeRow` (node, band, or group, following the pane's cursor), `TreeToggle`, `TreeTool`, `TreeFilterInput`, and `SidebarEmpty`; `FilterChips`, `PaneWarning`, `StatusNotice`; `Dock` (at the height its host keeps, its top edge dragging it, giving way to the main pane in a short window; `dockHeight`), `DockLog`, `DockLogEntry`, `DockInput`; `usePaneSplit`, `PaneSplitter`, `SplitDetail`, `cutRowDepth`, and `heldSplitHeight`; a page's `PageSlot`, `PanePage`, `Toolbar`, `ToolbarGrow`, `ToolbarGap`, `PageFilter`, `PageNote`, `EmptyAction`, `SectionHead`, `FootBar`, and `ShowSidebarButton`.
+- `PaneBox` (with a `danger` tone) and `PaneList` (`@bigpixelrocket/uiok/pane`): a pane and its scrolling body, with `RegionHandlers`, the handlers a host hangs on a region.
+- `EmptyState` (`@bigpixelrocket/uiok/listing`): a pane with nothing in it yet or one that could not load, with its glyph or mark, title, sentence, actions, note, detail, and numbered steps.
+- `Switch` (`@bigpixelrocket/uiok/field`): the `.switch` look as a component, out of the Tab order in a listing row, a press never opening the row.
+- `LoadFailure` (`@bigpixelrocket/uiok/shell`): the block a window shows in place of content that failed to load. A `SettingsPage` names its sidebar chip as `chip` (a string), drawn by the dialog.
+- `ModalDialog` and `ConfirmDialog` take a `size` (`DialogSize`: `md`, `lg`, `xl`); `ConfirmDialog` takes an `alternative`, a second way on between leaving and confirming (Close Window and Keep Running).
+- `LogWell` (`@bigpixelrocket/uiok/log`, a new area): a log in a well with each source's prefix in its own colour, a line's tone, and following the newest line; `logSourceIndexes`, `logSourceColour`, `logSourceWidth`.
+- `Sparkline` and `sparklinePoints` (`@bigpixelrocket/uiok/charts`).
+- `ProgressDialog` and `TypedNameDialog` (`@bigpixelrocket/uiok/dialog`).
+- Theme tokens: the release channels (`--channel-latest`, `--channel-local`, their `-text`, `--channel-name`, `--channel-detail`, and `[data-channel]` blocks that set `--channel` and `--channel-text`), the brand mark (`--brand-white`, `--brand-plate`, `--brand-plate-dark`, `--brand-badge-dark`), and a log's sources (`--log-source-1` to `--log-source-6`).
+- Scale tokens: `--font-weight-light`, `--font-weight-heavy`, `--shell-header-height`, `--traffic-light-inset`, `--sidebar-width`.
+- The `settings` label group (`SettingsLabels`, `AppearanceLabels`, `AppearanceMode`, `DEFAULT_SETTINGS_LABELS`) and the `dialog` labels `ok`, `close`, `stop`, `tryAgain`, `runInBackground`, `typeName`.
+- `shell.css`: the title bar (`shell-topbar`, `shell-brand`, `shell-lockup`, `shell-channel*`, `shell-trailing`), the lockup (sized by `Lockup`'s `size`) and brand mark (its glyph as `BrandMarkShape` data), the About window's drag regions and icon, `settings-restore`, `settings-count`, `settings-count-or-word`.
+
+### Changed
+
+- `usePaneKeys` never reads a home, row, or verb inside a `hidden` element (a page held out of sight), and with no sidebar shown Tab walks the page alone instead of naming a sidebar that is not there.
+- Breaking: uiok now defines `--channel`, `--channel-text`, `--channel-name`, `--channel-detail`, `--channel-latest`, `--channel-latest-text`, `--channel-local`, `--channel-local-text`, `--brand-white`, and `--brand-plate`, so `themeStylesheet` refuses an app token of those names. An app that wrote them as its own tokens drops them; the values are the same in every theme.
+
 ## [0.2.3] - 2026-11-22
 
 ### Added
@@ -200,7 +224,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.0...v0.2.1

@@ -4,7 +4,7 @@ Tables in the listing look: a ruled column strip over 24px rows in the monospace
 
 ## The listing scope
 
-Every rule applies under `.listing-root`. Put the class on the element that holds your panes, beside your own class:
+Every rule applies under `.listing-root`. A window drawn with `WindowFrame` ([Frame](frame.md)) is already the listing root; elsewhere, put the class on the element that holds your panes, beside your own class:
 
 ```html
 <section class="my-view listing-root">…</section>
@@ -148,25 +148,41 @@ Empty text looks like what it stands in for, dimmed, so it never reads as an aft
 - **A list with no rows** says so in a quiet row, `.pane-message.empty` (what `Listing`'s `empty` draws): it starts where a row's icon starts, in the rows' own typeface and size (the host's, which the library does not set), in the dim text tone, one row high. "This folder is empty." under a `..` row is drawn the same way. `empty` leaves the column labels out, so no header stands over nothing; a control in the strip keeps its place.
 - **An output or terminal well with nothing in it** says so in `.pane-well-note`, a line of the well: the terminal's font, size, and line height, dim, where the well's text starts. Beside a terminal in a well, add `.beside-terminal` to take the terminal's own 4px inset.
 - **A grid with no rows** draws its `empty` content where the first row would be, in the grid's cell type ([Grid](grid.md)). A chart with no values keeps its plot's place and says so in the chart's own type ([Charts](charts.md)).
-- **An empty or failed pane** is a different case: a pane that is empty because nothing has been added yet (no projects, no connections, no servers), or whose content could not load (a locked folder, a refused connection), says what it is and offers its actions where the eye is. It centres a `.pane-empty` block between its path bar and its status line, in the interface font:
+- **An empty or failed pane** is a different case: a pane that is empty because nothing has been added yet (no projects, no connections, no servers), or whose content could not load (a locked folder, a refused connection), says what it is and offers its actions where the eye is. `EmptyState` centres one block between its path bar and its status line, in the interface font:
 
   ```tsx
-  // role="alert" only for a failure, whose glyph is drawn in --danger; otherwise the faint tone
-  <div className="pane-empty" role="alert">
-    <Lock aria-hidden size={ICON_XL} />
-    <strong>You do not have permission to open locked</strong>
-    <p>Grant access to the folder, or go back to where you were.</p>
-    <div className="pane-empty-actions">
-      <Button variant="primary">Grant Access…</Button>
-      <Button>Try Again</Button>
-    </div>
-    <p className="pane-empty-detail">EACCES: permission denied, scandir '~/locked'</p>
-  </div>
+  import { EmptyState } from '@bigpixelrocket/uiok/listing';
+
+  <EmptyState
+    icon={Layers}
+    title="Nothing installed yet"
+    body="Runtimes come from mise, services from Homebrew."
+    actions={
+      <>
+        <Button variant="tonal">Add Runtime…</Button>
+        <Button>Add Service…</Button>
+      </>
+    }
+    detail="Homebrew 4.6.11 · mise 2026.11.2"
+    steps={[{ title: 'Pick a folder', detail: 'any folder of this Mac' }, { title: 'Start them' }]}
+  />;
   ```
 
-  The heading (`strong` or `h2`) is the text colour at the heading size; the sentence (`p`) is dim, small, at most 420px wide; the actions are `Button`s, one primary at most, in a `.pane-empty-actions` row that wraps (a lone `Button` may stand on its own); the error the system returned, where there is one, goes last in `p.pane-empty-detail`, in the code face. Each part may be left out except the heading. The words can be selected and copied.
+  | Prop      | Type                        | Purpose                                                                                     |
+  | --------- | --------------------------- | ------------------------------------------------------------------------------------------- |
+  | `icon`    | `LucideIcon`                | The glyph over the title, in the faint tone (`--danger` for a `failure`)                    |
+  | `mark`    | `ReactNode`                 | A mark of the host's own in the glyph's place (a `BrandMark`), at the glyph's scale         |
+  | `title`   | `string`                    | The heading (an `h2`), the text colour at the heading size; the one part always drawn       |
+  | `body`    | `ReactNode`                 | The sentence: dim, small, at most 420px wide                                                |
+  | `actions` | `ReactNode`                 | `Button`s, one primary at most, in a row that wraps                                         |
+  | `note`    | `ReactNode`                 | A quiet line under the actions (where an import would come from)                            |
+  | `detail`  | `ReactNode`                 | What the system returned (an error, the tools found), last of the lines, in the code face   |
+  | `steps`   | `readonly EmptyStateStep[]` | `{ title, detail? }`: the way in as numbered steps side by side, each number in a small box |
+  | `failure` | `boolean`                   | The pane could not load: an alert, its glyph in `--danger`                                  |
 
-Which to use: `.pane-message.empty` where there is nothing to do and nothing to explain (an empty folder, a filter that matches nothing, an output with no lines yet); `.pane-empty` where the user has to add the first thing or deal with a failure before the pane is of any use.
+  The words can be selected and copied.
+
+Which to use: a listing's `empty` (`.pane-message.empty`) where there is nothing to do and nothing to explain (an empty folder, a filter that matches nothing, an output with no lines yet); `EmptyState` where the user has to add the first thing or deal with a failure before the pane is of any use.
 
 ## Labels read
 

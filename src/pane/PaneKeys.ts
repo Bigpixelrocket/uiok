@@ -8,9 +8,32 @@
 
 import type { ControlVerb } from './PaneActions.js';
 
-/** The rows a pane's cursor walks, top to bottom: its `data-row-key` elements. */
+/**
+ * The elements in `root` matching `selector` that show: none inside a
+ * `hidden` element under `root`, such as a page held mounted out of sight
+ * behind the front tab (`PageSlot`), whose rows, home, and verbs the keys
+ * never reach.
+ */
+const shownMatches = (root: Element, selector: string): HTMLElement[] =>
+  [...root.querySelectorAll<HTMLElement>(selector)].filter((match) => {
+    const hidden = match.closest('[hidden]');
+
+    return hidden === null || !root.contains(hidden) || hidden === root;
+  });
+
+/**
+ * A pane's home that shows: the first `data-pane-home` element in it (the
+ * sidebar's with `"sidebar"`) outside a hidden page, or null for none.
+ * Internal to the pane area.
+ */
+export const shownHome = (pane: Element | null, sidebar = false): HTMLElement | null =>
+  pane === null
+    ? null
+    : (shownMatches(pane, sidebar ? '[data-pane-home="sidebar"]' : '[data-pane-home]')[0] ?? null);
+
+/** The rows a pane's cursor walks, top to bottom: its `data-row-key` elements that show. */
 export const paneRows = (pane: Element | null): HTMLElement[] =>
-  pane === null ? [] : [...pane.querySelectorAll<HTMLElement>('[data-row-key]')];
+  pane === null ? [] : shownMatches(pane, '[data-row-key]');
 
 /** A pane's row by its key, or null for none. */
 export const paneRow = (pane: Element | null, key: string | null): HTMLElement | null =>
@@ -31,7 +54,8 @@ export function verbControl(
 ): HTMLElement | null {
   // The verb is quoted, so only a quote or a backslash in it needs escaping.
   const quoted = verb.replace(/["\\]/g, '\\$&');
-  const control = root?.querySelector<HTMLElement>(`[data-${attribute}~="${quoted}"]`) ?? null;
+  const control =
+    root === null ? null : (shownMatches(root, `[data-${attribute}~="${quoted}"]`)[0] ?? null);
 
   return control !== null && enabled(control) ? control : null;
 }
@@ -98,14 +122,16 @@ const inDocumentOrder = (a: Element, b: Element): number =>
  * document puts it, make one cycle in document order that wraps at either
  * end. A row's controls are no stops (the cursor row's keys run them) unless
  * its listing keeps them in the Tab order (`Row`'s `tabbable`); a sidebar
- * row's never are.
+ * row's never are. With `alone` (no sidebar shown) the page's stops make
+ * the one cycle, wrapping at either end, and the sidebar is never named.
  */
 export function nextTabStop(
   main: Element,
   home: HTMLElement,
   from: TabStop,
   back: boolean,
-  sidebar: SidebarTabStops | null = null
+  sidebar: SidebarTabStops | null = null,
+  alone = false
 ): TabStop {
   if (from === 'sidebar' && sidebar === null) return 'page';
 
@@ -133,7 +159,7 @@ export function nextTabStop(
             .filter((stop) => stop.compareDocumentPosition(at) & Node.DOCUMENT_POSITION_FOLLOWING)
             .pop()
         : stops.find((stop) => stop.compareDocumentPosition(at) & Node.DOCUMENT_POSITION_PRECEDING);
-  const landed = next ?? (sidebar === null ? undefined : back ? stops.at(-1) : stops[0]);
+  const landed = next ?? (sidebar === null && !alone ? undefined : back ? stops.at(-1) : stops[0]);
 
   if (landed === undefined || landed === sidebar?.home) return 'sidebar';
 
@@ -145,7 +171,7 @@ export function nextTabStop(
  * (`data-pane-home`) shows of 24px rows, less one kept in view.
  */
 export const pageRows = (pane: Element | null): number => {
-  const list = pane?.querySelector('[data-pane-home]');
+  const list = shownHome(pane);
 
   return Math.max(1, Math.floor((list?.clientHeight ?? 0) / 24) - 1);
 };

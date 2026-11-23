@@ -768,7 +768,7 @@ a {
 }
 
 .demo-empty-pane {
-  height: 320px;
+  height: 440px;
 }
 
 .demo-pin {
@@ -1388,4 +1388,25 @@ a {
    down to its icon. */
 .demo-facts-tight {
   width: min(240px, 100%);
+}
+
+/* The frame page's small window: a fixed height, so the window's grid has
+   rows to fill, on the window ground with a hairline round it. */
+.frame-demo {
+  height: 520px;
+  overflow: hidden;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--ground);
+}
+
+/* A log well at a reading height. */
+.log-demo {
+  display: flex;
+  flex-direction: column;
+  height: 220px;
+}
+
+.log-demo > .log-well {
+  flex: 1;
 }

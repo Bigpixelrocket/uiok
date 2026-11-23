@@ -30,10 +30,11 @@ import {
 import { useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { ICON_MD, ICON_SM, ICON_XL } from '@bigpixelrocket/uiok/icon';
+import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 import {
   Cell,
   column,
+  EmptyState,
   iconLinksColumn,
   Listing,
   PathCell,
@@ -437,24 +438,29 @@ export function ListingDemo() {
             word="Add"
           />
         </PanePathBar>
-        <div className="pane-empty">
-          <FolderOpen aria-hidden size={ICON_XL} />
-          <strong>No projects yet</strong>
-          <p>
-            Add a folder you work in, or clone one from a repository, and it shows here with its
-            scripts and services.
-          </p>
-          <div className="pane-empty-actions">
-            <Button onClick={() => setDid('add a folder')} variant="primary">
-              <FolderPlus size={ICON_MD} />
-              Add a Folder
-            </Button>
-            <Button onClick={() => setDid('clone a repository')}>
-              <GitBranch size={ICON_MD} />
-              Clone a Repository
-            </Button>
-          </div>
-        </div>
+        <EmptyState
+          actions={
+            <>
+              <Button onClick={() => setDid('add a folder')} variant="primary">
+                <FolderPlus size={ICON_MD} />
+                Add a Folder
+              </Button>
+              <Button onClick={() => setDid('clone a repository')}>
+                <GitBranch size={ICON_MD} />
+                Clone a Repository
+              </Button>
+            </>
+          }
+          body="Add a folder you work in, or clone one from a repository, and it shows here with its scripts and services."
+          icon={FolderOpen}
+          note="A projects file elsewhere holds 3 projects and 15 commands."
+          steps={[
+            { title: 'Pick a folder', detail: 'any folder of this computer' },
+            { title: 'Tick its scripts', detail: 'from package.json or composer.json' },
+            { title: 'Start them', detail: 'or add commands by hand' }
+          ]}
+          title="No projects yet"
+        />
         <PaneStatus>No projects</PaneStatus>
       </div>
 
@@ -463,19 +469,22 @@ export function ListingDemo() {
           why and what to do, the ways on, and the system's own line under them. */}
       <div className="pane demo-pane demo-empty-pane">
         <PanePathBar trail={['~', 'locked']} />
-        <div className="pane-empty" role="alert">
-          <Lock aria-hidden size={ICON_XL} />
-          <strong>You do not have permission to open locked</strong>
-          <p>Grant access to the folder, or go back to where you were.</p>
-          <div className="pane-empty-actions">
-            <Button onClick={() => setDid('grant access')} variant="primary">
-              Grant Access…
-            </Button>
-            <Button onClick={() => setDid('try again')}>Try Again</Button>
-            <Button onClick={() => setDid('go back')}>Go Back</Button>
-          </div>
-          <p className="pane-empty-detail">EACCES: permission denied, scandir '~/locked'</p>
-        </div>
+        <EmptyState
+          actions={
+            <>
+              <Button onClick={() => setDid('grant access')} variant="primary">
+                Grant Access…
+              </Button>
+              <Button onClick={() => setDid('try again')}>Try Again</Button>
+              <Button onClick={() => setDid('go back')}>Go Back</Button>
+            </>
+          }
+          body="Grant access to the folder, or go back to where you were."
+          detail="EACCES: permission denied, scandir '~/locked'"
+          failure
+          icon={Lock}
+          title="You do not have permission to open locked"
+        />
         <PaneStatus>Could not read locked</PaneStatus>
       </div>
 

@@ -1,0 +1,57 @@
+/* A log in a well (LogWell): the code face at the small size, the lines
+   kept as written (wrapping only where a line is longer than the well),
+   each source in a column as wide as the longest, in its own colour
+   (--log-source, which the component sets to a --log-source-N token, each
+   legible as text on a panel). */
+.log-well {
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  overflow: auto;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-md);
+  background: var(--surface);
+  color: var(--text);
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-mono);
+}
+
+.log-line {
+  display: grid;
+  grid-template-columns: var(--log-source-width) auto minmax(0, 1fr);
+  column-gap: var(--space-3);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* A log with no sources: the words alone. */
+.log-line:not(:has(> .log-source)) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.log-source {
+  color: var(--log-source, var(--text-dim));
+  white-space: nowrap;
+}
+
+.log-bar {
+  color: var(--text-faint);
+}
+
+.log-line[data-tone='danger'] > .log-text {
+  color: var(--danger-text);
+}
+
+.log-line[data-tone='warning'] > .log-text {
+  color: var(--warning-text);
+}
+
+.log-line[data-tone='dim'] > .log-text {
+  color: var(--text-dim);
+}
+
+.log-empty {
+  margin: 0;
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+}

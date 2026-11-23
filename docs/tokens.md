@@ -28,6 +28,8 @@ Colour tokens are in [themes](themes.md).
 | `--font-weight-regular` | 400    | Running text; resets                                        |
 | `--font-weight-medium`  | 500    | Labels that head data: column labels, strip links, tooltips |
 | `--font-weight-strong`  | 600    | Control labels, titles, the current item                    |
+| `--font-weight-light`   | 300    | A wordmark's light first part (`Lockup`)                    |
+| `--font-weight-heavy`   | 700    | A wordmark's heavy last part (`Lockup`)                     |
 | `--tracking-caps`       | 0.04em | Letter-spacing of a small uppercase heading                 |
 
 Italic has two meanings. The first: a value that stands for no value, or that is not literal. A grid's or a form's NULL, a "none" where a key or a setting has nothing, a name a rename leaves unchanged, a value marked as in use. It is set with `font-style: italic` on that value's own class, in the value's quiet colour (`--text-dim`), never on a label, an action, a heading, an alias, a session or connection name, or a comment, which stay upright in their own colour. The second, for a place: a tab whose place is not fixed yet, which the next place opened takes over (a following tab, as an editor sets its preview tab), set on its name alone. The library's uses are the grid's NULL cell (`.cell-null`) and a following tab's name (`.pane-tab.following .pane-tab-name`). Two kinds of text are not interface text and keep their own conventions: highlighted code keeps its language's (a code comment in italic, as every editor sets it), and a brand lockup keeps its own weights (300 and 700), which no weight token names.
@@ -113,6 +115,8 @@ Reduced motion: under `prefers-reduced-motion: reduce`, `tokens.css` sets the th
 | `--bar-height`        | 26px  | Path bar, status line, query row                                                       |
 | `--bar-height-lg`     | 34px  | Title strip, key legend, dialog legend                                                 |
 | `--hit-target`        | 24px  | The smallest pointer target, whatever the drawn size                                   |
+
+The window frame ([Frame](components/frame.md)) reads three more: `--shell-header-height` (the top band, `--bar-height-lg`), `--traffic-light-inset` (72px, where macOS's window buttons end, which a title bar's brand clears), and `--sidebar-width` (240px, a sidebar's default). A window that wears the frame sets `--dialog-inset-top` to clear the band.
 
 A control drawn smaller than `--hit-target` keeps its drawn size and grows its hit area with a pseudo-element: the `.hit-target` utility class, or the same `::after` in a component's sheet. Where neighbours sit closer than the growth (pager steps 2px apart), it grows in the block axis only. The segmented choice reads `--segmented-height` (small by default); a form of regular fields sets it to `var(--control-height)`.
 

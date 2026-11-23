@@ -2,11 +2,13 @@
  * Listings: the column strip, rows and cells in the listing look (scoped by
  * `.listing-root`), the row cursor they share with the keys, column widths,
  * and the state, path, and terminal-well cells; `CurrentDot` marks the
- * current one in a list.
+ * current one in a list, and `EmptyState` fills a pane with nothing in it
+ * yet or one that could not load.
  */
 
 export { type SortDirection } from '../labels/listing.js';
 export { CurrentDot, type CurrentDotProps } from './CurrentDot.js';
+export { EmptyState, type EmptyStateProps, type EmptyStateStep } from './EmptyState.js';
 export {
   ACTION_COLUMN,
   Cell,

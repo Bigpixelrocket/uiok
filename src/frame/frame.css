@@ -1,0 +1,801 @@
+/* The window frame every app of the family draws its content in
+   (docs/components/frame.md): the app's root and its one content panel,
+   a space's root and its element resets, the window's grid (the title band
+   over the sidebar and the main pane, the tray and the dock under the main
+   pane, the key legend across the foot), the sidebar's tree rows and its
+   quick row, the dock's bar and log, the splitter between a list and the
+   pane under it, a page's toolbar, and the small blocks a pane's pages
+   share. Every rule places or sizes uiok's own parts (panes, listings,
+   path bars, tab strips, legends); none paints a ground of its own. */
+
+/* ---- The app's root ---- */
+
+/* A window that wears the frame: its top band (the title bar and the main
+   pane's tabs), which every dialog keeps clear of, and the interface face
+   as the window's default. */
+:root:has(:is(.app-shell, .about-window)) {
+  --dialog-inset-top: calc(var(--shell-header-height) + var(--space-4));
+
+  font-family: var(--font-ui);
+  line-height: var(--line-height-prose);
+}
+
+:where(body:has(:is(.app-shell, .about-window))) {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--ground);
+  color: var(--text);
+}
+
+/* The app's root: one column the window's height, its content panel. */
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+/* The content owns the whole window, the top band's layout included. */
+.shell-content {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+/* The panel the content's keyboard commands work in: a focus boundary,
+   never a control, so it draws no ring. */
+.space-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.space-panel:focus {
+  outline: none;
+}
+
+/* A space's root: a column the panel's height in the body size. The
+   element resets weigh nothing (:where), so any class rule wins over them,
+   uiok's components included. */
+.space-root {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  color: var(--text);
+  font-size: var(--font-size-body);
+}
+
+.space-root *,
+.space-root *::before,
+.space-root *::after {
+  box-sizing: border-box;
+}
+
+:where(.space-root button) {
+  font: inherit;
+  color: inherit;
+}
+
+:where(.space-root code) {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+}
+
+/* A fieldset groups a form's choices without the browser's grooved frame
+   or its legend cut into the line. */
+:where(.space-root fieldset, .dialog fieldset) {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+:where(.space-root legend, .dialog legend) {
+  padding: 0;
+}
+
+/* A sidebar with nothing to list says so as a quiet row in the rows'
+   place, as a listing's empty message does: from where a row's icon
+   starts, in the rows' face and size, dim, one row high. */
+.space-nav-empty {
+  display: flex;
+  align-items: center;
+  min-height: var(--row-height);
+  margin: 0;
+  padding: 0 var(--pane-row-inset);
+  color: var(--row-meta-text);
+  font: inherit;
+  line-height: var(--line-height-compact);
+}
+
+/* ---- The window's grid ---- */
+
+/* The top band (the title bar's height) over the sidebar and the main
+   pane side by side on the ground, the ground's inset round them and
+   between them, the tray and the dock under the main pane while they show,
+   and the key legend across the foot. A `.window-frame-group` between the
+   frame and its items draws no box (display: contents), so a host may keep
+   its sidebar and main pane in one element for its keys. The band's
+   leading end is the title bar at the sidebar's width
+   (`--window-band-width`); the main pane rises into the band, so its tab
+   row ends on the band's foot. */
+.window-frame {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: var(--shell-header-height) minmax(0, 1fr) auto auto auto;
+  column-gap: var(--space-3);
+  height: 100%;
+  padding: 0 var(--space-3);
+}
+
+.window-frame-group {
+  display: contents;
+}
+
+.window-frame-band {
+  display: flex;
+  grid-column: 1 / -1;
+  grid-row: 1;
+  align-items: center;
+  min-width: 0;
+}
+
+/* From the window's edge to the sidebar's: the title bar clears the window
+   buttons from the edge, not from the ground's inset. */
+.window-frame-band-lead {
+  flex: none;
+  align-self: stretch;
+  width: calc(var(--window-band-width) + var(--space-3));
+  max-width: calc(100% + var(--space-3));
+  min-width: 0;
+  margin-left: calc(-1 * var(--space-3));
+}
+
+/* While no tab shows, the band's empty end is title bar too. */
+.window-frame-band-rest {
+  flex: 1 1 0;
+  align-self: stretch;
+  -webkit-app-region: drag;
+}
+
+.window-frame-sidebar {
+  grid-column: 1;
+  grid-row: 2 / 5;
+  margin-bottom: var(--space-3);
+}
+
+/* The sidebar's edge, dragged to resize it: in the gap beside the page. */
+.window-frame-resizer {
+  grid-column: 1;
+  grid-row: 2 / 5;
+  justify-self: end;
+  width: var(--space-3);
+  margin: 0 calc(-1 * var(--space-3)) var(--space-3) 0;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.window-frame-main {
+  flex: 1;
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  min-height: 0;
+  margin-bottom: var(--space-3);
+}
+
+/* A strip that takes its turn under the main pane (files dropped on the
+   window, being imported). */
+.window-frame-tray {
+  grid-column: 2;
+  grid-row: 3;
+  margin-bottom: var(--space-3);
+}
+
+/* The dock under the main pane: a console, a log, related rows. */
+.window-frame-dock {
+  grid-column: 2;
+  grid-row: 4;
+}
+
+.window-frame-legend {
+  grid-column: 1 / -1;
+  grid-row: 5;
+  margin: 0 calc(-1 * var(--space-3));
+}
+
+/* A slot `WindowFrame` wraps round a part: the part fills it. */
+.window-frame-slot {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+
+.window-frame-slot > * {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The main pane's tab row stands in the band, beside the title bar; the
+   row's empty end is title bar too. */
+.window-frame-main:is(:has(> .pane-header), :has(> .pane > .pane-header)) {
+  margin-top: calc(-1 * var(--pane-tab-height));
+}
+
+.window-frame-main > .pane-header > .pane-tabs-rest,
+.window-frame-main > .pane > .pane-header > .pane-tabs-rest {
+  -webkit-app-region: drag;
+}
+
+/* The sidebar hidden (a choice of the window, never of a tab): the main
+   pane, the tray, and the dock take the window's width, and the main
+   pane's tabs keep the place they have beside the title bar, so no tab
+   moves when the sidebar goes. */
+:is(.window-frame[data-sidebar='hidden'], .window-frame:has(> [data-sidebar='hidden']))
+  :is(.window-frame-main, .window-frame-tray, .window-frame-dock) {
+  grid-column: 1 / -1;
+}
+
+:is(.window-frame[data-sidebar='hidden'], .window-frame:has(> [data-sidebar='hidden']))
+  .window-frame-main
+  > .pane-header,
+:is(.window-frame[data-sidebar='hidden'], .window-frame:has(> [data-sidebar='hidden']))
+  .window-frame-main
+  > .pane
+  > .pane-header {
+  padding-left: calc(var(--window-band-width) + var(--space-3));
+}
+
+/* Show panel leads a path bar's tools, before the page's facts. */
+.path-tools > .window-frame-show-sidebar {
+  order: -1;
+}
+
+/* A page of the main pane in its slot: the front tab's page lays out as
+   the pane's own child; a held page (a background tab with unsaved
+   changes, kept mounted) stays out of sight. */
+.page-slot:not([hidden]) {
+  display: contents;
+}
+
+/* ---- The sidebar's tree ---- */
+
+/* The tree's pane: its width (the host sets the width it keeps as the
+   element's own `width`, else --sidebar-width), and the row's columns (the
+   chevron's slot, the node's glyph, its name, one trailing column). A
+   size container, so its path bar can wrap when narrow. */
+.tree-pane {
+  --pane-grid: var(--icon-md) var(--icon-column) minmax(0, 1fr) auto;
+  --tree-indent: var(--space-6);
+
+  width: var(--sidebar-width);
+  min-width: 0;
+  container: tree-pane / inline-size;
+}
+
+/* The tree's path bar keeps its tools whole at a narrow width, closer than
+   a page's, and its title gives way to an ellipsis. */
+.tree-pane .path-tools {
+  flex-shrink: 0;
+  gap: var(--space-1);
+}
+
+.tree-pane .path-tools > .path-star {
+  margin-right: 0;
+}
+
+.tree-pane .crumb.here {
+  flex-shrink: 1;
+  min-width: calc(2ch + var(--space-4));
+}
+
+/* Narrower than its title and its tools side by side, the path bar takes
+   a line for each: the title keeps its own, whole, and the tools wrap
+   under it from the left. */
+@container tree-pane (width < 238px) {
+  .tree-pane .pane-path-row {
+    flex: none;
+    flex-wrap: wrap;
+  }
+
+  .tree-pane .pane-crumbs {
+    flex: 1 0 100%;
+    height: var(--pane-path-height);
+  }
+
+  .tree-pane .path-tools {
+    flex: 1 1 100%;
+    flex-wrap: wrap;
+    padding: 0 var(--space-2) var(--space-2) var(--space-4);
+  }
+}
+
+/* A row stepped in by its level (`--tree-level`). */
+.tree .row {
+  width: 100%;
+  padding-left: calc(var(--pane-row-inset) + var(--tree-level, 0) * var(--tree-indent));
+}
+
+/* A band over the rows it holds (a server over its databases, a project
+   over its commands): the strip's ground and a hairline under it, its name
+   column as wide as the name. */
+.tree .row.tree-band {
+  grid-template-columns: var(--icon-md) var(--icon-column) minmax(6ch, max-content) minmax(0, 1fr);
+  border-bottom: var(--line) solid var(--border);
+}
+
+.tree .row.tree-band:not(.cursor) {
+  background: var(--strip);
+}
+
+/* A quiet cursor on a band (another pane focused, or the window behind)
+   frames the band on its own ground. */
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .tree
+  .row.tree-band.cursor {
+  --row-fill: var(--strip);
+}
+
+/* The disclosure chevron in a row's first column (`TreeToggle`). */
+.tree-chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-xs);
+  background: none;
+  color: inherit;
+}
+
+.tree-chev:hover {
+  background: var(--hover-wash);
+  color: var(--text);
+}
+
+.tree-chev:active {
+  background: var(--pressed-wash);
+  box-shadow: var(--press-frost);
+}
+
+.tree-glyph {
+  display: inline-flex;
+  align-items: center;
+  color: var(--row-meta-text);
+}
+
+.tree-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A group's name reads as a heading over its rows. */
+.tree .row.tree-group .tree-name {
+  color: var(--text-dim);
+}
+
+/* Words after a name, quieter. */
+.tree-detail {
+  color: var(--row-meta-text);
+}
+
+/* On a cursor or marked row the quiet words take the surface's text. */
+.row:is(.cursor, .marked):where(:not(.selected)) :is(.tree-detail, .tree-glyph),
+.tree-tool.cursor,
+.tree-tool.cursor .tree-note-glyph {
+  color: var(--text-on-surface);
+}
+
+/* A row's own tool (Hide) shows on the cursor row only, which a click and
+   the keys both move; it never appears under a passing pointer. */
+.tree-row-tool {
+  margin-left: var(--space-2);
+  visibility: hidden;
+}
+
+.tree .row.cursor .tree-row-tool {
+  visibility: visible;
+}
+
+/* A row that is not a node (a filter field, a pager, a note), at its
+   row's indent, in the small size. */
+.tree-tool {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-height: var(--row-height);
+  padding: var(--space-1) var(--pane-row-inset) var(--space-1)
+    calc(var(--pane-row-inset) + var(--tree-level, 0) * var(--tree-indent));
+  box-sizing: border-box;
+  color: var(--row-meta-text);
+  font-size: var(--font-size-small);
+}
+
+.tree-tool.cursor {
+  background: var(--cursor-row);
+}
+
+/* A read that failed: the glyph beside the reason, which wraps, and the
+   action under the reason at its edge. */
+.tree-tool.danger {
+  display: grid;
+  grid-template-columns: var(--icon-column) minmax(0, 1fr);
+  column-gap: var(--space-3);
+  row-gap: var(--space-1);
+  align-items: start;
+  font-family: var(--font-ui);
+}
+
+.tree-tool.danger > .tree-note-glyph {
+  display: inline-flex;
+  align-items: center;
+  height: var(--line-height-compact);
+  color: var(--danger);
+}
+
+.tree-tool.danger .tree-note-text {
+  grid-column: 2;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: break-word;
+}
+
+.tree-tool.danger > :last-child {
+  grid-column: 2;
+  justify-self: start;
+}
+
+.tree-tool.danger > .pane-act:last-child {
+  margin-inline-start: calc(-1 * var(--space-2));
+}
+
+/* A note under a node starts past the chevron's slot. */
+.tree-tool.tree-note {
+  padding-left: calc(
+    var(--pane-row-inset) + var(--tree-level, 0) * var(--tree-indent) + var(--icon-md)
+  );
+}
+
+/* A heading over a group of rows further down the tree. */
+.tree-tool.tree-heading {
+  margin-top: var(--space-3);
+  padding-block: var(--space-3) var(--space-2);
+  border-top: var(--line) solid var(--border);
+}
+
+.tree-tool.tree-heading .tree-note-text {
+  white-space: normal;
+}
+
+.tree-note-glyph {
+  width: var(--icon-column);
+  color: var(--row-meta-text);
+}
+
+.tree-note-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The tree's filter line: a bare field that fills its row, the row
+   underlined in the accent while the field holds the keyboard. */
+.tree-tool:has(.tree-filter-input:focus-visible) {
+  box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--accent);
+}
+
+.tree-filter-input {
+  flex: 1;
+  min-width: 0;
+  height: var(--control-height-xs);
+  padding: 0 var(--space-2);
+  border: 0;
+  outline: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: var(--font-size-small);
+  text-overflow: ellipsis;
+}
+
+/* ---- A pane's quick row ---- */
+
+/* A row of quiet buttons under a pane's path bar (FilterChips: the tree's
+   Running and Updates filters): each a word with its glyph and count, and
+   `aria-pressed="true"` while its filter is on. */
+.pane-quick-row {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--pane-row-inset);
+  border-bottom: var(--line) solid var(--border);
+}
+
+.pane-quick-button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  border: none;
+  border-radius: var(--radius-md);
+  font: inherit;
+  font-size: var(--font-size-small);
+}
+
+/* Its rest face weighs nothing, so the quiet track item's hover and press
+   (.quiet-track-item) paint over it. */
+:where(.pane-quick-button) {
+  background: none;
+  color: var(--row-meta-text);
+}
+
+.pane-quick-button[aria-pressed='true'] {
+  background: var(--accent-wash-strong);
+  color: var(--text);
+}
+
+.pane-quick-count {
+  color: var(--row-meta-text);
+  font-variant-numeric: tabular-nums;
+}
+
+/* A warning under a pane's path bar, over its rows (PaneWarning). */
+.pane-warning {
+  margin: 0;
+  padding: var(--space-2) var(--pane-row-inset);
+  border-bottom: var(--line) solid var(--border);
+  color: var(--row-meta-text);
+  font-size: var(--font-size-small);
+}
+
+/* ---- The dock ---- */
+
+/* A pane in the dock under the main pane: the divide over it, its bar,
+   then its body. Closed, it takes no room. */
+.window-dock {
+  position: relative;
+  min-height: var(--bar-height-lg);
+  margin-bottom: var(--space-3);
+  overflow: visible;
+}
+
+.window-dock.closed {
+  display: none;
+}
+
+/* The divide stands in the ground over the dock and sets its height. */
+.window-dock > .pane-splitter {
+  position: absolute;
+  inset: calc(-1 * var(--space-3)) 0 auto;
+  margin: 0;
+  cursor: row-resize;
+}
+
+.dock-bar {
+  display: flex;
+  flex: none;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-5);
+  padding: var(--space-1) var(--space-4);
+  border-bottom: var(--line) solid var(--border);
+  font-size: var(--font-size-small);
+}
+
+.dock-body {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* A dock's log: entries over a hairline each, the newest at the foot;
+   entries far from the foot skip layout until scrolled to. */
+.dock-log {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: var(--space-2) var(--space-4);
+  overflow: auto;
+  list-style: none;
+  font-size: var(--font-size-small);
+}
+
+.dock-log-empty {
+  padding: var(--space-1) 0;
+  color: var(--text-dim);
+}
+
+.dock-log-entry {
+  padding: var(--space-1) 0;
+  border-top: var(--line) solid var(--border);
+}
+
+.dock-log-entry:not(:nth-last-child(-n + 24)) {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 44px;
+}
+
+.dock-log-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-4);
+  min-height: var(--control-height-xs);
+}
+
+/* What a dock takes typed in, at the log's foot, ringed while it holds
+   the keyboard. */
+.dock-input {
+  flex: none;
+  min-height: var(--control-height);
+  max-height: 50%;
+  overflow: auto;
+  border-top: var(--line) solid var(--border);
+}
+
+.dock-input:focus-within {
+  outline: var(--focus-ring-width) solid var(--accent);
+  outline-offset: var(--focus-offset-inset);
+}
+
+/* ---- A list over the pane under it ---- */
+
+/* The splitter between a page's list and the pane under it
+   (`PaneSplitter`): a thin band over the hairline that divides them, with
+   the resize cursor, overlapping both by half its height. */
+.pane-splitter {
+  position: relative;
+  z-index: var(--z-raised);
+  flex: none;
+  height: var(--space-3);
+  margin-block: calc(-0.5 * var(--space-3));
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+/* The pane under a list: as tall as what it shows until dragged, up to
+   38% of the page and never under seven dense rows. */
+.split-detail {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  max-height: max(38%, calc(7 * var(--row-height-dense)));
+  min-height: 0;
+  border-top: var(--line) solid var(--border);
+}
+
+.split-detail.folded {
+  flex: none !important;
+}
+
+.split-detail-body {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-height: 0;
+  padding: var(--space-3) var(--pane-row-inset);
+  overflow-y: auto;
+}
+
+/* ---- A page's parts ---- */
+
+/* A page in the main pane: a column that fills it. */
+.pane-page {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* A toolbar on one line: its items keep their size, one `grow` item gives
+   way, an `end` group stands at the far end, and a `gap` hairline parts
+   two groups. */
+.pane-toolbar {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.pane-toolbar > * {
+  flex: none;
+}
+
+.pane-toolbar > .pane-toolbar-grow {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.pane-toolbar-end {
+  display: inline-flex;
+  margin-inline-start: auto;
+}
+
+.pane-toolbar-gap {
+  align-self: stretch;
+  width: var(--line);
+  margin-block: var(--space-1);
+  margin-inline: var(--space-2);
+  background: var(--border);
+}
+
+/* A page's filter under its tab strip. */
+.pane-page-filter {
+  flex: none;
+  padding: var(--space-2) var(--space-3) 0;
+}
+
+/* A loading or empty line: its glyph or spinner beside the words. */
+.pane-page-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.pane-page-note > svg {
+  flex: none;
+  color: var(--text-dim);
+}
+
+/* The one command that answers an empty list, under its empty line. */
+.pane-empty-action {
+  padding: var(--space-3) var(--pane-row-inset);
+}
+
+/* A heading over one of a page's listings, in the rows' inset (on an
+   overline too, whose own margin it replaces). */
+:is(.pane-section-head, .pane-section-head.overline) {
+  margin: var(--space-4) var(--pane-row-inset) var(--space-2);
+}
+
+/* A bar at a pane's foot, under its list: a select-all bar, a form's
+   actions. */
+.pane-foot-bar {
+  flex: none;
+  padding: var(--space-2) var(--pane-row-inset);
+  border-top: var(--line) solid var(--border);
+}
+
+/* ---- A status line's notice ---- */
+
+/* A message about the window as a pane's status line (StatusNotice): the
+   tone's glyph, the words in the text colour cut with an ellipsis. */
+.status-notice {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--text);
+  font-family: var(--font-ui);
+}
+
+.status-notice > svg {
+  flex: none;
+  color: var(--text-dim);
+}
+
+.status-notice.danger > svg {
+  color: var(--danger);
+}
+
+.status-notice.success > svg {
+  color: var(--success);
+}
+
+.status-notice-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

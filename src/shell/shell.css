@@ -4,10 +4,11 @@
    a file's problems, the update cards and their notes), the update pill's
    failed state, the release channel tag, the About window's layout, the
    sign-in prompts, and the line a part of the window shows when it fails
-   to load. None is a component: the app writes the markup with these
-   classes (docs/components/shell.md). The header, the brand
-   wordmark, the app's icon, window drag regions, and the startup screens
-   stay the app's. */
+   to load, and the title bar (the lockup and the brand mark, the channel
+   marker, the update pill's place). The components of
+   @bigpixelrocket/uiok/shell draw them (docs/components/shell.md); a host
+   may write the same markup with these classes. The app's icon, its
+   brand mark's glyph, and its startup screens stay the app's. */
 
 /* ---- Settings dialog ---- */
 
@@ -910,6 +911,19 @@
 
 /* ---- Channel tag ---- */
 
+/* The release channel an element wears (data-channel on the app's root or
+   the About window): its hue and its tag's words, from the theme's
+   channel tokens. A release build wears none. */
+[data-channel='latest'] {
+  --channel: var(--channel-latest);
+  --channel-text: var(--channel-latest-text);
+}
+
+[data-channel='local'] {
+  --channel: var(--channel-local);
+  --channel-text: var(--channel-local-text);
+}
+
 /* The release channel beside a lockup (an About window, a splash) on a
    build that is not the release: small caps on a pill of the channel's
    colour, so a screenshot always says which build it shows. An app that
@@ -1070,4 +1084,229 @@
 .space-load-failure :is(strong, p) {
   -webkit-user-select: text;
   user-select: text;
+}
+
+/* ---- Title bar ---- */
+
+/* A window's title bar where the native one is hidden (TitleBar): the
+   lockup and, on a build that is not the release, its channel marker,
+   standing on the window ground. It paints nothing, so tabs beside it
+   stand on the same ground. The whole bar is a drag region except the
+   marker, so it moves the window and a double click zooms it like a native
+   title bar. A bar cut narrow cuts at its end. */
+.shell-topbar {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  min-width: 0;
+  padding: 0 var(--space-4) 0 var(--space-6);
+  box-sizing: border-box;
+  overflow: hidden;
+  -webkit-app-region: drag;
+}
+
+.shell-brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* On macOS the brand clears the traffic lights by 4px; elsewhere the
+   bar's own padding stands there. */
+.shell-topbar[data-traffic-lights] .shell-brand {
+  margin-left: calc(var(--traffic-light-inset) - var(--space-6));
+}
+
+/* Only the channel marker shrinks; the lockup keeps its size. */
+.shell-brand > * {
+  flex: none;
+}
+
+.shell-lockup {
+  --lockup-size: 15px;
+}
+
+/* The channel marker (ChannelMarker): a dot in the channel's colour, the
+   channel's name, and its build number or branch, small and quiet. It opts
+   out of the drag region: a draggable region takes no pointer events, so
+   its tooltip would never show. */
+.shell-brand > .shell-channel {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  margin-left: var(--space-1);
+  font-size: var(--font-size-caption);
+  line-height: 1;
+  transform: translateY(1px);
+  -webkit-app-region: no-drag;
+}
+
+/* Where a channel's colour sits near 2:1 on the bar, the dot wears the
+   group marks' hairline ring (--group-dot-ring). */
+.shell-channel-dot {
+  flex: none;
+  width: var(--dot);
+  height: var(--dot);
+  border-radius: var(--radius-pill);
+  background: var(--channel, var(--accent));
+  box-shadow: var(--group-dot-ring);
+}
+
+.shell-channel-name {
+  flex: none;
+  color: var(--channel-name);
+  font-weight: var(--font-weight-medium);
+}
+
+/* The build number or the branch gives way, up to 224px. */
+.shell-channel-detail {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 224px;
+  overflow: hidden;
+  color: var(--channel-detail);
+  font-variant-numeric: tabular-nums;
+  font-weight: var(--font-weight-regular);
+  text-overflow: ellipsis;
+}
+
+.shell-channel-modified {
+  flex: none;
+  color: var(--channel-detail);
+  font-size: var(--font-size-caption);
+}
+
+/* The band's trailing end, after the main pane's tabs: the update pill,
+   out of the drag region so it takes clicks. */
+.shell-trailing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+  -webkit-app-region: no-drag;
+}
+
+/* ---- Lockup and brand mark ---- */
+
+/* A product's lockup (Lockup): the mark beside the wordmark, its last part
+   heavier. The host sizes it with --lockup-size; the mark scales with it. */
+:where(.lockup) {
+  --lockup-size: 40px;
+}
+
+.lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  margin: 0;
+  font-size: var(--lockup-size);
+  font-weight: var(--font-weight-light);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.lockup-wordmark b {
+  font-weight: var(--font-weight-heavy);
+}
+
+/* The mark (BrandMark) stands a little taller than the wordmark's capitals,
+   so the badge's overhang does not make the plate look smaller than the
+   text. The plate wears the accent and the badge the success hue; under a
+   dark appearance both deepen toward the constant plate tone, so the white
+   glyph and check keep their contrast on a light accent. A glyph's cuts and
+   the badge's ring are drawn in the plate's and the bar's own colours. */
+.brand-mark {
+  --brand-mark-plate: var(--accent);
+  --brand-mark-badge: var(--success);
+
+  flex: none;
+  width: 1.4em;
+  height: 1.4em;
+}
+
+@media (prefers-color-scheme: dark) {
+  .brand-mark {
+    --brand-mark-plate: var(--brand-plate-dark);
+    --brand-mark-badge: var(--brand-badge-dark);
+  }
+}
+
+.brand-mark-plate {
+  fill: var(--brand-mark-plate);
+}
+
+.brand-mark-glyph {
+  fill: var(--brand-white);
+}
+
+.brand-mark-cut {
+  fill: none;
+  stroke: var(--brand-mark-plate);
+  stroke-width: 0.9;
+}
+
+.brand-mark-line {
+  fill: none;
+  stroke: var(--brand-white);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.6;
+}
+
+.brand-mark-badge {
+  fill: var(--brand-mark-badge);
+  stroke: var(--surface-header);
+  stroke-width: 1.5;
+}
+
+.brand-mark-check {
+  fill: none;
+  stroke: var(--brand-white);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.4;
+}
+
+/* ---- About window: the drag regions and the icon ---- */
+
+/* The panel drags the window under a hidden title bar; only the version
+   line takes the pointer, so it can be selected. */
+.about-window {
+  -webkit-app-region: drag;
+}
+
+.about-version {
+  -webkit-app-region: no-drag;
+}
+
+/* The round patch on a transparent canvas, its drop shadow baked in. */
+.about-icon {
+  width: 128px;
+  height: 128px;
+  margin-bottom: var(--space-4);
+}
+
+.about-lockup-text {
+  --lockup-size: 21px;
+}
+
+/* ---- Settings: field widths ---- */
+
+/* Restore default value: dim beside a setting off its default. */
+.settings-restore {
+  color: var(--text-dim);
+}
+
+/* A count is a few digits wide; a count whose empty field reads as a word
+   ("No limit") fits every locale's word. */
+.settings-count.field {
+  width: 9ch;
+}
+
+.settings-count-or-word.field {
+  width: 20ch;
 }

@@ -206,10 +206,7 @@ describe("an app's own tokens", () => {
     // A component's hook and the base sheet's tokens are among them.
     expect(names).toContain('--stripe-ground');
     expect(names).toContain('--z-tooltip');
-    // An app's own hooks the library reads only behind a fallback
-    // (`var(--channel, var(--accent))`): an app defines them as extra tokens.
-    const appHooks = new Set(['--channel', '--channel-text']);
-    for (const name of [...names].filter((each) => !appHooks.has(each))) {
+    for (const name of names) {
       expect(() => themeStylesheet({ extraFixed: { [name]: '0' } })).toThrow(
         `extraFixed redefines ${name}`
       );

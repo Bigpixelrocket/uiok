@@ -1,6 +1,6 @@
 # Form controls (`@bigpixelrocket/uiok/field`)
 
-One look for everything a user types in or toggles: text fields, textareas, selects, number fields, checkboxes, radios, and switches, with their labels, help, and problems. The look is a set of classes on the native elements, so a form keeps its own markup, keyboard behaviour, and screen reader semantics; the stylesheet ships in `@bigpixelrocket/uiok/styles.css`. `Check` is the one component, for a checkbox whose state can be mixed, and `labelHelp` puts a control's help in its label's tooltip.
+One look for everything a user types in or toggles: text fields, textareas, selects, number fields, checkboxes, radios, and switches, with their labels, help, and problems. The look is a set of classes on the native elements, so a form keeps its own markup, keyboard behaviour, and screen reader semantics; the stylesheet ships in `@bigpixelrocket/uiok/styles.css`. `Check` is a checkbox whose state can be mixed, `Switch` turns a running thing on or off, and `labelHelp` puts a control's help in its label's tooltip.
 
 ## Example
 
@@ -134,6 +134,21 @@ A native checkbox in the `check` look whose `checked` may be `'mixed'`. The mixe
 | Prop      | Type                 | Meaning                      |
 | --------- | -------------------- | ---------------------------- |
 | `checked` | `boolean \| 'mixed'` | On, off, or some but not all |
+
+## `Switch` (`SwitchProps`)
+
+A running thing turned on or off at once (a service, sharing) in the `switch` look: a native checkbox with `role="switch"`. A setting is a `check`, not a switch.
+
+| Prop          | Type                         | Purpose                                                                                 |
+| ------------- | ---------------------------- | --------------------------------------------------------------------------------------- |
+| `checked`     | `boolean`                    | Whether it is on                                                                        |
+| `onChange`    | `(checked: boolean) => void` | Hears the state a press asks for                                                        |
+| `label`       | `string`                     | Its words, beside it in a `field-choice` label, the whole label its target              |
+| `labelHidden` | `boolean`                    | Speaks the label without drawing it: a switch in a row whose name says what it turns on |
+| `disabled`    | `boolean`                    | Fades it once                                                                           |
+| `verb`        | `string`                     | The verb the row's keys run it for (`data-verb`)                                        |
+
+In a listing or tree row it leaves the Tab order, as a row's other controls do, since the cursor row's keys run it.
 
 ## Keyboard
 

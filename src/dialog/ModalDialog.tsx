@@ -27,6 +27,13 @@ import { legendKeyAction, type DialogLegendModel } from './DialogLegend.logic.js
  */
 export type DialogTone = 'accent' | 'danger' | 'warning';
 
+/**
+ * A dialog's width step by what its body holds: `md` (480px) a form with a
+ * label column, `lg` (640px) two columns or a short list, `xl` (880px) a
+ * wide table or a log; none keeps the 360px of a question or a name field.
+ */
+export type DialogSize = 'md' | 'lg' | 'xl';
+
 /** Whether a key comes from a text field holding text, which keeps its deletion chords. */
 const isFilledField = (target: EventTarget): boolean => {
   if (!isTextEditingTarget(target)) {
@@ -125,6 +132,8 @@ export interface ModalDialogProps {
   readonly describedBy?: string;
   /** Extra class on the dialog box for dialog-specific layout (its width). */
   readonly className?: string;
+  /** Its width step (`dialog-size-*`); none keeps the default width. */
+  readonly size?: DialogSize;
   /** The verb's icon at the start of the title strip, drawn in the tone's colour. */
   readonly icon?: LucideIcon;
   /** The title strip's colour; `accent` unless given. */
@@ -214,6 +223,7 @@ function DialogFrame({
   labelId,
   describedBy,
   className,
+  size,
   icon: Icon,
   tone = 'accent',
   frosted = false,
@@ -299,7 +309,9 @@ function DialogFrame({
         aria-describedby={describedBy}
         aria-labelledby={labelId}
         aria-modal="true"
-        className={className ? `dialog ${className}` : 'dialog'}
+        className={['dialog', size === undefined ? null : `dialog-size-${size}`, className]
+          .filter(Boolean)
+          .join(' ')}
         data-pinned={pinned !== null || undefined}
         data-tone={tone}
         onKeyDown={(event) => {

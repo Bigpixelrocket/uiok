@@ -165,6 +165,10 @@ const CATPPUCCIN_LATTE: ThemeColours = {
     cursor: '#dc8a78'
   },
   overrides: {
+    // A channel tag's words, darkened past the least step that holds 4.5:1
+    // on its tint, so they keep 4.5:1 on the tint over the title bar too.
+    '--channel-latest-text': '#6d2ebf',
+    '--channel-local-text': '#983c07',
     // Lavender a step stronger than the primary hue itself, so the fill
     // carries white text at 4.7:1 where the hue stops at 3.2:1.
     '--primary': '#5468e4',

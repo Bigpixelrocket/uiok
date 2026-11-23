@@ -6,6 +6,7 @@ SVG charts painted from the theme's chart tokens, so they follow light, dark, an
 - `PieChart`: slices with a legend of values and shares.
 - `ScatterChart`: points on number, time, or category axes, with drag-to-zoom and a resizable frame.
 - `ResultChart`: a table of rows drawn as bar, column, line, spline, area, pie, timeline, or scatter, stackable where it makes sense, with title, legend, and axes inside the SVG so it saves whole as a picture.
+- `Sparkline`: a word-sized line of recent values beside a figure, over `sparklinePoints`.
 - `tokenColour`, `svgMarkup`, `svgPng`: save a chart as SVG text or PNG bytes.
 
 Series take `--chart-1` to `--chart-8` in turn and start over after the eighth (a pie's slices then hatch; see `ResultChart` and `PieChart`). `seriesColour(index)` gives that colour as a `var()` (`seriesColour(2)` is `'var(--chart-3)'`), so a series an app draws outside these charts, in its own legend or plot, matches theirs. A `LineSeries` may name its own `colour` instead. The chrome reads `--text`, `--text-dim`, `--row-meta-text`, `--border`, `--border-strong`, `--surface`, `--accent`, and `--hover-wash`, and a `LineChart`'s reference lines `--text-dim`, `--warning`, and `--danger`.
@@ -157,6 +158,21 @@ Time ticks are written in UTC (`2026-01-02`, `2026-01-02 10:00`, or `10:00` for 
 
 `ResultChart` is memoised: keep the arrays stable across renders. The legend starts at the plot's left edge and shows at most 24 entries in up to four rows (a pie's legend, with its title, keeps within a third of the drawing's height, so a short pie keeps room for its tags); when entries are left out, the legend ends in a count of them, `+N` in the legend's own `--row-meta-text` with no swatch, whose width it reserves on its last row. The title is centred on the plot. Values are written with six significant digits. An area's fill breaks where a value is missing, as its line does. The legend keeps the same 12px of air under its last row whether it fits one row or wraps. A pie with more slices than the eight series colours numbers each slice its legend lists on a leader outside the rim, and its legend entry to match; a slice the legend counts in its `+N` carries no number. Past the eighth slice the colours come round again hatched (stripes of `--surface` across the hue), and past the sixteenth crosshatched, so the 24 legend entries each have a fill of their own; beyond 24 a slice that would match a neighbour, round the circle too, takes the next of the three, so no two neighbouring slices share a fill. A number or time X axis shows at least three ticks and leaves out any label that would touch its neighbour.
 
+### `Sparkline` (`SparklineProps`)
+
+| Prop              | Type                | Default    | Purpose                                                       |
+| ----------------- | ------------------- | ---------- | ------------------------------------------------------------- |
+| `values`          | `readonly number[]` |            | The values, oldest first; a value not finite is left out      |
+| `label`           | `string`            |            | What the line shows and its latest value, its accessible name |
+| `series`          | `number`            | `0`        | Which series colour it wears (`seriesColour`)                 |
+| `width`, `height` | `number`            | `64`, `16` | Its size in pixels                                            |
+
+No axes and no grid: the line alone, scaled to its own lowest and highest, a flat series through the middle. It is an image named by `label`, which carries what a reader needs; `sparklinePoints(values, width, height, inset?)` gives its `points`.
+
+```tsx
+<Sparkline label="CPU, 12% now" values={cpu} />
+```
+
 ## Look
 
 Every chart shares one vocabulary: caption-size type with tabular figures; a 10px swatch with a 2px corner, a dash for a line series and a dash broken in two for a reference line; a left axis and a baseline in `--border-strong` with grid lines in `--border-faint`, never a box; a hovered mark ringed in `--text`; a dragged range in `--accent-wash`. A `LineChart` value with no value beside it (a series of one point, or one between two gaps) is a dot at rest, since a line of one point has no length. Hovering a `LineChart` puts a dot on every line at the guide and a read-out in the tooltip's look; hovering a `ResultChart` mark puts the same read-out beside it. An axis whose ticks lie too close together for their size to tell apart in short form (epoch milliseconds on a number axis) labels the first tick in full and the rest by their offset from it (`+100M`). Area fills are faint (`--chart-area-opacity`) and lie under the grid; where unstacked areas overlap, only the front series' tint shows (a mask cuts each fill wherever a series in front has its own), so an overlap never mixes into a hue the legend lacks; the unlit pie slices step back to `--dimmed-opacity`. Hovering a pie slice or its legend row lights both and steps the other slices back.
@@ -179,7 +195,7 @@ Nothing is fetched: the SVG is loaded from its own `data:` URL. Writing the byte
 
 ## Styling
 
-`.line-chart`, `.line-*`, `.pie-chart`, `.pie-*`, `.scatter-chart`, `.scatter-*`, `.result-chart`, `.result-chart-*`, in `@bigpixelrocket/uiok/styles.css`.
+`.sparkline`, `.sparkline-line`, `.line-chart`, `.line-*`, `.pie-chart`, `.pie-*`, `.scatter-chart`, `.scatter-*`, `.result-chart`, `.result-chart-*`, in `@bigpixelrocket/uiok/styles.css`.
 
 ## Labels read
 

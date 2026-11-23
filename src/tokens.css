@@ -43,6 +43,9 @@
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-strong: 600;
+  /* A product's wordmark (Lockup): its light first part, its heavy last. */
+  --font-weight-light: 300;
+  --font-weight-heavy: 700;
 
   /* Letter-spacing of small uppercase headings. Key glyphs keep their own
      spacing, which belongs to the glyph, not to a heading. */
@@ -132,6 +135,14 @@
   --bar-height: 26px;
   --bar-height-lg: 34px;
   --hit-target: 24px;
+
+  /* The window frame (frame.css): the top band, the title bar's and the
+     main pane's tabs, which every dialog keeps clear of; where macOS's
+     traffic lights end, which a title bar's brand clears (window geometry,
+     not a space step); and a sidebar's default width. */
+  --shell-header-height: var(--bar-height-lg);
+  --traffic-light-inset: 72px;
+  --sidebar-width: 240px;
 
   /* Focus. One ring for everything focusable: a 2px accent line outside the
      control at focus-offset, so it follows the control's corner one pixel

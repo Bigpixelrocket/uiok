@@ -37,6 +37,8 @@
 /* The shell's shared surfaces: Settings dialog, theme picker, update card,
    channel tag, sign-in prompts, load failure (docs/components/shell.md). */
 @import './shell/shell.css';
+@import './frame/frame.css';
+@import './log/log.css';
 
 /* ---- What the browser would otherwise draw in its own colours ---- */
 

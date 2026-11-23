@@ -6,7 +6,8 @@ The frame around a listing: the tabs it hangs from, a path bar it opens with, a 
 
 ```tsx
 import { Listing, RowCursorContext, StateMark } from '@bigpixelrocket/uiok/listing';
-import { NO_MAIN_VERBS, PanePathBar, PaneStatus, PathFact, paneKeyAction, QuietAction, usePaneKeys, verbControl, paneRow } from '@bigpixelrocket/uiok/pane';
+import { NO_MAIN_VERBS, PaneBox, PaneList, PanePathBar, PaneStatus, PathFact, paneKeyAction, QuietAction, usePaneKeys, verbControl, paneRow } from '@bigpixelrocket/uiok/pane';
+import { TreePane, WindowFrame } from '@bigpixelrocket/uiok/frame';
 
 function View() {
   const panes = usePaneKeys({
@@ -30,26 +31,34 @@ function View() {
   });
 
   return (
-    <div className="listing-root" ref={panes.rootRef}>
-      <aside className={panes.activePane === 'sidebar' ? 'pane active' : 'pane'}>…</aside>
-      <div className={panes.activePane === 'main' ? 'pane active' : 'pane'} ref={panes.mainRef}>
+    <WindowFrame
+      group={{ ref: panes.rootRef }}
+      sidebar={<TreePane active={panes.activePane === 'sidebar'}>…</TreePane>}
+      main={
+      <PaneBox active={panes.activePane === 'main'} ref={panes.mainRef}>
         <PanePathBar heading trail={['Servers', 'local']}>
           <PathFact mark={<StateMark tone="warning" word="" />} tone="warning">
             2 changes not applied
           </PathFact>
           <QuietAction icon={Play} label="Start local" lit onClick={start} pageVerb="toggle" word="Start" />
         </PanePathBar>
-        <div className="pane-list" data-pane-home tabIndex={-1}>
+        <PaneList home>
           <RowCursorContext value={panes.rowCursor}>
             <Listing …>…</Listing>
           </RowCursorContext>
-        </div>
+        </PaneList>
         <PaneStatus>12 items</PaneStatus>
-      </div>
-    </div>
+      </PaneBox>
+      }
+      …
+    />
   );
 }
 ```
+
+## Panes
+
+`PaneBox` (`active`, `label`, `tone`, `as`, `ref`, and the region handlers: keys, focus, pointer down, drag and drop) is a pane: a framed column of its tab strip or path bar, its list, and its status line, a `section` unless `as="aside"`. `active` marks the pane that holds the keyboard, its frame in the accent; the others show their cursor row quietly. `tone="danger"` draws its frame and its front tab's outline in the danger colour (a production server). `PaneList` (`home`, `pointer`, `label`, `ref`, the region handlers) is its scrolling body: `home` makes it the list the keys return to and Page Up and Page Down measure (`data-pane-home`, focusable by script, out of the Tab order), and `pointer` lights the row under the pointer, for rows that act on a click. A sidebar's pane is the frame's `TreePane` ([Frame](frame.md)).
 
 ## Tabs
 
@@ -67,7 +76,7 @@ import {
 const [picks, setPicks] = useState<TabPicks | null>(null);
 const order = tabs.map((tab) => tab.id);
 
-<div className="pane active" data-tone={production ? 'danger' : undefined}>
+<PaneBox active tone={production ? 'danger' : undefined}>
   <PaneTabs
     front={front}
     label="Tabs"
@@ -86,7 +95,7 @@ const order = tabs.map((tab) => tab.id);
     tabs={tabs}
   />
   <PanePathBar trail={trail} />…
-</div>;
+</PaneBox>;
 ```
 
 ### Props
@@ -172,7 +181,7 @@ const fit = useToolbarFit();
 What the options say:
 
 - `readKey` maps an event to an action (`paneKeyAction`, or the app's own on top of it); `run` performs it in the pane the key was aimed at; `cursorKey` says which actions a focused control keeps for itself (moves, Return).
-- Each pane's home is the element marked `data-pane-home` (`data-pane-home="sidebar"` for the sidebar's); the keys hand it the focus. The sidebar pane is the `.pane` around its home.
+- Each pane's home is the element marked `data-pane-home` (`data-pane-home="sidebar"` for the sidebar's); the keys hand it the focus. The sidebar pane is the `.pane` around its home. A home, row, or verb inside a `hidden` element (a page held out of sight) is never read, and with no sidebar shown Tab walks the page alone.
 - A text field keeps every key but Tab. A text field inside `.terminal` keeps Tab too. A focused control keeps its own arrows and Return; a control inside a row hands arrows back to the pane's home.
 - `sidebarStops` makes Tab walk the sidebar's controls with the page's as one cycle (`nextTabStop`).
 - `cursorInRender` (default true) returns `mainKey` and `sidebarKey` in render, so a move renders the view. False leaves a move to the two rows it changes; read `rowCursor.current()` and `sidebarCursor.current()` instead.

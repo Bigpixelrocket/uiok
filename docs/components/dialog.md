@@ -6,6 +6,8 @@ Every modal dialog shares one frame and one footer: a title strip that says what
 - `DialogLegend`: the key legend footer, with `legendKeyAction` deciding which slot a keystroke runs.
 - `ConfirmDialog`: the one confirmation, built on both.
 - `DialogItems` and `DialogFacts`: the framed list of what a confirmation acts on, and the property list of facts about an action.
+- `ProgressDialog`: the progress dialog of long work, its legend following the run.
+- `TypedNameDialog`: a for-good confirmation whose verb waits for the typed name.
 - `DialogLayer`: where a host's dialogs mount, so they paint above every pane.
 
 ## Example
@@ -57,7 +59,8 @@ function RenameDialog({ name, onRename, onCancel }) {
 | `title`          | `ReactNode`                         |            | What the dialog does, in at most five words; one line, cut with an ellipsis, a string's text a tooltip while cut |
 | `labelId`        | `string`                            |            | The heading's id, wired to `aria-labelledby`; unique per dialog (`useId`)                                        |
 | `describedBy`    | `string`                            |            | The id of the body element that says what the dialog is about (`aria-describedby`)                               |
-| `className`      | `string`                            |            | Extra class on the box, for its width and its body's layout                                                      |
+| `className`      | `string`                            |            | Extra class on the box, for its body's layout                                                                    |
+| `size`           | `'md' \| 'lg' \| 'xl'`              |            | Its width step (`DialogSize`, below); none keeps 360px                                                           |
 | `icon`           | `LucideIcon`                        |            | The verb's icon at the start of the title strip                                                                  |
 | `tone`           | `'accent' \| 'danger' \| 'warning'` | `'accent'` | The strip's rule and icon colour; `danger` also lights the primary red                                           |
 | `frosted`        | `boolean`                           | `false`    | Frost the window behind; only for a self-contained overlay (a shortcuts list, settings)                          |
@@ -96,7 +99,7 @@ A dialog's own `container` prop overrides the layer, for one mounted elsewhere (
 
 ### Size
 
-The box hugs its form: pick the narrowest step that holds the body's widest row (labels and fields at their natural width, plus the 12px insets), by adding its class through `className`. Every step shrinks with a narrow window, since the box never passes the backdrop's inset area, so no `min(…, 100vw - …)` is needed.
+The box hugs its form: pick the narrowest step that holds the body's widest row (labels and fields at their natural width, plus the 12px insets), by its `size` (`DialogSize`: `md`, `lg`, `xl`; the `.dialog-size-*` class it adds). Every step shrinks with a narrow window, since the box never passes the backdrop's inset area, so no `min(…, 100vw - …)` is needed.
 
 | Step            | Class             | Width | For                                                                             |
 | --------------- | ----------------- | ----- | ------------------------------------------------------------------------------- |
@@ -205,6 +208,8 @@ A held key runs its slot once. A key the browser-key guard cancelled still reach
 | `paths`           | `readonly string[]`                                                   |                | Deprecated: drawn as `items`, the last part the name and its folder the detail                                                                                |
 | `children`        | `ReactNode`                                                           |                | A choice drawn under the message; the caller holds its state                                                                                                  |
 | `className`       | `string`                                                              |                | Extra class on the box                                                                                                                                        |
+| `size`            | `DialogSize`                                                          |                | Its width step, as `ModalDialog`'s                                                                                                                            |
+| `alternative`     | `LegendSecondary`                                                     |                | A second way on between leaving and confirming, on its own chord (Close Window and Keep Running beside Quit)                                                  |
 | `forGood`         | `boolean`                                                             | `false`        | A delete that cannot be undone                                                                                                                                |
 | `confirmDisabled` | `boolean`                                                             | `false`        | Holds the primary off: its slot is disabled and its key runs nothing (a typed-name confirmation, until the name matches)                                      |
 | `onConfirm`       | `() => void`                                                          |                | The primary                                                                                                                                                   |
@@ -298,6 +303,39 @@ A `DialogFact` is `{ label: string; count?: number | string; value?: ReactNode; 
 
 `DialogStatements` (`label`, `lines`, `id`, `count`) is the block `statements` draws. Its heading counts the lines; `count` puts a host's own words in that place ("1–100 of 101" for one page of a longer batch), and `null` draws none, for a label that already says it. It serves any other dialog body. In a `ConfirmDialog`, prefer the `statements` prop; a `DialogStatements` passed as children still gives the confirmation its 480px width.
 
+## `ProgressDialog` (`ProgressDialogProps`)
+
+The progress dialog of long work: a `ModalDialog` at the medium size whose body opens with a `RunHeader` ([Run](run.md)), its legend following the run's state.
+
+```tsx
+<ProgressDialog
+  title="Install PostgreSQL 18"
+  icon={Download}
+  run={{ state: 'running', headline: 'Downloading postgresql@18', figure: '42%' }}
+  onStop={stop}
+  onBackground={putAway}
+  onClose={close}
+/>
+```
+
+| Prop           | Type             | Default | Purpose                                                                     |
+| -------------- | ---------------- | ------- | --------------------------------------------------------------------------- |
+| `title`        | `string`         |         | The page or the action                                                      |
+| `icon`         | `LucideIcon`     |         | The title strip's glyph                                                     |
+| `run`          | `RunHeaderProps` |         | The header: state, headline, figure, bar, facts, a failure's reason         |
+| `stopping`     | `boolean`        | `false` | Stop was asked and the run has not settled: Stop dims                       |
+| `onStop`       | `() => void`     |         | Ends the run; absent for a run that cannot stop                             |
+| `onBackground` | `() => void`     |         | Puts the dialog away while the run goes on; absent where nothing follows it |
+| `onClose`      | `() => void`     |         | OK once settled, Cancel on a run that could not start                       |
+| `onTryAgain`   | `() => void`     |         | Starts again a run that could not start                                     |
+| `children`     | `ReactNode`      |         | Under the header: the run's lists, notes, or console                        |
+
+While it runs, Escape is Stop (dimmed while stopping) and Return is Run in Background; once settled, OK alone answers Return and Escape; a run that could not start (`onTryAgain` with a failed run) offers Cancel and Try Again. A press outside the box never stops the run.
+
+## `TypedNameDialog` (`TypedNameDialogProps`)
+
+A `ConfirmDialog` in the for-good anatomy (below) for work a slip would cost most: its verb stays off until the field under the lists holds `name` exactly, letter case included. It takes `ConfirmDialog`'s `title`, `message`, `confirmLabel`, `icon`, `items`, `itemIcon`, `itemCount`, `statements`, `facts`, `onConfirm`, and `onCancel`, plus `name` (what to type) and `nameLabel` (the field's label); `children` go before the field (a choice the confirmation carries). The note under the field is `dialog.typeName`.
+
 ### Deletes that cannot be undone
 
 People confirm a delete out of habit, ⌘⌫ then Return, without reading. With `forGood` the confirm verb still stands at the right edge, lit red, but its key is ⌥⌘⌫ (the Delete Now chord, Finder's chord for a delete that skips the Trash), Return runs nothing, and a held chord never runs it on a repeat.
@@ -310,4 +348,4 @@ Nothing animates in: a dialog and a frosted wash are there on the frame they ope
 
 ## Labels read
 
-`dialog`: `cancel` (ConfirmDialog's default leave verb, `filterLeaveLabel`), `clear` (`filterLeaveLabel`), `affectedItems(count)` (an item list's accessible name when it has no label), `itemCount(count)` (the count read before the names), `moreItems(count)` (the "+N more" row). `keys` through `KeyChord` for the slots' caps. See [labels](../labels.md).
+`dialog`: `cancel` (ConfirmDialog's default leave verb, `filterLeaveLabel`, ProgressDialog's Cancel), `clear` (`filterLeaveLabel`), `ok`, `stop`, `tryAgain`, and `runInBackground` (ProgressDialog's verbs), `typeName` (TypedNameDialog's note), `affectedItems(count)` (an item list's accessible name when it has no label), `itemCount(count)` (the count read before the names), `moreItems(count)` (the "+N more" row). `keys` through `KeyChord` for the slots' caps. See [labels](../labels.md).

@@ -17,6 +17,7 @@ import {
   RESULT_CHART_TYPES,
   ResultChart,
   ScatterChart,
+  Sparkline,
   STACKABLE_CHART_TYPES,
   type ResultChartType
 } from '@bigpixelrocket/uiok/charts';
@@ -204,6 +205,18 @@ export function ChartsDemo() {
 
   return (
     <div className="demo-stack charts-demo">
+      <section>
+        <h3 className="demo-subhead">Sparkline</h3>
+        <p className="demo-readout">
+          CPU <Sparkline label="CPU, 12% now" values={[4, 6, 5, 9, 14, 11, 8, 12]} /> 12% · Memory{' '}
+          <Sparkline
+            label="Memory, 182 MB now"
+            series={2}
+            values={[150, 152, 160, 171, 168, 175, 182]}
+          />{' '}
+          182 MB
+        </p>
+      </section>
       <section>
         <h3 className="demo-subhead">LineChart</h3>
         <LineChart
