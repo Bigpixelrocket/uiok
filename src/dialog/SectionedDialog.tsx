@@ -97,6 +97,19 @@ export function SectionedDialog({
     setCurrent(spiedSubsection(sectionAnchors(column), column));
   };
 
+  // Scrolls the column to a chosen section, keeping the scroll it causes from
+  // moving the mark off it.
+  const scrollTo = (column: HTMLElement, id: string): void => {
+    const top = subsectionScrollTop(sectionAnchors(column), id);
+
+    if (top === null) return;
+
+    const before = column.scrollTop;
+
+    column.scrollTop = top;
+    chosenScrollRef.current = column.scrollTop !== before;
+  };
+
   const show = (id: string, focus: boolean): void => {
     const column = columnRef.current;
 
@@ -104,14 +117,7 @@ export function SectionedDialog({
 
     if (column === null) return;
 
-    const top = subsectionScrollTop(sectionAnchors(column), id);
-
-    if (top !== null) {
-      const before = column.scrollTop;
-
-      column.scrollTop = top;
-      chosenScrollRef.current = column.scrollTop !== before;
-    }
+    scrollTo(column, id);
 
     if (focus) {
       [...column.querySelectorAll<HTMLElement>(`[${SECTION_ATTRIBUTE}]`)]
@@ -131,9 +137,7 @@ export function SectionedDialog({
     if (first === undefined) {
       spy(column);
     } else {
-      const top = subsectionScrollTop(sectionAnchors(column), first);
-
-      if (top !== null) column.scrollTop = top;
+      scrollTo(column, first);
     }
   }, []);
 

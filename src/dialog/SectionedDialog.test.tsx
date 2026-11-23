@@ -79,6 +79,67 @@ describe('SectionedDialog', () => {
     expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Waits for' }));
   });
 
+  it('keeps the section it opened at marked where the column cannot bring it to the top', () => {
+    // Laid out before the dialog's first layout pass: sections at 0, 200,
+    // and 300 in a 300px column of 400px, so the column scrolls at most
+    // 100px and the opening scroll to the second section stops at the bottom.
+    const restore = [
+      vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockImplementation(function (
+        this: HTMLElement
+      ) {
+        return this.classList.contains('sectioned-dialog-sections') ? 300 : 0;
+      }),
+      vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockImplementation(function (
+        this: HTMLElement
+      ) {
+        return this.classList.contains('sectioned-dialog-sections') ? 400 : 0;
+      }),
+      vi.spyOn(Element.prototype, 'scrollTop', 'set').mockImplementation(function (
+        this: Element,
+        top: number
+      ) {
+        (this as HTMLElement & { scrolled?: number }).scrolled = Math.min(top, 100);
+      }),
+      vi.spyOn(Element.prototype, 'scrollTop', 'get').mockImplementation(function (this: Element) {
+        return (this as HTMLElement & { scrolled?: number }).scrolled ?? 0;
+      }),
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: Element
+      ) {
+        const sections = this.closest('.sectioned-dialog-sections');
+        const at: Record<string, number> = { depends: 200, health: 300 };
+        const top = at[this.getAttribute('data-dialog-section') ?? ''] ?? 0;
+
+        return {
+          top: sections === this || sections === null ? 0 : top - sections.scrollTop
+        } as DOMRect;
+      })
+    ];
+
+    try {
+      render(
+        <SectionedDialog
+          labelId="edit"
+          onCancel={vi.fn()}
+          openAt="depends"
+          sections={SECTIONS}
+          title="Edit Command"
+        />
+      );
+      expect(column().scrollTop).toBe(100);
+      fireEvent.scroll(column());
+
+      expect(screen.getByRole('button', { name: 'Depends on' }).getAttribute('aria-current')).toBe(
+        'location'
+      );
+      expect(
+        screen.getByRole('button', { name: 'Health' }).getAttribute('aria-current')
+      ).toBeNull();
+    } finally {
+      restore.forEach((spy) => spy.mockRestore());
+    }
+  });
+
   it('keeps its notice outside the scrolling column', () => {
     render(
       <SectionedDialog
