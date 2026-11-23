@@ -28,6 +28,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - A `ModalDialog`'s box (the Settings dialog's included) and a `Palette`'s box carry the listing scope (`.listing-root`), and a `Listing` drawn outside any scope carries it itself, so listings, rows, and filter fields keep their look in a dialog, a palette, or anywhere else. `Palette`'s classes are now `folder-menu palette listing-root`.
 
+### Fixed
+
+- The tree keeps its look where single-class rules lost to others: a chevron off the cursor row draws in the rows' dim icon tone rather than its row's words, a tree note that is also a listing's empty line (`.pane-message.empty`) keeps the tree's small size and padding, and a focused `TreeFilterInput` shows its row's underline without the field focus ring.
+
 ## [0.4.0] - 2026-11-23
 
 ### Added
