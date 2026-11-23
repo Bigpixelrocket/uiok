@@ -8,7 +8,7 @@
 
 import { createContext } from 'react';
 
-import type { SyntaxLanguageId } from './SyntaxLanguage.logic.js';
+import { isSyntaxLanguage, type SyntaxLanguageId } from './SyntaxLanguage.logic.js';
 import {
   createSyntaxSession,
   type LineTokenizer,
@@ -83,6 +83,8 @@ export const SyntaxWorkerContext = createContext<SyntaxWorkerFactory | null>(ope
  * Answers the page's requests in `scope`, tokenizing with what `load`
  * returns for the language `open` names. Requests other than `open` wait
  * for the page to have seen `ready`, so none arrive before a session exists.
+ * An `open` naming no shipped language, or whose load throws, is answered
+ * with `failed`.
  */
 export function serveSyntax<State>(
   scope: SyntaxScope,
@@ -93,7 +95,11 @@ export function serveSyntax<State>(
   scope.onmessage = ({ data }) => {
     switch (data.type) {
       case 'open':
-        load(data.language).then(
+        if (!isSyntaxLanguage(data.language)) {
+          scope.postMessage({ type: 'failed' });
+          return;
+        }
+        new Promise<LineTokenizer<State>>((resolve) => resolve(load(data.language))).then(
           (tokenizer) => {
             session = createSyntaxSession(tokenizer, data.maxLineBytes);
             scope.postMessage({ type: 'ready', styles: tokenizer.styles });

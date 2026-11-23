@@ -17,7 +17,7 @@ import { createJavaScriptRegexEngine } from '@shikijs/engine-javascript';
 import { createShikiPrimitiveAsync, type LanguageRegistration } from '@shikijs/primitive';
 import { EncodedTokenMetadata, INITIAL, type StateStack } from '@shikijs/primitive/textmate';
 
-import type { SyntaxLanguageId } from './SyntaxLanguage.logic.js';
+import { isSyntaxLanguage, type SyntaxLanguageId } from './SyntaxLanguage.logic.js';
 import type { LineTokenizer, SyntaxStyle, SyntaxToken } from './SyntaxSession.logic.js';
 
 type GrammarModule = Promise<{ readonly default: LanguageRegistration[] }>;
@@ -97,7 +97,8 @@ const STRIKETHROUGH = 8;
 
 /** The style for a theme color and font style; the text's own color stays unset. */
 function styleFor(color: string | undefined, fontStyle: number): SyntaxStyle {
-  const role = color === undefined ? undefined : MOCHA_ROLES[color.toLowerCase()];
+  const key = color?.toLowerCase();
+  const role = key !== undefined && Object.hasOwn(MOCHA_ROLES, key) ? MOCHA_ROLES[key] : undefined;
 
   return {
     color: role === undefined ? null : `var(--syntax-${role})`,
@@ -112,11 +113,14 @@ const LINE_TIME_LIMIT_MS = 500;
 
 /**
  * Loads `language`'s grammar (and the grammars it embeds) and the theme,
- * and returns a tokenizer over them. Rejects when a chunk fails to load.
+ * and returns a tokenizer over them. Rejects when a chunk fails to load, or
+ * `language` names no shipped grammar (it arrives from another thread).
  */
 export async function loadLineTokenizer(
   language: SyntaxLanguageId
 ): Promise<LineTokenizer<StateStack>> {
+  if (!isSyntaxLanguage(language)) throw new Error('No grammar ships for this language');
+
   const shiki = await createShikiPrimitiveAsync({
     engine: createJavaScriptRegexEngine(),
     themes: [import('@shikijs/themes/catppuccin-mocha')],

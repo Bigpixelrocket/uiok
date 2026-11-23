@@ -100,6 +100,12 @@ describe('the file facts', () => {
     );
     expect(contentLabel({ kind: 'pdf', mimeType: 'application/pdf' }, L)).toBe('PDF document');
   });
+
+  it('names no format for a media type that is an inherited key', () => {
+    expect(contentLabel({ kind: 'image', mimeType: 'toString' }, L)).toBe('Image');
+    expect(contentLabel({ kind: 'video', mimeType: '__proto__' }, L)).toBe('Video');
+    expect(contentLabel({ kind: 'audio', mimeType: 'constructor' }, L)).toBe('Audio');
+  });
 });
 
 describe('changeNotice', () => {

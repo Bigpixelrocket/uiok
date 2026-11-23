@@ -92,7 +92,10 @@ const FORMAT_NAMES: Readonly<Record<string, string>> = {
 
 /** The content in a word or two: "Text", "PNG image", "QuickTime video", "PDF document". */
 export function contentLabel(content: ViewerContentType, labels: ViewerLabels): string {
-  const format = FORMAT_NAMES[content.mimeType];
+  // The media type is the file's, so a type such as `toString` names nothing.
+  const format = Object.hasOwn(FORMAT_NAMES, content.mimeType)
+    ? FORMAT_NAMES[content.mimeType]
+    : undefined;
 
   switch (content.kind) {
     case 'text':
