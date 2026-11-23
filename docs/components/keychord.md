@@ -80,11 +80,11 @@ import { ShortcutGroup, ShortcutIndex, ShortcutRow } from '@bigpixelrocket/uiok/
 </ModalDialog>;
 ```
 
-| Part            | Props                                                                | Draws                                                                                                               |
-| --------------- | -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
-| `ShortcutIndex` | `label` (its accessible name, a region), `children`                  | `.shortcut-index`: the grid, a verb column taking the room left and the chord column at its widest chords           |
-| `ShortcutGroup` | `title` (an overline, which names the group as a region), `children` | `section.shortcut-group` with `dl.shortcut-group-rows`, a hairline above every group but the first                  |
-| `ShortcutRow`   | `verb`, `detail`, `chords` (`Chord[]`), `none`, `changed`, `dim`     | `.shortcut-row`: the verb (`dt`, its `detail` in a quieter line under it), the chords (`dd.shortcut-chords.keycap`) |
+| Part            | Props                                                                | Draws                                                                                                                             |
+| --------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `ShortcutIndex` | `label` (its accessible name, a region), `children`                  | `.shortcut-index`: the grid, a verb column taking the room left and the chord column at its widest chords, at most half the index |
+| `ShortcutGroup` | `title` (an overline, which names the group as a region), `children` | `section.shortcut-group` with `dl.shortcut-group-rows`, a hairline above every group but the first                                |
+| `ShortcutRow`   | `verb`, `detail`, `chords` (`Chord[]`), `none`, `changed`, `dim`     | `.shortcut-row`: the verb (`dt`, its `detail` in a quieter line under it), the chords (`dd.shortcut-chords.keycap`)               |
 
 A row's chords are `KeyChords` on the library's key cap, at the column's end, several parted by "or" and wrapping within it; each is named in words for assistive technology. With no chord the column says `none` (".shortcut-none", dim). `changed` draws the caps in the `accent` tone (chords changed from the defaults); `dim` sets a verb not available where the index was opened a tone down (`.shortcut-row.dim`). A find field above the index and the narrowing it does are the host's; say "no match" with a `PageNote`.
 
