@@ -42,7 +42,8 @@ describe('PdfView', () => {
     ['%2e%2e', '%252e%252e'],
     ['.%2e', '.%252e'],
     ['../../secret.pdf', '..%2F..%2Fsecret.pdf'],
-    ['...', '...']
+    ['...', '...'],
+    ['scan\uD800.pdf', 'document.pdf']
   ])('keeps the name %j one segment below the media URL', (name, segment) => {
     const url = new URL(pdfDocumentUrl({ ...info, name }));
 

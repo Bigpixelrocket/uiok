@@ -6,8 +6,9 @@ import type { ViewerViewProps } from './ViewerViews.js';
 
 /**
  * The last segment for a file whose name is empty or a dot segment (`.` or
- * `..`), which the URL parser would resolve to the media URL's parent; it
- * only feeds the PDF viewer's title.
+ * `..`), which the URL parser would resolve to the media URL's parent, or
+ * cannot be encoded (a lone UTF-16 surrogate); it only feeds the PDF
+ * viewer's title.
  */
 const UNNAMED_SEGMENT = 'document.pdf';
 
@@ -21,14 +22,24 @@ const UNNAMED_SEGMENT = 'document.pdf';
  *
  * The name stays one segment below the media URL: `encodeURIComponent`
  * escapes `/`, `?`, and `#`, and a name that is empty or a dot segment is
- * replaced, since `.` and `..` are left as they are. A `%2e` in a name is
- * escaped to `%252e`, so it is no dot segment either.
+ * replaced, since `.` and `..` are left as they are, as is a name
+ * `encodeURIComponent` refuses. A `%2e` in a name is escaped to `%252e`, so
+ * it is no dot segment either.
  */
 export function pdfDocumentUrl(info: ViewerFileInfo): string {
   const { name } = info;
-  const segment = name === '' || name === '.' || name === '..' ? UNNAMED_SEGMENT : name;
+  let segment = UNNAMED_SEGMENT;
 
-  return `${info.mediaUrl}/${encodeURIComponent(segment)}`;
+  if (name !== '' && name !== '.' && name !== '..') {
+    try {
+      segment = encodeURIComponent(name);
+    } catch {
+      // A name with a lone surrogate, which only some file systems allow,
+      // has no UTF-8 form; the frame still opens, under the fallback name.
+    }
+  }
+
+  return `${info.mediaUrl}/${segment}`;
 }
 
 /**
