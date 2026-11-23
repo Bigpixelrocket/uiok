@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
 import { flushSync } from 'react-dom';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
@@ -307,21 +307,11 @@ describe('KeyLegendStrip', () => {
   });
 
   describe('with an alert', () => {
-    // Keys a person presses come at distinct times, and the strip tells the
-    // key that raised an alert from a later one by when each happened; jsdom
-    // stamps events with Date.now(), so the clock moves on before each key.
-    beforeEach(() => {
-      vi.useFakeTimers({ toFake: ['Date'] });
-    });
-    afterEach(() => {
-      vi.useRealTimers();
-    });
-
-    /** Presses `init`'s key on `target` a moment after the last. */
+    /** Presses `init`'s key on `target`. */
     const press = (target: Element, init: KeyboardEventInit): void => {
-      vi.setSystemTime(Date.now() + 50);
       fireEvent.keyDown(target, init);
     };
+
     /** A host that refuses x with an alert, which the legend asks it to clear. */
     function Refusing({ onDismiss }: { readonly onDismiss: () => void }): ReactElement {
       const [alert, setAlert] = useState<LegendAlert | null>(null);
@@ -506,6 +496,23 @@ describe('KeyLegendStrip', () => {
       const node = region.firstElementChild;
       rerender(<KeyLegendStrip alert={shown} verbs={verbs()} />);
       expect(region.firstElementChild).toBe(node);
+    });
+
+    it('dismisses on the next key in the same millisecond, under frozen timers', () => {
+      vi.useFakeTimers();
+      try {
+        const onDismiss = vi.fn();
+        render(<Refusing onDismiss={onDismiss} />);
+        const field = screen.getByRole('textbox', { name: 'Field' });
+
+        press(field, { key: 'x' });
+        expect(screen.getByRole('status').textContent).toBe('Nothing to open here');
+        press(field, { key: 'ArrowDown' });
+        expect(onDismiss).toHaveBeenCalledOnce();
+        expect(screen.getByRole('status').textContent).toBe('');
+      } finally {
+        vi.useRealTimers();
+      }
     });
 
     for (const legendLater of [false, true]) {

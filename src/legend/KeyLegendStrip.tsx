@@ -160,11 +160,12 @@ const MODIFIER_KEYS = new Set([
  * matters: the alert a key raises is a new object, which the dismissal of
  * the one before it does not name. Nor does the key that raised it dismiss
  * it, even when a host's earlier listener commits it at once (`flushSync`)
- * and the ref already holds it as the strip's listener runs: each alert is
- * stamped as it commits, on the clock the engine stamps events with (a new
- * `Event`'s `timeStamp`), and a key dismisses only an alert stamped before
- * the key went down. A tie counts as raised by the key, since a clock that
- * coarse cannot tell; the next key, later, dismisses it.
+ * and the ref already holds it as the strip's listener runs: each alert
+ * keeps the event being dispatched as it committed (`window.event`), and a
+ * key dismisses no alert its own event raised. Only a window listener in
+ * the capture phase, added before the strip's, can run first, and there
+ * the event is always set. No clock is read, so keys in the same
+ * millisecond, and a test's frozen timers, change nothing.
  */
 function useDismissOnKey(
   alert: LegendAlert | null,
@@ -173,23 +174,24 @@ function useDismissOnKey(
   const latest = useRef<{
     readonly alert: LegendAlert | null;
     readonly dismiss: typeof dismiss;
-    readonly raisedAt: number;
-  }>({ alert: null, dismiss, raisedAt: -Infinity });
+    readonly raisedBy: Event | null;
+  }>({ alert: null, dismiss, raisedBy: null });
 
   useLayoutEffect(() => {
     const now = latest.current;
-    const raisedAt = alert === now.alert ? now.raisedAt : new Event('uiok-legend-alert').timeStamp;
+    const raisedBy =
+      alert === now.alert ? now.raisedBy : ((window as { event?: Event }).event ?? null);
 
-    latest.current = { alert, dismiss, raisedAt };
+    latest.current = { alert, dismiss, raisedBy };
   });
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
-      const { alert: showing, dismiss: run, raisedAt } = latest.current;
+      const { alert: showing, dismiss: run, raisedBy } = latest.current;
 
       if (showing === null || MODIFIER_KEYS.has(event.key)) return;
       // Raised while this key was going down: the key's, not the one it dismisses.
-      if (raisedAt >= event.timeStamp) return;
+      if (raisedBy === event) return;
       run?.(showing);
     };
 
