@@ -245,8 +245,9 @@ export interface FieldGroupProps {
 }
 
 /**
- * A group of choices under its legend, 4px apart, or in `columns`. Draws
- * `fieldset.field-group` (`.field-columns`).
+ * A group of choices under its legend, 4px apart, or in `columns`, described
+ * by its problem and note (`aria-describedby`); a `note` or `problem` of
+ * `false` draws nothing. Draws `fieldset.field-group` (`.field-columns`).
  */
 export function FieldGroup({
   legend,
@@ -258,17 +259,21 @@ export function FieldGroup({
 }: FieldGroupProps): ReactElement {
   const made = useId();
   const hasProblem = problem !== undefined && problem !== null && problem !== false;
+  const hasNote = note !== undefined && note !== null && note !== false;
+  const describedBy = [hasProblem ? `${made}-problem` : '', hasNote ? `${made}-note` : '']
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <fieldset
-      aria-describedby={hasProblem ? `${made}-problem` : undefined}
+      aria-describedby={describedBy || undefined}
       className={columns === undefined ? 'field-group' : 'field-group field-columns'}
       style={columns === undefined ? undefined : ({ '--field-columns': columns } as CSSProperties)}
     >
       <legend className={legendHidden ? 'visually-hidden' : undefined}>{legend}</legend>
       {children}
       {hasProblem ? <FieldProblem id={`${made}-problem`}>{problem}</FieldProblem> : null}
-      {note === undefined || note === null ? null : <FieldNote>{note}</FieldNote>}
+      {hasNote ? <FieldNote id={`${made}-note`}>{note}</FieldNote> : null}
     </fieldset>
   );
 }
