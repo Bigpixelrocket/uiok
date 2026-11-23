@@ -65,7 +65,9 @@ export function PaneMessage({
   const [ledByChild, setLedByChild] = useState(false);
 
   useLayoutEffect(() => {
-    let first = words.current?.firstChild ?? null;
+    // With `icon`, the first node is the component's own glyph: no child
+    // leads, and nothing is kept for when `icon` goes.
+    let first = Icon === undefined ? (words.current?.firstChild ?? null) : null;
 
     while (first !== null && first.nodeType === Node.TEXT_NODE && first.nodeValue?.trim() === '') {
       first = first.nextSibling;
@@ -73,7 +75,7 @@ export function PaneMessage({
     const led = first !== null && first.nodeName.toLowerCase() === 'svg';
 
     setLedByChild((now) => (now === led ? now : led));
-  }, [children]);
+  }, [Icon, children]);
 
   const led = Icon !== undefined || ledByChild;
   const message = (

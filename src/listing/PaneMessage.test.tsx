@@ -128,4 +128,22 @@ describe('PaneMessage and PageNote outside a listing scope', () => {
       screen.getByTestId('leading').parentElement?.classList.contains('pane-message-led')
     ).toBe(true);
   });
+
+  it('drops the indent and gives the tone its glyph back once the icon goes, the words the same', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const words = <>Slow query</>;
+    const { rerender } = render(
+      <PaneMessage icon={Info} tone="warning">
+        {words}
+      </PaneMessage>
+    );
+    const message = screen.getByText('Slow query').closest('.pane-message') as HTMLElement;
+    const box = message.querySelector('.pane-message-text') as HTMLElement;
+
+    expect(box.classList.contains('pane-message-led')).toBe(true);
+    rerender(<PaneMessage tone="warning">{words}</PaneMessage>);
+    expect(box.classList.contains('pane-message-led')).toBe(false);
+    expect(declaredValues(box, 'padding-inline-start')).toEqual([]);
+    expect(drawsToneGlyph(message)).toBe(true);
+  });
 });
