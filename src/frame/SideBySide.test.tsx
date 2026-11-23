@@ -372,7 +372,7 @@ describe('SideBySide', () => {
       expect(reads).toBe(before);
     });
 
-    it('measures no content under the floor, nor in the hold when only the width moved', () => {
+    it('measures no content under the floor, nor in the hold when only the width moved', async () => {
       observe();
       const { container, rerender } = render(pair(640));
       const root = container.querySelector('.side-by-side') as HTMLElement;
@@ -404,7 +404,10 @@ describe('SideBySide', () => {
       widen(root, 630);
       measured = reads;
       rerender(pair(640, 'settings and more'));
-      expect(reads).toBeGreaterThan(measured);
+      // Measured once for the change, both parts read once: the watch on
+      // the content, given its chance, does not measure it again.
+      await settle();
+      expect(reads).toBe(measured + 2);
     });
 
     it('measures once as it mounts', () => {

@@ -108,6 +108,9 @@ export function SideBySide({
   const needKnown = useRef(false);
   // The measure of the latest render, given whether the content changed.
   const measureNow = useRef<(contentChanged: boolean) => void>(() => undefined);
+  // The watch on the content's own changes, whose records a measure in the
+  // commit that made them takes, so the change is measured once.
+  const contentWatch = useRef<MutationObserver | null>(null);
   // The parts the last commit drew, to tell new parts from a new `from`.
   const drawn = useRef<readonly [ReactNode, ReactNode]>([first, second]);
 
@@ -165,6 +168,8 @@ export function SideBySide({
     // words only, never an attribute.
     const content = new MutationObserver(() => measure(true));
 
+    contentWatch.current = content;
+
     content.observe(element, { characterData: true, childList: true, subtree: true });
     // Optional: jsdom has no ResizeObserver.
     if (typeof ResizeObserver === 'undefined') return () => content.disconnect();
@@ -187,7 +192,11 @@ export function SideBySide({
     const changed = drawn.current[0] !== first || drawn.current[1] !== second;
 
     drawn.current = [first, second];
-    measureNow.current(changed);
+    // This commit's own changes, measured here, are not measured again
+    // when the watch would deliver them.
+    const pending = (contentWatch.current?.takeRecords().length ?? 0) > 0;
+
+    measureNow.current(changed || pending);
   }, [from, first, second]);
 
   return (
