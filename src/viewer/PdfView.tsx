@@ -5,14 +5,30 @@ import type { ViewerFileInfo } from './types.js';
 import type { ViewerViewProps } from './ViewerViews.js';
 
 /**
+ * The last segment for a file whose name is empty or a dot segment (`.` or
+ * `..`), which the URL parser would resolve to the media URL's parent; it
+ * only feeds the PDF viewer's title.
+ */
+const UNNAMED_SEGMENT = 'document.pdf';
+
+/**
  * Where the PDF view loads the document: the file's media URL with its name
  * as a last segment, which Chromium's PDF viewer shows as the toolbar's
  * title (a document's own title metadata wins). The reader's media URL must
- * therefore serve the file whatever segment follows it (`ViewerFileInfo`'s
+ * therefore serve the file whatever segment follows it, and carry no query
+ * or fragment, which the segment would land in (`ViewerFileInfo`'s
  * `mediaUrl`); a `blob:` URL cannot, since its path is fixed.
+ *
+ * The name stays one segment below the media URL: `encodeURIComponent`
+ * escapes `/`, `?`, and `#`, and a name that is empty or a dot segment is
+ * replaced, since `.` and `..` are left as they are. A `%2e` in a name is
+ * escaped to `%252e`, so it is no dot segment either.
  */
 export function pdfDocumentUrl(info: ViewerFileInfo): string {
-  return `${info.mediaUrl}/${encodeURIComponent(info.name)}`;
+  const { name } = info;
+  const segment = name === '' || name === '.' || name === '..' ? UNNAMED_SEGMENT : name;
+
+  return `${info.mediaUrl}/${encodeURIComponent(segment)}`;
 }
 
 /**

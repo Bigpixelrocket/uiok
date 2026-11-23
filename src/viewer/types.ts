@@ -55,8 +55,9 @@ export interface ViewerFileOrigin {
  * loadable for as long as this generation is open, mode switches included,
  * and retired by the reader after it (the PDF
  * view appends `/<name>` to it, so a PDF's URL must serve the file whatever
- * last segment follows, and frames it unsandboxed, so it must answer with
- * the PDF alone); `origin` is set only for a copy.
+ * last segment follows and carry no query or fragment, and frames it
+ * unsandboxed, so it must answer with the PDF alone); `origin` is set only
+ * for a copy.
  */
 export interface ViewerFileInfo {
   readonly generation: number;
