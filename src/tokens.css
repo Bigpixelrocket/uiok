@@ -144,6 +144,10 @@
   --traffic-light-inset: 72px;
   --sidebar-width: 240px;
 
+  /* A framed terminal's height when its host gives none (TerminalBox, whose
+     TERMINAL_BOX_HEIGHT it matches): a dialog's console, ten lines and some. */
+  --terminal-box-default-height: 200px;
+
   /* Focus. One ring for everything focusable: a 2px accent line outside the
      control at focus-offset, so it follows the control's corner one pixel
      out. focus-offset-flush puts it on the control's edge, for a compact

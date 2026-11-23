@@ -195,7 +195,8 @@
 }
 
 /* A terminal in a box of its own (TerminalBox). Framed, it is a console of
-   a fixed height (--terminal-box-height, which the component sets) in the
+   a fixed height (--terminal-box-height, which the component sets, else
+   --terminal-box-default-height, 200px, for a box drawn by class alone) in the
    strong hairline a well wears, on the terminal's ground; filling, it
    takes its parent's room with no frame. Either way it pads the mount by
    the 8px every host adds, so the text starts 12px in. */
@@ -203,7 +204,7 @@
   display: flex;
   flex: none;
   min-width: 0;
-  height: var(--terminal-box-height);
+  height: var(--terminal-box-height, var(--terminal-box-default-height));
   padding: var(--space-4);
   overflow: hidden;
   border: var(--line) solid var(--border-strong);

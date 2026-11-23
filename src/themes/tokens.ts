@@ -1534,6 +1534,7 @@ const BASE_TOKEN_NAMES = [
   '--shell-header-height',
   '--traffic-light-inset',
   '--sidebar-width',
+  '--terminal-box-default-height',
   '--focus-ring-width',
   '--focus-offset',
   '--focus-offset-flush',
