@@ -1,9 +1,10 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { createRoot } from 'react-dom/client';
 import { useState, type ReactNode } from 'react';
-import { CircleAlert, Server } from 'lucide-react';
+import { CircleAlert, Server, Settings2 } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { Switch } from '../field/Switch.js';
 import { Listing, Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
 import { AppRoot, PageSlot, SpacePanel } from './AppRoot.js';
@@ -597,6 +598,19 @@ describe('TreeTool', () => {
 
     expect(tool.className).toBe('tree-tool danger');
     expect(tool.textContent).toBe('Homebrew is not installed.Retry');
+  });
+
+  it('shows a note’s words whole in a tooltip while the sidebar cuts them', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <TreeTool icon={Settings2} kind="note" level={1} text="Services need Homebrew to install." />
+    );
+    const words = screen.getByText('Services need Homebrew to install.');
+
+    expect(words.dataset.tooltip).toBe('Services need Homebrew to install.');
+    // Only while cut: the layer opens it only when the words overflow their box.
+    expect(words.hasAttribute('data-tooltip-cut')).toBe(true);
+    expect(declaredValues(words, 'text-overflow').at(-1)).toBe('ellipsis');
   });
 
   it('holds a filter field that reports each edit', () => {

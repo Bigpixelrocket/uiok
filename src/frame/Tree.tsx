@@ -363,7 +363,7 @@ export interface TreeToolProps {
   readonly level?: number;
   /** Its glyph, before the words. */
   readonly icon?: LucideIcon;
-  /** Its words. */
+  /** Its words; words in a string the sidebar cuts show whole in a tooltip. */
   readonly text?: ReactNode;
   /**
    * Its key among the tree's rows, which joins it to the pane's cursor
@@ -448,6 +448,8 @@ export function TreeTool({
         <span
           className="tree-note-text"
           role={rowKey !== undefined && kind === 'danger' ? 'alert' : undefined}
+          // Words a narrow sidebar cuts show whole in a tooltip, only while cut.
+          {...(typeof text === 'string' ? cutTooltip(text) : {})}
         >
           {text}
         </span>
