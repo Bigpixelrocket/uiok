@@ -143,7 +143,8 @@ function HexView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): Re
   const rowsElement = useRef<HTMLDivElement | null>(null);
   const jumpField = useRef<HTMLInputElement | null>(null);
   const wheelRemainder = useRef(0);
-  const drag = useRef<{ timer: ReturnType<typeof setInterval> | null } | null>(null);
+  // The drag in progress, which owns its window listeners and scroll timer.
+  const drag = useRef<{ readonly stop: () => void } | null>(null);
 
   const digits = offsetDigits(info.sizeBytes);
   const top = screen?.top ?? 0;
@@ -313,8 +314,9 @@ function HexView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): Re
     focusQuietly(rowsElement.current);
   }, []);
 
+  /** Ends the drag in progress, if any: its scroll timer and window listeners go with it. */
   const endDrag = useCallback(() => {
-    if (drag.current?.timer) clearInterval(drag.current.timer);
+    drag.current?.stop();
     drag.current = null;
   }, []);
 
@@ -322,6 +324,9 @@ function HexView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): Re
 
   const onMouseDown = (event: ReactMouseEvent<HTMLDivElement>): void => {
     if (event.button !== 0) return;
+
+    // A drag whose mouseup never came (released outside the window) ends here.
+    endDrag();
 
     // The page's own selection would cover only the rows in the DOM, so the
     // view keeps its own and the native one never starts.
@@ -343,7 +348,6 @@ function HexView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): Re
       y: event.clientY,
       timer: null as ReturnType<typeof setInterval> | null
     };
-    drag.current = state;
 
     const extend = (): void => {
       const focus = byteAt(state.x, state.y);
@@ -366,12 +370,16 @@ function HexView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): Re
         state.timer = null;
       }
     };
-    const onUp = (): void => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      endDrag();
-    };
+    const onUp = (): void => endDrag();
 
+    drag.current = {
+      stop: () => {
+        if (state.timer !== null) clearInterval(state.timer);
+        state.timer = null;
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+      }
+    };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
   };

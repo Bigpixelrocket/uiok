@@ -184,6 +184,19 @@ function copy(): ReturnType<typeof vi.fn> {
   return setData;
 }
 
+/** The window's mousemove and mouseup listeners added from now on and not yet removed. */
+function liveDragListeners(): () => { mousemove: number; mouseup: number } {
+  const add = vi.spyOn(window, 'addEventListener');
+  const remove = vi.spyOn(window, 'removeEventListener');
+  return () => {
+    const live = (type: string): number => {
+      const removed = new Set(remove.mock.calls.filter(([t]) => t === type).map(([, l]) => l));
+      return add.mock.calls.filter(([t, l]) => t === type && !removed.has(l)).length;
+    };
+    return { mousemove: live('mousemove'), mouseup: live('mouseup') };
+  };
+}
+
 describe('TextView', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -471,6 +484,68 @@ describe('TextView', () => {
     }
 
     expect(copy()).toHaveBeenCalledWith('text/plain', '\nbeta\ngamma');
+  });
+
+  it('ends a drag with the view: no listener or scroll timer survives an unmount', async () => {
+    const bytes = new TextEncoder().encode('alpha\nbeta\ngamma\n');
+    const { unmount } = render(
+      <TextView reader={bridgeOver(memory(bytes), bytes.length)} info={infoFor(bytes.length)} />
+    );
+    await screen.findByText('gamma');
+    vi.spyOn(textBox(), 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 400, height: 200 })
+    );
+    const firstRow = document.querySelector('.text-row');
+    document.elementFromPoint = () => firstRow;
+    const live = liveDragListeners();
+    vi.useFakeTimers();
+
+    try {
+      fireEvent.mouseDown(textBox(), { button: 0, clientX: 5, clientY: 5 });
+      // Held below the box: the drag scrolls on a timer.
+      fireEvent.mouseMove(window, { clientX: 5, clientY: 300 });
+      unmount();
+      expect(live()).toEqual({ mousemove: 0, mouseup: 0 });
+
+      const interval = vi.spyOn(globalThis, 'setInterval');
+      fireEvent.mouseMove(window, { clientX: 5, clientY: 100 });
+      fireEvent.mouseMove(window, { clientX: 5, clientY: 300 });
+      fireEvent.mouseUp(window);
+      expect(interval).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+      Reflect.deleteProperty(document, 'elementFromPoint');
+    }
+  });
+
+  it('ends a drag whose mouseup never came when the next one starts', async () => {
+    const bytes = new TextEncoder().encode('alpha\nbeta\ngamma\n');
+    render(
+      <TextView reader={bridgeOver(memory(bytes), bytes.length)} info={infoFor(bytes.length)} />
+    );
+    await screen.findByText('gamma');
+    vi.spyOn(textBox(), 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 400, height: 200 })
+    );
+    const firstRow = document.querySelector('.text-row');
+    document.elementFromPoint = () => firstRow;
+    const live = liveDragListeners();
+    vi.useFakeTimers();
+
+    try {
+      fireEvent.mouseDown(textBox(), { button: 0, clientX: 5, clientY: 5 });
+      fireEvent.mouseMove(window, { clientX: 5, clientY: 300 });
+      fireEvent.mouseDown(textBox(), { button: 0, clientX: 5, clientY: 5 });
+      expect(live()).toEqual({ mousemove: 1, mouseup: 1 });
+      expect(vi.getTimerCount()).toBe(0);
+
+      fireEvent.mouseUp(window);
+      expect(live()).toEqual({ mousemove: 0, mouseup: 0 });
+    } finally {
+      vi.useRealTimers();
+      Reflect.deleteProperty(document, 'elementFromPoint');
+    }
   });
 
   it('pages wrapped text by the lines in view, so no wrapped line is skipped', async () => {

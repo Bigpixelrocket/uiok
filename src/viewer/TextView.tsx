@@ -144,7 +144,8 @@ function TextView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): R
 
   const rowsElement = useRef<HTMLDivElement | null>(null);
   const wheelRemainder = useRef(0);
-  const drag = useRef<{ y: number; timer: ReturnType<typeof setInterval> | null } | null>(null);
+  // The drag in progress, which owns its window listeners and scroll timer.
+  const drag = useRef<{ readonly stop: () => void } | null>(null);
   const shown = useRef<readonly ScreenRow[]>([]);
 
   const contentStart = layout?.contentStart ?? 0;
@@ -467,8 +468,9 @@ function TextView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): R
     focusQuietly(rowsElement.current);
   }, []);
 
+  /** Ends the drag in progress, if any: its scroll timer and window listeners go with it. */
   const endDrag = useCallback(() => {
-    if (drag.current?.timer) clearInterval(drag.current.timer);
+    drag.current?.stop();
     drag.current = null;
   }, []);
 
@@ -476,6 +478,9 @@ function TextView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): R
 
   const onMouseDown = (event: ReactMouseEvent<HTMLDivElement>): void => {
     if (event.button !== 0) return;
+
+    // A drag whose mouseup never came (released outside the window) ends here.
+    endDrag();
 
     // The page's own selection would cover only the rows in the DOM, so the
     // view keeps its own and the native one never starts.
@@ -509,7 +514,6 @@ function TextView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): R
       y: event.clientY,
       timer: null as ReturnType<typeof setInterval> | null
     };
-    drag.current = state;
 
     const extend = (clientX: number, clientY: number): void => {
       const focus = pointAt(clientX, clientY);
@@ -532,12 +536,16 @@ function TextView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): R
         state.timer = null;
       }
     };
-    const onUp = (): void => {
-      window.removeEventListener('mousemove', onMove);
-      window.removeEventListener('mouseup', onUp);
-      endDrag();
-    };
+    const onUp = (): void => endDrag();
 
+    drag.current = {
+      stop: () => {
+        if (state.timer !== null) clearInterval(state.timer);
+        state.timer = null;
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+      }
+    };
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp);
   };
