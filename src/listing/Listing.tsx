@@ -547,7 +547,8 @@ export interface RowProps {
   /**
    * More than the name says, in the host's words: what a narrow pane's
    * dropped columns held ("running · 5432"). The name's tooltip at every
-   * width, under the whole name (a name in markup by its drawn words), in
+   * width, under the whole name (a name in markup by its words as assistive
+   * technology reads them, kept current as they change), in
    * place of the tooltip a cut name shows alone; its words are also read
    * as the description (below).
    */
@@ -555,8 +556,9 @@ export interface RowProps {
   /**
    * Read by assistive technology before `nameTip`'s words, and never shown:
    * what kind of item the row is ("Database"), never the name itself. The
-   * two are the description of the name's cell, of the row when it takes
-   * the focus (`focusable`, `tabbable`), and of a radio row's radio.
+   * two are the description of the name's cell, of the row when it or its
+   * controls take the focus (`focusable`, `tabbable`), and of a radio row's
+   * radio.
    */
   readonly nameDescription?: string;
   readonly className?: string;
@@ -632,6 +634,39 @@ function nameTooltip(name: ReactNode, nameText: string | null, tip: string | und
   });
 }
 
+/**
+ * A marked-up name's words as assistive technology reads them: every text
+ * node but those under an `aria-hidden="true"` or `hidden` element, its
+ * runs of space made one. So a name drawn twice, once for sight
+ * (`aria-hidden`) and once read whole (`.visually-hidden`), as `NameCut`
+ * draws a cut name, gives its words once, the whole name; a glyph or word
+ * drawn for sight alone is left out; and words given to assistive
+ * technology alone (`.visually-hidden`) are read, as they are part of the
+ * name the row's description follows.
+ */
+function readName(box: Node): string {
+  let words = '';
+  const walk = (node: Node): void => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      words += node.nodeValue ?? '';
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const element = node as Element;
+
+    if (
+      node !== box &&
+      (element.getAttribute('aria-hidden') === 'true' || element.hasAttribute('hidden'))
+    ) {
+      return;
+    }
+    for (const child of node.childNodes) walk(child);
+  };
+
+  walk(box);
+  return words.replace(/\s+/g, ' ').trim();
+}
+
 /** What a row's name is described by: the host's description, then its tip; none when neither. */
 function nameDescribed(description: string | undefined, tip: string | undefined) {
   const parts = [description, tip].filter((part) => part !== undefined && part !== '');
@@ -699,15 +734,37 @@ export function Row({
     return () => cursor.rowsChanged?.();
   }, [cursor, rowKey]);
 
-  // Whenever the name is drawn again: a name in markup is a new element
-  // each time its host draws it.
+  // Whenever the name is drawn again (a name in markup is a new element
+  // each time its host draws it), and whenever its words change on their
+  // own: a component inside the name drawing new words, or showing or
+  // hiding some, with no new `name` from the host.
+  const picked = radio !== undefined;
+
   useLayoutEffect(() => {
-    if (!tipped || typeof name === 'string') return;
+    const box = nameBox.current;
 
-    const text = nameBox.current?.textContent ?? '';
+    if (!tipped || typeof name === 'string' || box === null) return undefined;
 
-    setDrawnName((now) => (now === text ? now : text));
-  }, [tipped, name]);
+    const read = (): void => {
+      const text = readName(box);
+
+      setDrawnName((now) => (now === text ? now : text));
+    };
+
+    read();
+    const observer = new MutationObserver(read);
+
+    // Only the attributes that hide words: the tooltip this reading sets
+    // on the box is an attribute too, and must not wake it again.
+    observer.observe(box, {
+      attributes: true,
+      attributeFilter: ['aria-hidden', 'hidden'],
+      characterData: true,
+      childList: true,
+      subtree: true
+    });
+    return () => observer.disconnect();
+  }, [tipped, name, picked]);
 
   return (
     <InListingRowContext.Provider value>

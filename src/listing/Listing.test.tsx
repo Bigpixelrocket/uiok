@@ -1,5 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
-import { Profiler } from 'react';
+import { Profiler, useState, type ReactElement, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,6 +31,9 @@ import {
 } from './Listing.js';
 import { TimelineCell, TimelineScale } from './Timeline.js';
 import { MarkedText } from '../text/MarkedText.js';
+import { NameCut } from '../namecut/NameCut.js';
+import { nameParts } from '../namecut/NameCut.logic.js';
+import { VisuallyHidden } from '../VisuallyHidden.js';
 
 const styles = readStylesheet('src/styles.css');
 
@@ -513,6 +516,65 @@ describe('a row', () => {
     expect(screen.getByRole('cell', { name: 'postgres' }).dataset.tooltip).toBe(
       'postgres\nrunning · 5432'
     );
+  });
+
+  describe('a marked-up name’s words in the tip’s tooltip', () => {
+    const tipOf = (name: ReactNode) => {
+      render(
+        <RowCursorContext value={cursorOn('a', [])}>
+          <Listing columns={[]} grid="20px 1fr" title="Services">
+            <Row name={name} nameTip="Running" rowKey="a" />
+          </Listing>
+        </RowCursorContext>
+      );
+      return () =>
+        (document.querySelector('[data-row-key="a"] .row-name') as HTMLElement).dataset.tooltip;
+    };
+
+    it('follows a name a component inside it renames on its own', async () => {
+      let rename: (to: string) => void = () => undefined;
+      function Renaming(): ReactElement {
+        const [name, setName] = useState('Old');
+
+        rename = setName;
+        return <span>{name}</span>;
+      }
+      const tip = tipOf(<Renaming />);
+
+      expect(tip()).toBe('Old\nRunning');
+      await act(async () => rename('New'));
+      expect(tip()).toBe('New\nRunning');
+    });
+
+    it('leaves out words drawn for sight alone, and keeps words read alone', async () => {
+      let hide: (hidden: boolean) => void = () => undefined;
+      function Flagged(): ReactElement {
+        const [hidden, setHidden] = useState(true);
+
+        hide = setHidden;
+        return (
+          <>
+            <span aria-hidden={hidden}>Draft </span>
+            <VisuallyHidden>Database </VisuallyHidden>
+            Postgres
+          </>
+        );
+      }
+      const tip = tipOf(<Flagged />);
+
+      expect(tip()).toBe('Database Postgres\nRunning');
+      // Shown to assistive technology too, its words join the name.
+      await act(async () => hide(false));
+      expect(tip()).toBe('Draft Database Postgres\nRunning');
+    });
+
+    it('reads a cut NameCut name once, whole', () => {
+      const tip = tipOf(
+        <NameCut parts={nameParts([{ name: 'quarterly-report-final-version-2.sql' }])} />
+      );
+
+      expect(tip()).toBe('quarterly-report-final-version-2.sql\nRunning');
+    });
   });
 
   it('takes the cursor on a secondary click, then hands the click and its key to the app', () => {
