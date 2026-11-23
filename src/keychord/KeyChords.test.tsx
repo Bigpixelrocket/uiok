@@ -26,6 +26,12 @@ describe('KeyChords', () => {
     expect(spoken).toEqual(['Shift Command N', 'or', 'Command N']);
   });
 
+  it('draws nothing for no chords', () => {
+    const { container } = render(<KeyChords chords={[]} />);
+
+    expect(container.innerHTML).toBe('');
+  });
+
   it('draws one chord alone, and takes the word from the key labels', () => {
     const { container, rerender } = render(<KeyChords chords={[{ key: 'k', meta: true }]} />);
 

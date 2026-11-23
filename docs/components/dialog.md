@@ -354,7 +354,7 @@ import { FieldGrid, FieldRow, TextField } from '@bigpixelrocket/uiok/field';
 <SectionedDialog
   icon={Pencil}
   labelId="edit-command"
-  legend={{ leave: {}, primary: { label: 'Save and Restart', onRun: save } }}
+  legend={{ leave: { label: 'Cancel' }, primary: { label: 'Save and Restart', onRun: save } }}
   notice={
     failure === null ? null : (
       <Notice role="alert" tone="danger">

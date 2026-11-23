@@ -72,5 +72,8 @@ describe('PaneMessage and PageNote outside a listing scope', () => {
     expect(declaredValues(screen.getByTestId('own-warning'), 'color').at(-1)).toBe(
       'var(--warning)'
     );
+    expect(declaredValues(message('Refused').querySelector('svg') as Element, 'color').at(-1)).toBe(
+      'var(--danger)'
+    );
   });
 });

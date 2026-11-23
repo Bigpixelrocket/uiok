@@ -1020,7 +1020,7 @@ button.crumb-label.crumb-siblings > svg {
    and an app's own placement of the label wins. */
 :where(
     .pane-listing:is(.listing-root, .listing-root *):has(> .row):not(
-        :has(> .row > .row-icon:not(:empty))
+        :has(> .row > .row-icon:not(:empty), > .row > .row-pick)
       )
   )
   > .pane-columns
@@ -1736,6 +1736,13 @@ button.crumb-label.crumb-siblings > svg {
 :where(.listing-root) .pane-message.warning > .pane-message-text > svg:first-child {
   flex: none;
   color: var(--warning);
+}
+
+/* A refusal's own glyph takes the danger tone, as the drawn one does. */
+:where(.listing-root) .pane-message.danger > svg:first-child,
+:where(.listing-root) .pane-message.danger > .pane-message-text > svg:first-child {
+  flex: none;
+  color: var(--danger);
 }
 
 /* A line that says a listing has no rows (`.empty`, Listing's `empty`)
@@ -2685,7 +2692,8 @@ button.crumb-label.crumb-siblings > svg {
 @media (prefers-reduced-motion: reduce) {
   :where(.listing-root) .pane:is(.bell-0, .bell-1) .row.cursor {
     animation: none;
-    background: var(--selected-bg);
+    --row-fill: var(--selected-bg);
+    background: var(--row-fill);
   }
 
   :where(.listing-root)

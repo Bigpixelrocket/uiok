@@ -156,8 +156,10 @@ export interface KeyChordsProps {
  * on an element round it to draw each chord as a key cap. Draws
  * `.keychords` with `.keychords-or` between the chords.
  */
-export function KeyChords({ chords, tone }: KeyChordsProps): ReactElement {
+export function KeyChords({ chords, tone }: KeyChordsProps): ReactElement | null {
   const { keys } = useLabels();
+
+  if (chords.length === 0) return null;
 
   return (
     <span className="keychords">

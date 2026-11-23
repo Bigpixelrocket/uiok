@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
+
 import { Cell, Listing, Row } from './Listing.js';
 
 describe("Row's radio", () => {
@@ -78,5 +80,18 @@ describe("Row's radio", () => {
     );
 
     expect((screen.getByRole('radio', { name: 'shop' }) as HTMLInputElement).tabIndex).toBe(0);
+  });
+
+  it("keeps the strip's name label over the radio and the name, as over an icon and a name", () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="listing-root"><div class="pane-listing">
+      <div class="pane-columns"><span class="row-name">Database</span></div>
+      <div class="row"><span class="row-name row-pick"><input type="radio" /><span>shop</span></span></div>
+    </div></div>`;
+
+    expect(
+      declaredValues(document.querySelector('.pane-columns > .row-name') as Element, 'grid-column')
+    ).not.toContain('2');
+    document.body.innerHTML = '';
   });
 });
