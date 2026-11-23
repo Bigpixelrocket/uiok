@@ -107,6 +107,8 @@ function ProgressConsole() {
 
   useEffect(() => {
     let done = 0;
+    // Start clean: a development build runs this effect twice.
+    ref.current?.reset();
     ref.current?.write('\u001b[2m❯\u001b[0m mise install php@8.5.4\r\n');
     const timer = window.setInterval(() => {
       done = done >= 31 ? 0 : done + 1;
