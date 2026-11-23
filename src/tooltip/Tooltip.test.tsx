@@ -81,7 +81,7 @@ describe('TooltipLayer', () => {
     fireEvent.mouseOver(screen.getByText('plain'));
     fireEvent.mouseOver(button);
     rest();
-    expect(shown()).toBe('New Tab⌘T');
+    expect(shown()).toBe('New Tab ⌘T');
   });
 
   it('hangs from the element in full screen, where nothing on the body is drawn', () => {

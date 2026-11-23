@@ -210,6 +210,9 @@ export function TooltipLayer(): ReactElement | null {
   return createPortal(
     <div className={shown.value ? 'tooltip tooltip-value' : 'tooltip'} ref={tipRef} role="tooltip">
       <span className="tooltip-label">{shown.label}</span>
+      {/* A word apart in the tooltip's name ("New Tab ⌘T"); a space between
+          flex items draws nothing, and the gap draws the room. */}
+      {shown.chord !== null || shown.shortcut !== null ? ' ' : null}
       {shown.chord !== null ? (
         <span className="tooltip-shortcut tooltip-chord">
           <KeyChord chord={shown.chord} />
