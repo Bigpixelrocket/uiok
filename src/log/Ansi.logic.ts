@@ -36,31 +36,104 @@ interface Style {
   inverse?: boolean;
 }
 
-/**
- * Every escape sequence a log line may carry: a CSI sequence (`ESC [`
- * parameters, intermediates, a final byte), an OSC string (`ESC ]` to BEL
- * or ST), or a lone two-byte escape. Only an SGR (`m`) changes the style;
- * every other one is dropped, so a cursor move or a title never shows.
- */
-const ESCAPE = new RegExp(
-  // The escape, BEL, and ST bytes are what the pattern exists to find.
-  // eslint-disable-next-line no-control-regex
-  '\u001b(?:\\[([0-9;:?]*)[ -/]*([@-~])|\\][^\u0007\u001b]*(?:\u0007|\u001b\\\\)?|[@-Z\\\\-_])',
-  'g'
-);
+const ESC = 0x1b;
+const BEL = 0x07;
 
-/** Applies one SGR's parameters to `style`, skipping the extended colours (38, 48), which name no ANSI colour. */
+/** Whether `code` lies in the inclusive byte range `low`–`high`. */
+function within(code: number, low: number, high: number): boolean {
+  return code >= low && code <= high;
+}
+
+/** Index of the first byte at or after `from` that is not in `low`–`high`. */
+function skipRange(text: string, from: number, low: number, high: number): number {
+  let at = from;
+  while (at < text.length && within(text.charCodeAt(at), low, high)) at += 1;
+  return at;
+}
+
+/**
+ * The end of a control string (OSC, DCS, SOS, PM, APC) whose payload starts
+ * at `from`: past its BEL or ST (`ESC \`), at an escape that starts the next
+ * sequence, or at the end of the text when it never ends.
+ */
+function controlStringEnd(text: string, from: number): number {
+  for (let at = from; at < text.length; at += 1) {
+    const code = text.charCodeAt(at);
+    if (code === BEL) return at + 1;
+    if (code === ESC) return text.charCodeAt(at + 1) === 0x5c ? at + 2 : at;
+  }
+  return text.length;
+}
+
+/** One escape sequence read at an `ESC`: where it ends, and the SGR parameters when it is one. */
+interface Escape {
+  readonly end: number;
+  readonly sgr?: string;
+}
+
+/**
+ * Reads the escape sequence starting at the `ESC` at `start`, after ECMA-48:
+ * a CSI (`ESC [`, parameter bytes `0`–`?`, intermediate bytes space–`/`, a
+ * final byte `@`–`~`); an OSC (`ESC ]`) or DCS, SOS, PM, or APC (`ESC P`,
+ * `X`, `^`, `_`) string to BEL or ST; or any other escape (intermediates
+ * then one final byte). A sequence cut off by the end of the text runs to
+ * the end; one broken by a control byte ends before it, so the `ESC` never
+ * shows. Only a CSI ending in `m`, with no intermediate and no private
+ * marker (`<`, `=`, `>`, `?`), is an SGR.
+ */
+function readEscape(text: string, start: number): Escape {
+  const kind = text.charCodeAt(start + 1);
+
+  if (kind === 0x5b) {
+    const parametersEnd = skipRange(text, start + 2, 0x30, 0x3f);
+    const intermediatesEnd = skipRange(text, parametersEnd, 0x20, 0x2f);
+    if (intermediatesEnd >= text.length) return { end: text.length };
+    const final = text.charCodeAt(intermediatesEnd);
+    if (!within(final, 0x40, 0x7e)) return { end: intermediatesEnd };
+    const parameters = text.slice(start + 2, parametersEnd);
+    const sgr =
+      final === 0x6d && intermediatesEnd === parametersEnd && !/[<=>?]/.test(parameters)
+        ? parameters
+        : undefined;
+    return sgr === undefined ? { end: intermediatesEnd + 1 } : { end: intermediatesEnd + 1, sgr };
+  }
+  if (kind === 0x5d || kind === 0x50 || kind === 0x58 || kind === 0x5e || kind === 0x5f) {
+    return { end: controlStringEnd(text, start + 2) };
+  }
+
+  const intermediatesEnd = skipRange(text, start + 1, 0x20, 0x2f);
+  if (intermediatesEnd >= text.length) return { end: text.length };
+  return within(text.charCodeAt(intermediatesEnd), 0x30, 0x7e)
+    ? { end: intermediatesEnd + 1 }
+    : { end: intermediatesEnd };
+}
+
+/**
+ * Applies one SGR's parameters to `style`. Parameters split on `;`; a
+ * group joined by `:` is one parameter with subparameters (`4:3` is a
+ * curly underline, `4:0` underline off, `38:2::r:g:b` a colour). Extended colours (38, 48, and
+ * the underline colour 58) name no ANSI colour, so each is skipped whole,
+ * in either form; any other colon group but underline's is ignored.
+ */
 function applySgr(style: Style, parameters: string): Style {
-  const codes = parameters === '' ? [0] : parameters.split(/[;:]/).map((part) => Number(part || 0));
+  const groups = parameters.split(';');
   let next: Style = { ...style };
 
-  for (let index = 0; index < codes.length; index += 1) {
-    const code = codes[index] ?? 0;
+  for (let index = 0; index < groups.length; index += 1) {
+    const group = groups[index] ?? '';
 
-    if (code === 38 || code === 48) {
+    if (group.includes(':')) {
+      const [main, kind] = group.split(':', 2).map((part) => Number(part || 0));
+      if (main === 4 && kind === 0) next.underline = false;
+      else if (main === 4 && kind !== undefined && kind >= 1 && kind <= 5) next.underline = true;
+      continue;
+    }
+
+    const code = Number(group || 0);
+    if (code === 38 || code === 48 || code === 58) {
       // 38;5;n or 38;2;r;g;b: the colour is the theme's to choose, so it is skipped whole.
-      const mode = codes[index + 1];
-      index += mode === 5 ? 2 : mode === 2 ? 4 : 1;
+      const mode = groups[index + 1];
+      index += mode === '5' ? 2 : mode === '2' ? 4 : 1;
       continue;
     }
     if (code === 0) next = {};
@@ -106,8 +179,9 @@ function segment(text: string, style: Style): AnsiSegment {
  * sequences: the eight colours and their bright forms (as the same name),
  * backgrounds, bold, dim, italic, underline, and inverse, each reset as
  * SGR resets it. Extended colours (256 and true colour) are skipped, and
- * every other escape sequence is dropped, so the runs hold printable text
- * alone. A line with no escape is one plain run. Pure: the text is never
+ * every other escape sequence, control string, and cut-off escape is
+ * dropped, so the runs hold printable text alone. A line with no escape is
+ * one plain run. Linear in the text's length, and pure: the text is never
  * read as markup.
  */
 export function ansiSegments(text: string): readonly AnsiSegment[] {
@@ -115,13 +189,15 @@ export function ansiSegments(text: string): readonly AnsiSegment[] {
   let style: Style = {};
   let at = 0;
 
-  for (const match of text.matchAll(ESCAPE)) {
-    if (match.index > at) segments.push(segment(text.slice(at, match.index), style));
-    if (match[2] === 'm' && !(match[1] ?? '').includes('?'))
-      style = applySgr(style, match[1] ?? '');
-    at = match.index + match[0].length;
+  while (at < text.length) {
+    const escape = text.indexOf('\u001b', at);
+    const textEnd = escape === -1 ? text.length : escape;
+    if (textEnd > at) segments.push(segment(text.slice(at, textEnd), style));
+    if (escape === -1) break;
+    const read = readEscape(text, escape);
+    if (read.sgr !== undefined) style = applySgr(style, read.sgr);
+    at = read.end;
   }
-  if (at < text.length) segments.push(segment(text.slice(at), style));
 
   return segments;
 }

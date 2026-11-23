@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { applyStylesheets, readStylesheet } from '../../test/stylesheets.js';
+
 import { LogWell } from './LogWell.js';
 
 describe('LogWell', () => {
@@ -66,5 +68,20 @@ describe('LogWell', () => {
     rerender(<LogWell label="Combined log" lines={[{ key: 1, source: 'web', text }]} />);
     expect(container.querySelector('.log-ansi')).toBe(null);
     expect(container.querySelector('.log-text')?.textContent).toBe(text);
+  });
+
+  it("keeps a filled run's paired words when it is also dim, and dims a plain one", () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const { container } = render(
+      <LogWell
+        ansi
+        label="Combined log"
+        lines={[{ key: 1, source: 'web', text: '\u001b[41;2m FAIL \u001b[0;2m quiet' }]}
+      />
+    );
+    const [filled, plain] = [...container.querySelectorAll('.log-ansi')] as HTMLElement[];
+
+    expect(getComputedStyle(filled as HTMLElement).color).toBe('var(--on-danger)');
+    expect(getComputedStyle(plain as HTMLElement).color).toBe('var(--text-dim)');
   });
 });

@@ -124,7 +124,7 @@
   font-weight: var(--font-weight-strong);
 }
 
-.log-ansi[data-dim] {
+.log-ansi[data-dim]:not([data-bg]) {
   color: var(--text-dim);
 }
 

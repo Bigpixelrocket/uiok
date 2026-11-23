@@ -37,4 +37,55 @@ describe('ansiSegments', () => {
       )
     ).toEqual([{ text: 'hot' }, { text: ' bold', bold: true }, { text: '!', bold: true }]);
   });
+
+  it('drops a CSI with private, intermediate, or any parameter bytes without applying it', () => {
+    expect(ansiSegments(`${ESC}[>4;2mhello`)).toEqual([{ text: 'hello' }]);
+    expect(ansiSegments(`${ESC}[<1mhi`)).toEqual([{ text: 'hi' }]);
+    expect(ansiSegments(`${ESC}[1 mhello`)).toEqual([{ text: 'hello' }]);
+  });
+
+  it('drops a cut-off escape at the end of the text and one broken by a control byte', () => {
+    expect(ansiSegments(`abc${ESC}[31`)).toEqual([{ text: 'abc' }]);
+    expect(ansiSegments(`abc${ESC}`)).toEqual([{ text: 'abc' }]);
+    expect(ansiSegments(`a${ESC}[3\nb`)).toEqual([{ text: 'a' }, { text: '\nb' }]);
+    expect(ansiSegments(`${ESC}(Bx${ESC}7y${ESC}cz`)).toEqual([
+      { text: 'x' },
+      { text: 'y' },
+      { text: 'z' }
+    ]);
+  });
+
+  it('drops DCS, SOS, PM, and APC strings with their payload', () => {
+    expect(ansiSegments(`${ESC}P1$r0m${ESC}\\hi`)).toEqual([{ text: 'hi' }]);
+    expect(ansiSegments(`a${ESC}Xsos${ESC}\\b${ESC}^pm\u0007c${ESC}_apc`)).toEqual([
+      { text: 'a' },
+      { text: 'b' },
+      { text: 'c' }
+    ]);
+  });
+
+  it('reads colon subparameters as one parameter each', () => {
+    expect(ansiSegments(`${ESC}[1;38:2::255:0:0mbold`)).toEqual([{ text: 'bold', bold: true }]);
+    expect(ansiSegments(`${ESC}[4:3mcurly${ESC}[4:0m plain`)).toEqual([
+      { text: 'curly', underline: true },
+      { text: ' plain' }
+    ]);
+    expect(ansiSegments(`${ESC}[31;4:0mred`)).toEqual([{ text: 'red', fg: 'red' }]);
+  });
+
+  it('skips the underline colour whole in either form', () => {
+    expect(ansiSegments(`${ESC}[58;2;1;3;4mx${ESC}[58:5:1;2my${ESC}[58;5;3mz`)).toEqual([
+      { text: 'x' },
+      { text: 'y', dim: true },
+      { text: 'z', dim: true }
+    ]);
+  });
+
+  it('reads hostile input in linear time', () => {
+    const started = performance.now();
+    expect(ansiSegments(`${ESC}[`.repeat(100_000) + 'mend')).toEqual([{ text: 'end' }]);
+    expect(ansiSegments(`${ESC}[${';'.repeat(1_000_000)}mok`)).toEqual([{ text: 'ok' }]);
+    expect(ansiSegments(`${ESC}]`.repeat(100_000) + 'x')).toEqual([]);
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
 });
