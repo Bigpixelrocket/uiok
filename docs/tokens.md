@@ -116,7 +116,7 @@ Reduced motion: under `prefers-reduced-motion: reduce`, `tokens.css` sets the th
 | `--bar-height-lg`     | 34px  | Title strip, key legend, dialog legend                                                 |
 | `--hit-target`        | 24px  | The smallest pointer target, whatever the drawn size                                   |
 
-The window frame ([Frame](components/frame.md)) reads four more: `--shell-header-height` (the top band, `--bar-height-lg`), `--traffic-light-inset` (72px, where macOS's window buttons end, which a title bar's brand clears), `--sidebar-width` (240px, a sidebar's default), and `--quick-menu-height` (320px, the tallest a quick row's menu grows). A window that wears the frame sets `--dialog-inset-top` to clear the band.
+The window frame ([Frame](components/frame.md)) reads three more: `--shell-header-height` (the top band, `--bar-height-lg`), `--traffic-light-inset` (72px, where macOS's window buttons end, which a title bar's brand clears), and `--sidebar-width` (240px, a sidebar's default). A window that wears the frame sets `--dialog-inset-top` to clear the band.
 
 A control drawn smaller than `--hit-target` keeps its drawn size and grows its hit area with a pseudo-element: the `.hit-target` utility class, or the same `::after` in a component's sheet. Where neighbours sit closer than the growth (pager steps 2px apart), it grows in the block axis only. The segmented choice reads `--segmented-height` (small by default); a form of regular fields sets it to `var(--control-height)`.
 

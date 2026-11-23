@@ -12,7 +12,15 @@
 
 export { AboutWindow, type AboutWindowProps } from './AboutWindow.js';
 export { LanguageChoice, type LanguageChoiceProps, type LanguageOption } from './LanguageChoice.js';
-export { BrandMark, Lockup, type BrandMarkProps, type LockupProps } from './Lockup.js';
+export {
+  BrandMark,
+  Lockup,
+  type BrandMarkLook,
+  type BrandMarkProps,
+  type BrandMarkShape,
+  type LockupProps,
+  type LockupSize
+} from './Lockup.js';
 export {
   SettingsDialog,
   SettingsSaveFailure,

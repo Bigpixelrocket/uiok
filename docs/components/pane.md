@@ -6,7 +6,8 @@ The frame around a listing: the tabs it hangs from, a path bar it opens with, a 
 
 ```tsx
 import { Listing, RowCursorContext, StateMark } from '@bigpixelrocket/uiok/listing';
-import { NO_MAIN_VERBS, PanePathBar, PaneStatus, PathFact, paneKeyAction, QuietAction, usePaneKeys, verbControl, paneRow } from '@bigpixelrocket/uiok/pane';
+import { NO_MAIN_VERBS, PaneBox, PaneList, PanePathBar, PaneStatus, PathFact, paneKeyAction, QuietAction, usePaneKeys, verbControl, paneRow } from '@bigpixelrocket/uiok/pane';
+import { TreePane, WindowFrame } from '@bigpixelrocket/uiok/frame';
 
 function View() {
   const panes = usePaneKeys({
@@ -30,26 +31,34 @@ function View() {
   });
 
   return (
-    <div className="listing-root" ref={panes.rootRef}>
-      <aside className={panes.activePane === 'sidebar' ? 'pane active' : 'pane'}>…</aside>
-      <div className={panes.activePane === 'main' ? 'pane active' : 'pane'} ref={panes.mainRef}>
+    <WindowFrame
+      group={{ ref: panes.rootRef }}
+      sidebar={<TreePane active={panes.activePane === 'sidebar'}>…</TreePane>}
+      main={
+      <PaneBox active={panes.activePane === 'main'} ref={panes.mainRef}>
         <PanePathBar heading trail={['Servers', 'local']}>
           <PathFact mark={<StateMark tone="warning" word="" />} tone="warning">
             2 changes not applied
           </PathFact>
           <QuietAction icon={Play} label="Start local" lit onClick={start} pageVerb="toggle" word="Start" />
         </PanePathBar>
-        <div className="pane-list" data-pane-home tabIndex={-1}>
+        <PaneList home>
           <RowCursorContext value={panes.rowCursor}>
             <Listing …>…</Listing>
           </RowCursorContext>
-        </div>
+        </PaneList>
         <PaneStatus>12 items</PaneStatus>
-      </div>
-    </div>
+      </PaneBox>
+      }
+      …
+    />
   );
 }
 ```
+
+## Panes
+
+`PaneBox` (`active`, `label`, `as`, `ref`, and the region handlers: keys, focus, pointer down, drag and drop) is a pane: a framed column of its tab strip or path bar, its list, and its status line, a `section` unless `as="aside"`. `active` marks the pane that holds the keyboard, its frame in the accent; the others show their cursor row quietly. `PaneList` (`home`, `pointer`, `label`, `ref`, the region handlers) is its scrolling body: `home` makes it the list the keys return to and Page Up and Page Down measure (`data-pane-home`, focusable by script, out of the Tab order), and `pointer` lights the row under the pointer, for rows that act on a click. A sidebar's pane is the frame's `TreePane` ([Frame](frame.md)).
 
 ## Tabs
 

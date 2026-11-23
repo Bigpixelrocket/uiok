@@ -11,22 +11,37 @@ describe('Lockup', () => {
   it('names the product as one heading, the mark drawn for the eye only', () => {
     render(
       <Lockup
-        className="shell-lockup"
         lead="Acme"
         mark={
-          <BrandMark>
-            <rect className="brand-mark-glyph" height="8" width="8" x="5" y="5" />
-          </BrandMark>
+          <BrandMark
+            glyph={[
+              { d: 'M5 5h8v8H5z', look: 'fill' },
+              { d: 'M6 9h6', look: 'cut' },
+              { d: 'M5 15l5 2 5-2', look: 'line' }
+            ]}
+          />
         }
+        size="title"
         strong="OK"
       />
     );
 
     const heading = screen.getByRole('heading', { name: 'AcmeOK' });
     expect(heading.classList.contains('lockup')).toBe(true);
+    expect(heading.classList.contains('shell-lockup')).toBe(true);
     expect(heading.querySelector('b')?.textContent).toBe('OK');
     expect(heading.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
-    expect(heading.querySelector('.brand-mark-glyph')).not.toBeNull();
+    expect(
+      [...heading.querySelectorAll('path[d^="M5 5"], path[d^="M6"], path[d^="M5 15"]')].map(
+        (shape) => shape.getAttribute('class')
+      )
+    ).toEqual(['brand-mark-glyph', 'brand-mark-cut', 'brand-mark-line']);
+  });
+
+  it('takes the hero size unless placed', () => {
+    render(<Lockup lead="Acme" strong="OK" />);
+
+    expect(screen.getByRole('heading').getAttribute('class')).toBe('lockup');
   });
 });
 
@@ -94,7 +109,7 @@ describe('AboutWindow', () => {
         channel="latest"
         channelTag="Latest"
         icon="/about-icon.png"
-        lockup={<Lockup as="span" className="about-lockup-text" lead="Acme" strong="OK" />}
+        lockup={<Lockup as="span" lead="Acme" size="about" strong="OK" />}
         version="Version 0.3.0 (412)"
       />
     );

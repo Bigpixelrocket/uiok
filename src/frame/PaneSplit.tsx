@@ -6,6 +6,7 @@ import {
   useState,
   type PointerEvent as ReactPointerEvent,
   type ReactElement,
+  type ReactNode,
   type RefObject
 } from 'react';
 
@@ -43,8 +44,8 @@ export const cutRowDepth = (scroller: HTMLElement): number => {
 export interface PaneSplit {
   /** The upper list's scroller, which gives way as the lower pane grows. */
   readonly upper: RefObject<HTMLDivElement | null>;
-  /** The lower pane, whose height the splitter sets. */
-  readonly lower: RefObject<HTMLDivElement | null>;
+  /** The lower pane (`SplitDetail`), whose height the splitter sets. */
+  readonly lower: RefObject<HTMLElement | null>;
   /** Starts a drag on the splitter's band. */
   readonly drag: (event: ReactPointerEvent<HTMLDivElement>) => void;
   /** Puts the lower pane back at the page's own share. */
@@ -54,18 +55,23 @@ export interface PaneSplit {
 /**
  * A splitter between a page's upper list and the pane under it: the user drags the divide, the height is
  * kept per page (`name`) while the window lives, and both regions come to
- * rest at a whole row. The upper list ends at a row's lower edge (the slice
- * it would have cut goes to the lower pane); the lower pane's own list,
- * the first match of `lowerScroller` inside it, ends at a whole row with
- * the rest of the pane left empty under it.
+ * rest at a whole row. The upper list (`upper`, a `PaneList`'s ref) ends at
+ * a row's lower edge (the slice it would have cut goes to the lower pane);
+ * the lower pane's own list, the first match of `lowerScroller` inside it
+ * (a `SplitDetail`'s body unless given), ends at a whole row with the rest
+ * of the pane left empty under it.
  *
  * The lower pane is a flex item whose basis the splitter sets; until the
  * user drags, both regions take the sizes the page's stylesheet gives them. `layoutKey` changes when the rows change (a load, a
  * tab switch), so the rest is measured again; a window resize is observed.
  */
-export function usePaneSplit(name: string, lowerScroller: string, layoutKey: unknown): PaneSplit {
+export function usePaneSplit(
+  name: string,
+  layoutKey: unknown,
+  lowerScroller = '.split-detail-body'
+): PaneSplit {
   const upper = useRef<HTMLDivElement | null>(null);
-  const lower = useRef<HTMLDivElement | null>(null);
+  const lower = useRef<HTMLElement | null>(null);
   const drag = useRef<AbortController | null>(null);
   const [height, setHeight] = useState<number | null>(() => heldHeights.get(name) ?? null);
 
@@ -184,5 +190,43 @@ export function PaneSplitter({ split }: PaneSplitterProps): ReactElement {
       onDoubleClick={split.reset}
       onPointerDown={split.drag}
     />
+  );
+}
+
+/** Props for {@link SplitDetail}. */
+export interface SplitDetailProps {
+  /** The split it is the lower pane of (`usePaneSplit`). */
+  readonly split: PaneSplit;
+  /** Kept at its head alone (its body folded away), whatever was dragged. */
+  readonly folded?: boolean;
+  /** Its accessible name ("Selected row"). */
+  readonly label?: string;
+  /** Its head, over the body that scrolls (a strip, a title with its verbs). */
+  readonly head?: ReactNode;
+  /** What it shows, in its scrolling body. */
+  readonly children?: ReactNode;
+}
+
+/**
+ * The pane under a page's list, under its `PaneSplitter`: as tall as what
+ * it shows until dragged, up to 38% of the page and never under seven
+ * dense rows, its body scrolling under its head.
+ */
+export function SplitDetail({
+  split,
+  folded = false,
+  label,
+  head,
+  children
+}: SplitDetailProps): ReactElement {
+  return (
+    <section
+      aria-label={label}
+      className={folded ? 'split-detail folded' : 'split-detail'}
+      ref={split.lower}
+    >
+      {head}
+      {folded ? null : <div className="split-detail-body">{children}</div>}
+    </section>
   );
 }

@@ -1,4 +1,15 @@
-import type { CSSProperties, ReactElement, ReactNode } from 'react';
+import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react';
+
+import type { RegionHandlers } from '../pane/Pane.js';
+
+/**
+ * The one element a host keeps its sidebar and main pane in (for its keys
+ * or its drop zone): its handlers and ref. It draws no box, so the parts
+ * inside it keep their places in the frame's grid.
+ */
+export interface WindowFrameGroup extends RegionHandlers {
+  readonly ref?: Ref<HTMLDivElement>;
+}
 
 /** Props for {@link WindowFrame}. */
 export interface WindowFrameProps {
@@ -21,8 +32,11 @@ export interface WindowFrameProps {
   readonly dock?: ReactNode;
   /** The key legend across the window's foot (`KeyLegendStrip`). */
   readonly legend?: ReactNode;
-  /** The frame's own class, beside `window-frame` (the space's root class). */
-  readonly className?: string;
+  /**
+   * Gathers the sidebar, its edge, the main pane, the tray, and the dock in
+   * one element with these handlers; none leaves them the frame's own children.
+   */
+  readonly group?: WindowFrameGroup;
 }
 
 /**
@@ -32,7 +46,9 @@ export interface WindowFrameProps {
  * and the key legend across the foot. Each part fills its slot; the band's
  * empty end is the window's drag region. Hiding the sidebar gives its room
  * to the main pane, the tray, and the dock, and the main pane's tabs keep
- * their place beside the title bar.
+ * their place beside the title bar. The frame is the space's root, in the
+ * listing look: a column the panel's height that sizes every box by its
+ * border and resets its buttons, code, fieldsets, and legends.
  */
 export function WindowFrame({
   brand,
@@ -43,13 +59,22 @@ export function WindowFrame({
   tray = null,
   dock = null,
   legend = null,
-  className
+  group
 }: WindowFrameProps): ReactElement {
   const shown = sidebar !== null && sidebar !== undefined && sidebar !== false;
+  const parts = (
+    <>
+      {shown ? <div className="window-frame-slot window-frame-sidebar">{sidebar}</div> : null}
+      {shown ? resizer : null}
+      <div className="window-frame-slot window-frame-main">{main}</div>
+      {tray === null ? null : <div className="window-frame-slot window-frame-tray">{tray}</div>}
+      {dock === null ? null : <div className="window-frame-slot window-frame-dock">{dock}</div>}
+    </>
+  );
 
   return (
     <div
-      className={className === undefined ? 'window-frame' : `window-frame ${className}`}
+      className="window-frame space-root listing-root"
       data-sidebar={shown ? 'shown' : 'hidden'}
       style={{ '--window-band-width': `${sidebarWidth}px` } as CSSProperties}
     >
@@ -57,11 +82,13 @@ export function WindowFrame({
         <div className="window-frame-band-lead">{brand}</div>
         <span aria-hidden className="window-frame-band-rest" />
       </div>
-      {shown ? <div className="window-frame-slot window-frame-sidebar">{sidebar}</div> : null}
-      {shown ? resizer : null}
-      <div className="window-frame-slot window-frame-main">{main}</div>
-      {tray === null ? null : <div className="window-frame-slot window-frame-tray">{tray}</div>}
-      {dock === null ? null : <div className="window-frame-slot window-frame-dock">{dock}</div>}
+      {group === undefined ? (
+        parts
+      ) : (
+        <div className="window-frame-group" {...group}>
+          {parts}
+        </div>
+      )}
       {legend === null ? null : <div className="window-frame-legend">{legend}</div>}
     </div>
   );

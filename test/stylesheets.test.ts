@@ -96,13 +96,21 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
       <div class="listing-root"><div class="pane-empty"><svg></svg><strong>No projects yet</strong>
       <p>Add a folder.</p><div class="pane-empty-actions"></div>
       <p class="pane-empty-detail">EACCES</p></div></div>`;
-    for (const selector of ['.space-load-failure', '.pane-empty']) {
+    // A pane's block centres safely and scrolls in a pane shorter than it,
+    // so its top and the pane's status line stay in reach.
+    for (const [selector, justify] of [
+      ['.space-load-failure', 'center'],
+      ['.pane-empty', 'safe center']
+    ] as const) {
       const block = document.querySelector(selector) as Element;
       expect(declaredValues(block, 'flex-direction').at(-1), selector).toBe('column');
       expect(declaredValues(block, 'align-items').at(-1), selector).toBe('center');
-      expect(declaredValues(block, 'justify-content').at(-1), selector).toBe('center');
+      expect(declaredValues(block, 'justify-content').at(-1), selector).toBe(justify);
       expect(declaredValues(block, 'text-align').at(-1), selector).toBe('center');
     }
+    expect(
+      declaredValues(document.querySelector('.pane-empty') as Element, 'overflow-y').at(-1)
+    ).toBe('auto');
     // The system's own line is set in the code face.
     expect(
       declaredValues(document.querySelector('.pane-empty-detail') as Element, 'font-family').at(-1)

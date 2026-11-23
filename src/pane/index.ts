@@ -4,10 +4,18 @@
  * fits its tools to one line (`useToolbarFit`), and the keyboard of a
  * sidebar beside a page (`usePaneKeys`) with the pure key mapping and DOM
  * readers it is built on, and the tab strip a pane hangs from (`PaneTabs`)
- * with the pure rules it and its host keep tab state by. Styled by the
- * listing look under `.listing-root`.
+ * with the pure rules it and its host keep tab state by; `PaneBox` and
+ * `PaneList` are the pane and its scrolling body. Styled by the listing
+ * look under `.listing-root`.
  */
 
+export {
+  PaneBox,
+  PaneList,
+  type PaneBoxProps,
+  type PaneListProps,
+  type RegionHandlers
+} from './Pane.js';
 export {
   InRowContext,
   QuietAction,

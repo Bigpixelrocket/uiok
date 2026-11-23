@@ -768,7 +768,7 @@ a {
 }
 
 .demo-empty-pane {
-  height: 320px;
+  height: 440px;
 }
 
 .demo-pin {
@@ -1398,16 +1398,6 @@ a {
   border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-lg);
   background: var(--ground);
-}
-
-/* The splitter's list over the pane under it, in a box of its own height. */
-.frame-split-demo {
-  display: flex;
-  height: 260px;
-}
-
-.frame-split-demo > .pane {
-  flex: 1;
 }
 
 /* A log well at a reading height. */

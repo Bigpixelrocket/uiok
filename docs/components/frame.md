@@ -1,92 +1,124 @@
 # Frame (`@bigpixelrocket/uiok/frame`)
 
-The window every app of the family draws its content in: one grid with a top band (the title bar, then the main pane's tabs), a sidebar beside the main pane, a tray and a dock under the main pane, and the key legend across the foot. The parts inside are uiok's own (panes, listings, path bars, tab strips, legends); the frame places and sizes them and paints no ground of its own. Its look is `src/frame/frame.css` in `@bigpixelrocket/uiok/styles.css`.
+The window every app of the family draws its content in: one grid with a top band (the title bar, then the main pane's tabs), a sidebar beside the main pane, a tray and a dock under the main pane, and the key legend across the foot. Every part is a component, so an app draws its whole window with no class, style, or element of its own; the classes in `src/frame/frame.css` (in `@bigpixelrocket/uiok/styles.css`) are the components' own. The parts inside the panes are uiok's too (path bars, tab strips, listings, legends).
 
-- `WindowFrame`: the grid, with a slot for each part.
-- `SidebarResizer`: the sidebar's edge, dragged to resize it (`draggedWidth`, its pure rule).
-- `TreeToggle` and the `tree-*` classes: a sidebar's tree rows.
-- `FilterChips`: a pane's quick row of filters (Running 3, Updates 2).
+- `AppRoot`, `SpacePanel`: the window's root and the panel its keys work in.
+- `WindowFrame`: the grid, with a slot for each part; `SidebarResizer` is the sidebar's edge.
+- `TreePane`, `TreeList`, `TreeRow`, `TreeTool`, `TreeFilterInput`, `SidebarEmpty`: the sidebar's tree (`TreeToggle` is a row's chevron).
+- `FilterChips`, `PaneWarning`: a pane's quick row of filters and its warning line.
 - `StatusNotice`: a message about the window in a pane's status line.
-- `usePaneSplit` and `PaneSplitter`: the splitter between a page's list and the pane under it (`cutRowDepth`, the row it would cut).
+- `Dock`, `DockLog`, `DockLogEntry`, `DockInput`: the dock under the main pane.
+- `usePaneSplit`, `PaneSplitter`, `SplitDetail`: a page's list over the pane under it.
+- `PageSlot`, `PanePage`, `Toolbar`, `ToolbarGrow`, `ToolbarGap`, `PageFilter`, `PageNote`, `EmptyAction`, `SectionHead`, `FootBar`, `ShowSidebarButton`: a page's parts.
+
+The panes themselves are `PaneBox` and `PaneList` from [Pane](pane.md).
 
 ## Example
 
 ```tsx
-import { FilterChips, SidebarResizer, TreeToggle, WindowFrame } from '@bigpixelrocket/uiok/frame';
-import { PanePathBar, PaneStatus, PaneTabs } from '@bigpixelrocket/uiok/pane';
+import { Switch } from '@bigpixelrocket/uiok/field';
+import {
+  AppRoot,
+  FilterChips,
+  PanePage,
+  SidebarResizer,
+  SpacePanel,
+  TreeList,
+  TreePane,
+  TreeRow,
+  WindowFrame
+} from '@bigpixelrocket/uiok/frame';
+import { StateMark } from '@bigpixelrocket/uiok/listing';
+import { PaneBox, PaneList, PanePathBar, PaneStatus, PaneTabs } from '@bigpixelrocket/uiok/pane';
 import { TitleBar } from '@bigpixelrocket/uiok/shell';
 
-<div className="app-shell" data-channel={channel}>
-  <main className="shell-content">
-    <div className="space-panel" tabIndex={-1}>
-      <WindowFrame
-        className="space-root listing-root"
-        brand={<TitleBar trafficLights>{lockup}</TitleBar>}
-        sidebarWidth={width}
-        sidebar={
-          <aside className="pane tree-pane">
-            <PanePathBar crumbs={[{ label: 'Stack' }]} tools={tools} />
-            <FilterChips label="Filters" chips={chips} on={on} onToggle={toggle} />
-            <ul className="tree-list tree">{rows}</ul>
-            <PaneStatus>3 running</PaneStatus>
-          </aside>
-        }
-        resizer={<SidebarResizer label="Resize the sidebar" width={width} min={120} max={600} pageMin={100} onResize={setWidth} onResizeEnd={keepWidth} />}
-        main={<section className="pane">…</section>}
-        legend={<KeyLegendStrip … />}
-      />
-    </div>
-  </main>
-</div>;
+<AppRoot channel={channel}>
+  <SpacePanel onKeyDown={keys}>
+    <WindowFrame
+      brand={<TitleBar trafficLights>{lockup}</TitleBar>}
+      sidebarWidth={width}
+      sidebar={
+        <TreePane active={pane === 'sidebar'} width={width}>
+          <PanePathBar trail={['Stack']}>{tools}</PanePathBar>
+          <FilterChips label="Filters" chips={chips} on={on} onToggle={toggle} />
+          <TreeList label="Stack">
+            <TreeRow rowKey="pg" level={1} glyph={<Database />} name="PostgreSQL"
+              trailing={<StateMark tone="ready" word="5432" />}
+              tool={<Switch checked label="Run PostgreSQL" labelHidden onChange={run} />} />
+          </TreeList>
+          <PaneStatus>3 running</PaneStatus>
+        </TreePane>
+      }
+      resizer={<SidebarResizer label="Resize the sidebar" width={width} min={120} max={600} pageMin={100} onResize={setWidth} onResizeEnd={keepWidth} />}
+      main={
+        <PaneBox active={pane === 'main'}>
+          <PaneTabs … />
+          <PanePage>
+            <PaneList home>…</PaneList>
+          </PanePage>
+          <PaneStatus>…</PaneStatus>
+        </PaneBox>
+      }
+      legend={<KeyLegendStrip … />}
+    />
+  </SpacePanel>
+</AppRoot>;
 ```
-
-## `WindowFrame` (`WindowFrameProps`)
-
-| Prop           | Type        | Default | Purpose                                                                                      |
-| -------------- | ----------- | ------- | -------------------------------------------------------------------------------------------- |
-| `brand`        | `ReactNode` |         | The title bar at the band's leading end, as wide as the sidebar                              |
-| `sidebar`      | `ReactNode` | none    | The sidebar's pane; none hides it and gives its room to the main pane, the tray, the dock    |
-| `resizer`      | `ReactNode` | none    | The sidebar's edge, drawn while the sidebar shows                                            |
-| `sidebarWidth` | `number`    |         | The sidebar's width in pixels, which the title bar matches, kept while the sidebar is hidden |
-| `main`         | `ReactNode` |         | The main pane; a `PaneTabs` header at its top rises into the band beside the title bar       |
-| `tray`         | `ReactNode` | none    | A strip that takes its turn under the main pane (files being imported)                       |
-| `dock`         | `ReactNode` | none    | The dock under the main pane (a console, a log)                                              |
-| `legend`       | `ReactNode` | none    | The key legend across the foot                                                               |
-| `className`    | `string`    |         | The frame's own class beside `window-frame`, such as the space's root class                  |
-
-Each part fills a `window-frame-slot`. While no tab shows, the band's empty end is the window's drag region (`window-frame-band-rest`), as is a tab row's empty end (`pane-tabs-rest`). With the sidebar hidden the main pane's tabs keep the place they have beside the title bar, so no tab moves.
-
-A host that keeps its sidebar and main pane in one element of its own (for its keys or its drop zone) writes the grid with classes instead: `window-frame` on the root (`data-sidebar="hidden"` on it or on a direct child, `--window-band-width` on it), `window-frame-group` on any element between (it draws no box), and `window-frame-band`, `-band-lead`, `-band-rest`, `-sidebar`, `-resizer`, `-main`, `-tray`, `-dock`, `-legend` on the parts.
 
 ## The app's root
 
-`app-shell` (the window's root: a column the window's height) holds `shell-content`, which holds `space-panel`, the focus boundary the content's keyboard commands work in (it draws no ring). A window with `app-shell` or an About window sets the interface face, the body's ground and text, and `--dialog-inset-top`, so a dialog keeps clear of the top band. `space-root` on a space's root lays it out as a column the panel's height, sizes every box by its border, and resets its buttons, code, fieldsets, and legends at zero weight; `space-nav-empty` is a sidebar's one quiet line when it has nothing to list. `page-slot` holds one page of the main pane: the front tab's page lays out as the pane's own child, and a held page stays mounted out of sight.
+`AppRoot` (`channel`, `children`) is the window's root: a column the window's height whose content owns the whole window, the top band included. `channel` is the release channel the window wears (`data-channel`), which colours its `ChannelMarker` and channel tags; none on the release. A window with `AppRoot` or an `AboutWindow` sets the interface face, the body's ground and text, and `--dialog-inset-top`, so a dialog keeps clear of the top band.
+
+`SpacePanel` (`ref`, the region handlers, `children`) is the focus boundary the content's keyboard commands work in, inside `AppRoot`: focusable by script, out of the Tab order, with no ring. The region handlers, here and on every part below that takes them, are `onKeyDown`, `onKeyDownCapture`, `onFocus`, `onBlur`, `onMouseDown`, `onPointerDown`, and the drag and drop handlers (`RegionHandlers`).
+
+## `WindowFrame` (`WindowFrameProps`)
+
+| Prop           | Type               | Default | Purpose                                                                                                         |
+| -------------- | ------------------ | ------- | --------------------------------------------------------------------------------------------------------------- |
+| `brand`        | `ReactNode`        |         | The title bar at the band's leading end, as wide as the sidebar                                                 |
+| `sidebar`      | `ReactNode`        | none    | The sidebar's pane (`TreePane`); none hides it and gives its room to the main pane, the tray, the dock          |
+| `resizer`      | `ReactNode`        | none    | The sidebar's edge (`SidebarResizer`), drawn while the sidebar shows                                            |
+| `sidebarWidth` | `number`           |         | The sidebar's width in pixels, which the title bar matches, kept while the sidebar is hidden                    |
+| `main`         | `ReactNode`        |         | The main pane (`PaneBox`); a `PaneTabs` header at its top rises into the band beside the title bar              |
+| `tray`         | `ReactNode`        | none    | A strip that takes its turn under the main pane (files being imported)                                          |
+| `dock`         | `ReactNode`        | none    | The dock under the main pane (`Dock`)                                                                           |
+| `legend`       | `ReactNode`        | none    | The key legend across the foot                                                                                  |
+| `group`        | `WindowFrameGroup` | none    | Gathers the sidebar, its edge, the main pane, the tray, and the dock in one element with these handlers and ref |
+
+The frame is the space's root in the listing look: a column the panel's height that sizes every box by its border and resets its buttons, code, fieldsets, and legends at zero weight. While no tab shows, the band's empty end is the window's drag region, as is a tab row's empty end. With the sidebar hidden the main pane's tabs keep the place they have beside the title bar, so no tab moves. A host that keeps its sidebar and main pane in one element (for its keys or its drop zone) passes `group`: the element draws no box, so the parts keep their places in the grid.
+
+`SidebarResizer` (`label`, `width`, `min`, `max`, `pageMin`, `onResize`, `onResizeEnd`) is the sidebar's edge, in the gap beside the page: the pointer drags it, kept between `min` and the widest the room allows less `pageMin` (`draggedWidth`, its pure rule).
 
 ## Sidebar tree
 
-| Class                                    | What it is                                                                                                                                                                                                                                                             |
-| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tree-pane`                              | On the sidebar's `pane`: 240px by default (`--sidebar-width`, or the host's `flex-basis`), leaving the page 100px; the row grid is the chevron's slot, the glyph, the name, one trailing column. Narrower than its title and tools, its path bar takes a line for each |
-| `tree-list`                              | The `ul` of rows, with no list marks                                                                                                                                                                                                                                   |
-| `tree`                                   | On the rows' container: each `row` steps in by `--tree-level` times `--tree-indent` (`--space-6`)                                                                                                                                                                      |
-| `tree-band`                              | On a `row` that heads the rows under it (a server, a project): the strip's ground and a hairline under it                                                                                                                                                              |
-| `tree-group`                             | On a `row` that groups others: its name dim, as a heading                                                                                                                                                                                                              |
-| `tree-chev`                              | The disclosure chevron (`TreeToggle`)                                                                                                                                                                                                                                  |
-| `tree-glyph`, `tree-name`, `tree-detail` | The node's glyph (row-meta tone), its name (cut with an ellipsis), quieter words after it                                                                                                                                                                              |
-| `tree-row-tool`                          | A row's own tool (Hide), shown on the cursor row only                                                                                                                                                                                                                  |
-| `tree-tool`                              | A row that is not a node (a filter field, a pager, a note) at its level's indent; `danger` lays out a failed read with its action under the reason; `tree-note` starts past the chevron's slot; `tree-heading` heads a group further down                              |
-| `tree-note-glyph`, `tree-note-text`      | A tool row's glyph and words                                                                                                                                                                                                                                           |
-| `tree-filter-input`                      | A bare field that fills its `tree-tool` row, the row underlined in the accent while it holds the keyboard                                                                                                                                                              |
+`TreePane` (`width`, `active`, `label`, `ref`, the region handlers) is the sidebar's pane: 240px unless `width` is given (`--sidebar-width`), leaving the page 100px, its rows laid out as the chevron's slot, the glyph, the name, one trailing column. Narrower than its title and tools, its path bar takes a line for each. `TreeList` (`label`) holds the rows: the sidebar's home (`data-pane-home="sidebar"`, which `usePaneKeys` hands the focus and finds the sidebar by), a `tree`.
 
-On a cursor or marked row the quiet words (`tree-detail`, `tree-glyph`) take `--text-on-surface`. A band's quiet cursor (another pane focused, the window behind) keeps the strip's ground.
+`TreeRow`:
 
-`TreeToggle` (`open`, `onToggle`, `label`) is the chevron, right while closed and down while open: a press toggles the row's children, never opens the row, leaves the focus where it was, and stays out of the Tab order, since the tree's keys open and close a row.
+| Prop        | Type                          | Default | Purpose                                                                                                       |
+| ----------- | ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| `rowKey`    | `string`                      |         | Names the row to the pane's cursor (`data-row-key`)                                                           |
+| `level`     | `number`                      | `0`     | How deep it stands; each level steps it in by `--space-6`                                                     |
+| `kind`      | `'node' \| 'band' \| 'group'` | `node`  | A band heads the rows under it (a server, a project) on the strip's ground; a group's name reads as a heading |
+| `toggle`    | `TreeRowToggle`               | none    | `{ open, onToggle, label }`: the chevron of a row with children                                               |
+| `glyph`     | `ReactNode`                   | none    | The node's glyph, in the quiet tone                                                                           |
+| `name`      | `ReactNode`                   |         | Its name, cut with an ellipsis (whole in its tooltip when a string)                                           |
+| `detail`    | `ReactNode`                   | none    | Quieter words after the name (×3)                                                                             |
+| `trailing`  | `ReactNode`                   | none    | The trailing column: a count, a port, a `StateMark`                                                           |
+| `tool`      | `ReactNode`                   | none    | The row's own tool (Hide, a `Switch`), shown on the cursor row only                                           |
+| `marked`    | `boolean`                     | `false` | Chosen though it is not the cursor row                                                                        |
+| `onOpen`    | `() => void`                  | none    | Opens the row's item on a click anywhere but its controls                                                     |
+| `focusable` | `boolean`                     | `false` | The row itself takes the focus: in the Tab order while it is the cursor row                                   |
+
+Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`): the cursor row wears the cursor's look and `aria-current`, and the pointer moving over a row or the focus entering it moves the cursor there. On a cursor or marked row the quiet words (the glyph, the detail) take `--text-on-surface`. A band's quiet cursor (another pane focused, the window behind) keeps the strip's ground. Its controls leave the Tab order, since the tree's keys run them; the expansion and its keys stay the host's.
+
+`TreeToggle` (`open`, `onToggle`, `label`) is the chevron `TreeRow` draws for `toggle`, right while closed and down while open: a press toggles the row's children, never opens the row, leaves the focus where it was, and stays out of the Tab order.
+
+`TreeTool` (`kind`, `level`, `icon`, `text`, `cursor`, `children`) is a row that is not a node, at its level's indent in the small size: `tool` (a filter field, a pager, an Add action), `note` (starts past the chevron's slot), `heading` (heads a group further down, over a hairline), or `danger` (a failed read, announced as an alert, its reason wrapping and its action under it). `TreeFilterInput` (`value`, `onChange`, `label`, `placeholder`, `onKeyDown`, `ref`) is a bare field that fills its `TreeTool` row, the row underlined in the accent while it holds the keyboard. `SidebarEmpty` is a sidebar's one quiet line when it has nothing to list.
 
 ## Quick row
 
-`pane-quick-row` under a pane's path bar: quiet buttons (`pane-quick-button`, with the track item's hover and press) with a glyph, a word, and a `pane-quick-count`, pressed (`aria-pressed="true"`) while a filter is on. A menu hangs from the row (`pane-quick-menu`, its `pane-quick-entry` rows of `pane-quick-link`, `pane-quick-empty` when it has none) and spans it, so the pane's clip never cuts an entry short; it grows to `--quick-menu-height`. `pane-warning` is a warning line under the path bar, over the rows.
-
-`FilterChips` draws a quick row of filters:
+`FilterChips` draws a quick row of filters under a pane's path bar: quiet buttons with a glyph, a word, and a count, pressed (`aria-pressed="true"`) while a filter is on.
 
 | Prop       | Type                    | Purpose                                  |
 | ---------- | ----------------------- | ---------------------------------------- |
@@ -95,34 +127,37 @@ On a cursor or marked row the quiet words (`tree-detail`, `tree-glyph`) take `--
 | `onToggle` | `(id) => void`          | Turns one on or off                      |
 | `label`    | `string`                | The row's accessible name ("Filters")    |
 
+`PaneWarning` is a warning line under a pane's path bar, over its rows, read as a status.
+
 ## Status notice
 
 `StatusNotice` (`tone`: `info`, `danger`, `success`; `icon`; `text`) goes in a `PaneStatus` in place of its words while a message about the window stands: the tone's glyph and the words on one line, cut with an ellipsis and whole in a tooltip. A failure is an alert, anything else a status. Its verbs (Show, Close) go in the status line's `tools`.
 
 ## Dock
 
-`window-dock` on a pane in the dock (`closed` takes no room): a `pane-splitter` over its top edge sets its height; `dock-bar` is its toolbar, `dock-body` its body. A log in it is `dock-log` (`dock-log-entry` rows, `dock-log-empty`, `dock-log-actions` under an entry) over `dock-input`, what it takes typed in, ringed while it holds the keyboard.
+`Dock` (`open`, `label`, `active`, `resizer`, `bar`, `ref`, the region handlers, `children`) is a pane in `WindowFrame`'s `dock`: the divide over its top edge that sets its height (`resizer`), its toolbar (`bar`), then its body, which scrolls. Closed, it takes no room and keeps its state. `DockLog` (`label`, `empty`) is a log in its body, entries over a hairline each with the newest at the foot, saying `empty` while it has none; entries far from the foot skip layout until scrolled to. `DockLogEntry` (`actions`) is one entry with its verbs under it. `DockInput` holds what the dock takes typed in at the log's foot, ringed while it holds the keyboard, growing to half the dock and then scrolling.
 
 ## A list over the pane under it
 
-`usePaneSplit(name, lowerScroller, layoutKey)` gives `{ upper, lower, drag, reset }`: refs for the upper list's scroller and the lower pane, the splitter's pointer handler, and the reset a double click runs. The height a user drags is kept per `name` while the window lives, and both regions come to rest at a whole row (`cutRowDepth(scroller)` is how far an edge cuts into its last visible row). `PaneSplitter` (`split`) is the band between them (`pane-splitter`, the resize cursor over the hairline). `split-detail` is the lower pane (as tall as what it shows until dragged, up to 38% of the page and never under seven dense rows; `folded` keeps it at its head), and `split-detail-body` its scrolling body.
+`usePaneSplit(name, layoutKey, lowerScroller?)` gives `{ upper, lower, drag, reset }`: the ref for the upper list (a `PaneList`'s `ref`), the ref `SplitDetail` takes, the splitter's pointer handler, and the reset a double click runs. The height a user drags is kept per `name` while the window lives, and both regions come to rest at a whole row (`cutRowDepth(scroller)` is how far an edge cuts into its last visible row). `layoutKey` changes when the rows change (a load, a tab switch); `lowerScroller` names the lower pane's own list when it is not `SplitDetail`'s body. `PaneSplitter` (`split`) is the band between them, the resize cursor over the hairline. `SplitDetail` (`split`, `folded`, `label`, `head`, `children`) is the lower pane: as tall as what it shows until dragged, up to 38% of the page and never under seven dense rows, its body scrolling under its `head`; `folded` keeps it at its head alone.
 
 ## A page's parts
 
-| Class                       | What it is                                                                                                                                                       |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pane-page`                 | A page in the main pane: a column that fills it                                                                                                                  |
-| `pane-toolbar`              | One line of tools that keep their size; `pane-toolbar-grow` gives way, `pane-toolbar-end` stands at the far end, `pane-toolbar-gap` is a hairline between groups |
-| `pane-page-filter`          | A page's filter under its tab strip                                                                                                                              |
-| `pane-page-note`            | A loading or empty line: its glyph or spinner beside the words                                                                                                   |
-| `pane-empty-action`         | The one command that answers an empty list, under its empty line                                                                                                 |
-| `pane-section-head`         | A heading over one of a page's listings                                                                                                                          |
-| `pane-foot-bar`             | A bar at a pane's foot under its list (a select-all bar, a form's actions)                                                                                       |
-| `window-frame-show-sidebar` | On a path bar's Show panel tool, which leads the tools while the sidebar is hidden                                                                               |
+| Component           | What it is                                                                                                                       |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `PageSlot`          | One page of the main pane (`shown`): the front tab's lays out as the pane's own child, a held page stays mounted out of sight    |
+| `PanePage`          | A page in the main pane: a column that fills it                                                                                  |
+| `Toolbar`           | One line of tools that keep their size, `end` at the far end; `ToolbarGrow` gives way, `ToolbarGap` is a hairline between groups |
+| `PageFilter`        | A page's filter under its tab strip                                                                                              |
+| `PageNote`          | A loading or empty line (`icon`, or `busy` for the spinner and a status)                                                         |
+| `EmptyAction`       | The one command that answers an empty list, under its `PageNote`                                                                 |
+| `SectionHead`       | A heading over one of a page's listings, as an overline (`level`, 3 unless given)                                                |
+| `FootBar`           | A bar at a pane's foot under its list (a select-all bar, a form's actions)                                                       |
+| `ShowSidebarButton` | Shows the hidden sidebar again (`label`, `onShow`, `icon`), leading a path bar's tools                                           |
 
 ## Keyboard
 
-The frame adds no keys. The sidebar's edge is a pointer control (`role="separator"` with its width as its value); `TreeToggle` stays out of the Tab order; `FilterChips` and the quick row's buttons are buttons in the Tab order that leave the focus where it was when pressed.
+The frame adds no keys. The sidebar's edge is a pointer control (`role="separator"` with its width as its value); a tree row's chevron and its tools stay out of the Tab order; `FilterChips` are buttons in the Tab order that leave the focus where it was when pressed. `SpacePanel`, `TreeList`, and a `PaneList` with `home` take the focus by script only.
 
 ## Labels read
 

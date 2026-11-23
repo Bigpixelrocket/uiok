@@ -139,11 +139,10 @@
   /* The window frame (frame.css): the top band, the title bar's and the
      main pane's tabs, which every dialog keeps clear of; where macOS's
      traffic lights end, which a title bar's brand clears (window geometry,
-     not a space step); a sidebar's default width; and the tallest a quick row's menu grows. */
+     not a space step); and a sidebar's default width. */
   --shell-header-height: var(--bar-height-lg);
   --traffic-light-inset: 72px;
   --sidebar-width: 240px;
-  --quick-menu-height: 320px;
 
   /* Focus. One ring for everything focusable: a 2px accent line outside the
      control at focus-offset, so it follows the control's corner one pixel

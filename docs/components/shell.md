@@ -7,8 +7,8 @@ The surfaces an app's window draws around its own pages, which every app of the 
 | Component             | What it draws                                                                                                                                                                                    |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `TitleBar`            | The window's title bar where the native one is hidden (`.shell-topbar`): its children at the leading end, clear of macOS's window buttons with `trafficLights`; a drag region but for the marker |
-| `Lockup`              | A product's wordmark (`lead` light, `strong` heavy) after an optional `mark`; `as="span"` inside another heading; sized by `--lockup-size`                                                       |
-| `BrandMark`           | The family's mark: a plate in the accent, the app's glyph on it (`children`, SVG shapes on a 24-unit grid), and a check badge                                                                    |
+| `Lockup`              | A product's wordmark (`lead` light, `strong` heavy) after an optional `mark`; `as="span"` inside another heading; `size` `title` (15px), `about` (21px), or `hero` (40px, the default)           |
+| `BrandMark`           | The family's mark: a plate in the accent, the app's `glyph` on it (`BrandMarkShape`s on a 24-unit grid), and a check badge                                                                       |
 | `ChannelMarker`       | A build's channel after the lockup: a dot in `--channel`, the name, the build number or branch (`detail`), a dot for uncommitted changes (`modified`), the whole line as a tooltip (`title`)     |
 | `UpdatePill`          | The title bar's update control while a build is offered: `state` `offered` (tonal), `ready` (primary), `download-failed` (neutral, warning outline)                                              |
 | `AboutWindow`         | The About window's panel: `icon` (a URL), `lockup`, the `channelTag` coloured by `channel`, and the `version`                                                                                    |
@@ -29,16 +29,15 @@ import { BrandMark, ChannelMarker, Lockup, TitleBar, UpdatePill } from '@bigpixe
 
 <TitleBar trafficLights={platform === 'darwin'}>
   <Lockup
-    className="shell-lockup"
+    size="title"
     lead="Acme"
     strong="OK"
     mark={
-      <BrandMark>
-        <path
-          className="brand-mark-line"
-          d="M5 7l5-2.5L15 7l-5 2.5z M5 10.5l5 2.5 5-2.5 M5 14l5 2.5 5-2.5"
-        />
-      </BrandMark>
+      <BrandMark
+        glyph={[
+          { d: 'M5 7l5-2.5L15 7l-5 2.5z M5 10.5l5 2.5 5-2.5 M5 14l5 2.5 5-2.5', look: 'line' }
+        ]}
+      />
     }
   />
   {channel ? (
@@ -47,7 +46,7 @@ import { BrandMark, ChannelMarker, Lockup, TitleBar, UpdatePill } from '@bigpixe
 </TitleBar>;
 ```
 
-A brand mark's glyph takes three classes: `brand-mark-glyph` fills a shape in the brand's white, `brand-mark-line` strokes it in that white (a line drawing), and `brand-mark-cut` strokes in the plate's colour over a white fill, so it reads as cut out of it.
+A brand mark's glyph is a list of shapes (`BrandMarkShape`: a path's `d` on the mark's 24-unit grid, inside the plate from 1 to 19 on each axis, and its `look`), drawn in order: `fill` fills a shape in the brand's white, `line` strokes it in that white (a line drawing), and `cut` strokes in the plate's colour over a white fill, so it reads as cut out of it.
 
 ```tsx
 import {

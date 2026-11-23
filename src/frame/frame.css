@@ -307,12 +307,6 @@
   }
 }
 
-.tree-list {
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
 /* A row stepped in by its level (`--tree-level`). */
 .tree .row {
   width: 100%;
@@ -508,13 +502,10 @@
 
 /* ---- A pane's quick row ---- */
 
-/* A row of quiet buttons under a pane's path bar (the tree's Recent and
-   Favorites, its Running and Updates filters): each a word with its glyph
-   and count, a menu hung from the row rather than its button so the pane's
-   clip never cuts an entry short. A filter button that is on wears
-   `aria-pressed="true"` (`FilterChips`). */
+/* A row of quiet buttons under a pane's path bar (FilterChips: the tree's
+   Running and Updates filters): each a word with its glyph and count, and
+   `aria-pressed="true"` while its filter is on. */
 .pane-quick-row {
-  position: relative;
   display: flex;
   gap: var(--space-2);
   padding: var(--space-2) var(--pane-row-inset);
@@ -549,69 +540,13 @@
   font-variant-numeric: tabular-nums;
 }
 
-.pane-quick-menu {
-  position: absolute;
-  top: calc(100% + var(--line-strong));
-  right: var(--pane-row-inset);
-  left: var(--pane-row-inset);
-  z-index: var(--z-menu);
-  max-height: var(--quick-menu-height);
-  overflow: auto;
-  padding: var(--space-2);
-  border: var(--line) solid var(--border-strong);
-  border-radius: var(--radius-lg);
-  background: var(--surface);
-  box-shadow: var(--shadow-popover);
-}
-
-.pane-quick-entry {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-}
-
-.pane-quick-link {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  padding: var(--space-1) var(--space-3);
-  border: none;
-  border-radius: calc(var(--radius-lg) - var(--space-2));
-  background: none;
-  color: var(--text);
-  font: inherit;
-  font-size: var(--font-size-small);
-  text-align: left;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.pane-quick-link:hover {
-  background: var(--accent-wash-strong);
-}
-
-.pane-quick-link:active {
-  background: var(--accent-wash-pressed);
-  box-shadow: var(--press-frost);
-}
-
-/* The menu clips its links, so the ring sits inside. */
-.pane-quick-link:focus-visible {
-  outline-offset: var(--focus-offset-inset);
-}
-
-.pane-quick-empty,
+/* A warning under a pane's path bar, over its rows (PaneWarning). */
 .pane-warning {
   margin: 0;
-  padding: var(--space-2) var(--space-3);
-  color: var(--row-meta-text);
-  font-size: var(--font-size-small);
-}
-
-/* A warning under a pane's path bar, over its rows. */
-.pane-warning {
   padding: var(--space-2) var(--pane-row-inset);
   border-bottom: var(--line) solid var(--border);
+  color: var(--row-meta-text);
+  font-size: var(--font-size-small);
 }
 
 /* ---- The dock ---- */

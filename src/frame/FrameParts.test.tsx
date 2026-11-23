@@ -1,0 +1,236 @@
+import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { CircleAlert, Server } from 'lucide-react';
+import { describe, expect, it, vi } from 'vitest';
+
+import { RowCursorContext, type RowCursor } from '../listing/Listing.js';
+import { AppRoot, PageSlot, SpacePanel } from './AppRoot.js';
+import { Dock, DockLog, DockLogEntry } from './Dock.js';
+import { PageNote, SectionHead, ShowSidebarButton, Toolbar, ToolbarGap } from './PageParts.js';
+import { SplitDetail, usePaneSplit } from './PaneSplit.js';
+import { TreeFilterInput, TreeList, TreeRow, TreeTool } from './Tree.js';
+import { WindowFrame } from './WindowFrame.js';
+
+/** A cursor the test moves by hand, as `usePaneKeys` gives a host. */
+const cursorAt = (start: string | null): RowCursor & { readonly listeners: Set<() => void> } => {
+  let key = start;
+  const listeners = new Set<() => void>();
+
+  return {
+    listeners,
+    current: () => key,
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    point: (next) => {
+      key = next;
+      for (const listener of listeners) listener();
+    }
+  };
+};
+
+describe('AppRoot and its panel', () => {
+  it('wears the channel and hands the panel the host’s keys, out of the Tab order', () => {
+    const onKeyDown = vi.fn();
+    const { container } = render(
+      <AppRoot channel="local">
+        <SpacePanel onKeyDown={onKeyDown}>
+          <PageSlot shown={false}>held</PageSlot>
+        </SpacePanel>
+      </AppRoot>
+    );
+    const panel = container.querySelector('.space-panel') as HTMLElement;
+
+    expect(container.querySelector('.app-shell')?.getAttribute('data-channel')).toBe('local');
+    expect(panel.tabIndex).toBe(-1);
+    fireEvent.keyDown(panel, { key: 'k' });
+    expect(onKeyDown).toHaveBeenCalledOnce();
+    expect((container.querySelector('.page-slot') as HTMLElement).hidden).toBe(true);
+  });
+});
+
+describe('WindowFrame', () => {
+  it('is the space’s listing root, and gathers its panes in the host’s group', () => {
+    const onDrop = vi.fn();
+    const { container } = render(
+      <WindowFrame
+        brand="b"
+        group={{ onDrop }}
+        main={<section>main</section>}
+        sidebar={<aside>tree</aside>}
+        sidebarWidth={240}
+      />
+    );
+    const frame = container.querySelector('.window-frame') as HTMLElement;
+    const group = frame.querySelector(':scope > .window-frame-group') as HTMLElement;
+
+    expect(frame.classList.contains('space-root')).toBe(true);
+    expect(frame.classList.contains('listing-root')).toBe(true);
+    expect(group.querySelector('.window-frame-sidebar')?.textContent).toBe('tree');
+    expect(group.querySelector('.window-frame-main')?.textContent).toBe('main');
+    expect(frame.querySelector(':scope > .window-frame-band')).not.toBeNull();
+    fireEvent.drop(group);
+    expect(onDrop).toHaveBeenCalledOnce();
+  });
+});
+
+describe('TreeRow', () => {
+  it('follows the pane’s cursor, and the pointer moves the cursor to it', () => {
+    const cursor = cursorAt('a');
+
+    render(
+      <RowCursorContext value={cursor}>
+        <TreeList label="Services">
+          <TreeRow glyph={<Server />} level={1} name="PostgreSQL" rowKey="a" trailing="5432" />
+          <TreeRow name="Redis" rowKey="b" />
+        </TreeList>
+      </RowCursorContext>
+    );
+    const [first, second] = screen.getAllByRole('treeitem');
+
+    expect(screen.getByRole('tree', { name: 'Services' }).getAttribute('data-pane-home')).toBe(
+      'sidebar'
+    );
+    expect(first?.getAttribute('aria-current')).toBe('true');
+    expect(first?.classList.contains('cursor')).toBe(true);
+    expect(first?.getAttribute('aria-level')).toBe('2');
+    expect(first?.style.getPropertyValue('--tree-level')).toBe('1');
+    fireEvent.pointerMove(second as HTMLElement);
+    expect(second?.classList.contains('cursor')).toBe(true);
+    expect(first?.classList.contains('cursor')).toBe(false);
+  });
+
+  it('toggles its children from the chevron without opening the row', () => {
+    const onToggle = vi.fn();
+    const onOpen = vi.fn();
+
+    render(
+      <TreeRow
+        kind="group"
+        name="Services"
+        onOpen={onOpen}
+        rowKey="services"
+        toggle={{ open: false, onToggle, label: 'Expand Services' }}
+      />
+    );
+
+    expect(screen.getByRole('treeitem').getAttribute('aria-expanded')).toBe('false');
+    expect(screen.getByRole('treeitem').classList.contains('tree-group')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: 'Expand Services' }));
+    expect(onToggle).toHaveBeenCalledOnce();
+    expect(onOpen).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByText('Services'));
+    expect(onOpen).toHaveBeenCalledOnce();
+  });
+});
+
+describe('TreeTool', () => {
+  it('announces a failed read, its glyph and words, its action after them', () => {
+    render(
+      <TreeTool icon={CircleAlert} kind="danger" level={1} text="Homebrew is not installed.">
+        <button type="button">Retry</button>
+      </TreeTool>
+    );
+    const tool = screen.getByRole('alert');
+
+    expect(tool.className).toBe('tree-tool danger');
+    expect(tool.textContent).toBe('Homebrew is not installed.Retry');
+  });
+
+  it('holds a filter field that reports each edit', () => {
+    const onChange = vi.fn();
+
+    render(
+      <TreeTool>
+        <TreeFilterInput label="Filter services" onChange={onChange} value="" />
+      </TreeTool>
+    );
+    fireEvent.change(screen.getByRole('textbox', { name: 'Filter services' }), {
+      target: { value: 'pg' }
+    });
+    expect(onChange).toHaveBeenCalledWith('pg');
+  });
+});
+
+describe('Dock', () => {
+  it('takes no room while closed and keeps its body', () => {
+    const { container, rerender } = render(
+      <Dock bar="Console" label="Console" open={false}>
+        <DockLog empty="Nothing yet." label="Activity" />
+      </Dock>
+    );
+    const dock = screen.getByRole('region', { name: 'Console', hidden: true });
+
+    expect(dock.classList.contains('closed')).toBe(true);
+    expect(container.querySelector('.dock-log-empty')?.textContent).toBe('Nothing yet.');
+
+    rerender(
+      <Dock label="Console" open>
+        <DockLog empty="Nothing yet." label="Activity">
+          <DockLogEntry actions={<button type="button">Show</button>}>Exported</DockLogEntry>
+        </DockLog>
+      </Dock>
+    );
+    expect(dock.classList.contains('closed')).toBe(false);
+    expect(container.querySelector('.dock-log-empty')).toBeNull();
+    expect(container.querySelector('.dock-log-entry .dock-log-actions')?.textContent).toBe('Show');
+  });
+});
+
+describe('SplitDetail', () => {
+  it('is the split’s lower pane, and folds to its head', () => {
+    const { result } = renderHook(() => usePaneSplit('test-split', null));
+    const { rerender } = render(
+      <SplitDetail head={<span>head</span>} label="Selected" split={result.current}>
+        body
+      </SplitDetail>
+    );
+    const pane = screen.getByRole('region', { name: 'Selected' });
+
+    expect(result.current.lower.current).toBe(pane);
+    expect(pane.querySelector('.split-detail-body')?.textContent).toBe('body');
+
+    rerender(
+      <SplitDetail folded head={<span>head</span>} label="Selected" split={result.current}>
+        body
+      </SplitDetail>
+    );
+    expect(pane.classList.contains('folded')).toBe(true);
+    expect(pane.textContent).toBe('head');
+  });
+});
+
+describe('page parts', () => {
+  it('says a page is loading as a status, its spinner for the glyph', () => {
+    render(<PageNote busy>Loading services…</PageNote>);
+
+    expect(screen.getByRole('status').textContent).toBe('Loading services…');
+    expect(screen.getByRole('status').querySelector('.spinner')).not.toBeNull();
+  });
+
+  it('heads a listing at the level given', () => {
+    render(<SectionHead level={2}>Needs attention</SectionHead>);
+
+    expect(screen.getByRole('heading', { level: 2, name: 'Needs attention' })).toBeTruthy();
+  });
+
+  it('stands a toolbar’s end group at its far end', () => {
+    const { container } = render(
+      <Toolbar end={<button type="button">Stop</button>}>
+        <button type="button">Start</button>
+        <ToolbarGap />
+      </Toolbar>
+    );
+
+    expect(container.querySelector('.pane-toolbar > .pane-toolbar-end')?.textContent).toBe('Stop');
+    expect(container.querySelector('.pane-toolbar-gap')?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('shows the sidebar again', () => {
+    const onShow = vi.fn();
+
+    render(<ShowSidebarButton label="Show panel" onShow={onShow} />);
+    act(() => screen.getByRole('button', { name: 'Show panel' }).click());
+    expect(onShow).toHaveBeenCalledOnce();
+  });
+});
