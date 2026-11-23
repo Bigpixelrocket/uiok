@@ -460,14 +460,20 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
       // sidebar control (Refresh) switches panes as the listing does, and a
       // row's control out of the Tab order goes on from the page's home.
       const stop = node !== null && isTabStop(node) ? node : null;
+      const listingFirst = current.tabOrder === 'listing';
+      // In a listing-first walk, a key aimed at neither pane (the view
+      // itself) goes on as from the page's listing, whichever pane was
+      // active (`listingFirstStop`).
       const from: TabStop =
-        pane === 'sidebar'
-          ? walked !== null && stop !== null && !inRow
-            ? stop
-            : 'sidebar'
-          : onHome || (inRow && stop === null)
-            ? 'page'
-            : (node as HTMLElement);
+        listingFirst && !inSidebar && !inMain
+          ? 'page'
+          : pane === 'sidebar'
+            ? walked !== null && stop !== null && !inRow
+              ? stop
+              : 'sidebar'
+            : onHome || (inRow && stop === null)
+              ? 'page'
+              : (node as HTMLElement);
       const back = 'back' in action && action.back === true;
       const to = nextTabStop(
         main,
@@ -476,7 +482,7 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
         back,
         walked,
         sidebar === null,
-        current.tabOrder ?? 'document'
+        listingFirst ? 'listing' : 'document'
       );
 
       event.preventDefault();

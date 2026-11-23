@@ -70,7 +70,9 @@ const FOCUSABLE = 'a[href], button, input, select, textarea, summary, [tabindex]
  * its first while none is.
  */
 function tabbable(element: HTMLElement): boolean {
-  if (element.tabIndex < 0 || (element as HTMLButtonElement).disabled) return false;
+  // `:disabled` also covers a control inside a disabled fieldset, which
+  // refuses the focus though its own `disabled` is false.
+  if (element.tabIndex < 0 || element.matches(':disabled')) return false;
   if (element.closest('[hidden], [inert], [aria-hidden="true"]') !== null) return false;
 
   const details = element.closest('details');

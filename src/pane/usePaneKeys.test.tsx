@@ -18,6 +18,7 @@ function Panes({
   sidebarStops,
   sidebar = true,
   held = false,
+  locked = false,
   tabOrder
 }: {
   readonly sidebarStops: boolean;
@@ -27,6 +28,8 @@ function Panes({
   readonly sidebar?: boolean;
   /** A page held mounted out of sight comes before the front page. */
   readonly held?: boolean;
+  /** A disabled fieldset's control follows Edit, refusing the focus. */
+  readonly locked?: boolean;
 }): ReactElement {
   const panes = usePaneKeys<PaneKeyAction, object>({
     shown: true,
@@ -46,7 +49,7 @@ function Panes({
   });
 
   return (
-    <div ref={panes.rootRef}>
+    <div aria-label="View" ref={panes.rootRef} tabIndex={-1}>
       {sidebar ? (
         <aside className="pane">
           <button type="button">Refresh</button>
@@ -61,6 +64,11 @@ function Panes({
       ) : null}
       <div className="pane" ref={panes.mainRef} tabIndex={-1}>
         <button type="button">Edit</button>
+        {locked ? (
+          <fieldset disabled>
+            <button type="button">Locked</button>
+          </fieldset>
+        ) : null}
         {held ? (
           <div hidden>
             <div aria-label="Held page" data-pane-home="page" tabIndex={-1}>
@@ -135,6 +143,24 @@ describe('usePaneKeys Tab, listing first', () => {
     focus('Filter');
     expect(tab(true)).toBe('Refresh');
     expect(tab(true)).toBe('Tree');
+  });
+
+  it('goes on from the page listing when the view itself holds the focus, whichever pane was active', () => {
+    render(<Panes sidebarStops tabOrder="listing" />);
+
+    expect(focused()).toBe('Tree');
+    focus('View');
+    expect(tab()).toBe('Edit');
+    focus('View');
+    expect(tab(true)).toBe('Tree');
+  });
+
+  it('passes over a control a disabled fieldset holds', () => {
+    render(<Panes locked sidebarStops={false} tabOrder="listing" />);
+
+    focus('Page');
+    expect(tab()).toBe('Edit');
+    expect(tab()).toBe('Collation');
   });
 
   it('cycles through the page alone when the window hides the sidebar', () => {
