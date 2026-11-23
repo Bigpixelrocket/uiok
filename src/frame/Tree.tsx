@@ -117,11 +117,11 @@ export function TreeList({ label, ref, children, ...handlers }: TreeListProps): 
     // root it is mounted in, where the document cannot see), never a scan
     // of the rows; the tree's prefix makes the id unique there. A tree not
     // yet attached has no such root, and nothing to name.
-    const root = element.getRootNode();
+    // Asked by shape, not instanceof, so a tree React renders into another
+    // window's document (a same-origin frame) finds its row too.
+    const root = element.getRootNode() as Partial<Pick<Document, 'getElementById'>>;
     const row =
-      id === null || !(root instanceof Document || root instanceof ShadowRoot)
-        ? null
-        : root.getElementById(id);
+      id === null || typeof root.getElementById !== 'function' ? null : root.getElementById(id);
     const drawnRow = row !== null && element.contains(row);
 
     if (drawnRow && id !== null) element.setAttribute('aria-activedescendant', id);
@@ -393,11 +393,9 @@ export function TreeTool({
             }
       }
       // A row the cursor walks is one of the tree's items, as a TreeRow is,
-      // so the tree can name it as its active descendant; a danger row
-      // keeps announcing itself as it appears.
-      aria-atomic={rowKey !== undefined && kind === 'danger' ? true : undefined}
+      // so the tree can name it as its active descendant; a danger row's
+      // words then carry the alert.
       aria-level={rowKey === undefined ? undefined : level + 1}
-      aria-live={rowKey !== undefined && kind === 'danger' ? 'assertive' : undefined}
       role={rowKey !== undefined ? 'treeitem' : kind === 'danger' ? 'alert' : undefined}
       style={levelStyle(level)}
     >
@@ -406,7 +404,14 @@ export function TreeTool({
           <Icon size={ICON_MD} />
         </span>
       )}
-      {text === undefined ? null : <span className="tree-note-text">{text}</span>}
+      {text === undefined ? null : (
+        <span
+          className="tree-note-text"
+          role={rowKey !== undefined && kind === 'danger' ? 'alert' : undefined}
+        >
+          {text}
+        </span>
+      )}
       {children}
     </div>
   );

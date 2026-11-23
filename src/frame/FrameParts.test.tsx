@@ -234,6 +234,45 @@ describe('TreeRow', () => {
     host.remove();
   });
 
+  it("names its cursor row in another window's document", () => {
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const frameDocument = frame.contentDocument as Document;
+    const mount = frameDocument.createElement('div');
+    frameDocument.body.append(mount);
+    const root = createRoot(mount);
+
+    act(() =>
+      root.render(
+        <RowCursorContext value={cursorAt('a')}>
+          <TreeList label="Services">
+            <TreeRow name="PostgreSQL" rowKey="a" />
+          </TreeList>
+        </RowCursorContext>
+      )
+    );
+
+    expect(frameDocument instanceof Document).toBe(false);
+    expect(mount.querySelector('[role="tree"]')?.getAttribute('aria-activedescendant')).toBe(
+      mount.querySelector('[role="treeitem"]')?.id
+    );
+    act(() => root.unmount());
+    frame.remove();
+  });
+
+  it('keeps a keyed danger row an item of the tree, its words the alert', () => {
+    render(
+      <RowCursorContext value={cursorAt(null)}>
+        <TreeList label="Services">
+          <TreeTool kind="danger" rowKey="failed" text="Could not list the services." />
+        </TreeList>
+      </RowCursorContext>
+    );
+
+    expect(screen.getByRole('treeitem').contains(screen.getByRole('alert'))).toBe(true);
+    expect(screen.getByRole('alert').textContent).toBe('Could not list the services.');
+  });
+
   it('mounts with a cursor row in an element not yet attached to a document', () => {
     const mount = document.createElement('div');
     const root = createRoot(mount);

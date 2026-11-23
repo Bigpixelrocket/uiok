@@ -373,7 +373,7 @@ export interface RangeProps {
   readonly max?: number;
   /** The step between values; any value unless given. */
   readonly step?: number | 'any';
-  /** Its accessible name ("Volume"); in a `FieldRow` the row's label names it. */
+  /** Its accessible name ("Volume") outside a `FieldRow`; in one, the row's label names it instead. */
   readonly label?: string;
   /** The value as words, read by assistive technology ("1:05 of 3:20"). */
   readonly valueText?: string;
@@ -398,11 +398,13 @@ export function Range({
   const span = max - min;
   const fill = span > 0 ? Math.min(100, Math.max(0, ((value - min) / span) * 100)) : 0;
   const wiring = useFieldWiring({});
+  // In a row its label names it; an aria-label would override that.
+  const inRow = wiring.id !== undefined;
 
   return (
     <input
       {...wiring}
-      aria-label={label}
+      aria-label={inRow ? undefined : label}
       aria-valuetext={valueText}
       className="range"
       disabled={disabled}
@@ -429,7 +431,7 @@ export interface MeterProps {
   readonly high: number;
   /** A value in the range that is good: low, middle, or high. */
   readonly optimum: number;
-  /** Its accessible name ("Strength"); in a `FieldRow` the row's label names it. */
+  /** Its accessible name ("Strength") outside a `FieldRow`; in one, the row's label names it instead. */
   readonly label?: string;
 }
 
@@ -450,10 +452,11 @@ export function Meter({
 }: MeterProps): ReactElement {
   const { id, 'aria-describedby': describedBy } = useFieldWiring({});
 
+  // In a row its label names it; an aria-label would override that.
   return (
     <meter
       aria-describedby={describedBy}
-      aria-label={label}
+      aria-label={id === undefined ? label : undefined}
       id={id}
       high={high}
       low={low}

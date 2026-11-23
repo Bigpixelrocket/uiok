@@ -271,6 +271,67 @@ describe('ViewerWindow', () => {
     expect(screen.getByRole('textbox', { name: 'Bytes of app.ts' })).toBeTruthy();
   });
 
+  it('lets the newest check speak when checks answer out of order', async () => {
+    const reader = bridgeWith();
+    render(<ViewerWindow onClose={noop} reader={reader} />);
+    await screen.findByRole('heading', { name: 'app.ts' });
+
+    const answers: ((info: ViewerFileInfo) => void)[] = [];
+    reader.inspect.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          answers.push((info) => resolve({ ok: true, value: info }));
+        })
+    );
+    act(() => {
+      window.dispatchEvent(new Event('focus'));
+      window.dispatchEvent(new Event('focus'));
+    });
+
+    await act(async () => {
+      answers[1]?.({ ...opened, change: 'removed' });
+      await Promise.resolve();
+    });
+    await act(async () => {
+      answers[0]?.({ ...opened, change: 'modified' });
+      await Promise.resolve();
+    });
+
+    expect(screen.getByRole('status').textContent).toContain('The file was moved or deleted.');
+    expect(screen.queryByRole('button', { name: 'Reload' })).toBeNull();
+  });
+
+  it("leaves the page's own controls their Escape and Copy", async () => {
+    const close = vi.fn();
+    render(
+      <>
+        <input aria-label="Search" />
+        <ViewerWindow onClose={close} reader={bridgeWith()} />
+      </>
+    );
+    await screen.findByText('answer', { exact: false });
+    const search = screen.getByRole('textbox', { name: 'Search' });
+
+    fireEvent.keyDown(screen.getByRole('textbox', { name: /app\.ts/ }), {
+      key: 'a',
+      metaKey: true
+    });
+    const setData = vi.fn();
+    const copyEvent = new Event('copy', { bubbles: true, cancelable: true });
+    Object.defineProperty(copyEvent, 'clipboardData', { value: { setData } });
+    act(() => {
+      search.dispatchEvent(copyEvent);
+    });
+    expect(setData).not.toHaveBeenCalled();
+    expect(copyEvent.defaultPrevented).toBe(false);
+
+    fireEvent.keyDown(search, { key: 'Escape' });
+    expect(close).not.toHaveBeenCalled();
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    fireEvent.keyDown(document.body, { key: 'Escape' });
+    expect(close).toHaveBeenCalledTimes(1);
+  });
+
   it('offers no Reload for a file that is gone from its path', async () => {
     render(
       <ViewerWindow

@@ -33,7 +33,8 @@ import { useElementHeight } from './useElementHeight.js';
 import { useEscapeToClear } from './useEscapeToClear.js';
 import { useSyntaxHighlight } from './useSyntaxHighlight.js';
 import { useTextDocument, type ScreenRow, type TextScreen } from './useTextDocument.js';
-import { deliverCopy } from './ViewerClipboard.js';
+import { deliverCopy, useCopyTickets } from './ViewerClipboard.js';
+import { isViewerEventTarget } from './ViewerScope.js';
 import type { ViewerViewProps } from './ViewerViews.js';
 
 /** One row's height in pixels; the stylesheet's row height and line height match it. */
@@ -113,6 +114,7 @@ function Row({
  */
 function TextView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): ReactElement {
   const labels = useLabels().viewer;
+  const takeCopyTicket = useCopyTickets();
   const [wrap, setWrap] = useState(false);
   const [selection, setSelection] = useState<TextSelection | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -343,14 +345,21 @@ function TextView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): R
   useEffect(() => {
     const onCopy = (event: ClipboardEvent): void => {
       if (selection === null || isCollapsed(selection)) return;
+      if (!isViewerEventTarget(event.target)) return;
 
       event.preventDefault();
-      deliverCopy(textDocument.copy(selection), event.clipboardData, setMessage, labels);
+      deliverCopy(
+        textDocument.copy(selection),
+        event.clipboardData,
+        setMessage,
+        labels,
+        takeCopyTicket()
+      );
     };
 
     window.addEventListener('copy', onCopy);
     return () => window.removeEventListener('copy', onCopy);
-  }, [textDocument, selection, labels]);
+  }, [textDocument, selection, labels, takeCopyTicket]);
 
   const selectAll = useCallback(() => {
     setSelection({

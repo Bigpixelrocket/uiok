@@ -66,6 +66,23 @@ describe('FieldRow', () => {
     expect(screen.getByLabelText('Host').id).toBe('host-field');
   });
 
+  it("names a slider and a meter by their row's label over their own", () => {
+    render(
+      <FieldGrid>
+        <FieldRow label="Volume">
+          <Range label="Loudness" onChange={vi.fn()} value={40} />
+        </FieldRow>
+        <FieldRow label="Strength">
+          <Meter high={0.75} label="Score" low={0.4} optimum={1} value={0.6} />
+        </FieldRow>
+      </FieldGrid>
+    );
+
+    expect(screen.getByRole('slider', { name: 'Volume' })).toBeTruthy();
+    expect(screen.getByRole('meter', { name: 'Strength' })).toBeTruthy();
+    expect(screen.queryByLabelText('Loudness')).toBeNull();
+  });
+
   it('labels and describes a slider, a meter, and a boxed field from their rows', () => {
     render(
       <FieldGrid>

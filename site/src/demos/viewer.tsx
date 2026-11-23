@@ -89,9 +89,12 @@ function dataUrlBytes(url: string): Uint8Array {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
-/** A reader over one in-memory file, answering as a host would. */
+/**
+ * A reader over one in-memory file, answering as a host would: a reload
+ * opens the next generation, which inspections and reads then report.
+ */
 function memoryReader(file: DemoFile): ViewerReader {
-  const info: ViewerFileInfo = {
+  let info: ViewerFileInfo = {
     generation: 0,
     name: file.name,
     sizeBytes: file.bytes.length,
@@ -104,10 +107,13 @@ function memoryReader(file: DemoFile): ViewerReader {
 
   return {
     inspect: () => ok(info),
-    reload: () => ok({ ...info, change: 'none' }),
+    reload: () => {
+      info = { ...info, generation: info.generation + 1, change: 'none' };
+      return ok(info);
+    },
     readRange: ({ offset, length }) =>
       ok({
-        generation: 0,
+        generation: info.generation,
         offset,
         bytes: file.bytes.slice(offset, offset + length),
         endOfFile: offset + length >= file.bytes.length
@@ -117,7 +123,7 @@ function memoryReader(file: DemoFile): ViewerReader {
       for (let index = 0; index < offset && index < file.bytes.length; index += 1) {
         if (file.bytes[index] === 0x0a) line += 1;
       }
-      return ok({ generation: 0, offset, line });
+      return ok({ generation: info.generation, offset, line });
     }
   };
 }

@@ -14,6 +14,7 @@ import { tooltip } from '../tooltip/Tooltip.logic.js';
 import { ICON_MD } from '../icon/index.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { formatMediaTime, mediaKeyAction, seekTarget } from './MediaPlayer.logic.js';
+import { isViewerEventTarget } from './ViewerScope.js';
 
 /** What the bar shows, read from the element on each of its events. */
 interface PlayerState {
@@ -182,7 +183,8 @@ function MediaControls({
 
     const onKeyDown = (event: KeyboardEvent): void => {
       const action = mediaKeyAction(event);
-      if (!action || !isPlayerKeyTarget(event.target, player)) return;
+      if (!action || !isViewerEventTarget(event.target)) return;
+      if (!isPlayerKeyTarget(event.target, player)) return;
       if (action.kind === 'fullscreen' && !fullscreen) return;
 
       // The volume slider moves by its own arrows and ends.

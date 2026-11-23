@@ -18,6 +18,7 @@ import { useLabels } from '../labels/UiokProvider.js';
 import { Notice } from '../surface/Notice.js';
 import { VisuallyHidden } from '../VisuallyHidden.js';
 import { isViewerCloseKey, type ViewerKeyStroke } from './ViewerKeys.js';
+import { isViewerEventTarget } from './ViewerScope.js';
 import {
   openSyntaxWorker,
   SyntaxWorkerContext,
@@ -138,9 +139,10 @@ const readerKey = (reader: ViewerReader | null): number => {
  * front; when its source no longer matches, a notice says so and offers
  * Reload, while the view keeps what it has. A native view that cannot show
  * the file hands over to its kind's fallback (source for an SVG, hex
- * otherwise) with a note saying why. It owns its document's keyboard and
- * clipboard (its keys and Copy listen on the window), so mount one per
- * window or document; a new `reader` starts it afresh on that file.
+ * otherwise) with a note saying why. Its keys and Copy listen on the window
+ * and answer when aimed inside it or at nothing, leaving the page's own
+ * controls theirs (`isViewerEventTarget`), so mount one per window or
+ * document; a new `reader` starts it afresh on that file.
  */
 export function ViewerWindow(props: ViewerWindowProps): ReactElement {
   return <ViewerWindowFor key={readerKey(props.reader)} {...props} />;
@@ -230,9 +232,16 @@ function ViewerWindowFor({
   useEffect(() => {
     if (!reader) return;
 
+    // Checks can answer out of order; only the newest one answered speaks.
+    let asked = 0;
+    let heard = 0;
     const check = (): void => {
+      asked += 1;
+      const ticket = asked;
+
       void settleRead(noAnswer.current, () => reader.inspect()).then((result) => {
-        if (!result.ok) return;
+        if (!result.ok || ticket < heard) return;
+        heard = ticket;
 
         // A disk that matches the open file again leaves nothing for an
         // earlier failed reload to explain. A check that answers for an
@@ -263,7 +272,8 @@ function ViewerWindowFor({
   // full screen, Escape is the browser's, to leave it; other close keys still close.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.defaultPrevented || !isCloseKeyRef.current(event)) return;
+      if (event.defaultPrevented || !isViewerEventTarget(event.target)) return;
+      if (!isCloseKeyRef.current(event)) return;
       if (event.key === 'Escape' && document.fullscreenElement) return;
 
       event.preventDefault();

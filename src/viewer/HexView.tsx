@@ -40,7 +40,8 @@ import { screenRows as clampScreenRows } from './TextViewport.logic.js';
 import { useElementHeight } from './useElementHeight.js';
 import { useEscapeToClear } from './useEscapeToClear.js';
 import { useHexDocument } from './useHexDocument.js';
-import { deliverCopy } from './ViewerClipboard.js';
+import { deliverCopy, useCopyTickets } from './ViewerClipboard.js';
+import { isViewerEventTarget } from './ViewerScope.js';
 import type { ViewerViewProps } from './ViewerViews.js';
 
 /** One row's height in pixels; the stylesheet's row height and line height match it. */
@@ -122,6 +123,7 @@ function Row({
  */
 function HexView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): ReactElement {
   const labels = useLabels().viewer;
+  const takeCopyTicket = useCopyTickets();
   const [selection, setSelection] = useState<HexSelection | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const clearSelection = useCallback(() => setSelection(null), []);
@@ -173,23 +175,25 @@ function HexView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): Re
   useEffect(() => {
     const onCopy = (event: ClipboardEvent): void => {
       if (selection === null || document.activeElement === jumpField.current) return;
+      if (!isViewerEventTarget(event.target)) return;
 
       event.preventDefault();
       deliverCopy(
         hexDocument.copy(selection, selection.column),
         event.clipboardData,
         setMessage,
-        labels
+        labels,
+        takeCopyTicket()
       );
     };
 
     window.addEventListener('copy', onCopy);
     return () => window.removeEventListener('copy', onCopy);
-  }, [hexDocument, labels, selection]);
+  }, [hexDocument, labels, selection, takeCopyTicket]);
 
   const copyAs = (column: HexColumn): void => {
     if (selection !== null)
-      deliverCopy(hexDocument.copy(selection, column), null, setMessage, labels);
+      deliverCopy(hexDocument.copy(selection, column), null, setMessage, labels, takeCopyTicket());
   };
 
   const openJump = (): void => {

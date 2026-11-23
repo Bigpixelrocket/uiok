@@ -18,7 +18,7 @@ import { ViewerWindow, isViewerCloseKey } from '@bigpixelrocket/uiok/viewer';
 />;
 ```
 
-`ViewerWindow` fills its container: give the window's root a height. It owns its document's keyboard and clipboard (its keys, Escape to close, and Copy listen on the window), so mount one per window or document, not beside other inputs on a page. Giving it another `reader` starts it afresh on that file; nothing the old reader answers late reaches it.
+`ViewerWindow` fills its container: give the window's root a height. Its keys, Escape to close, and Copy listen on the window and answer when aimed inside the viewer or at nothing (a window that shows only the viewer, with nothing focused); a key or Copy aimed at a control of the page beside it stays the page's. Mount one viewer per window or document: two would both answer a key aimed at nothing. Giving it another `reader` starts it afresh on that file; nothing the old reader answers late reaches it.
 
 ## `ViewerWindow` (`ViewerWindowProps`)
 
@@ -45,7 +45,7 @@ Every method acts on the same file and resolves to a `ViewerResult`: `{ ok: true
 
 A read never asks for more than `VIEWER_MAX_READ_BYTES` (1 MB). Content kinds: `text`, `binary`, `image`, `svg`, `audio`, `video`, `pdf`; each opens in its own view and can switch to hex (an SVG also to its source). The native views (image, audio, video, PDF) load `mediaUrl`; the text and hex views read through `readRange` alone. The PDF view loads `mediaUrl` with `/<file name>` appended, which the browser's PDF viewer shows as its title, so a PDF's `mediaUrl` must serve the file whatever last segment follows it: a custom scheme or a server route that ignores it, not a `blob:` URL.
 
-The reader owns each `mediaUrl`'s lifetime: the viewer stops loading it when the view leaves (a reload, a switch to hex, unmounting), and the reader revokes or expires it after that, as it should a `blob:` URL. A page that loads `mediaUrl` from a scheme of its own needs a Content Security Policy that allows it: `img-src` for images, `media-src` for audio and video, `frame-src` for a PDF.
+The reader owns each `mediaUrl`'s lifetime: it must stay loadable for as long as its generation is open, since a switch to hex and back loads it again, and the reader retires it (revoking a `blob:` URL, say) once a reload opens the next generation or the viewer closes. A page that loads `mediaUrl` from a scheme of its own needs a Content Security Policy that allows it: `img-src` for images, `media-src` for audio and video, `frame-src` for a PDF.
 
 The PDF view frames `mediaUrl` unsandboxed, since the browser's PDF viewer does not run in a sandboxed frame, so whatever that URL answers runs as a page in the viewer's frame. Serve it only from a source the app controls, only as the file's bytes with `Content-Type: application/pdf` and `X-Content-Type-Options: nosniff`, never as HTML (an error page included: answer a failure with a status and no body), and preferably from an origin other than the page's, such as a custom scheme of the host's; narrow the page's `frame-src` to that source.
 

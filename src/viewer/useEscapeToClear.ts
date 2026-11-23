@@ -1,8 +1,10 @@
 import { useEffect } from 'react';
 
+import { isViewerEventTarget } from './ViewerScope.js';
+
 /**
  * Lets a bare Escape clear what a view holds (its selection) wherever focus
- * is in the window, the Wrap checkbox or a status bar button included, before
+ * is in the viewer, the Wrap checkbox or a status bar button included, before
  * the window's own Escape closes it (`ViewerWindow.tsx`). The listener sits on
  * the document, which a keystroke reaches before the window, and takes Escape
  * only while `active`; a key something inside took first stays with it.
@@ -14,6 +16,7 @@ export function useEscapeToClear(active: boolean, clear: () => void): void {
     const onKeyDown = (event: KeyboardEvent): void => {
       const bare = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
       if (event.defaultPrevented || event.key !== 'Escape' || !bare) return;
+      if (!isViewerEventTarget(event.target)) return;
 
       event.preventDefault();
       clear();
