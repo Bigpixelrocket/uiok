@@ -115,9 +115,12 @@ describe('usePaneKeys Tab', () => {
     expect(tab()).toBe('Collation');
     expect(tab()).toBe('Manual');
     expect(tab()).toBe('Log');
+    // The page's stops make one cycle, wrapping at either end.
+    expect(tab()).toBe('Edit');
     expect(tab()).toBe('Page');
     expect(tab(true)).toBe('Edit');
-    expect(tab(true)).toBe('Page');
+    expect(tab(true)).toBe('Log');
+    expect(tab(true)).toBe('Manual');
   });
 
   it('never reaches the home, rows, or verbs of a page held out of sight', () => {

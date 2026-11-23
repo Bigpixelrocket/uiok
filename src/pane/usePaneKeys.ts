@@ -462,15 +462,12 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
             ? 'page'
             : (node as HTMLElement);
       const back = 'back' in action && action.back === true;
-      const to = nextTabStop(main, home, from, back, walked);
+      const to = nextTabStop(main, home, from, back, walked, sidebar === null);
 
       event.preventDefault();
       event.stopPropagation();
 
-      // With no sidebar shown (the window hid it), the walk that would go
-      // there comes back to the page's home.
-      if (to === 'sidebar' || to === 'page')
-        focusPane(to === 'sidebar' && sidebar !== null ? 'sidebar' : 'main');
+      if (to === 'sidebar' || to === 'page') focusPane(to === 'sidebar' ? 'sidebar' : 'main');
       else to.focus();
 
       return;

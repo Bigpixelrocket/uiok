@@ -178,6 +178,29 @@ describe('TreeRow', () => {
     expect(second?.id).not.toBe('');
   });
 
+  it('names no active descendant once a filter takes the cursor row away', () => {
+    const cursor = cursorAt('a');
+    const tree = (keys: readonly string[]) => (
+      <RowCursorContext value={cursor}>
+        <TreeList label="Services">
+          {keys.map((key) => (
+            <TreeRow key={key} name={key} rowKey={key} />
+          ))}
+        </TreeList>
+      </RowCursorContext>
+    );
+    const { rerender } = render(tree(['a', 'b']));
+    const list = screen.getByRole('tree');
+
+    expect(list.getAttribute('aria-activedescendant')).toBe(
+      screen.getByText('a').closest('[role="treeitem"]')?.id
+    );
+    rerender(tree(['b']));
+    expect(list.hasAttribute('aria-activedescendant')).toBe(false);
+    act(() => cursor.point('b'));
+    expect(list.getAttribute('aria-activedescendant')).toBe(screen.getByRole('treeitem').id);
+  });
+
   it('toggles its children from the chevron without opening the row', () => {
     const onToggle = vi.fn();
     const onOpen = vi.fn();
@@ -294,6 +317,36 @@ describe('Dock', () => {
     // edge unless the host hears a drag.
     expect(dock.style.height).toBe('200px');
     expect(screen.queryByRole('separator', { hidden: true })).toBeNull();
+  });
+
+  it('measures again when the main pane’s slot changes, as a tray or legend coming does', () => {
+    const observed: Element[] = [];
+
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe(element: Element): void {
+          observed.push(element);
+        }
+        disconnect(): void {}
+      }
+    );
+    const { container } = render(
+      <WindowFrame
+        brand="b"
+        dock={
+          <Dock height={120} label="Console" open>
+            body
+          </Dock>
+        }
+        main="m"
+        sidebarWidth={240}
+      />
+    );
+
+    expect(observed).toContain(container.querySelector('.window-frame'));
+    expect(observed).toContain(container.querySelector('.window-frame-main'));
+    vi.unstubAllGlobals();
   });
 
   it('draws its edge for a drag, with its height as the separator’s value', () => {

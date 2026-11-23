@@ -1,9 +1,11 @@
 import type { LucideIcon } from 'lucide-react';
 import {
   createContext,
+  useCallback,
   useContext,
   useId,
   useLayoutEffect,
+  useRef,
   useSyncExternalStore,
   type ChangeEvent,
   type CSSProperties,
@@ -88,15 +90,46 @@ export interface TreeListProps extends RegionHandlers {
 export function TreeList({ label, ref, children, ...handlers }: TreeListProps): ReactElement {
   const tree = useId();
   const cursor = useContext(RowCursorContext);
-  const current = useSyncExternalStore(cursor.subscribe, cursor.current);
+  const list = useRef<HTMLDivElement | null>(null);
+  const attach = useCallback(
+    (element: HTMLDivElement | null) => {
+      list.current = element;
+      if (typeof ref === 'function') ref(element);
+      else if (ref !== null && ref !== undefined) ref.current = element;
+    },
+    [ref]
+  );
+
+  // Names the cursor row only while it is drawn here: a row a filter took
+  // away, or a cursor on another pane's row, leaves no active descendant
+  // pointing at nothing. Run after every render, since rows come and go
+  // with the host's, and on every cursor move.
+  useLayoutEffect(() => {
+    const sync = (): void => {
+      const element = list.current;
+
+      if (element === null) return;
+
+      const key = cursor.current();
+      const id = key === null ? null : rowId(tree, key);
+      const drawnRow =
+        id !== null &&
+        [...element.querySelectorAll('[role="treeitem"]')].some((row) => row.id === id);
+
+      if (drawnRow) element.setAttribute('aria-activedescendant', id);
+      else element.removeAttribute('aria-activedescendant');
+    };
+
+    sync();
+    return cursor.subscribe(sync);
+  });
 
   return (
     <div
-      aria-activedescendant={current === null ? undefined : rowId(tree, current)}
       aria-label={label}
       className="pane-list tree"
       data-pane-home="sidebar"
-      ref={ref}
+      ref={attach}
       role="tree"
       tabIndex={-1}
       {...handlers}

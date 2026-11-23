@@ -122,14 +122,16 @@ const inDocumentOrder = (a: Element, b: Element): number =>
  * document puts it, make one cycle in document order that wraps at either
  * end. A row's controls are no stops (the cursor row's keys run them) unless
  * its listing keeps them in the Tab order (`Row`'s `tabbable`); a sidebar
- * row's never are.
+ * row's never are. With `alone` (no sidebar shown) the page's stops make
+ * the one cycle, wrapping at either end, and the sidebar is never named.
  */
 export function nextTabStop(
   main: Element,
   home: HTMLElement,
   from: TabStop,
   back: boolean,
-  sidebar: SidebarTabStops | null = null
+  sidebar: SidebarTabStops | null = null,
+  alone = false
 ): TabStop {
   if (from === 'sidebar' && sidebar === null) return 'page';
 
@@ -157,7 +159,7 @@ export function nextTabStop(
             .filter((stop) => stop.compareDocumentPosition(at) & Node.DOCUMENT_POSITION_FOLLOWING)
             .pop()
         : stops.find((stop) => stop.compareDocumentPosition(at) & Node.DOCUMENT_POSITION_PRECEDING);
-  const landed = next ?? (sidebar === null ? undefined : back ? stops.at(-1) : stops[0]);
+  const landed = next ?? (sidebar === null && !alone ? undefined : back ? stops.at(-1) : stops[0]);
 
   if (landed === undefined || landed === sidebar?.home) return 'sidebar';
 

@@ -150,8 +150,15 @@ export function Dock({
     if (typeof ResizeObserver === 'undefined') return undefined;
 
     const observer = new ResizeObserver(measure);
+    const main = element
+      .closest('.window-frame-dock')
+      ?.parentElement?.querySelector(':scope > .window-frame-main');
 
+    // The frame for a window resize, the main pane's slot for a tray or a
+    // legend that comes, goes, or changes height in a frame of fixed size.
+    // The room leaves the dock's own height out, so its change settles.
     observer.observe(frame);
+    if (main !== null && main !== undefined) observer.observe(main);
     return () => observer.disconnect();
   }, [open]);
 
