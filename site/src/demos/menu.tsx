@@ -9,16 +9,30 @@
  * the desktop menu's other looks: a row that opens a submenu, a checked
  * setting, a disabled command, and plain separators. Under them, `Menu`
  * itself: Actions drops one from its button, and a secondary click on the
- * box opens the same menu at the pointer.
+ * box opens the same menu at the pointer. Last, a pane of files: a
+ * secondary click on a file moves the cursor to it and opens its menu, whose
+ * Copy As opens a submenu (→ or the pointer opens it, ← or Escape closes
+ * it), and one on the pane's empty space opens the pane's own menu.
  */
 
-import { ClipboardPaste, Copy, Eye, File, Folder, FolderOpen, PenLine, Trash2 } from 'lucide-react';
+import {
+  ClipboardPaste,
+  Copy,
+  Eye,
+  File,
+  Folder,
+  FolderOpen,
+  FolderPlus,
+  PenLine,
+  Trash2
+} from 'lucide-react';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { FilterIcon } from '@bigpixelrocket/uiok/filter';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { KeyChord } from '@bigpixelrocket/uiok/keychord';
+import { Cell, Listing, Row, RowCursorContext } from '@bigpixelrocket/uiok/listing';
 import {
   Menu,
   matchQuery,
@@ -27,8 +41,10 @@ import {
   useBellBeat,
   type MenuEntry
 } from '@bigpixelrocket/uiok/menu';
+import { PaneBox, PaneList } from '@bigpixelrocket/uiok/pane';
 import { MarkedText } from '@bigpixelrocket/uiok/text';
 
+import { useDemoCursor } from './cursor';
 import { FILES } from './data';
 
 /** An entry of the menu: a folder or a file, a chord for some, and one folder that cannot be opened. */
@@ -343,6 +359,110 @@ function ActionsMenuDemo({ onPick }: { readonly onPick: (name: string) => void }
   );
 }
 
+/** The files in the pane, by name, each with its size. */
+const PANE_FILES: readonly (readonly [string, string])[] = [
+  ['README.md', '4 KB'],
+  ['package.json', '2 KB'],
+  ['vite.config.ts', '1 KB'],
+  ['index.html', '1 KB']
+];
+
+/** A file's menu: its verbs, Copy As with its submenu, and a destructive one. */
+const FILE_MENU: readonly MenuEntry[] = [
+  { id: 'open', label: 'Open', icon: FolderOpen, chord: { key: 'o', meta: true } },
+  {
+    kind: 'submenu',
+    id: 'copy-as',
+    label: 'Copy As',
+    icon: Copy,
+    entries: [
+      { id: 'copy-path', label: 'Path', chord: { key: 'c', meta: true, alt: true } },
+      { id: 'copy-relative', label: 'Relative Path' },
+      { id: 'copy-url', label: 'File URL' },
+      { kind: 'separator' },
+      { id: 'copy-name', label: 'Name' }
+    ]
+  },
+  { id: 'rename', label: 'Rename', icon: PenLine, chord: { key: 'Enter' } },
+  { kind: 'separator' },
+  { id: 'trash', label: 'Move to Trash', icon: Trash2, danger: true }
+];
+
+/** The pane's own menu, for a secondary click on no file. */
+const PANE_MENU: readonly MenuEntry[] = [
+  {
+    id: 'new-folder',
+    label: 'New Folder',
+    icon: FolderPlus,
+    chord: { key: 'n', meta: true, shift: true }
+  },
+  { id: 'paste', label: 'Paste', icon: ClipboardPaste, disabled: true, tip: 'Nothing copied yet' },
+  { kind: 'separator' },
+  { id: 'hidden', label: 'Show Hidden Files', icon: Eye, checked: true }
+];
+
+/**
+ * A pane of files whose rows and empty space each open their own `Menu` on
+ * a secondary click: the row's moves the cursor to it first, and the pane's
+ * takes only a click no row took.
+ */
+function FilePaneDemo({ onPick }: { readonly onPick: (name: string) => void }) {
+  const { cursor, onKeyDown } = useDemoCursor(PANE_FILES.map(([name]) => name));
+  const [open, setOpen] = useState<{
+    readonly file: string | null;
+    readonly at: { readonly x: number; readonly y: number };
+  } | null>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const close = (by: 'keyboard' | 'pointer') => {
+    setOpen(null);
+    if (by === 'keyboard') list.current?.focus();
+  };
+  return (
+    <PaneBox
+      label="Files"
+      onContextMenu={(event) => setOpen({ file: null, at: { x: event.clientX, y: event.clientY } })}
+    >
+      <PaneList
+        home
+        label="Files: secondary-click a file or the space under them"
+        onKeyDown={onKeyDown}
+        ref={list}
+      >
+        <RowCursorContext value={cursor}>
+          <Listing columns={[{ label: 'Size', align: 'right' }]} grid="20px 1fr auto" title="Files">
+            {PANE_FILES.map(([name, size]) => (
+              <Row
+                key={name}
+                mark={<File size={ICON_MD} />}
+                name={name}
+                onContextMenu={(event, key) =>
+                  setOpen({ file: key, at: { x: event.clientX, y: event.clientY } })
+                }
+                rowKey={name}
+              >
+                <Cell align="right">{size}</Cell>
+              </Row>
+            ))}
+          </Listing>
+        </RowCursorContext>
+      </PaneList>
+      {open === null ? null : (
+        <Menu
+          at={open.at}
+          compact
+          entries={open.file === null ? PANE_MENU : FILE_MENU}
+          label={open.file ?? 'Files'}
+          onClose={close}
+          onPick={(id) => {
+            onPick(open.file === null ? id : `${id} ${open.file}`);
+            close('keyboard');
+          }}
+        />
+      )}
+    </PaneBox>
+  );
+}
+
 /** The menu page's demo. */
 export function MenuDemo() {
   const [open, setOpen] = useState<'files' | 'commands' | null>(null);
@@ -374,6 +494,7 @@ export function MenuDemo() {
         </div>
       </div>
       <ActionsMenuDemo onPick={setPicked} />
+      <FilePaneDemo onPick={setPicked} />
       <code className="demo-readout">picked: {picked ?? 'nothing yet'}</code>
     </div>
   );

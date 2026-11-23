@@ -21,10 +21,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `usePaneKeys`'s `tabOrder` and `nextTabStop`'s `order` (`TabOrder`): `listing` walks each pane's listing first, then its other controls, then the other pane's listing, over the pure rule `listingFirstStop` (`WalkPane`).
 - `Row`'s `onContextMenu(event, rowKey)`: a secondary click for the row's menu. The row moves the pane's cursor to itself before calling it, and cancels the browser's own menu.
 - `RegionHandlers`' `onContextMenu`, so every part that takes the region handlers (`PaneBox`, `PaneList`, `SpacePanel`, `WindowFrame`'s `group`, `Dock`, `TreePane`, `TreeList`) takes a secondary click for its own menu. The innermost menu wins: a row's, then its pane's, then the region's around it, each running only for a click nothing inside cancelled, so one click never opens two menus.
+- `Menu`'s submenus (`MenuSubmenuEntry`, `{ kind: 'submenu', id, label, entries }`), one level deep (`MenuLeafEntry`): an item that opens a second menu beside it, on its inline-end side or the other with no room there (`placeMenu`'s `{ beside, rtl }`, `MenuFrom`). → (← right to left), Return, or Space opens it with the keys on its first item, ← goes back to its item, Escape closes it alone and Tab the whole menu; resting on or pressing its item opens it for the pointer, which may cross other items on its way in. The item is a `menuitem` with `aria-haspopup="menu"` and `aria-expanded`, the submenu a `menu` labelled by it.
 - `BUDGETED_TERMINALS_PER_PAGE` (`@bigpixelrocket/uiok/terminal`): how many terminals one page's shared engine memory is budgeted for (17), so an app can test how many it opens against it; past it, terminals that fill their histories to the ceiling can exhaust the shared memory.
 
 ### Changed
 
+- `menuKeyAction(event, rtl)` maps → and ← (`open`, `back`), and its `close` says whether it closes one level (Escape, `all: false`) or the whole menu (Tab, `all: true`). A `Menu` now holds → and ← too, which no longer reach its owner while it is open.
 - `KeyLabels` takes `or` ("or" in English). An app that builds a whole `keys` group of its own, not an override through `UiokProvider`, adds it.
 - `PaneMessage` draws its words in one `.pane-message-text`, so inline code flows with them.
 - `PaneMessage` and `PageNote` drawn outside every listing scope carry the scope themselves (a `.listing-root` around them), as `Listing` does, so a note after a listing keeps its look anywhere.
