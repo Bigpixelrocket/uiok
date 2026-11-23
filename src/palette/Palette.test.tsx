@@ -6,7 +6,8 @@ import {
   useRef,
   useState,
   type KeyboardEvent,
-  type ReactElement
+  type ReactElement,
+  type ReactNode
 } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -148,7 +149,13 @@ const type = (value: string): void => {
  * the cursor command on Return and closes the palette without cancelling
  * the key, as the documented example does.
  */
-function PaletteHost({ onRun }: { readonly onRun: (id: string) => void }): ReactElement {
+function PaletteHost({
+  onRun,
+  stop = false
+}: {
+  readonly onRun: (id: string) => void;
+  readonly stop?: boolean;
+}): ReactElement {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -170,6 +177,7 @@ function PaletteHost({ onRun }: { readonly onRun: (id: string) => void }): React
       </button>
       {open && (
         <ReturningPalette
+          stop={stop}
           onClose={() => setOpen(false)}
           onRun={(id) => {
             setOpen(false);
@@ -183,10 +191,15 @@ function PaletteHost({ onRun }: { readonly onRun: (id: string) => void }): React
 
 function ReturningPalette({
   onRun,
-  onClose
+  onClose,
+  stop = false,
+  children
 }: {
   readonly onRun: (id: string) => void;
   readonly onClose: () => void;
+  /** The field's handler keeps Return from the parts around it, as a host may. */
+  readonly stop?: boolean;
+  readonly children?: ReactNode;
 }): ReactElement {
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -210,7 +223,9 @@ function ReturningPalette({
         listId="commands"
         onChange={() => undefined}
         onKeyDown={(event) => {
-          if (event.key === 'Enter') onRun('new-tab');
+          if (event.key !== 'Enter') return;
+          if (stop) event.stopPropagation();
+          onRun('new-tab');
         }}
         placeholder="Type a command"
         refused={null}
@@ -221,6 +236,7 @@ function ReturningPalette({
           New Tab
         </div>
       </div>
+      {children}
     </Palette>
   );
 }
@@ -312,14 +328,40 @@ describe('Palette', () => {
   });
 
   it('leaves an input method’s Return to the input method', () => {
-    render(
-      <Palette label="Commands" onClose={vi.fn()}>
-        <input aria-label="Filter commands" role="combobox" />
-      </Palette>
-    );
+    render(<ReturningPalette onClose={vi.fn()} onRun={vi.fn()} />);
 
     expect(fireEvent.keyDown(field(), { key: 'Enter', isComposing: true })).toBe(true);
     expect(fireEvent.keyDown(field(), { key: 'Enter' })).toBe(false);
+  });
+
+  it('stays closed after Return though the host keeps the key from the parts around its field', () => {
+    const onRun = vi.fn();
+    render(<PaletteHost onRun={onRun} stop />);
+    const opener = screen.getByRole('button', { name: 'Commands' });
+
+    opener.focus();
+    press(opener, { key: 'k', metaKey: true });
+    press(field(), { key: 'Enter' });
+
+    expect(onRun).toHaveBeenCalledExactlyOnceWith('new-tab');
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('leaves Return to a button inside the palette, which it clicks', () => {
+    const onPress = vi.fn();
+    render(
+      <ReturningPalette onClose={vi.fn()} onRun={vi.fn()}>
+        <button onClick={onPress} type="button">
+          Add Project
+        </button>
+      </ReturningPalette>
+    );
+    const button = screen.getByRole('button', { name: 'Add Project' });
+
+    button.focus();
+    press(button, { key: 'Enter' });
+
+    expect(onPress).toHaveBeenCalledOnce();
   });
 
   it('closes on Escape, but not on an input method’s Escape', () => {
