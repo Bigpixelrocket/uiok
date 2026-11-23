@@ -92,7 +92,8 @@
 /* The listing's face: the path bar, the list, and the status line are set
    in the monospace face, whatever the space around them uses. An empty
    pane's block is sentences, in the interface face. */
-:where(.listing-root) :is(.pane-path-row, .pane-list, .pane-status) {
+:where(.listing-root) :is(.pane-path-row, .pane-list, .pane-status),
+.pane-listing:where(.listing-root, .listing-root *) {
   font-family: var(--font-mono);
   font-size: var(--font-size-body);
 }
@@ -856,7 +857,7 @@ button.crumb-label.crumb-siblings > svg {
    it again, which a subgrid adds to its edge cells as margin: the two
    cancel, so the cells sit exactly on the listing's tracks. Anything else
    in the listing (a message, an app's own block) spans every track. */
-:where(.listing-root) .pane-listing:where([role='table']) {
+.pane-listing:where(.listing-root, .listing-root *):where([role='table']) {
   display: grid;
   grid-template-columns: var(
     --pane-grid,
@@ -866,12 +867,12 @@ button.crumb-label.crumb-siblings > svg {
   padding: 0 var(--pane-row-inset);
 }
 
-:where(.listing-root .pane-listing[role='table']) > * {
+:where(.pane-listing:is(.listing-root, .listing-root *)[role='table']) > * {
   grid-column: 1 / -1;
   margin-inline: calc(-1 * var(--pane-row-inset));
 }
 
-:where(.listing-root .pane-listing[role='table']) > :is(.row, .pane-columns) {
+:where(.pane-listing:is(.listing-root, .listing-root *)[role='table']) > :is(.row, .pane-columns) {
   grid-template-columns: subgrid;
 }
 
@@ -1016,7 +1017,11 @@ button.crumb-label.crumb-siblings > svg {
    edge, as the headings of the sections around it do. The listing's part
    weighs nothing, so the rule weighs what the label's default above does,
    and an app's own placement of the label wins. */
-:where(.listing-root .pane-listing:has(> .row):not(:has(> .row > .row-icon:not(:empty))))
+:where(
+    .pane-listing:is(.listing-root, .listing-root *):has(> .row):not(
+        :has(> .row > .row-icon:not(:empty))
+      )
+  )
   > .pane-columns
   > .row-name:where(:not(:has(h3))) {
   grid-column: 2;
@@ -1523,7 +1528,9 @@ button.crumb-label.crumb-siblings > svg {
 
 /* Each section is a listing of its own, so its strip pins only while the
    listing is in view; a rule sets a listing off from the one above. */
-:where(.listing-root) :is(.pane-listing, .pane-message) + .pane-listing > .pane-columns {
+:is(.pane-listing, .pane-message)
+  + .pane-listing:where(.listing-root, .listing-root *)
+  > .pane-columns {
   border-top: var(--line) solid var(--border);
 }
 
@@ -1610,9 +1617,8 @@ button.crumb-label.crumb-siblings > svg {
 /* A strip that follows a listing carries a rule above it inside its own
    height, one line less room: there the button is one line shorter, so
    it still stands 2px clear of both rules. */
-:where(.listing-root)
-  :is(.pane-listing, .pane-message)
-  + .pane-listing
+:is(.pane-listing, .pane-message)
+  + .pane-listing:where(.listing-root, .listing-root *)
   > .pane-columns
   :is(.pane-strip-link, .button-xs) {
   height: calc(var(--pane-columns-height) - 2 * var(--line) - 2 * var(--space-1));
@@ -1931,7 +1937,7 @@ button.crumb-label.crumb-siblings > svg {
    wide as the spinner (--icon-sm), so the words read from one edge: the
    mark is --dot wide, and its margins take up the rest (a turned diamond
    is about as wide). A listing with no spinner keeps the room. */
-:where(.listing-root) .pane-listing:has(.pane-state-busy) .pane-state-dot {
+.pane-listing:where(.listing-root, .listing-root *):has(.pane-state-busy) .pane-state-dot {
   margin-inline: calc((var(--icon-sm) - var(--dot)) / 2);
 }
 
@@ -2081,7 +2087,9 @@ button.crumb-label.crumb-siblings > svg {
 /* Each pinned cell fills its row's height, so its ground and its hairline
    run unbroken from the strip to the foot, and holds its controls at its
    end, centred in the row. */
-:where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
+:where(.pane-listing.pane-pin-end:is(.listing-root, .listing-root *))
+  > :is(.row, .pane-columns)
+  > :last-child {
   position: sticky;
   inset-inline-end: 0;
   z-index: var(--z-raised);
@@ -2101,7 +2109,9 @@ button.crumb-label.crumb-siblings > svg {
 
 /* The strip's pinned cell is a square band of the strip, not a sort
    control's rounded box. */
-:where(.listing-root .pane-listing.pane-pin-end) > .pane-columns > :last-child {
+:where(.pane-listing.pane-pin-end:is(.listing-root, .listing-root *))
+  > .pane-columns
+  > :last-child {
   border-radius: 0;
   background: var(--strip);
 }
@@ -2115,18 +2125,19 @@ button.crumb-label.crumb-siblings > svg {
    and the pinned cells (`inset-inline-end: 0` above) reach over that track
    to end with their row, then stop at the scroller's edge, its end inset
    inside the scrollport, whichever box scrolls them. */
-:where(.listing-root) .pane-listing.pane-pin-end:where([role='table']) {
+.pane-listing.pane-pin-end:where(.listing-root, .listing-root *):where([role='table']) {
   grid-template-columns:
     var(--pane-grid, var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr))
     var(--pane-row-inset);
   padding-inline-end: 0;
 }
 
-:where(.listing-root .pane-listing.pane-pin-end[role='table']) > * {
+:where(.pane-listing.pane-pin-end:is(.listing-root, .listing-root *)[role='table']) > * {
   margin-inline-end: 0;
 }
 
-:where(.listing-root .pane-listing.pane-pin-end[role='table']) > :is(.row, .pane-columns) {
+:where(.pane-listing.pane-pin-end:is(.listing-root, .listing-root *)[role='table'])
+  > :is(.row, .pane-columns) {
   padding-inline-end: 0;
 }
 
@@ -2137,12 +2148,14 @@ button.crumb-label.crumb-siblings > svg {
    the cells, so a listing that fits, or one scrolled to its end, keeps its
    last column whole. */
 @supports (animation-timeline: scroll()) {
-  :where(.listing-root .pane-listing.pane-pin-end) > :is(.row, .pane-columns) > :last-child {
+  :where(.pane-listing.pane-pin-end:is(.listing-root, .listing-root *))
+    > :is(.row, .pane-columns)
+    > :last-child {
     animation: uiok-pane-pin-edge linear both;
     animation-timeline: scroll(nearest inline);
   }
 
-  :where(.listing-root .pane-listing.pane-pin-end)
+  :where(.pane-listing.pane-pin-end:is(.listing-root, .listing-root *))
     > :is(.row, .pane-columns)
     > :last-child::before {
     content: '';
@@ -2161,8 +2174,8 @@ button.crumb-label.crumb-siblings > svg {
 
   /* Right to left the columns before the cell lie on its right. */
   :where(
-      [dir='rtl'] .listing-root .pane-listing.pane-pin-end,
-      .listing-root[dir='rtl'] .pane-listing.pane-pin-end
+      [dir='rtl'] .pane-listing.pane-pin-end:is(.listing-root, .listing-root *),
+      :is(.listing-root[dir='rtl'], .listing-root[dir='rtl'] *).pane-listing.pane-pin-end
     )
     > :is(.row, .pane-columns)
     > :last-child::before {
@@ -2565,6 +2578,33 @@ button.crumb-label.crumb-siblings > svg {
 
 .timeline-cell[data-emphasis] .timeline-bar {
   background: var(--accent);
+}
+
+/* On a selected row the accent fill would swallow the accent bar and the
+   wait's grey line, so both take the selection's words' tone, as the state
+   dots do; the lighter bar keeps its step under the solid one. */
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .timeline-cell
+  :is(.timeline-wait, .timeline-bar) {
+  background: var(--on-selected-dim);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .timeline-cell[data-emphasis]
+  .timeline-bar {
+  background: var(--on-selected);
 }
 
 /* The ticks over the column (TimelineScale), each tick's words starting at

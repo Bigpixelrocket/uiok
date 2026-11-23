@@ -52,10 +52,10 @@ import { Spinner } from '@bigpixelrocket/uiok/icon';
 | Prop       | Type                       | Use                                                                                           |
 | ---------- | -------------------------- | --------------------------------------------------------------------------------------------- |
 | `mark`     | `ProductMarkShape \| null` | The mark; null or absent draws `fallback`                                                     |
-| `fallback` | `LucideIcon`               | The glyph drawn with no mark (a database's, a terminal's), in the quiet icon tone             |
+| `fallback` | `LucideIcon`               | The glyph drawn with no mark (a database's, a terminal's), in the quiet icon tone or a row's  |
 | `label`    | `string`                   | The mark's name when it stands alone (`role="img"`); absent, it is decorative beside its name |
 
-A `ProductMarkShape` is `title` (the product's name, the mark's tooltip), `path` (path data on a 24-unit square), `colour` (the brand's colour as a CSS colour, or `currentColor` for a mark published in plain black, which then takes the quiet icon tone), and optionally `viewBox` (the part of the artwork to show) and `stroke` (an outline in viewBox units for a mark published in hairlines).
+A `ProductMarkShape` is `title` (the product's name, the mark's tooltip), `path` (path data on a 24-unit square), `colour` (the brand's colour as a CSS colour, or `currentColor` for a mark published in plain black, which then takes the quiet icon tone, or in a row's icon column that column's tone, on the cursor and a selection too), and optionally `viewBox` (the part of the artwork to show) and `stroke` (an outline in viewBox units for a mark published in hairlines).
 
 ```tsx
 import { Database } from 'lucide-react';

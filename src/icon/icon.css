@@ -5,7 +5,9 @@
    (--product-mark-colour, set on the mark); how much of it shows is the
    theme's (--product-mark-mix), the rest the text tone, so a dark brand
    colour still reads on a dark ground. A mark with no colour of its own
-   (currentColor) and a fallback glyph take the quiet icon tone. */
+   (currentColor) and a fallback glyph take the quiet icon tone, at zero
+   weight; in a row's icon column they take that column's tone instead,
+   so they rise with it on the cursor and turn with it on a selection. */
 .product-mark {
   display: inline-flex;
   flex: none;
@@ -13,7 +15,14 @@
   justify-content: center;
   width: var(--icon-md);
   height: var(--icon-md);
+}
+
+:where(.product-mark) {
   color: var(--text-dim);
+}
+
+:where(.row-icon) > .product-mark {
+  color: inherit;
 }
 
 .product-mark > svg {

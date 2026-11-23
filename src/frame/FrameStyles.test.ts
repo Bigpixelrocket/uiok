@@ -63,4 +63,19 @@ describe('the tree look', () => {
     expect(getComputedStyle(input).outline).not.toContain('--focus-ring-width');
     document.body.innerHTML = '';
   });
+
+  it("keeps an add row's accent plus on the cursor", () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `
+      <section class="listing-root"><div class="pane-list tree">
+        <div class="row cursor pane-add"><span class="row-icon"></span>
+          <span class="tree-glyph" id="plus"></span><span class="row-name tree-name">Add</span></div>
+        <div class="row cursor"><span class="row-icon"></span>
+          <span class="tree-glyph" id="glyph"></span><span class="row-name tree-name">users</span></div>
+      </div></section>`;
+
+    expect(style('#plus').getPropertyValue('color')).toBe('var(--accent)');
+    expect(style('#glyph').getPropertyValue('color')).toBe('var(--text-on-surface)');
+    document.body.innerHTML = '';
+  });
 });

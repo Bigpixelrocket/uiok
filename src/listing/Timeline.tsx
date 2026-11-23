@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactElement } from 'react';
 
-import { describedTooltip } from '../tooltip/Tooltip.logic.js';
+import { tooltip } from '../tooltip/Tooltip.logic.js';
 
 /** A share of a scale, clamped to it, as a CSS percentage. */
 const share = (value: number, max: number): string =>
@@ -58,7 +58,7 @@ export function TimelineCell({
           '--timeline-end': share(Math.max(start, end), max)
         } as CSSProperties
       }
-      {...describedTooltip(label)}
+      {...tooltip(label)}
     >
       <span aria-hidden className="timeline-track">
         {waited ? <span className="timeline-wait" /> : null}

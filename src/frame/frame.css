@@ -388,7 +388,7 @@
 }
 
 /* On a cursor or marked row the quiet words take the surface's text. */
-.row:is(.cursor, .marked):where(:not(.selected)) :is(.tree-detail, .tree-glyph),
+.row:is(.cursor, .marked):where(:not(.selected, .pane-add)) :is(.tree-detail, .tree-glyph),
 .tree-tool.cursor,
 .tree-tool.cursor .tree-note-glyph {
   color: var(--text-on-surface);

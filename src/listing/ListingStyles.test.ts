@@ -102,6 +102,49 @@ describe('the listing look', () => {
   });
 });
 
+describe('a listing outside the frame', () => {
+  /** A listing as `Listing` draws it: a table with its strip and one row, pinned at its end. */
+  const table = (classes: string): string => `
+    <section class="${classes} pane-pin-end" role="table" style="--pane-grid: 1fr auto">
+      <div class="pane-columns" role="row"><span class="row-name">Name</span><span>Size</span></div>
+      <div class="row" role="row"><span class="row-icon"></span><span class="row-name">a</span><span>1</span></div>
+    </section>`;
+
+  const LOOK = [
+    'display',
+    'grid-template-columns',
+    'padding-inline-end',
+    'font-family',
+    'font-size'
+  ];
+  const look = (element: Element | null): Record<string, string> => {
+    const style = getComputedStyle(element as Element);
+    return Object.fromEntries(LOOK.map((property) => [property, style.getPropertyValue(property)]));
+  };
+  const parts = (root: Element): Record<string, string>[] =>
+    [
+      root,
+      root.querySelector('.pane-columns'),
+      root.querySelector('.row'),
+      root.querySelector('.row > :last-child')
+    ].map(look);
+
+  it('looks the same standing alone or in a dialog as it does in a pane', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `
+      <section class="listing-root"><div class="pane"><div class="pane-list" id="framed">${table('pane-listing')}</div></div></section>
+      <div id="alone">${table('pane-listing listing-root')}</div>
+      <div class="dialog listing-root" id="dialog">${table('pane-listing')}</div>`;
+    const framed = parts(document.querySelector('#framed > .pane-listing') as Element);
+
+    expect(framed[0]).toMatchObject({ display: 'grid', 'font-family': 'var(--font-mono)' });
+    expect(framed[1]?.['grid-template-columns']).toBe('subgrid');
+    expect(parts(document.querySelector('#alone > .pane-listing') as Element)).toEqual(framed);
+    expect(parts(document.querySelector('#dialog > .pane-listing') as Element)).toEqual(framed);
+    document.body.innerHTML = '';
+  });
+});
+
 describe("the frame's compact controls", () => {
   it('measure the same wherever they are drawn', () => {
     applyStylesheets(styles);
@@ -213,6 +256,27 @@ describe('the listing states', () => {
       }
     }
     expect(colour(document.querySelector('#rest .pane-state'))).toBe('var(--row-meta-text)');
+    document.body.innerHTML = '';
+  });
+
+  it("paints a timeline's bar and wait in the selection's words on a selected row", () => {
+    applyStylesheets(styles);
+    const cell = (id: string, emphasis: boolean): string =>
+      `<span class="row-meta timeline-cell" id="${id}"${emphasis ? ' data-emphasis="true"' : ''}>
+        <span class="timeline-track"><span class="timeline-wait"></span><span class="timeline-bar"></span></span>
+      </span>`;
+    document.body.innerHTML = `<section class="listing-root"><div class="pane active"><div class="pane-list">
+      <div class="row">${cell('rest', true)}</div>
+      <div class="row selected">${cell('solid', true)}${cell('light', false)}</div>
+    </div></div></section>`;
+    // jsdom keeps a background shorthand holding var() unexpanded, so read the last rule's value.
+    const fill = (selector: string): string | undefined =>
+      declaredValues(document.querySelector(selector) as Element, 'background').at(-1);
+
+    expect(fill('#rest .timeline-bar')).toBe('var(--accent)');
+    expect(fill('#solid .timeline-bar')).toBe('var(--on-selected)');
+    expect(fill('#light .timeline-bar')).toBe('var(--on-selected-dim)');
+    expect(fill('#light .timeline-wait')).toBe('var(--on-selected-dim)');
     document.body.innerHTML = '';
   });
 
@@ -783,7 +847,7 @@ describe('the listing states', () => {
     // The rule weighs what the label's default does, so any scoped app rule
     // that places the label wins, and a section's heading keeps the edge.
     expect(sheet).toMatch(
-      /^:where\(\.listing-root \.pane-listing:has\(> \.row\):not\(:has\(> \.row > \.row-icon:not\(:empty\)\)\)\)\n\s*> \.pane-columns\n\s*> \.row-name:where\(:not\(:has\(h3\)\)\) \{\n\s*grid-column: 2;/m
+      /^:where\(\s*\.pane-listing:is\(\.listing-root, \.listing-root \*\):has\(> \.row\):not\(\s*:has\(> \.row > \.row-icon:not\(:empty\)\)\s*\)\s*\)\n\s*> \.pane-columns\n\s*> \.row-name:where\(:not\(:has\(h3\)\)\) \{\n\s*grid-column: 2;/m
     );
   });
 

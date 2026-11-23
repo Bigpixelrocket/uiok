@@ -52,4 +52,24 @@ describe('ProductMark', () => {
     expect(mark.className).toBe('product-mark glyph');
     expect(mark.querySelector('svg')).not.toBe(null);
   });
+
+  it("takes a row icon column's tone, and the quiet icon tone elsewhere", () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const { container } = render(
+      <div className="listing-root">
+        <div className="pane-listing">
+          <div className="row cursor">
+            <span className="row-icon">
+              <ProductMark fallback={Database} />
+            </span>
+          </div>
+        </div>
+        <ProductMark fallback={Database} />
+      </div>
+    );
+    const [inRow, alone] = [...container.querySelectorAll('.product-mark')] as HTMLElement[];
+
+    expect(getComputedStyle(inRow as HTMLElement).color).toBe('var(--text-on-surface)');
+    expect(getComputedStyle(alone as HTMLElement).color).toBe('var(--text-dim)');
+  });
 });

@@ -766,6 +766,8 @@ describe('TimelineCell', () => {
     expect(cell.style.getPropertyValue('--timeline-end')).toBe('90%');
     expect(cell.querySelector('.timeline-wait')).not.toBe(null);
     expect(cell.dataset.tooltip).toBe('began at 1.9 s, took 0.8 s');
+    // Its name already says it; a description would read the same words twice.
+    expect(cell.hasAttribute('aria-description')).toBe(false);
     const ticks = [...document.querySelectorAll('.timeline-tick')] as HTMLElement[];
     expect(ticks.map((tick) => tick.style.getPropertyValue('--timeline-at'))).toEqual([
       '0%',
