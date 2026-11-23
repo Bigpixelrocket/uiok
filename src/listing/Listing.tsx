@@ -640,15 +640,38 @@ function nameTooltip(name: ReactNode, nameText: string | null, tip: string | und
 const UNNAMED_ROLES = new Set(['none', 'presentation', 'generic']);
 
 /**
+ * The role assistive technology gives `element`, as far as naming goes:
+ * the first token of its `role` attribute, or null for its implicit role
+ * (no role, or an empty one). A presentational role (`none`,
+ * `presentation`) gives way to the implicit role on an element that takes
+ * the focus or carries a label, as WAI-ARIA's conflict resolution says.
+ */
+function effectiveRole(element: Element): string | null {
+  const role = element.getAttribute('role')?.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
+
+  if (role === '') return null;
+  if (
+    (role === 'none' || role === 'presentation') &&
+    (element.hasAttribute('tabindex') ||
+      element.hasAttribute('aria-label') ||
+      element.hasAttribute('aria-labelledby'))
+  ) {
+    return null;
+  }
+  return role;
+}
+
+/**
  * An element's own text alternative, read in place of its content, or null
  * when it has none: the text of the elements `aria-labelledby` names, else
  * `aria-label`, on an element whose role takes a name (an `svg` or an
  * `img`, or one with an explicit role but none, presentation, or generic; a
  * plain `span`'s label is not read); else an `img`'s `alt`, unless the
- * image is presentational too.
+ * image is presentational too. The role is the one in effect
+ * (`effectiveRole`), not the attribute as written.
  */
 function textAlternative(element: Element): string | null {
-  const role = element.getAttribute('role');
+  const role = effectiveRole(element);
   const tag = element.localName;
   const named = role === null ? tag === 'svg' || tag === 'img' : !UNNAMED_ROLES.has(role);
 

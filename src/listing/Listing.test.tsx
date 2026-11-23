@@ -656,7 +656,7 @@ describe('a row', () => {
     });
 
     it('reads no alt of a presentational image, and a plain image’s alt', () => {
-      for (const role of ['presentation', 'none']) {
+      for (const role of ['presentation', 'none', ' presentation ', 'NONE']) {
         const tip = tipOf(
           <>
             <img alt="Badge" role={role} src="data:," />
@@ -667,14 +667,21 @@ describe('a row', () => {
         expect(tip()).toBe('Replica\nRunning');
         cleanup();
       }
-      const tip = tipOf(
-        <>
-          <img alt="Badge" src="data:," />
-          Replica
-        </>
-      );
+      for (const image of [
+        <img alt="Badge" key="plain" src="data:," />,
+        // Focusable, so WAI-ARIA gives it back its own role and its alt is read.
+        <img alt="Badge" key="focusable" role="presentation" src="data:," tabIndex={0} />
+      ]) {
+        const tip = tipOf(
+          <>
+            {image}
+            Replica
+          </>
+        );
 
-      expect(tip()).toBe('Badge Replica\nRunning');
+        expect(tip()).toBe('Badge Replica\nRunning');
+        cleanup();
+      }
     });
 
     it('reads a cut NameCut name once, whole', () => {
