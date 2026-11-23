@@ -547,15 +547,16 @@ export interface RowProps {
   /**
    * More than the name says, in the host's words: what a narrow pane's
    * dropped columns held ("running · 5432"). The name's tooltip at every
-   * width, under the whole name (so a cut name still reads whole), in
-   * place of the tooltip a cut name shows alone; its words are read after
-   * the name too, as the name's description.
+   * width, under the whole name (a name in markup by its drawn words), in
+   * place of the tooltip a cut name shows alone; its words are also read
+   * as the description (below).
    */
   readonly nameTip?: string;
   /**
-   * Read after the name by assistive technology, before `nameTip`'s words,
-   * and never shown: what kind of item the row is ("Database"). Never the
-   * name itself, which the row already reads.
+   * Read by assistive technology before `nameTip`'s words, and never shown:
+   * what kind of item the row is ("Database"), never the name itself. The
+   * two are the description of the name's cell, of the row when it takes
+   * the focus (`focusable`, `tabbable`), and of a radio row's radio.
    */
   readonly nameDescription?: string;
   readonly className?: string;
@@ -617,28 +618,25 @@ export interface RowProps {
 }
 
 /**
- * The tooltip and description of a row's name. With neither a host tip nor
- * a description, a name in words shows itself whole only while a narrow
- * column cuts it. A host tip shows at every width under the whole name and
- * is read with the host's description after the name, never repeating it.
+ * The tooltip of a row's name, on the box that cuts it. With no host tip,
+ * a name in words shows itself whole only while a narrow column cuts it. A
+ * host tip shows at every width under the whole name: `nameText`, the
+ * name's words (a marked-up name's as rendered), or the tip alone while
+ * they are not known.
  */
-function nameHelp(
-  name: ReactNode,
-  tip: string | undefined,
-  description: string | undefined
-): Record<string, string> {
-  const described = [description, tip].filter((part) => part !== undefined && part !== '');
-  const shown =
-    tip === undefined || tip === '' ? null : typeof name === 'string' ? `${name}\n${tip}` : tip;
+function nameTooltip(name: ReactNode, nameText: string | null, tip: string | undefined) {
+  if (tip === undefined || tip === '') return typeof name === 'string' ? cutTooltip(name) : {};
 
-  return {
-    ...(shown === null
-      ? typeof name === 'string'
-        ? cutTooltip(name)
-        : {}
-      : tooltip(shown, null, { value: true })),
-    ...(described.length === 0 ? {} : { 'aria-description': described.join(', ') })
-  };
+  return tooltip(nameText === null || nameText === '' ? tip : `${nameText}\n${tip}`, null, {
+    value: true
+  });
+}
+
+/** What a row's name is described by: the host's description, then its tip; none when neither. */
+function nameDescribed(description: string | undefined, tip: string | undefined) {
+  const parts = [description, tip].filter((part) => part !== undefined && part !== '');
+
+  return parts.length === 0 ? {} : { 'aria-description': parts.join(', ') };
 }
 
 /**
@@ -685,12 +683,31 @@ export function Row({
   const cursor = useContext(RowCursorContext);
   const current = useSyncExternalStore(cursor.subscribe, () => cursor.current() === rowKey);
   const nameId = useId();
+  const nameBox = useRef<HTMLSpanElement>(null);
+  // A marked-up name's words, read from the drawn name for the host tip's
+  // tooltip; a name in words is its own.
+  const [drawnName, setDrawnName] = useState<string | null>(null);
+  const nameText = typeof name === 'string' ? name : drawnName;
+  const tipped = nameTip !== undefined && nameTip !== '';
+  // Read where the focus lands (a focusable or tabbable row, a radio) and in
+  // the name's cell for a table's navigation.
+  const described = nameDescribed(nameDescription, nameTip);
 
   useLayoutEffect(() => {
     cursor.rowsChanged?.();
 
     return () => cursor.rowsChanged?.();
   }, [cursor, rowKey]);
+
+  // Whenever the name is drawn again: a name in markup is a new element
+  // each time its host draws it.
+  useLayoutEffect(() => {
+    if (!tipped || typeof name === 'string') return;
+
+    const text = nameBox.current?.textContent ?? '';
+
+    setDrawnName((now) => (now === text ? now : text));
+  }, [tipped, name]);
 
   return (
     <InListingRowContext.Provider value>
@@ -731,6 +748,7 @@ export function Row({
           role="row"
           style={level > 0 ? ({ '--row-level': level } as CSSProperties) : undefined}
           tabIndex={focusable ? (current || entry ? 0 : -1) : undefined}
+          {...(focusable || tabbable ? described : {})}
         >
           {radio === undefined ? (
             <>
@@ -739,10 +757,12 @@ export function Row({
               </span>
               <span
                 className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
+                ref={nameBox}
                 role="cell"
                 // A name in words carries itself whole as its tooltip while a
                 // narrow name column cuts it, or the host's tip under it.
-                {...nameHelp(name, nameTip, nameDescription)}
+                {...nameTooltip(name, nameText, nameTip)}
+                {...described}
               >
                 {name}
               </span>
@@ -756,9 +776,11 @@ export function Row({
                 nameClass === undefined ? 'row-name row-pick' : `row-name row-pick ${nameClass}`
               }
               role="cell"
+              {...described}
             >
               <input
                 aria-labelledby={nameId}
+                {...described}
                 checked={radio.checked}
                 className="check row-radio"
                 data-verb={radio.verb}
@@ -774,7 +796,8 @@ export function Row({
               <span
                 className="row-pick-name"
                 id={nameId}
-                {...nameHelp(name, nameTip, nameDescription)}
+                ref={nameBox}
+                {...nameTooltip(name, nameText, nameTip)}
               >
                 {name}
               </span>
