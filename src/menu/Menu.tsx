@@ -116,6 +116,13 @@ export interface MenuProps {
   readonly initial?: string | null;
   /** The small size, for a menu of short commands (`.folder-menu-compact`). */
   readonly compact?: boolean;
+  /**
+   * The direction it reads in, which its keys, a submenu's side, and the
+   * chevron follow; when absent, the direction of `anchor`, or of the place
+   * it is rendered in, as it opens (the document body it is drawn on may
+   * read the other way).
+   */
+  readonly dir?: 'ltr' | 'rtl';
   /** Runs an item that can run, by its id, a submenu's items included; the caller closes the menu. */
   readonly onPick: (id: string) => void;
   /**
@@ -178,6 +185,8 @@ interface MenuSurfaceProps {
   readonly onKeyDown: (event: KeyboardEvent<HTMLDivElement>) => void;
   readonly onBlur: (event: FocusEvent<HTMLDivElement>) => void;
   readonly onMouseMove?: () => void;
+  readonly onMouseLeave: () => void;
+  readonly dir: 'ltr' | 'rtl' | undefined;
   readonly onRowClick: (row: MenuRowEntry) => void;
   readonly onRowMove: (row: MenuRowEntry) => void;
 }
@@ -204,6 +213,8 @@ function MenuSurface({
   onKeyDown,
   onBlur,
   onMouseMove,
+  onMouseLeave,
+  dir,
   onRowClick,
   onRowMove
 }: MenuSurfaceProps): ReactElement {
@@ -257,12 +268,14 @@ function MenuSurface({
       className={compact ? 'folder-menu folder-menu-compact menu-popup' : 'folder-menu menu-popup'}
       data-native-keyboard
       data-overlay
+      dir={dir}
       id={id}
       onBlur={onBlur}
       onContextMenu={(event) => event.preventDefault()}
       onKeyDown={onKeyDown}
       // A press on an item must not take the focus from the menu, which holds the keys.
       onMouseDown={(event) => event.preventDefault()}
+      onMouseLeave={onMouseLeave}
       onMouseMove={onMouseMove}
       ref={surfaceRef}
       role="menu"
@@ -374,25 +387,31 @@ export function Menu({
   anchor = null,
   initial = null,
   compact = false,
+  dir: dirGiven,
   onPick,
   onClose
 }: MenuProps): ReactElement {
   const rootRef = useRef<HTMLDivElement>(null);
+  const originRef = useRef<HTMLSpanElement>(null);
+  const [dirFound, setDirFound] = useState<'ltr' | 'rtl' | undefined>(undefined);
+  const dir = dirGiven ?? dirFound;
   const subRef = useRef<HTMLDivElement>(null);
   const itemId = useId();
   const subItemId = useId();
   const [pointed, setPointed] = useState<string | null>(initial);
-  const [sub, setSub] = useState<OpenSubmenu | null>(null);
+  const [subState, setSub] = useState<OpenSubmenu | null>(null);
   const grace = useRef<{ readonly timer: number; to: MenuRowEntry } | null>(null);
   const rows = entries.filter(isRow);
   const pickable = pickableRows(rows);
   const cursor = pickableCursor(pickable, pointed);
   const cursorRow = cursor === null ? null : (rows[cursor] ?? null);
   const subPlace =
-    sub === null
+    subState === null
       ? -1
-      : rows.findIndex((row) => row.kind === 'submenu' && row.id === sub.id && !row.disabled);
+      : rows.findIndex((row) => row.kind === 'submenu' && row.id === subState.id && !row.disabled);
   const subEntry = subPlace === -1 ? null : (rows[subPlace] as MenuSubmenuEntry);
+  // The submenu shown: none once its item is disabled or gone from `entries`.
+  const sub = subEntry === null ? null : subState;
   const subRows = subEntry === null ? [] : subEntry.entries.filter(isItem);
   const subPickable = pickableRows(subRows);
   const subCursor =
@@ -400,15 +419,31 @@ export function Menu({
   const subCursorRow = subCursor === null ? null : (subRows[subCursor] ?? null);
   const keysInSub = subEntry !== null && sub?.keys === true;
   const onCloseRef = useRef(onClose);
+  const subCursorRef = useRef(subCursor);
 
   useLayoutEffect(() => {
     onCloseRef.current = onClose;
+    subCursorRef.current = subCursor;
   });
 
-  // The keys stay where the menu holds them: the menu, or its submenu.
+  // Drawn on the body, it reads in the direction of what opened it.
+  useLayoutEffect(() => {
+    const opener = anchor ?? originRef.current;
+    if (opener !== null) setDirFound(isRtl(opener) ? 'rtl' : 'ltr');
+  }, [anchor]);
+
+  // An item disabled or gone takes its submenu with it.
+  useEffect(() => {
+    if (subState !== null && subEntry === null) setSub(null);
+  }, [subState, subEntry]);
+
+  // The keys stay where the menu holds them, the menu or its submenu, and
+  // come back to it when it moves (the anchor may have taken them). Keys
+  // taking over a submenu the pointer opened bring its cursor into view.
   useLayoutEffect(() => {
     (keysInSub ? subRef : rootRef).current?.focus({ preventScroll: true });
-  }, [keysInSub]);
+    if (keysInSub) revealItem(subItemId, subCursorRef.current);
+  }, [keysInSub, at, anchor, subItemId]);
 
   // A press outside closes it, but one on its anchor, which toggles it.
   useEffect(() => {
@@ -551,17 +586,21 @@ export function Menu({
 
   return (
     <>
+      {/* Where it is rendered, so it reads in that place's direction. */}
+      <span hidden ref={originRef} />
       <MenuSurface
         anchor={anchor}
         at={at}
         compact={compact}
         cursor={cursor}
+        dir={dir}
         entries={entries}
         expanded={subEntry === null ? null : { id: subEntry.id, menu: subMenuId }}
         itemId={itemId}
         label={label}
         onBlur={onBlur}
         onKeyDown={onMenuKey}
+        onMouseLeave={clearGrace}
         onRowClick={(row) => {
           if (row.kind === 'submenu') pointAt(row);
           else run(row);
@@ -594,6 +633,7 @@ export function Menu({
           besideId={`${itemId}-${subPlace}`}
           compact={compact}
           cursor={subCursor}
+          dir={dir}
           entries={subEntry.entries}
           expanded={null}
           id={subMenuId}
@@ -601,6 +641,7 @@ export function Menu({
           labelledBy={`${itemId}-${subPlace}`}
           onBlur={onBlur}
           onKeyDown={onSubKey}
+          onMouseLeave={clearGrace}
           onMouseMove={clearGrace}
           onRowClick={run}
           onRowMove={(row) => {

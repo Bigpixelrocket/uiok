@@ -355,3 +355,150 @@ describe("Menu's submenu", () => {
     expect(nested.entries).toHaveLength(1);
   });
 });
+
+describe("Menu's submenu as its host changes it", () => {
+  const ENTRIES_WITH_SUB: readonly MenuEntry[] = [
+    { kind: 'submenu', id: 'sub', label: 'Copy As', entries: [{ id: 'path', label: 'Path' }] },
+    { id: 'open', label: 'Open' }
+  ];
+  const named = (name: string) => screen.getByRole('menu', { name });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('closes on the first Escape once the host disables the expanded item', () => {
+    const onClose = vi.fn();
+    const mount = (entries: readonly MenuEntry[]) => (
+      <Menu
+        at={{ x: 100, y: 100 }}
+        entries={entries}
+        label="Actions"
+        onClose={onClose}
+        onPick={vi.fn()}
+      />
+    );
+    const { rerender } = render(mount(ENTRIES_WITH_SUB));
+
+    fireEvent.keyDown(named('Actions'), { key: 'ArrowRight' });
+    expect(document.activeElement).toBe(named('Copy As'));
+    const [copyAs, ...rest] = ENTRIES_WITH_SUB as [MenuSubmenuEntry, ...MenuEntry[]];
+    rerender(mount([{ ...copyAs, disabled: true }, ...rest]));
+
+    expect(screen.queryByRole('menu', { name: 'Copy As' })).toBe(null);
+    expect(document.activeElement).toBe(named('Actions'));
+    fireEvent.keyDown(named('Actions'), { key: 'Escape' });
+    expect(onClose).toHaveBeenCalledWith('keyboard');
+  });
+
+  it('takes the keys back when the host moves it after its anchor took the focus', () => {
+    const anchor = document.createElement('button');
+    document.body.append(anchor);
+    try {
+      const onClose = vi.fn();
+      const mount = (at: { x: number; y: number }) => (
+        <Menu
+          anchor={anchor}
+          at={at}
+          entries={ENTRIES_WITH_SUB}
+          label="Actions"
+          onClose={onClose}
+          onPick={vi.fn()}
+        />
+      );
+      const { rerender } = render(mount({ x: 100, y: 100 }));
+
+      act(() => anchor.focus());
+      expect(onClose).not.toHaveBeenCalled();
+      rerender(mount({ x: 200, y: 200 }));
+      expect(document.activeElement).toBe(named('Actions'));
+    } finally {
+      anchor.remove();
+    }
+  });
+
+  it('reads right to left where it is opened, though the document reads left to right', () => {
+    render(
+      <div dir="rtl">
+        <Menu
+          at={{ x: 100, y: 100 }}
+          entries={ENTRIES_WITH_SUB}
+          label="Actions"
+          onClose={vi.fn()}
+          onPick={vi.fn()}
+        />
+      </div>
+    );
+
+    expect(named('Actions').getAttribute('dir')).toBe('rtl');
+    fireEvent.keyDown(named('Actions'), { key: 'ArrowLeft' });
+    expect(named('Copy As').getAttribute('dir')).toBe('rtl');
+    fireEvent.keyDown(named('Copy As'), { key: 'ArrowRight' });
+    expect(screen.queryByRole('menu', { name: 'Copy As' })).toBe(null);
+  });
+
+  it('brings the cursor into view when the keys take over a submenu the pointer opened', () => {
+    const shown: string[] = [];
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: function (this: HTMLElement) {
+        shown.push(this.textContent ?? '');
+      }
+    });
+    try {
+      const long: MenuSubmenuEntry = {
+        kind: 'submenu',
+        id: 'sub',
+        label: 'Copy As',
+        entries: [
+          ...Array.from({ length: 30 }, (_, index) => ({
+            id: `off-${index}`,
+            label: `Off ${index}`,
+            disabled: true
+          })),
+          { id: 'path', label: 'Path' }
+        ]
+      };
+      render(
+        <Menu
+          at={{ x: 0, y: 0 }}
+          entries={[long]}
+          label="Actions"
+          onClose={vi.fn()}
+          onPick={vi.fn()}
+        />
+      );
+
+      fireEvent.mouseMove(screen.getByRole('menuitem', { name: 'Copy As' }));
+      fireEvent.keyDown(named('Actions'), { key: 'ArrowRight' });
+      expect(named('Copy As').getAttribute('aria-activedescendant')).toBe(
+        screen.getByRole('menuitem', { name: 'Path' }).id
+      );
+      expect(shown).toContain('Path');
+    } finally {
+      delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
+  it('keeps the submenu when the pointer leaves the menu before the moment passes', () => {
+    vi.useFakeTimers();
+    render(
+      <Menu
+        at={{ x: 0, y: 0 }}
+        entries={ENTRIES_WITH_SUB}
+        label="Actions"
+        onClose={vi.fn()}
+        onPick={vi.fn()}
+      />
+    );
+
+    fireEvent.mouseMove(screen.getByRole('menuitem', { name: 'Copy As' }));
+    const open = screen.getByRole('menuitem', { name: 'Open' });
+    fireEvent.mouseMove(open);
+    fireEvent.mouseOut(open, { relatedTarget: document.body });
+    act(() => {
+      vi.advanceTimersByTime(1000);
+    });
+    expect(named('Copy As')).toBeTruthy();
+  });
+});
