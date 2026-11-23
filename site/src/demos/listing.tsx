@@ -712,6 +712,9 @@ const DATABASES: readonly { readonly name: string; readonly size: string }[] = [
 function DatabaseChoice() {
   const [picked, setPicked] = useState('shop');
   const [bell, setBell] = useState(0);
+  // Active only while it holds the focus, so the page's other panes keep
+  // their keyboard looks until it does.
+  const [focused, setFocused] = useState(false);
   const list = useRef<HTMLDivElement>(null);
   const keys = DATABASES.map((database) => database.name);
   const { cursor, current, onKeyDown } = useDemoCursor(keys);
@@ -739,7 +742,12 @@ function DatabaseChoice() {
   // and keeps its content's height.
   return (
     <div className="demo-row">
-      <PaneBox active bell={bell}>
+      <PaneBox
+        active={focused}
+        bell={bell}
+        onBlur={() => setFocused(false)}
+        onFocus={() => setFocused(true)}
+      >
         <div
           aria-label="Databases: arrows move, Space picks"
           className="pane-list"
