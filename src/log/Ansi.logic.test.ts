@@ -88,11 +88,32 @@ describe('ansiSegments', () => {
     ]);
   });
 
+  it('reads the 8-bit forms: a CSI, control strings, and their terminator', () => {
+    const csi = '\u009b';
+    const st = '\u009c';
+    // An 8-bit CSI applies its SGR; an 8-bit OSC and DCS drop their payload.
+    expect(ansiSegments(`${csi}31mred${csi}0m plain`)).toEqual([
+      { text: 'red', fg: 'red' },
+      { text: ' plain' }
+    ]);
+    expect(ansiSegments(`a\u009d0;title${st}b\u0090q payload${st}c`)).toEqual([
+      { text: 'a' },
+      { text: 'b' },
+      { text: 'c' }
+    ]);
+    // A 7-bit OSC ended by the 8-bit terminator keeps the words after it.
+    expect(ansiSegments(`${ESC}]0;title${st}after`)).toEqual([{ text: 'after' }]);
+    // A lone 8-bit control shows nothing.
+    expect(ansiSegments(`x\u0085y${st}z`)).toEqual([{ text: 'x' }, { text: 'y' }, { text: 'z' }]);
+  });
+
   it('reads hostile input in linear time', () => {
     const started = performance.now();
     expect(ansiSegments(`${ESC}[`.repeat(100_000) + 'mend')).toEqual([{ text: 'end' }]);
     expect(ansiSegments(`${ESC}[${';'.repeat(1_000_000)}mok`)).toEqual([{ text: 'ok' }]);
     expect(ansiSegments(`${ESC}]`.repeat(100_000) + 'x')).toEqual([]);
+    expect(ansiSegments('\u009b'.repeat(100_000) + 'mend')).toEqual([{ text: 'end' }]);
+    expect(ansiSegments('\u009d'.repeat(100_000) + 'x')).toEqual([]);
     expect(performance.now() - started).toBeLessThan(1000);
   });
 });

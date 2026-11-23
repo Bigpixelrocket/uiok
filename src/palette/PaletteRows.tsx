@@ -39,7 +39,10 @@ export interface PaletteOptionProps {
   readonly id: string;
   /** The row's name: words, or `MarkedText` with the query's matches lit. */
   readonly name: ReactNode;
-  /** The row's accessible name, when `name` is not a string. */
+  /**
+   * The row's accessible name, when `name` is not a string; absent, a
+   * markup name's own words name it.
+   */
   readonly label?: string;
   /** The glyph in the icon column (a `ProductMark`, a lucide icon), decorative. */
   readonly mark?: ReactNode;
@@ -120,6 +123,9 @@ export function PaletteOption({
       aria-description={described === '' ? undefined : described}
       aria-disabled={disabled || undefined}
       aria-label={label ?? (typeof name === 'string' ? name : undefined)}
+      // A name in markup (MarkedText) names the row by its own words alone,
+      // never with the context and trail that the description reads.
+      aria-labelledby={label === undefined && typeof name !== 'string' ? `${id}-name` : undefined}
       aria-selected={cursor}
       className={cursor ? 'folder-menu-option cursor' : 'folder-menu-option'}
       id={id}
@@ -136,7 +142,9 @@ export function PaletteOption({
         {mark}
       </span>
       <span className="palette-text">
-        <span className="row-name">{name}</span>
+        <span className="row-name" id={`${id}-name`}>
+          {name}
+        </span>
         {context === undefined || context === '' ? null : (
           <span className={contextClass} {...cutTooltip(context)}>
             {contextKind === 'path' ? <bdi>{context}</bdi> : context}

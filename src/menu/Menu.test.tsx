@@ -118,6 +118,24 @@ describe('Menu', () => {
     expect(isNativeKeyboardTarget(menu.querySelector('[role="menuitem"]'))).toBe(true);
   });
 
+  it('stays inside the window when the window shrinks, keeping the focus where it is', () => {
+    const height = window.innerHeight;
+    try {
+      const { menu } = open({ at: { x: 10, y: 400 } });
+      const item = screen.getByRole('menuitem', { name: /Copy Path/ });
+
+      expect(menu.style.top).toBe('400px');
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: 300 });
+      fireEvent(window, new Event('resize'));
+      // jsdom measures the menu as no height, so it stands a margin above the window's end.
+      expect(menu.style.top).toBe('296px');
+      expect(document.activeElement).toBe(menu);
+      expect(item.isConnected).toBe(true);
+    } finally {
+      Object.defineProperty(window, 'innerHeight', { configurable: true, value: height });
+    }
+  });
+
   it("scrolls the cursor's item into view when it opens and when the keys move it", () => {
     const shown: string[] = [];
     const scrollIntoView = vi.fn(function (this: HTMLElement) {

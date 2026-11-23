@@ -141,24 +141,32 @@ export function Menu({
     cursorRef.current = cursor;
   });
 
-  // Placed after layout, when its own size is known, and given the keys.
+  // Placed after layout, when its own size is known, and given the keys;
+  // placed again when the window resizes, so it never stands outside it,
+  // without moving the focus or the scroll.
   useLayoutEffect(() => {
     const menu = rootRef.current;
     if (menu === null) return;
-    const size = { width: menu.offsetWidth, height: menu.offsetHeight };
-    const viewport = { width: window.innerWidth, height: window.innerHeight };
-    const place = placeMenu(
-      at !== undefined
-        ? { point: at }
-        : { box: anchor?.getBoundingClientRect() ?? { left: 0, top: 0, right: 0, bottom: 0 } },
-      size,
-      viewport
-    );
-    menu.style.left = `${place.left}px`;
-    menu.style.top = `${place.top}px`;
+    const place = (): void => {
+      const size = { width: menu.offsetWidth, height: menu.offsetHeight };
+      const viewport = { width: window.innerWidth, height: window.innerHeight };
+      const spot = placeMenu(
+        at !== undefined
+          ? { point: at }
+          : { box: anchor?.getBoundingClientRect() ?? { left: 0, top: 0, right: 0, bottom: 0 } },
+        size,
+        viewport
+      );
+      menu.style.left = `${spot.left}px`;
+      menu.style.top = `${spot.top}px`;
+    };
+
+    place();
     menu.focus({ preventScroll: true });
     // A menu taller than the window scrolls; it opens with its cursor in view.
     revealItem(itemId, cursorRef.current);
+    window.addEventListener('resize', place);
+    return () => window.removeEventListener('resize', place);
   }, [at, anchor, itemId]);
 
   // A press outside closes it, but one on its anchor, which toggles it.

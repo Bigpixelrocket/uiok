@@ -387,8 +387,10 @@
   color: var(--row-meta-text);
 }
 
-/* On a cursor or marked row the quiet words take the surface's text. */
-.row:is(.cursor, .marked):where(:not(.selected, .pane-add)) :is(.tree-detail, .tree-glyph),
+/* On a cursor or marked row the quiet words take the surface's text, and
+   the glyph too but on an add row, which keeps its accent plus. */
+.row:is(.cursor, .marked):where(:not(.selected)) .tree-detail,
+.row:is(.cursor, .marked):where(:not(.selected, .pane-add)) .tree-glyph,
 .tree-tool.cursor,
 .tree-tool.cursor .tree-note-glyph {
   color: var(--text-on-surface);
@@ -516,9 +518,13 @@
 }
 
 /* Its row's underline shows the focus, so no field ring: two classes'
-   weight, past the base stylesheet's ring, which comes later. */
-.tree-filter-input:focus-visible {
-  outline: 0;
+   weight, past the base stylesheet's ring, which comes later. Forced
+   colours draw no shadow, so there the underline is gone and the ring
+   stays. */
+@media (forced-colors: none) {
+  .tree-filter-input:focus-visible {
+    outline: 0;
+  }
 }
 
 /* ---- A pane's quick row ---- */

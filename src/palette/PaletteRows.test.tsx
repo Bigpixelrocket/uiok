@@ -9,6 +9,7 @@ import {
   PaletteNotes,
   PaletteOption
 } from './PaletteRows.js';
+import { MarkedText } from '../text/MarkedText.js';
 
 describe('PaletteOption', () => {
   it('draws its name, sentence, trail, and current dot, named for assistive technology', () => {
@@ -132,6 +133,22 @@ describe('PaletteOption', () => {
     expect(path?.className).toBe('palette-context');
     expect(path?.querySelector('bdi')?.textContent).toBe('~/Developer/shop');
     expect(command?.className).toBe('palette-context palette-command');
+  });
+
+  it('names a row with a marked name by its name alone, its context and trail described', () => {
+    render(
+      <PaletteOption
+        context="The PostgreSQL server"
+        current="Installed"
+        id="pg"
+        name={<MarkedText positions={[0, 1]} text="PostgreSQL" />}
+        onPick={() => undefined}
+        trail="18.1"
+      />
+    );
+    const option = screen.getByRole('option', { name: 'PostgreSQL' });
+
+    expect(option.getAttribute('aria-description')).toBe('The PostgreSQL server, 18.1, Installed');
   });
 });
 
