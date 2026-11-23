@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { Play } from 'lucide-react';
+import { useState, type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { PanePathBar, PaneStatus, PathFact } from './PaneFrame.js';
@@ -91,6 +92,35 @@ describe('PanePathBar siblings', () => {
     expect(document.activeElement).toBe(crumb);
   });
 
+  it('gives the focus back to the crumb when the pick renames it', () => {
+    function Versions(): ReactElement {
+      const [shown, setShown] = useState('18');
+      return (
+        <PanePathBar
+          siblings={{
+            label: 'Other versions',
+            entries: ['18', '17'].map((id) => ({
+              id,
+              label: id,
+              current: id === shown ? 'Shown' : null
+            })),
+            onPick: setShown
+          }}
+          trail={['Services', 'PostgreSQL', shown]}
+        />
+      );
+    }
+    render(<Versions />);
+
+    fireEvent.click(screen.getByRole('button', { name: '18' }));
+    const menu = screen.getByRole('menu');
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    fireEvent.keyDown(menu, { key: 'Enter' });
+
+    expect(screen.queryByRole('menu')).toBe(null);
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: '17' }));
+  });
+
   it('takes its menu away on a second press of the crumb and on Escape', () => {
     render(
       <PanePathBar
@@ -101,9 +131,12 @@ describe('PanePathBar siblings', () => {
     const crumb = screen.getByRole('button', { name: 'a' });
 
     fireEvent.click(crumb);
+    screen.getByRole('menu').focus();
     fireEvent.mouseDown(crumb);
     fireEvent.click(crumb);
     expect(screen.queryByRole('menu')).toBe(null);
+    // The menu held the focus and is gone; the crumb takes it back.
+    expect(document.activeElement).toBe(crumb);
 
     fireEvent.click(crumb);
     fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });

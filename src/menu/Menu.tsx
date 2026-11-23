@@ -88,6 +88,12 @@ export interface MenuProps {
   readonly onClose: (by: 'keyboard' | 'pointer') => void;
 }
 
+/** Scrolls a menu's item at `position` into the menu's view, the least it takes; jsdom has no scrollIntoView. */
+const revealItem = (itemId: string, position: number | null): void => {
+  if (position === null) return;
+  document.getElementById(`${itemId}-${position}`)?.scrollIntoView?.({ block: 'nearest' });
+};
+
 const isItem = (entry: MenuEntry): entry is MenuItemEntry =>
   entry.kind === undefined || entry.kind === 'item';
 
@@ -103,9 +109,12 @@ const isItem = (entry: MenuEntry): entry is MenuItemEntry =>
  *
  * It takes the focus and holds the keys while open (`menuKeyAction`: ↑ ↓,
  * Home, End, Return and Space, Escape and Tab), which travel no further, so
- * neither a dialog nor the page hears them; `data-overlay` marks it an
- * open overlay while it shows. A press on it never takes the focus from
- * it; a press or a focus anywhere else closes it.
+ * neither a dialog nor the page hears them; `data-native-keyboard` keeps
+ * the browser-key guard and a page's own key handlers out
+ * (`isNativeKeyboardTarget`), and `data-overlay` marks it an open overlay
+ * while it shows. A press on it never takes the focus from it; a press or
+ * a focus anywhere else closes it. A menu taller than the window less its
+ * margins scrolls, and the keys keep the cursor's item in view.
  */
 export function Menu({
   label,
@@ -125,9 +134,11 @@ export function Menu({
   const cursor = pickableCursor(rows, pointed);
   const cursorItem = cursor === null ? null : (items[cursor] ?? null);
   const onCloseRef = useRef(onClose);
+  const cursorRef = useRef(cursor);
 
   useLayoutEffect(() => {
     onCloseRef.current = onClose;
+    cursorRef.current = cursor;
   });
 
   // Placed after layout, when its own size is known, and given the keys.
@@ -146,7 +157,9 @@ export function Menu({
     menu.style.left = `${place.left}px`;
     menu.style.top = `${place.top}px`;
     menu.focus({ preventScroll: true });
-  }, [at, anchor]);
+    // A menu taller than the window scrolls; it opens with its cursor in view.
+    revealItem(itemId, cursorRef.current);
+  }, [at, anchor, itemId]);
 
   // A press outside closes it, but one on its anchor, which toggles it.
   useEffect(() => {
@@ -171,6 +184,7 @@ export function Menu({
       aria-activedescendant={cursor === null ? undefined : `${itemId}-${cursor}`}
       aria-label={label}
       className={compact ? 'folder-menu folder-menu-compact menu-popup' : 'folder-menu menu-popup'}
+      data-native-keyboard
       data-overlay
       onBlur={(event) => {
         const to = event.relatedTarget;
@@ -192,6 +206,8 @@ export function Menu({
               ? movedPickableCursor(rows, cursor, action.delta)
               : movedPickableCursor(rows, null, action.to === 'first' ? 1 : -1);
           setPointed(next === null ? null : (items[next]?.id ?? null));
+          // Only the keys scroll: an item under the pointer is already in view.
+          revealItem(itemId, next);
         }
       }}
       // A press on an item must not take the focus from the menu, which holds the keys.

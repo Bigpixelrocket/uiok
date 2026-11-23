@@ -128,7 +128,7 @@ The backdrop is `position: fixed` on `--z-dialog`. The box carries the listing s
 - `current`: draws a `CurrentDot` after the trail, its value what current means ("Installed").
 - `cursor`: the cursor fill and bar.
 - `disabled`: dimmed (`aria-disabled`), passed over by the pointer, its press refused; say why in `description`.
-- `description`: read after the name (`aria-description`).
+- `description`: read after the name (`aria-description`). Absent, the row reads its `context`, a `trail` in words (a string or a number), and its `current` value, in that order, since its name alone hides them; give one to say why the row is disabled or to word a trail that is not text (a `KeyChord`), or `''` to read nothing.
 - `onPick`, `onPoint`: a press, and the pointer moving onto it (move the cursor there). Neither runs while it is disabled.
 - `ref`: the row's element, to scroll the cursor row into view.
 

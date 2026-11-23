@@ -50,4 +50,14 @@ describe('menu look', () => {
     expect(declaredValues(note, '-webkit-line-clamp').at(-1)).toBe('2');
     document.body.innerHTML = '';
   });
+
+  it('caps a popup menu to the window less its margins, and scrolls the rest', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = '<div class="folder-menu menu-popup" role="menu"></div>';
+    const menu = document.querySelector('.menu-popup') as Element;
+
+    expect(declaredValues(menu, 'max-height').at(-1)).toBe('calc(100vh - 2 * var(--space-2))');
+    expect(getComputedStyle(menu).overflowY).toBe('auto');
+    document.body.innerHTML = '';
+  });
 });

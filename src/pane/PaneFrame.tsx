@@ -232,7 +232,9 @@ function SiblingsCrumb({
       aria-expanded={open}
       aria-haspopup="menu"
       className="crumb-label crumb-siblings"
-      onClick={() => setOpen((shown) => !shown)}
+      // A press while the menu is open closes it and gives the focus back
+      // here, since the menu that held it goes away.
+      onClick={() => (open ? close('keyboard') : setOpen(true))}
       // While the menu holds the focus, a press here closes it, not the focus.
       onMouseDown={(event) => {
         if (open) event.preventDefault();
@@ -394,7 +396,9 @@ export function PanePathBar({
           const Label = last && heading ? 'h2' : 'span';
 
           return (
-            <Fragment key={`${index}:${label}`}>
+            // The siblings crumb keeps one key whatever its words, so picking
+            // a sibling that renames it keeps the button the focus went back to.
+            <Fragment key={last && siblings !== null ? 'siblings' : `${index}:${label}`}>
               {index > 0 && (
                 <span aria-hidden className="crumb-separator">
                   /

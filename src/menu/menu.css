@@ -366,7 +366,10 @@
 
    The menu surface on the document's body, fixed where placeMenu puts it
    (the component sets left and top), above dialogs, since a dialog's own
-   controls open menus too. As wide as its longest item, within reason. */
+   controls open menus too. As wide as its longest item, within reason, and
+   never taller than the window less placeMenu's margin at either edge
+   (MENU_MARGIN, --space-2): a longer menu scrolls, and the keys bring the
+   cursor's item into view. */
 .folder-menu.menu-popup {
   position: fixed;
   top: 0;
@@ -375,6 +378,9 @@
   width: auto;
   min-width: 180px;
   max-width: min(480px, calc(100vw - 2 * var(--space-4)));
+  max-height: calc(100vh - 2 * var(--space-2));
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 /* Its icons in the quiet tone, at a weight the cursor row's and a

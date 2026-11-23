@@ -62,7 +62,13 @@ export interface PaletteOptionProps {
    * keys and the pointer, and its press refused. Say why in `description`.
    */
   readonly disabled?: boolean;
-  /** Read after the name by assistive technology: the context and the trail in words, or why it is disabled. */
+  /**
+   * Read after the name by assistive technology, in place of what the row
+   * derives: its context, a trail in words, and what `current` means, in
+   * that order. Give it to say why the row is disabled, or to word a trail
+   * that is not text (a `KeyChord`); an empty string reads nothing after
+   * the name.
+   */
   readonly description?: string;
   /** A press picks it; never called while it is disabled. */
   readonly onPick: () => void;
@@ -79,7 +85,9 @@ export interface PaletteOptionProps {
  * chord) with the current item's dot. The cursor row wears the cursor fill
  * and bar, its quiet words in the tone made for that fill; a disabled row
  * is dimmed and never takes the cursor or a pick. The palette keeps the
- * focus in its field, so a press here never takes it.
+ * focus in its field, so a press here never takes it. Its name is `label`
+ * or its words; the context, a trail in words, and what `current` means
+ * are read after it as its description, unless `description` says it.
  */
 export function PaletteOption({
   id,
@@ -99,10 +107,17 @@ export function PaletteOption({
 }: PaletteOptionProps): ReactElement {
   const contextClass =
     contextKind === 'path' ? 'palette-context' : `palette-context palette-${contextKind}`;
+  // The row is named by its name alone, which hides the words drawn after
+  // it, so those are read as its description unless the caller words one.
+  const described =
+    description ??
+    [context, typeof trail === 'string' || typeof trail === 'number' ? String(trail) : '', current]
+      .filter((part): part is string => typeof part === 'string' && part !== '')
+      .join(', ');
 
   return (
     <div
-      aria-description={description === undefined || description === '' ? undefined : description}
+      aria-description={described === '' ? undefined : described}
       aria-disabled={disabled || undefined}
       aria-label={label ?? (typeof name === 'string' ? name : undefined)}
       aria-selected={cursor}

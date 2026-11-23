@@ -43,6 +43,50 @@ describe('PaletteOption', () => {
     expect(screen.getByText('Languages').getAttribute('role')).toBe('presentation');
   });
 
+  it('reads its context, a trail in words, and its current state after its name unless told otherwise', () => {
+    const { rerender } = render(
+      <PaletteOption
+        context="The PostgreSQL server"
+        current="Installed"
+        id="pg"
+        name="PostgreSQL"
+        onPick={() => undefined}
+        trail="18.1"
+      />
+    );
+    const option = screen.getByRole('option', { name: 'PostgreSQL' });
+
+    expect(option.getAttribute('aria-description')).toBe('The PostgreSQL server, 18.1, Installed');
+
+    // A trail that is not words reads nothing; the context still does.
+    rerender(
+      <PaletteOption
+        context="~/shop"
+        contextKind="path"
+        id="pg"
+        name="PostgreSQL"
+        onPick={() => undefined}
+        trail={<kbd>K</kbd>}
+      />
+    );
+    expect(option.getAttribute('aria-description')).toBe('~/shop');
+
+    rerender(
+      <PaletteOption
+        context="The PostgreSQL server"
+        description="Already added"
+        disabled
+        id="pg"
+        name="PostgreSQL"
+        onPick={() => undefined}
+      />
+    );
+    expect(option.getAttribute('aria-description')).toBe('Already added');
+
+    rerender(<PaletteOption id="pg" name="PostgreSQL" onPick={() => undefined} />);
+    expect(option.hasAttribute('aria-description')).toBe(false);
+  });
+
   it('picks on a press and points on a move, and refuses both while disabled', () => {
     const onPick = vi.fn();
     const onPoint = vi.fn();

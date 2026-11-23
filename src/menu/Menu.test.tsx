@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { Copy, Trash2 } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { isNativeKeyboardTarget } from '../keyboard/Keyboard.logic.js';
 import { Menu, type MenuEntry } from './Menu.js';
 
 const ENTRIES: readonly MenuEntry[] = [
@@ -108,5 +109,36 @@ describe('Menu', () => {
     fireEvent.mouseDown(anchor);
     expect(onClose).not.toHaveBeenCalled();
     anchor.remove();
+  });
+
+  it("keeps the page's own keys out while open, as every surface that holds its keys does", () => {
+    const { menu } = open();
+
+    expect(isNativeKeyboardTarget(menu)).toBe(true);
+    expect(isNativeKeyboardTarget(menu.querySelector('[role="menuitem"]'))).toBe(true);
+  });
+
+  it("scrolls the cursor's item into view when it opens and when the keys move it", () => {
+    const shown: string[] = [];
+    const scrollIntoView = vi.fn(function (this: HTMLElement) {
+      shown.push(this.textContent ?? '');
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: scrollIntoView
+    });
+    try {
+      const { menu } = open({ initial: 'remove' });
+
+      expect(shown).toEqual(['Remove…']);
+      fireEvent.keyDown(menu, { key: 'End' });
+      expect(shown.at(-1)).toBe('Show in Menu Bar');
+      expect(scrollIntoView).toHaveBeenLastCalledWith({ block: 'nearest' });
+      // A pointer's move is already in view and scrolls nothing.
+      fireEvent.mouseMove(screen.getByRole('menuitem', { name: /Copy Path/ }));
+      expect(scrollIntoView).toHaveBeenCalledTimes(2);
+    } finally {
+      delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
   });
 });

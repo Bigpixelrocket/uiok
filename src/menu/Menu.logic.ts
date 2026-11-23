@@ -31,7 +31,9 @@ const clamp = (start: number, extent: number, room: number): number =>
  * window, and opens upward from the point when there is no room below.
  * Dropped from a box, it starts under the box's leading edge, a margin
  * below, and stands over the box instead when there is room above and none
- * below; either way it stays inside the window.
+ * below; either way it stays inside the window. A menu its stylesheet
+ * caps at the window's height less both margins (`.menu-popup`) measures
+ * at that cap, so it starts at the top margin.
  */
 export function placeMenu(
   from: { readonly point: MenuPoint } | { readonly box: MenuBox },
