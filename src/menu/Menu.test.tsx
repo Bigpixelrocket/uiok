@@ -437,6 +437,26 @@ describe("Menu's submenu as its host changes it", () => {
     expect(screen.queryByRole('menu', { name: 'Copy As' })).toBe(null);
   });
 
+  it('reads where it is opened again once a given direction is taken away', () => {
+    const mount = (dir?: 'ltr') => (
+      <div dir="rtl">
+        <Menu
+          at={{ x: 100, y: 100 }}
+          dir={dir}
+          entries={ENTRIES_WITH_SUB}
+          label="Actions"
+          onClose={vi.fn()}
+          onPick={vi.fn()}
+        />
+      </div>
+    );
+    const { rerender } = render(mount('ltr'));
+
+    expect(named('Actions').getAttribute('dir')).toBe('ltr');
+    rerender(mount());
+    expect(named('Actions').getAttribute('dir')).toBe('rtl');
+  });
+
   it('brings the cursor into view when the keys take over a submenu the pointer opened', () => {
     const shown: string[] = [];
     Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {

@@ -431,11 +431,13 @@ export function Menu({
     subCursorRef.current = subCursor;
   });
 
-  // Drawn on the body, it reads in the direction of what opened it.
+  // Drawn on the body, it reads in the direction of what opened it, read
+  // again when the anchor changes or a given direction is taken away (the
+  // marker the fallback reads mounts only then).
   useLayoutEffect(() => {
     const opener = anchor ?? originRef.current;
     if (opener !== null) setDirFound(isRtl(opener) ? 'rtl' : 'ltr');
-  }, [anchor]);
+  }, [anchor, dirGiven]);
 
   // An item disabled or gone takes its submenu with it.
   useEffect(() => {
