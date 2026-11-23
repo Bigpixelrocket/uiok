@@ -10,14 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Added
 
-- `KeyLegendStrip`'s `alert` (`LegendAlert`, `{ text }`) and `onAlertDismiss`: a short alert in the host's words (why the last key did nothing) at the strip's end, in the warning's words, cut with an ellipsis and whole in its tooltip, spoken through a polite live region. On the next key the strip calls `onAlertDismiss` with the alert then showing, and the host clears only that one, so a refusal that same key raises stays, whatever order the strip's and the host's key listeners run in, even when the host commits it at once (`flushSync`) from a listener that runs before the strip's. Each alert, a repeat of the same words included, is spoken again.
+- `KeyLegendStrip`'s `alert` (`LegendAlert`, `{ text }`) and `onAlertDismiss`: a short alert in the host's words (why the last key did nothing) at the strip's end, in the warning's words, cut with an ellipsis and whole in its tooltip, spoken through a polite live region. On the next key the strip calls `onAlertDismiss` with the alert then showing, and the host clears only that one, so a refusal that same key raises stays, whatever order the strip's and the host's key listeners run in, even when the host commits it at once (`flushSync`) from a listener that runs before the strip's: the strip tells the key that raised an alert by its event, not by a clock, so a second key in the same millisecond, or under a test's frozen timers, still dismisses. Each alert, a repeat of the same words included, is spoken again.
 - `FilterChips`' `wrap`: chips that do not fit wrap onto further lines instead of scrolling sideways (no edge fade, no scroll, no sideways wheel), for a multi-choice control in a narrow cell. The chips stay buttons in the Tab order; the one scrolling line stays the default.
-- `TreeRow`'s `dim`: a row whose item is not there or cannot be used yet (an Add row while a tool it needs is missing) shows its name in the row-meta tone, full on the cursor, a mark, and hover, as a listing `Row`'s `dim` does. The row still takes the cursor and opens.
+- `TreeRow`'s `dim`: a row whose item is not there or cannot be used yet (an Add row while a tool it needs is missing) shows its name in the row-meta tone, full on the cursor, a mark, and hover, as a listing `Row`'s `dim` does. The row still takes the cursor and opens. A dim add row, on `Row` or `TreeRow`, reads as unavailable in every theme: its plus leaves the accent for the row-meta tone at `--disabled-opacity`, and its words never rise past the on-surface tone.
 - `PaneMessage`'s `icon`: a glyph of the host's own leading the words, at `--icon-md`, the words hanging beside it, in place of a tone's glyph.
+- `UiokLabels.paneTabs.foldedName(count)`: the folded tabs' count's accessible name, "6 more tabs".
 
 ### Changed
 
-- `SideBySide` stands its parts side by side only where each equal half holds its part at the part's min-content width, so content that will not narrow (a toolbar of tools that keep their size, a form) stacks though the room passes `from`, which is now a floor. Content that changes a part's size decides again with no resize of the pair.
+- `SideBySide` stands its parts side by side only where each equal half holds its part at the part's min-content width, so content that will not narrow (a toolbar of tools that keep their size, a form) stacks though the room passes `from`, which is now a floor. Content that changes decides again with no resize of the pair: new parts, and any change to the nodes or words inside. The content is measured in one column, so the pair never grows shorter for the read and a scrolled pane keeps its scroll, and not at all under the floor; the scrollbar's hold is dropped for content that needs more than it did.
 
 ### Fixed
 
@@ -25,6 +26,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `PaneMessage` hangs its words beside a glyph only when one leads them (`icon`, or an svg that is the first thing in its words), not beside an icon inside the sentence, which now keeps its own size while a tone keeps its glyph.
 - A tooltip's label and shortcut are a word apart in its accessible name ("New Tab ⌘T", not "New Tab⌘T").
 - `RowProps.nameDescription`'s docs: it describes the row when it or its controls take the focus (`focusable`, `tabbable`).
+- `PaneTabs`' folded tabs' count is named by what it shows and opens ("6 more tabs"), not "Folded here", which stays its menu's heading.
+- A cut tab name or context in `PaneTabs`, and a `Cell` whose text its column cuts, shows its whole words as a tooltip while cut, as a row's name does. A tab's `tip` and a cell's `tip` still name them whole at every width.
+- Neighbouring actions in a row's or a strip's cell meet edge to edge: an action with another after it is no longer pulled under its neighbour, so their click areas do not overlap, and a worded action's words stand as far from the next control as before.
+- `FilterEscape` is named by what it does and the key it shows ("Clear filter, Escape"), with `aria-keyshortcuts="Escape"`.
+- A `StateMark` with no word stands on the middle of its line of text, not at the top of a row's cell.
 
 ## [0.7.0] - 2026-11-23
 
