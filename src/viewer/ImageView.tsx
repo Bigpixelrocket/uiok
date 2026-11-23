@@ -182,13 +182,15 @@ function ImageView({ info, onFallback }: ViewerViewProps): ReactElement {
   }, [zoomTo]);
 
   // The zoom chords and arrows answer anywhere in the viewer, or with nothing
-  // focused; a control of the page beside it keeps its own keys.
+  // focused; a control of the page beside it keeps its own keys, and a key a
+  // control in the viewer already handled (the mode switch's arrows) does
+  // nothing more.
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent): void => {
-      if (!isViewerEvent(event)) return;
+      if (event.defaultPrevented || !isViewerEvent(event)) return;
       const command = event.metaKey && !event.ctrlKey && !event.altKey;
       const plain = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
-      const arrow = ARROWS[event.key];
+      const arrow = Object.hasOwn(ARROWS, event.key) ? ARROWS[event.key] : undefined;
 
       if (command && (event.code === 'Equal' || event.key === '+')) zoomTo((s) => stepScale(s, 1));
       else if (command && event.code === 'Minus') zoomTo((s) => stepScale(s, -1));

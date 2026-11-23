@@ -122,6 +122,22 @@ describe('ImageView', () => {
     expect(image.style.transform).toBe('translate(-1648px, -1200px)');
   });
 
+  it('leaves an arrow a control already handled alone', () => {
+    const { image } = renderLoaded(4000, 3000);
+    press({ code: 'Digit0', key: '0', metaKey: true });
+    const before = image.style.transform;
+
+    act(() => {
+      const event = new KeyboardEvent('keydown', { key: 'ArrowRight', cancelable: true });
+      event.preventDefault();
+      window.dispatchEvent(event);
+    });
+    expect(image.style.transform).toBe(before);
+
+    press({ code: 'ArrowRight', key: 'ArrowRight' });
+    expect(image.style.transform).not.toBe(before);
+  });
+
   it('zooms about the pointer with Command and the wheel, and pans with the wheel alone', () => {
     const { image } = renderLoaded(4000, 3000);
     const canvas = image.parentElement as HTMLElement;

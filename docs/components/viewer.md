@@ -60,7 +60,8 @@ Shiki is a dependency of this package, reached only from the worker: `ViewerWind
 | Keys                               | In           | Does                                                                    |
 | ---------------------------------- | ------------ | ----------------------------------------------------------------------- |
 | ↑ ↓, Page Up, Page Down, Home, End | text, hex    | Scroll by a row, a screen, or to an end                                 |
-| ⌘A, Shift with an arrow            | text, hex    | Select all, or extend the selection                                     |
+| ⌘A                                 | text, hex    | Select all                                                              |
+| Shift with an arrow                | hex          | Extend the selection by a byte sideways or a row up or down             |
 | ⌘C                                 | text, hex    | Copy the selection (at most 1 MB), as text, or as hex in the hex column |
 | ⌘L                                 | hex          | Go to Offset (an offset in hex, `1F40` or `0x1F40`)                     |
 | Escape                             | text, hex    | Clear the selection, then close                                         |

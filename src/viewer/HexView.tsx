@@ -239,7 +239,9 @@ function HexView({ reader, info }: Pick<ViewerViewProps, 'reader' | 'info'>): Re
     const command = event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
     const shift = event.shiftKey && !event.metaKey && !event.ctrlKey && !event.altKey;
     const plain = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
-    const step = SELECTION_STEPS[event.key as keyof typeof SELECTION_STEPS];
+    const step = Object.hasOwn(SELECTION_STEPS, event.key)
+      ? SELECTION_STEPS[event.key as keyof typeof SELECTION_STEPS]
+      : undefined;
     let handled = true;
 
     if (command && event.key === 'a') {
