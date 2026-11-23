@@ -3,6 +3,8 @@ import { BookOpen } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
+import { Cell, Listing, Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
+import { verbControl } from '../pane/PaneKeys.js';
 import { TextLink } from './TextLink.js';
 
 describe('TextLink', () => {
@@ -81,5 +83,65 @@ describe('TextLink', () => {
     expect(link.getAttribute('aria-description')).toBe('The disk is full, so writes fail.');
     expect(link.dataset.tooltip).toBe('The disk is full, so writes fail.');
     expect(declaredValues(link, 'color')).toContain('var(--danger-text)');
+  });
+
+  describe('in a listing row', () => {
+    const cursorOn = (key: string): RowCursor => ({
+      current: () => key,
+      subscribe: () => () => undefined,
+      point: () => undefined
+    });
+
+    const board = (props: { tabbable?: boolean; verb?: string }, onOpen = vi.fn()) =>
+      render(
+        <RowCursorContext value={cursorOn('web')}>
+          <Listing columns={[{ label: 'Port' }]} grid="20px 1fr auto" title="Services">
+            <Row name="web" onOpen={onOpen} rowKey="web" tabbable={props.tabbable}>
+              <Cell>
+                <TextLink onClick={onPort} verb={props.verb}>
+                  5173
+                </TextLink>
+              </Cell>
+            </Row>
+          </Listing>
+        </RowCursorContext>
+      );
+    const onPort = vi.fn();
+
+    it('leaves the Tab order with a verb, which the cursor row’s keys reach and run alone', () => {
+      onPort.mockClear();
+      const onOpen = vi.fn();
+      board({ verb: 'open-port' }, onOpen);
+      const link = screen.getByRole('button', { name: '5173' });
+
+      expect(link.tabIndex).toBe(-1);
+      expect(link.dataset.verb).toBe('open-port');
+      const row = screen.getAllByRole('row')[1] as HTMLElement;
+      const control = verbControl(row, 'open-port');
+      expect(control).toBe(link);
+      control?.click();
+      expect(onPort).toHaveBeenCalledOnce();
+      expect(onOpen).not.toHaveBeenCalled();
+    });
+
+    it('keeps its Tab stop without a verb, or in a tabbable row', () => {
+      board({});
+      expect(screen.getByRole('button', { name: '5173' }).hasAttribute('tabindex')).toBe(false);
+      document.body.innerHTML = '';
+      board({ tabbable: true, verb: 'open-port' });
+      expect(screen.getByRole('button', { name: '5173' }).hasAttribute('tabindex')).toBe(false);
+    });
+
+    it('changes nothing outside a row but the attribute', () => {
+      render(
+        <TextLink onClick={() => undefined} verb="open-port">
+          Manual
+        </TextLink>
+      );
+      const link = screen.getByRole('button', { name: 'Manual' });
+
+      expect(link.hasAttribute('tabindex')).toBe(false);
+      expect(link.dataset.verb).toBe('open-port');
+    });
   });
 });

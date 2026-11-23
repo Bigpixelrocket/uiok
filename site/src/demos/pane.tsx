@@ -2,7 +2,8 @@
  * A sidebar of servers beside a pane of services, on the two-pane keyboard
  * (`usePaneKeys`): ↑ ↓ Home End move the active pane's cursor, ← and →
  * switch panes, Return opens a server or a service's logs, ⌘⏎ starts or
- * stops the cursor's service. Tab keeps the browser's order, or, with
+ * stops the cursor's service, ⌘O opens its port (a `TextLink` with a verb,
+ * out of the Tab order). Tab keeps the browser's order, or, with
  * Listing first chosen, walks each pane's listing before its controls
  * (`tabOrder: 'listing'`); Escape from the panes gives the focus back to
  * that choice. The legend under it reads what the cursor
@@ -32,6 +33,7 @@ import {
 } from 'lucide-react';
 import { useId, useRef, useState } from 'react';
 
+import { TextLink } from '@bigpixelrocket/uiok/button';
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 import { KeyLegendStrip, type LegendVerb } from '@bigpixelrocket/uiok/legend';
 import {
@@ -121,6 +123,8 @@ const readKeyFor =
     if (plain && event.key === 'ArrowLeft') return { kind: 'focus', pane: 'sidebar' };
     if (plain && event.key === 'ArrowRight') return { kind: 'focus', pane: 'main' };
     const action = paneKeyAction(event);
+    // ⌘O opens the cursor service's port, a link the row's keys reach.
+    if (action?.kind === 'chord') return action.letter === 'o' && !action.alt ? action : null;
     const kinds =
       walk === 'listing' ? ['move', 'enter', 'toggle', 'switch-pane'] : ['move', 'enter', 'toggle'];
     return action !== null && kinds.includes(action.kind) ? action : null;
@@ -425,6 +429,12 @@ export function PaneDemo() {
           action.kind
         )?.click();
       }
+      if (action.kind === 'chord' && pane === 'main') {
+        verbControl(
+          paneRow(panes.mainRef.current, panes.rowCursor.current()),
+          'open-port'
+        )?.click();
+      }
     }
   });
 
@@ -468,6 +478,13 @@ export function PaneDemo() {
       label: panes.offered.toggle,
       chord: { key: 'Enter', meta: true },
       run: () => verbControl(cursorRow(), 'toggle')?.click()
+    });
+  }
+  if (panes.activePane === 'main' && panes.offered.rows) {
+    legend.push({
+      label: 'Open Port',
+      chord: { key: 'o', meta: true },
+      run: () => verbControl(cursorRow(), 'open-port')?.click()
     });
   }
 
@@ -609,7 +626,16 @@ export function PaneDemo() {
                         word={service.running ? 'running' : 'stopped'}
                       />
                     </Cell>
-                    <Cell align="right">{service.port}</Cell>
+                    <Cell align="right">
+                      {/* Out of the Tab order: the cursor row's ⌘O opens it. */}
+                      <TextLink
+                        label={`Open port ${service.port} of ${service.name}`}
+                        onClick={() => setSaid(`opened localhost:${service.port}`)}
+                        verb="open-port"
+                      >
+                        {String(service.port)}
+                      </TextLink>
+                    </Cell>
                     <Cell className="pane-action-cell">
                       <QuietAction
                         icon={FileText}

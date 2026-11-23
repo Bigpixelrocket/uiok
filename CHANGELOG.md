@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - `TreeRow`'s `onContextMenu(event, rowKey)`: a secondary click for a tree row's menu, as a listing `Row`'s. The row moves the pane's cursor to itself before calling it and cancels the browser's own menu, so its handler wins over its `TreeList`'s and `TreePane`'s. With the focus on the tree's `TreeList`, the Menu key or Shift-F10 runs the cursor row's, its event placed under the row.
+- `TextLink`'s `verb` (`ControlVerb`, `data-verb`): a link in a listing row, such as a service's port, becomes one of the row's controls, out of the Tab order unless the row is `tabbable`, reached by the cursor row's keys through `verbControl`, and run without opening the row. Without a `verb`, or outside a row, a link keeps its Tab stop.
 - The pane docs demo walks Tab listing first (`usePaneKeys`' `tabOrder: 'listing'`) beside the browser's own order, Escape giving the focus back to that choice, and the frame demo opens a tree row's menu, from a secondary click or, through its Focus the tree button, the keys.
 
 ### Fixed
