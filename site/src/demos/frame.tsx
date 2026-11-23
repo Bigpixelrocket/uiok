@@ -14,7 +14,9 @@
  * keeps, its log scrolling; the key legend across the foot. Under the
  * window, `SideBySide` in a pane the slider narrows: Settings and
  * Extensions side by side from 520px of the pane's own width, stacked in
- * less, the page's one cursor walking the first listing, then the second.
+ * less or once their toolbars no longer fit the halves, the page's one
+ * cursor walking the first listing, then the second; then `FilterChips`
+ * with `wrap` in a cell the slider narrows.
  */
 
 import {
@@ -48,6 +50,7 @@ import {
   SidebarResizer,
   SplitDetail,
   StatusNotice,
+  Toolbar,
   TreeList,
   TreePane,
   TreeRow,
@@ -95,21 +98,39 @@ const EXTENSIONS: readonly (readonly [string, string])[] = [
 
 /**
  * A pane the slider narrows, holding two listings in `SideBySide`: side by
- * side from 520px of the pane's own width, stacked in less. The page's one
+ * side from 520px of the pane's own width, stacked in less. With the
+ * toolbars shown, tools that keep their size stack the pair at a wider
+ * room than the floor, since each half must hold its part. The page's one
  * cursor walks the first listing's rows, then the second's.
  */
 function SideBySideDemo() {
   const [width, setWidth] = useState(640);
+  const [tools, setTools] = useState(false);
   const keys = [...SETTINGS, ...EXTENSIONS].map(([name]) => name);
   const { cursor, onKeyDown } = useDemoCursor(keys);
-  const listing = (title: string, rows: readonly (readonly [string, string])[]) => (
-    <Listing columns={[{ label: 'Value', align: 'right' }]} grid="20px 1fr auto" title={title}>
-      {rows.map(([name, value]) => (
-        <Row key={name} name={name} rowKey={name}>
-          <Cell align="right">{value}</Cell>
-        </Row>
-      ))}
-    </Listing>
+  const listing = (
+    title: string,
+    rows: readonly (readonly [string, string])[],
+    actions: readonly string[]
+  ) => (
+    <>
+      {tools ? (
+        <Toolbar>
+          {actions.map((action) => (
+            <Button key={action} size="small">
+              {action}
+            </Button>
+          ))}
+        </Toolbar>
+      ) : null}
+      <Listing columns={[{ label: 'Value', align: 'right' }]} grid="20px 1fr auto" title={title}>
+        {rows.map(([name, value]) => (
+          <Row key={name} name={name} rowKey={name}>
+            <Cell align="right">{value}</Cell>
+          </Row>
+        ))}
+      </Listing>
+    </>
   );
   return (
     <div className="demo-stack">
@@ -122,6 +143,7 @@ function SideBySideDemo() {
         value={width}
         valueText={`${width}px`}
       />
+      <Switch checked={tools} label="Toolbars that keep their size" onChange={setTools} />
       <div
         className="listing-root"
         style={{ width: `${width}px`, maxWidth: '100%' } as CSSProperties}
@@ -134,10 +156,20 @@ function SideBySideDemo() {
           >
             <RowCursorContext value={cursor}>
               <SideBySide
-                first={listing('Settings', SETTINGS)}
+                first={listing('Settings', SETTINGS, [
+                  'Edit',
+                  'Reset to defaults',
+                  'Open php.ini',
+                  'Reload'
+                ])}
                 firstLabel="Settings"
                 from={520}
-                second={listing('Extensions', EXTENSIONS)}
+                second={listing('Extensions', EXTENSIONS, [
+                  'Install',
+                  'Enable',
+                  'Disable',
+                  'Configure'
+                ])}
                 secondLabel="Extensions"
               />
             </RowCursorContext>

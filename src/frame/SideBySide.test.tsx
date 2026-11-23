@@ -177,6 +177,141 @@ describe('SideBySide', () => {
     expect(root.dataset.layout).toBe('side-by-side');
   });
 
+  describe('by its content', () => {
+    /** What each made ResizeObserver watches, by the order made. */
+    const watched: Element[][] = [];
+
+    const observe = (): void => {
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          readonly targets: Element[] = [];
+          constructor(callback: () => void) {
+            observers.push(callback);
+            watched.push(this.targets);
+          }
+          observe(target: Element) {
+            this.targets.push(target);
+          }
+          disconnect() {}
+        }
+      );
+    };
+
+    /**
+     * Gives the parts min-content widths, read only while the pair lays them
+     * out to measure (`data-measuring`); laid out otherwise, they read 0, so
+     * a width read outside the measuring layout would ask for nothing.
+     */
+    const content = (root: HTMLElement, first: number, second: number): void => {
+      const [firstPart, secondPart] = root.children;
+
+      for (const [part, width] of [
+        [firstPart, first],
+        [secondPart, second]
+      ] as const) {
+        (part as HTMLElement).getBoundingClientRect = () =>
+          ({ width: root.hasAttribute('data-measuring') ? width : 0 }) as DOMRect;
+      }
+    };
+
+    afterEach(() => {
+      watched.length = 0;
+    });
+
+    it('stacks wide content above the floor, standing it side by side once each half holds its part', () => {
+      observe();
+      const { container } = render(pair(400));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+
+      // The wider part needs 300px: equal halves need 600px.
+      content(root, 300, 200);
+      widen(root, 500);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+      widen(root, 600);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // The measuring layout is gone once read.
+      expect(root.hasAttribute('data-measuring')).toBe(false);
+    });
+
+    it('keeps narrow content side by side from the floor', () => {
+      observe();
+      const { container } = render(pair(400));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+
+      content(root, 100, 150);
+      widen(root, 420);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+    });
+
+    it('never stands content that fits side by side under the floor', () => {
+      observe();
+      const { container } = render(pair(640));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+
+      content(root, 50, 50);
+      widen(root, 600);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
+    it('settles when content sets the boundary and the scrollbar two columns bring narrows the pair', () => {
+      observe();
+      const { container } = render(pair(400));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+
+      content(root, 320, 320);
+      Object.defineProperty(root, 'clientWidth', {
+        configurable: true,
+        get: () => (root.dataset.layout === 'side-by-side' ? 625 : 640)
+      });
+      const layouts: string[] = [];
+
+      for (let turn = 0; turn < 4; turn += 1) {
+        act(() => observers.at(-1)?.());
+        layouts.push(root.dataset.layout ?? '');
+      }
+      expect(layouts).toEqual(['side-by-side', 'side-by-side', 'side-by-side', 'side-by-side']);
+    });
+
+    it('decides again when a part grows with no resize of the pair', () => {
+      observe();
+      const { container } = render(pair(400));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const parts = [...root.children];
+
+      // Each part is watched, so its content changing its size calls back.
+      expect(watched.at(-1)).toEqual([root, ...parts]);
+      content(root, 200, 200);
+      widen(root, 500);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      content(root, 200, 400);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+    });
+  });
+
+  it('measures each part at its min-content width, with the hairline it has side by side', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const { container } = render(pair(640));
+    const root = container.querySelector('.side-by-side') as HTMLElement;
+    const first = root.firstElementChild as HTMLElement;
+
+    root.setAttribute('data-measuring', '');
+    expect(declaredValues(root, 'grid-template-columns').at(-1)).toBe('min-content min-content');
+    expect(declaredValues(first, 'border-inline-end').at(-1)).toBe(
+      'var(--line) solid var(--border)'
+    );
+    expect(declaredValues(first, 'border-block-end').at(-1)).toBe('none');
+    // The measuring layout wins over a pair already side by side, too.
+    root.dataset.layout = 'side-by-side';
+    expect(declaredValues(root, 'grid-template-columns').at(-1)).toBe('min-content min-content');
+  });
+
   it('draws two columns with the hairline after the first side by side, and one under it stacked', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     const { container } = render(pair(640));
