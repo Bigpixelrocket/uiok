@@ -117,6 +117,24 @@ describe('the tree look', () => {
     document.body.innerHTML = '';
   });
 
+  it('dims a dim group’s name too, and lifts a hovered dim node in a tree that marks no pointer', () => {
+    applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
+    document.body.innerHTML = `
+      <section class="listing-root"><div class="pane-list tree">
+        <div class="row tree-group row-dim" id="group"><span class="row-icon"></span><span class="tree-glyph"></span>
+          <span class="row-name tree-name">Services</span></div>
+        <div class="row tree-group" id="plain-group"><span class="row-icon"></span><span class="tree-glyph"></span>
+          <span class="row-name tree-name">Databases</span></div>
+        <div class="row row-dim is-hovered" id="hovered"><span class="row-icon"></span><span class="tree-glyph"></span>
+          <span class="row-name tree-name">composer</span></div>
+      </div></section>`;
+
+    expect(style('#group .tree-name').getPropertyValue('color')).toBe('var(--row-meta-text)');
+    expect(style('#plain-group .tree-name').getPropertyValue('color')).toBe('var(--text-dim)');
+    expect(style('#hovered .tree-name').getPropertyValue('color')).toBe('var(--text-on-surface)');
+    document.body.innerHTML = '';
+  });
+
   it("keeps an add row's accent plus on the cursor", () => {
     applyStylesheets(styles);
     document.body.innerHTML = `

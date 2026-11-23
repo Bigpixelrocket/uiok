@@ -377,9 +377,17 @@
   text-overflow: ellipsis;
 }
 
-/* A group's name reads as a heading over its rows. */
-.tree .row.tree-group .tree-name {
+/* A group's name reads as a heading over its rows; a dim group's keeps
+   the dim row's tone (listing.css), which says its item is not there yet. */
+.tree .row.tree-group:where(:not(.row-dim)) .tree-name {
   color: var(--text-dim);
+}
+
+/* A dim row's name lifts under the pointer as a listing's does. A tree
+   takes the pointer without the listing's `.pointer` mark, so the tree says
+   it here. */
+.tree .row.row-dim:hover:where(:not(.selected)) > .row-name {
+  color: var(--text-on-surface);
 }
 
 /* Words after a name, quieter. */
