@@ -8,6 +8,7 @@ Every modal dialog shares one frame and one footer: a title strip that says what
 - `DialogItems` and `DialogFacts`: the framed list of what a confirmation acts on, and the property list of facts about an action.
 - `ProgressDialog`: the progress dialog of long work, its legend following the run.
 - `TypedNameDialog`: a for-good confirmation whose verb waits for the typed name.
+- `SectionedDialog`: a form too long for one view, with a sidebar of its sections that follows the scroll.
 - `DialogLayer`: where a host's dialogs mount, so they paint above every pane.
 
 ## Example
@@ -342,12 +343,51 @@ A `ConfirmDialog` in the for-good anatomy (below) for work a slip would cost mos
 
 People confirm a delete out of habit, ⌘⌫ then Return, without reading. With `forGood` the confirm verb still stands at the right edge, lit red, but its key is ⌥⌘⌫ (the Delete Now chord, Finder's chord for a delete that skips the Trash), Return runs nothing, and a held chord never runs it on a repeat.
 
+## `SectionedDialog` (`SectionedDialogProps`)
+
+A form too long for one view (a command's settings, a connection's options): a fixed frame (`min(860px, 100%)` by `min(640px, 100%)`, so it keeps its size as fields come and go) with a sidebar of the form's sections beside a column that scrolls. Each section is headed by its name as an overline, a hairline between sections; its rows are the [field](field.md) components.
+
+```tsx
+import { SectionedDialog } from '@bigpixelrocket/uiok/dialog';
+import { FieldGrid, FieldRow, TextField } from '@bigpixelrocket/uiok/field';
+
+<SectionedDialog
+  icon={Pencil}
+  labelId="edit-command"
+  legend={{ leave: {}, primary: { label: 'Save and Restart', onRun: save } }}
+  notice={
+    failure === null ? null : (
+      <Notice role="alert" tone="danger">
+        {failure}
+      </Notice>
+    )
+  }
+  onCancel={close}
+  sections={[
+    { id: 'command', title: 'Command', children: <FieldGrid>…</FieldGrid> },
+    { id: 'depends', title: 'Depends on', children: <FieldGrid>…</FieldGrid> },
+    { id: 'health', title: 'Health', children: <FieldGrid>…</FieldGrid> }
+  ]}
+  title="Edit Command"
+/>;
+```
+
+It takes `ModalDialog`'s props (but `size` and `children`) plus:
+
+| Prop       | Type                       | Meaning                                                                                                                           |
+| ---------- | -------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `sections` | `readonly DialogSection[]` | The groups in order: `id` (unique, the same in every language), `title` (the sidebar row and the overline), `children` (its rows) |
+| `openAt`   | `string`                   | The section scrolled to as the dialog opens; the first unless given                                                               |
+| `notice`   | `ReactNode`                | A line over the column that never scrolls away (a save that failed, a danger `Notice`)                                            |
+
+The sidebar (a `nav` named by `dialog.sections`) marks the section in view (`aria-current="location"`), following the column as it scrolls and as a section grows or shrinks, by the same rules as the Settings dialog's subsections (`spiedSubsection`): the last section whose start reached the column's top, or the last of all once the column is at its end. A row scrolls the column to its section and marks it. A press leaves the focus where it was, as a list row's does; a row run from the keyboard (Return or Space on it) moves the focus to its section's first control. Every row is a button in the Tab order.
+
 ## Styling
 
 Nothing animates in: a dialog and a frosted wash are there on the frame they open, with no fade, drop, or scale, as a desktop sheet appears. The lead, item names and details, counts, and values in a body can be selected and copied; the title, labels, and legend cannot.
 
-`.dialog-backdrop`, `.frosted`, `.dialog-layer`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.legend-danger`, `.confirm-dialog`, `.dialog-message`, `.dialog-facts`, `.dialog-fact`, `.dialog-fact-count`, `.dialog-fact-value`, `.dialog-fact-value-more`, `.dialog-fact-names`, `.dialog-fact-more`, `.confirm-items` (a confirmation with items, 480px), `.confirm-items-lists`, `.dialog-items-block`, `.dialog-items-head`, `.dialog-items-count`, `.dialog-items`, `.dialog-item`, `.dialog-item-glyph`, `.dialog-item-name`, `.dialog-item-detail`, `.dialog-items-more`. The frame declares `--dialog-tone` and `--dialog-icon`, reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
+`.dialog-backdrop`, `.frosted`, `.dialog-layer`, `.dialog` (`data-tone`, `data-pinned`), `.dialog-heading`, `.dialog-icon`, `.dialog-body`, `.dialog-help`, `.dialog-label`, `.dialog-value`, `.dialog-legend`, `.legend-slot`, `.legend-slot-key`, `.legend-primary`, `.legend-danger`, `.sectioned-dialog`, `.sectioned-dialog-body`, `.sectioned-dialog-nav`, `.sectioned-dialog-nav-row`, `.sectioned-dialog-column`, `.sectioned-dialog-sections`, `.dialog-section`, `.dialog-section-title`, `.confirm-dialog`, `.dialog-message`, `.dialog-facts`, `.dialog-fact`, `.dialog-fact-count`, `.dialog-fact-value`, `.dialog-fact-value-more`, `.dialog-fact-names`, `.dialog-fact-more`, `.confirm-items` (a confirmation with items, 480px), `.confirm-items-lists`, `.dialog-items-block`, `.dialog-items-head`, `.dialog-items-count`, `.dialog-items`, `.dialog-item`, `.dialog-item-glyph`, `.dialog-item-name`, `.dialog-item-detail`, `.dialog-items-more`. The frame declares `--dialog-tone` and `--dialog-icon`, reads `--dialog-top` and the host hook `--dialog-inset-top` (16px unless set).
 
 ## Labels read
 
-`dialog`: `cancel` (ConfirmDialog's default leave verb, `filterLeaveLabel`, ProgressDialog's Cancel), `clear` (`filterLeaveLabel`), `ok`, `stop`, `tryAgain`, and `runInBackground` (ProgressDialog's verbs), `typeName` (TypedNameDialog's note), `affectedItems(count)` (an item list's accessible name when it has no label), `itemCount(count)` (the count read before the names), `moreItems(count)` (the "+N more" row). `keys` through `KeyChord` for the slots' caps. See [labels](../labels.md).
+`dialog`: `cancel` (ConfirmDialog's default leave verb, `filterLeaveLabel`, ProgressDialog's Cancel), `clear` (`filterLeaveLabel`), `ok`, `stop`, `tryAgain`, and `runInBackground` (ProgressDialog's verbs), `typeName` (TypedNameDialog's note), `sections` (SectionedDialog's sidebar), `affectedItems(count)` (an item list's accessible name when it has no label), `itemCount(count)` (the count read before the names), `moreItems(count)` (the "+N more" row). `keys` through `KeyChord` for the slots' caps. See [labels](../labels.md).

@@ -1,6 +1,6 @@
 # Notices, cards, swatches, tags, fact tables, selection, and shared recipes (`@bigpixelrocket/uiok/surface`)
 
-Surfaces a page draws round its own content, each a component: `Notice`, `Card`, `FactTable` with `FactRow`, `GroupSwatch`, and `Tag`, with their looks in `@bigpixelrocket/uiok/styles.css`, and the shared recipes below.
+Surfaces a page draws round its own content, each a component: `Notice`, `Card`, `FactTable` with `FactRow`, `FactList` with `Fact` and `FactColumns`, `GroupSwatch`, and `Tag`, with their looks in `@bigpixelrocket/uiok/styles.css`, and the shared recipes below.
 
 ## GroupSwatch
 
@@ -81,6 +81,37 @@ import { FactRow, FactTable } from '@bigpixelrocket/uiok/surface';
 | `FactRow`   | `tone` (`FactTone`), `toneLabel`, `name`, `detail`, `value` | `.fact-row[data-tone]`: the state glyph, the name, the detail, the value, a hairline under   |
 
 `FactTone` is `'ready'` (a check, `--success-text`), `'warning'` (a triangle, `--warning-text`), `'danger'` (a cross, `--danger-text`), or `'muted'` (a dashed ring, `--text-dim`): each a shape of its own, so the state reads without its hue, named by `toneLabel` as an image with that tooltip. The name is in the interface face, the detail and the value in the code face, the value right-aligned in figures of one width; a name or a string detail cut short shows whole in its tooltip. The words can be swept and copied. Put a page's note about the table under it as a `FieldNote`.
+
+## FactList
+
+A headed list of facts set straight on a page, no card round it (what a process runs, how it restarts, where its log goes): one name and value a line, the names in a column of their own, each value beside its name. A long value wraps whole as a block beside its name, its next lines starting under its first, so it never runs under the name or breaks the line's alignment. For facts read at a glance; a short table with a state glyph each is a `FactTable`, and a list the keys move through is a `Listing`.
+
+```tsx
+import { Fact, FactColumns, FactList } from '@bigpixelrocket/uiok/surface';
+
+<FactColumns>
+  <FactList title="Command">
+    <Fact name="Runs">php artisan serve --port=8000</Fact>
+    <Fact name="In">~/Developer/shop</Fact>
+  </FactList>
+  <FactList title="Crash">
+    <Fact name="Exit" tone="danger">
+      exited 1 · 4 minutes ago
+    </Fact>
+    <Fact name="" printed>
+      {lastLines}
+    </Fact>
+  </FactList>
+</FactColumns>;
+```
+
+| Part          | Props                                                                              | Draws                                                                                                                            |
+| ------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `FactList`    | `title` (an overline that names the list), `label` (a name of its own), `children` | `section.fact-list`, a region named by its title or label, the overline, and `dl.fact-list-items`                                |
+| `Fact`        | `name`, `children` (the value), `tone` (`FactValueTone`), `printed`                | `.fact[data-tone]`: `dt.fact-name`, `dd.fact-value` (`.printed`)                                                                 |
+| `FactColumns` | `children` (the lists)                                                             | `.fact-columns`: as many columns of one width as fit, at least 26em each, the lists flowing across then down, aligned at the top |
+
+The names are in the interface face in `--text-dim`, in a column as wide as the longest name up to two fifths of the list (a longer name wraps); the values in the code face in `--text`, wrapping anywhere. `tone` sets a value's words in `--danger-text` (`danger`, a failure) or `--warning-text` (`warning`, a state that needs a look). `printed` keeps a value's line breaks and runs of spaces as a program printed them (`white-space: pre-wrap`). An empty `name` lets a value run on under the fact above. The words can be swept and copied.
 
 ## Notice
 

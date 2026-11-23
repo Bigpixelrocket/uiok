@@ -2,7 +2,9 @@
  * Paths with the characters a fuzzy query hit tinted in place. Under them,
  * the same marks on listing rows in a narrow pane: on a plain row, on the
  * cursor row, on a selected row (where the wash is `--selection-hit`), and
- * in a name cut short, where the ellipsis replaces a whole mark.
+ * in a name cut short, where the ellipsis replaces a whole mark. Last,
+ * commands and paths inside a sentence as inline code, one long enough to
+ * wrap.
  */
 
 import { FileText } from 'lucide-react';
@@ -11,7 +13,7 @@ import { useState } from 'react';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { Listing, Row, RowCursorContext } from '@bigpixelrocket/uiok/listing';
 import { matchQuery } from '@bigpixelrocket/uiok/menu';
-import { MarkedText } from '@bigpixelrocket/uiok/text';
+import { Code, MarkedText } from '@bigpixelrocket/uiok/text';
 
 import { useDemoCursor } from './cursor';
 import { FILES } from './data';
@@ -49,6 +51,13 @@ export function TextDemo() {
       </ul>
       <h3 className="demo-subhead">On listing rows</h3>
       <MarkedRows rows={rows.slice(0, 5)} />
+      <h3 className="demo-subhead">Inline code</h3>
+      <p>
+        Installing adds the tap <Code>shivammathur/php</Code>, then runs{' '}
+        <Code>brew install shivammathur/php/php@8.4</Code>. Its settings are in{' '}
+        <Code>/opt/homebrew/etc/php/8.4/conf.d/ext-opcache-and-the-other-extensions.ini</Code>,
+        which wraps where the line ends.
+      </p>
     </div>
   );
 }

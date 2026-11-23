@@ -14,7 +14,10 @@
  * note, a pane with nothing in it and one that could not load,
  * marked rows in a listing wider than its box with its action column pinned,
  * and rows with no icon that take the focus themselves, one with a value cut
- * short, under a section heading drawn by a lone Strip.
+ * short, under a section heading drawn by a lone Strip. Last, a choice of
+ * one database as radio rows (Space picks the cursor row, a move past the
+ * end rings the pane's bell), with a note after the listing whose command
+ * is inline code.
  */
 
 import {
@@ -29,7 +32,7 @@ import {
   Trash2,
   X
 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState, type KeyboardEvent } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
@@ -51,7 +54,15 @@ import {
   type SortDirection,
   type StateTone
 } from '@bigpixelrocket/uiok/listing';
-import { PanePathBar, PaneStatus, QuietAction, RowIconAction } from '@bigpixelrocket/uiok/pane';
+import {
+  PaneBox,
+  PanePathBar,
+  PaneStatus,
+  QuietAction,
+  RowIconAction,
+  verbControl
+} from '@bigpixelrocket/uiok/pane';
+import { Code } from '@bigpixelrocket/uiok/text';
 
 import { useDemoCursor } from './cursor';
 import { bytes, FILES, type SampleFile } from './data';
@@ -679,6 +690,88 @@ export function ListingDemo() {
       <h3 className="demo-subhead">Marked rows and a pinned action</h3>
       <PinnedMarked onOpen={(name) => setDid(`opened ${name}`)} />
       <code className="demo-readout">did: {did ?? 'nothing yet'}</code>
+
+      <h3 className="demo-subhead">A choice of one row, and a note after the listing</h3>
+      <DatabaseChoice />
     </div>
+  );
+}
+
+/** The databases a server holds, one of them the one it uses. */
+const DATABASES: readonly { readonly name: string; readonly size: string }[] = [
+  { name: 'shop', size: '48.2 MB' },
+  { name: 'blog', size: '12.4 MB' },
+  { name: 'analytics', size: '214.6 MB' }
+];
+
+/**
+ * Radio rows: the arrows move the cursor, Space picks the cursor row through
+ * its radio's verb, and a move past either end rings the pane's bell. A
+ * note after the listing names a command as inline code.
+ */
+function DatabaseChoice() {
+  const [picked, setPicked] = useState('shop');
+  const [bell, setBell] = useState(0);
+  const list = useRef<HTMLDivElement>(null);
+  const keys = DATABASES.map((database) => database.name);
+  const { cursor, current, onKeyDown } = useDemoCursor(keys);
+  const onKeys = (event: KeyboardEvent<HTMLDivElement>) => {
+    const at = current === null ? -1 : keys.indexOf(current);
+    const past =
+      (event.key === 'ArrowUp' && at === 0) ||
+      (event.key === 'ArrowDown' && at === keys.length - 1);
+
+    if (past) {
+      event.preventDefault();
+      setBell((count) => count + 1);
+      return;
+    }
+    if (event.key === ' ') {
+      event.preventDefault();
+      const row = list.current?.querySelector('.row.cursor') ?? null;
+      verbControl(row, 'pick')?.click();
+      return;
+    }
+    onKeyDown(event);
+  };
+
+  return (
+    <PaneBox active bell={bell}>
+      <div
+        aria-label="Databases: arrows move, Space picks"
+        className="pane-list"
+        onKeyDown={onKeys}
+        ref={list}
+        tabIndex={0}
+      >
+        <RowCursorContext value={cursor}>
+          <Listing
+            columns={[{ label: 'Size', align: 'right' }]}
+            grid={`var(--icon-column) minmax(0, 1fr) ${column(10)}`}
+            title="Databases"
+          >
+            {DATABASES.map((database) => (
+              <Row
+                key={database.name}
+                name={database.name}
+                radio={{
+                  checked: database.name === picked,
+                  group: 'demo-database',
+                  onPick: () => setPicked(database.name),
+                  verb: 'pick'
+                }}
+                rowKey={database.name}
+              >
+                <Cell align="right">{database.size}</Cell>
+              </Row>
+            ))}
+          </Listing>
+        </RowCursorContext>
+        <PaneMessage>
+          Opening <Code>{picked}</Code> signs in as your login user, the way{' '}
+          <Code>brew services start postgresql@18</Code> set the server up.
+        </PaneMessage>
+      </div>
+    </PaneBox>
   );
 }

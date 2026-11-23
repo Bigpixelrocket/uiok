@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-23
+
+### Added
+
+- `SectionedDialog`, `SectionedDialogProps`, and `DialogSection` (`@bigpixelrocket/uiok/dialog`): a form too long for one view, in a fixed frame with a sidebar of its sections beside a column that scrolls, each section headed by its name; the sidebar marks the section in view as the column scrolls, a row scrolls the column to its section, and a row run from the keyboard moves the focus to the section's first control. The `dialog` label `sections` names the sidebar.
+- `FactList`, `Fact`, `FactColumns`, and `FactValueTone` (`@bigpixelrocket/uiok/surface`): a headed list of facts set straight on a page, the names in a column of their own and each value beside its name, a long value wrapping whole as a block, a printed one keeping its lines; lists side by side in as many columns as fit.
+- `Code` (`@bigpixelrocket/uiok/text`): a command, a path, or a name inside a sentence, in the code face on a faint track, wrapping anywhere.
+- `ShortcutIndex`, `ShortcutGroup`, and `ShortcutRow` (`@bigpixelrocket/uiok/keychord`): every key a window answers, in groups of verbs whose chords stand in one column across the groups, with a changed chord's accent caps, a verb with no chord, and a dimmed verb.
+- `Row`'s `radio` (`RowRadio`): a row that is one choice of several, led by a radio named by the row's name, its cursor key reached through a `verb`.
+- `PaneBox`'s `bell`: the visual bell, which shoves the cursor row sideways for one beat each time its count rises, or flashes the selection fill under reduced motion.
+- `usePaneKeys`'s `tabOrder` and `nextTabStop`'s `order` (`TabOrder`): `listing` walks each pane's listing first, then its other controls, then the other pane's listing, over the pure rule `listingFirstStop` (`WalkPane`).
+
+### Changed
+
+- `PaneMessage` and `PageNote` drawn outside every listing scope carry the scope themselves (a `.listing-root` around them), as `Listing` does, so a note after a listing keeps its look anywhere.
+
 ## [0.5.0] - 2026-11-23
 
 ### Added
@@ -271,7 +287,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.3...v0.3.0
