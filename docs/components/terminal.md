@@ -57,6 +57,29 @@ Without `onInput` the terminal is read-only, for a log: `<Terminal ariaLabel="In
 
 The engine loads lazily, once per page, on the first terminal. Writes, resets, and focus requests that arrive before it is ready are held and applied in order once it is. When it cannot start, the terminal shows `labels.terminal.startFailed` in its place as terminal text (`role="alert"`): the alert glyph in `--danger`, then the words in the terminal's monospace and text colour at the engine's inset, on the terminal's own ground, with no notice frame and keeps acknowledging written output, so a host's flow control never stalls on it.
 
+## A terminal in a box (`TerminalBox`)
+
+`TerminalBox` takes every `Terminal` prop but `className`, and sizes the terminal for the two places a page puts one without a class of its own:
+
+| Prop     | Type      | What it does                                                                                                                                                                                                                               |
+| -------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `height` | `number`  | A framed console of this many pixels (`TERMINAL_BOX_HEIGHT`, 200, when absent): the strong hairline, `--radius-md`, the terminal's ground. Its height holds from the first line to the last, so a dialog never grows while output arrives. |
+| `fill`   | `boolean` | Fills its parent (a dock, a pane's foot) with no frame; the parent lays it out as a flex column or row. `height` is ignored.                                                                                                               |
+
+Leave out `onInput` for a read-only console: output written through the handle draws in place, a progress line redrawn by a carriage return included, and the user selects and copies it.
+
+```tsx
+import { TerminalBox, type TerminalHandle } from '@bigpixelrocket/uiok/terminal';
+
+const console = useRef<TerminalHandle>(null);
+// In an operation dialog's body:
+<TerminalBox ariaLabel="Install log" ref={console} />;
+// In a dock:
+<TerminalBox ariaLabel="Console" fill onInput={send} ref={shell} />;
+```
+
+It draws `.terminal-box` (`.fill`), with `--terminal-box-height` set from `height`, padding the terminal by the 8px every host adds, so its text starts 12px in.
+
 ## Scrollback
 
 `TerminalScrollbackContext` sets how many rows of history every terminal under it keeps above its screen (`DEFAULT_TERMINAL_SCROLLBACK_LINES`, 10,000, without a provider). Terminals follow it while they run: a longer length keeps more of what comes next, a shorter one drops the oldest lines at once.

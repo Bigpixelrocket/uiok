@@ -32,6 +32,7 @@ export {
   PaneStatus,
   PathFact,
   type PaneCrumb,
+  type PaneSiblings,
   type PanePathBarProps,
   type PaneStatusProps,
   type PathFactProps

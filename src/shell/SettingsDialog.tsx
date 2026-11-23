@@ -4,9 +4,9 @@ import type { ComponentType, MouseEvent, ReactElement, ReactNode } from 'react';
 
 import { Button } from '../button/Button.js';
 import { ModalDialog } from '../dialog/ModalDialog.js';
-import { ICON_MD } from '../icon/sizes.js';
+import { ICON_MD, ICON_SM } from '../icon/sizes.js';
 import { useLabels } from '../labels/UiokProvider.js';
-import { cutTooltip } from '../tooltip/Tooltip.logic.js';
+import { cutTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
 import {
   spiedSubsection,
   subsectionScrollTop,
@@ -30,6 +30,21 @@ export interface SettingsSubsectionEntry {
   readonly title: string;
 }
 
+/**
+ * A sidebar row's chip with more than words: a glyph before them (an
+ * up arrow for an offered build, a restart for one ready) and a tooltip that
+ * says what they mean ("Update to 1.4.4"), which the row's accessible name
+ * reads in place of the bare words.
+ */
+export interface SettingsChip {
+  /** The chip's words: "1.4.4". */
+  readonly text: string;
+  /** A glyph before the words, at the small icon size. */
+  readonly icon?: LucideIcon;
+  /** What the chip means, as its tooltip and in the row's accessible name. */
+  readonly tip?: string;
+}
+
 /** One page of the Settings dialog, with its body ready to draw. */
 export interface SettingsPage {
   /** Unique across every page in the dialog. */
@@ -45,8 +60,12 @@ export interface SettingsPage {
    * its own box (an updates page's notes) while the rest stays put.
    */
   readonly fills?: boolean;
-  /** A short label the page's sidebar row shows after its title as a warning chip (an offered build's version); none for none. */
-  readonly chip?: string | null;
+  /**
+   * A short label the page's sidebar row shows after its title as a
+   * warning chip (an offered build's version), in words alone or with a
+   * glyph and a tooltip (`SettingsChip`); none for none.
+   */
+  readonly chip?: string | SettingsChip | null;
   readonly body: ReactNode;
 }
 
@@ -238,39 +257,62 @@ function SettingsSidebar({
           <span className="settings-sidebar-header overline" id={`settings-group-${group.id}`}>
             {group.title}
           </span>
-          {group.pages.map((item) => (
-            <Fragment key={item.id}>
-              <button
-                aria-current={item.id === page.id ? 'page' : undefined}
-                className="settings-sidebar-page"
-                data-settings-page={item.id}
-                onClick={() => onPage(item.id)}
-                onMouseDown={keepFocus}
-                type="button"
-              >
-                <item.Icon aria-hidden size={ICON_MD} />
-                <span {...cutTooltip(item.title)}>{item.title}</span>
-                {item.chip ? <span className="settings-sidebar-chip">{item.chip}</span> : null}
-              </button>
-              {item.id === page.id && item.subsections.length > 0 ? (
-                <div className="settings-sidebar-subsections">
-                  {item.subsections.map((subsection) => (
-                    <button
-                      aria-current={subsection.id === subsectionId ? 'location' : undefined}
-                      className="settings-sidebar-subsection"
-                      key={subsection.id}
-                      onClick={() => onSubsection(subsection.id)}
-                      onMouseDown={keepFocus}
-                      type="button"
-                      {...cutTooltip(subsection.title)}
+          {group.pages.map((item) => {
+            const chip: SettingsChip | null =
+              item.chip === undefined || item.chip === null || item.chip === ''
+                ? null
+                : typeof item.chip === 'string'
+                  ? { text: item.chip }
+                  : item.chip;
+            const ChipIcon = chip?.icon;
+
+            return (
+              <Fragment key={item.id}>
+                <button
+                  aria-current={item.id === page.id ? 'page' : undefined}
+                  aria-label={
+                    chip === null
+                      ? undefined
+                      : labels.pageWithChip(item.title, chip.tip ?? chip.text)
+                  }
+                  className="settings-sidebar-page"
+                  data-settings-page={item.id}
+                  onClick={() => onPage(item.id)}
+                  onMouseDown={keepFocus}
+                  type="button"
+                >
+                  <item.Icon aria-hidden size={ICON_MD} />
+                  <span {...cutTooltip(item.title)}>{item.title}</span>
+                  {chip === null ? null : (
+                    <span
+                      className="settings-sidebar-chip"
+                      {...(chip.tip === undefined ? {} : tooltip(chip.tip))}
                     >
-                      {subsection.title}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </Fragment>
-          ))}
+                      {ChipIcon === undefined ? null : <ChipIcon aria-hidden size={ICON_SM} />}
+                      {chip.text}
+                    </span>
+                  )}
+                </button>
+                {item.id === page.id && item.subsections.length > 0 ? (
+                  <div className="settings-sidebar-subsections">
+                    {item.subsections.map((subsection) => (
+                      <button
+                        aria-current={subsection.id === subsectionId ? 'location' : undefined}
+                        className="settings-sidebar-subsection"
+                        key={subsection.id}
+                        onClick={() => onSubsection(subsection.id)}
+                        onMouseDown={keepFocus}
+                        type="button"
+                        {...cutTooltip(subsection.title)}
+                      >
+                        {subsection.title}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+              </Fragment>
+            );
+          })}
         </div>
       ))}
     </nav>

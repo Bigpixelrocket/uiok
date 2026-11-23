@@ -28,6 +28,7 @@ export {
   SettingsSaveFailure,
   type SettingsDialogProps,
   type SettingsGroup,
+  type SettingsChip,
   type SettingsPage,
   type SettingsPageRequest,
   type SettingsSaveFailureProps,

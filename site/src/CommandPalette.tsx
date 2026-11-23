@@ -14,7 +14,15 @@ import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { DialogLegend } from '@bigpixelrocket/uiok/dialog';
 import { KeyChord, type KeyChordProps } from '@bigpixelrocket/uiok/keychord';
 import { matchQuery, menuQueryRefused, moveMenuCursor } from '@bigpixelrocket/uiok/menu';
-import { Palette, PaletteQuery } from '@bigpixelrocket/uiok/palette';
+import {
+  Palette,
+  PaletteFailure,
+  PaletteList,
+  PaletteNote,
+  PaletteNotes,
+  PaletteOption,
+  PaletteQuery
+} from '@bigpixelrocket/uiok/palette';
 import { MarkedText } from '@bigpixelrocket/uiok/text';
 
 /** One command the palette lists. */
@@ -30,6 +38,8 @@ export interface Command {
   readonly icon?: ReactNode;
   /** Dim text at the row's end, such as the page's route. */
   readonly meta?: string;
+  /** Marks the current one (the branch checked out), with what current means as the dot's name. */
+  readonly current?: string;
   /** The command's chord, drawn as key caps at the row's end. */
   readonly chord?: KeyChordProps['chord'];
   /**
@@ -199,57 +209,46 @@ export function CommandPalette({
           if (event.key === 'Tab') event.preventDefault();
         }}
       />
-      <div className="folder-menu-options" id={listId} role="listbox" aria-label={label}>
+      <PaletteList id={listId} label={label}>
         {rows.map((row, index) => (
-          <div
-            aria-selected={index === cursor}
-            className={index === cursor ? 'folder-menu-option cursor' : 'folder-menu-option'}
+          <PaletteOption
+            context={row.command.hint ?? row.command.path ?? row.command.line}
+            contextKind={
+              row.command.path !== undefined
+                ? 'path'
+                : row.command.line !== undefined
+                  ? 'command'
+                  : 'sentence'
+            }
+            current={row.command.current ?? null}
+            cursor={index === cursor}
             id={`${listId}-${index}`}
             key={row.command.id}
-            onClick={() => run(row.command)}
-            onMouseMove={() => setCursor(index)}
-            role="option"
-          >
-            <span className="row-icon">{row.command.icon}</span>
-            <span className="palette-text">
-              <span className="row-name">
-                <MarkedText positions={row.positions} text={row.command.label} />
-              </span>
-              {row.command.hint === undefined ? null : (
-                <span className="palette-context palette-sentence">{row.command.hint}</span>
-              )}
-              {row.command.path === undefined ? null : (
-                <span className="palette-context">
-                  <bdi>{row.command.path}</bdi>
-                </span>
-              )}
-              {row.command.line === undefined ? null : (
-                <span className="palette-context palette-command">{row.command.line}</span>
-              )}
-            </span>
-            <span className="palette-trail keycap">
-              {row.command.meta === undefined ? null : (
-                <span className="palette-meta">{row.command.meta}</span>
-              )}
-              {row.command.chord === undefined ? null : <KeyChord chord={row.command.chord} />}
-            </span>
-          </div>
+            label={row.command.label}
+            mark={row.command.icon}
+            name={<MarkedText positions={row.positions} text={row.command.label} />}
+            onPick={() => run(row.command)}
+            onPoint={() => setCursor(index)}
+            trail={
+              row.command.chord === undefined ? (
+                row.command.meta
+              ) : (
+                <KeyChord chord={row.command.chord} />
+              )
+            }
+          />
         ))}
-      </div>
+      </PaletteList>
       {notes === undefined || notes.length === 0 ? null : (
-        <div className="palette-notes">
-          {notes.map((note) => (
-            <p
-              className={
-                note.failure === true ? 'folder-menu-note palette-failure' : 'folder-menu-note'
-              }
-              key={note.text}
-              role={note.failure === true ? 'alert' : undefined}
-            >
-              {note.text}
-            </p>
-          ))}
-        </div>
+        <PaletteNotes>
+          {notes.map((note) =>
+            note.failure === true ? (
+              <PaletteFailure key={note.text} message={note.text} />
+            ) : (
+              <PaletteNote key={note.text}>{note.text}</PaletteNote>
+            )
+          )}
+        </PaletteNotes>
       )}
       {legend === undefined ? null : (
         <DialogLegend

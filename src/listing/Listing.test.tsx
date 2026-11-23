@@ -4,7 +4,9 @@ import { Trash2 } from 'lucide-react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
+import { ModalDialog } from '../dialog/ModalDialog.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
+import { Palette } from '../palette/Palette.js';
 import {
   QuietAction,
   RowIconAction,
@@ -480,6 +482,55 @@ describe('a cell', () => {
     expect(cell.className).toBe('row-meta align-right');
     expect(cell.dataset.tooltip).toBe('12,345,678 rows');
     expect(cell.getAttribute('aria-description')).toBe('12,345,678 rows');
+  });
+
+  it('carries its tone as data-tone, none without one', () => {
+    render(
+      <>
+        <Cell tone="warning">8.4.15</Cell>
+        <Cell>8.4.16</Cell>
+      </>
+    );
+    const [toned, plain] = screen.getAllByRole('cell');
+
+    expect((toned as HTMLElement).dataset.tone).toBe('warning');
+    expect((plain as HTMLElement).hasAttribute('data-tone')).toBe(false);
+  });
+
+  it('carries the listing scope itself outside one, and not inside a dialog or a palette', () => {
+    const columns = [{ label: 'Size' }];
+    const { rerender } = render(<Listing columns={columns} grid="1fr" title="Lines" />);
+
+    expect(screen.getByRole('table').className).toBe('pane-listing listing-root');
+
+    rerender(
+      <ModalDialog labelId="settings-title" onCancel={() => undefined} title="Settings">
+        <Listing columns={columns} grid="1fr" title="Lines" />
+      </ModalDialog>
+    );
+    expect(screen.getByRole('dialog').classList.contains('listing-root')).toBe(true);
+    expect(screen.getByRole('table').className).toBe('pane-listing');
+
+    rerender(
+      <Palette label="Add" onClose={() => undefined}>
+        <Listing columns={columns} grid="1fr" title="Lines" />
+      </Palette>
+    );
+    expect(screen.getByRole('table').className).toBe('pane-listing');
+  });
+
+  it('draws a dim row and an add row with its accent plus', () => {
+    const { container } = render(
+      <>
+        <Row dim name="8.5" rowKey="v85" />
+        <Row add name="Add service…" rowKey="add" />
+      </>
+    );
+    const [dim, add] = container.querySelectorAll('.row');
+
+    expect(dim?.className).toBe('row row-dim');
+    expect(add?.className).toBe('row pane-add');
+    expect(add?.querySelector('.row-icon svg')).not.toBe(null);
   });
 });
 

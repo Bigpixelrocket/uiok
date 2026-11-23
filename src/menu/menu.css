@@ -361,3 +361,41 @@
     transform: translateX(2px);
   }
 }
+
+/* ---- A menu opened at a point or dropped from an element (Menu) ----
+
+   The menu surface on the document's body, fixed where placeMenu puts it
+   (the component sets left and top), above dialogs, since a dialog's own
+   controls open menus too. As wide as its longest item, within reason. */
+.folder-menu.menu-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: var(--z-dialog-popover);
+  width: auto;
+  min-width: 180px;
+  max-width: min(480px, calc(100vw - 2 * var(--space-4)));
+}
+
+/* Its icons in the quiet tone, at a weight the cursor row's and a
+   destructive item's rules above outrank. */
+:where(.menu-popup) .folder-menu-option > .row-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--text-dim);
+}
+
+/* An item's words and the current one's dot after them; long words give
+   way with an ellipsis, the dot never. */
+.menu-label {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.menu-label-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

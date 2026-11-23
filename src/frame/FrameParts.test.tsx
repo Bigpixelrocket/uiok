@@ -150,6 +150,18 @@ describe('pane tone', () => {
 });
 
 describe('TreeRow', () => {
+  it('draws an add row: an accent plus in the glyph slot and the pane-add look', () => {
+    render(
+      <TreeList label="Runtimes">
+        <TreeRow add level={1} name="Add runtime…" rowKey="add" />
+      </TreeList>
+    );
+    const row = screen.getByRole('treeitem');
+
+    expect(row.classList.contains('pane-add')).toBe(true);
+    expect(row.querySelector('.tree-glyph svg')).not.toBe(null);
+  });
+
   it('follows the pane’s cursor, and the pointer moves the cursor to it', () => {
     const cursor = cursorAt('a');
 

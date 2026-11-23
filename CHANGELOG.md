@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-11-23
+
+### Added
+
+- `Menu` (`@bigpixelrocket/uiok/menu`): a menu of verbs or places opened at a point or dropped from an element, through a portal: items (`MenuItemEntry`) with a glyph or a mark, a chord as key caps, a danger tone, a disabled state with its reason, a check, and the current one's dot; separators and group headings; the keys held while open (↑ ↓, Home, End, Return, Space, Escape, Tab). Its pure placement and keys are `placeMenu` and `menuKeyAction`.
+- `PanePathBar`'s `siblings` (`PaneSiblings`): the last crumb becomes a ⌄ button that drops the places beside it (a service's other versions) as a `Menu`, the one shown marked.
+- Palette rows as components (`@bigpixelrocket/uiok/palette`): `PaletteList`, `PaletteOption` (mark, name, a sentence, path, or command, a trail, the current dot, cursor, disabled), `PaletteHeading`, `PaletteNote`, `PaletteNotes`, and `PaletteFailure`.
+- `TerminalBox` and `TERMINAL_BOX_HEIGHT` (`@bigpixelrocket/uiok/terminal`): a terminal framed at a fixed height (200px by default, a dialog's console), or filling its parent (a dock).
+- `ProductMark` and `ProductMarkShape` (`@bigpixelrocket/uiok/icon`): a product's brand mark drawn from data the app passes in, with a fallback glyph, and the theme token `--product-mark-mix` (100% in a light theme, 78% in a dark one) that sets how much of the brand colour shows.
+- `FactTable`, `FactRow`, and `FactTone` (`@bigpixelrocket/uiok/surface`): a page's short table of facts, a state glyph, name, detail, and value a row.
+- `Cell`'s `tone` (`CellTone`: `warning`, `accent`, `danger`), held on the cursor row and under the pointer; `Row`'s `dim` (a name in the row-meta tone, `.row-dim`) and `add` (the add row's look with its accent plus); `TreeRow`'s `add`.
+- `PageTab`'s `count`, drawn after the tab's name and read in its accessible name.
+- `TextLink`'s `disabled` and `label` (an accessible name of its own).
+- `SettingsPage`'s `chip` takes a `SettingsChip` (`text`, `icon`, `tip`) as well as a string, and the `settings` label `pageWithChip`, which names a sidebar row and its chip apart ("Updates, Update to 1.4.4").
+
+### Changed
+
+- A `ModalDialog`'s box (the Settings dialog's included) and a `Palette`'s box carry the listing scope (`.listing-root`), and a `Listing` drawn outside any scope carries it itself, so listings, rows, and filter fields keep their look in a dialog, a palette, or anywhere else. `Palette`'s classes are now `folder-menu palette listing-root`.
+
 ## [0.4.0] - 2026-11-23
 
 ### Added
@@ -245,7 +264,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.2...v0.2.3

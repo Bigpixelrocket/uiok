@@ -267,3 +267,67 @@
   letter-spacing: var(--tracking-caps);
   text-transform: uppercase;
 }
+
+/* ---- Fact table (FactTable, FactRow) ----
+
+   A short table of facts on a page: a state glyph, a name, a detail, and a
+   value a row, the columns shared by every row (a subgrid) and ruled by
+   hairlines. The glyph wears its state's text tone, which keeps 4.5:1 on
+   every ground; the detail and the value are in the code face, the value
+   right-aligned in figures of one width. Its words are content, so they
+   can be swept and copied. */
+.fact-table {
+  display: grid;
+  grid-template-columns: var(--icon-md) minmax(8ch, max-content) minmax(0, 1fr) auto;
+  column-gap: var(--space-8);
+  border-top: var(--line) solid var(--border);
+  font: var(--font-size-small) / var(--line-height-compact) var(--font-ui);
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.fact-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+  padding-block: var(--space-3);
+  border-bottom: var(--line) solid var(--border);
+  color: var(--text);
+}
+
+.fact-state {
+  display: inline-flex;
+  color: var(--text-dim);
+}
+
+.fact-row[data-tone='ready'] > .fact-state {
+  color: var(--success-text);
+}
+
+.fact-row[data-tone='warning'] > .fact-state {
+  color: var(--warning-text);
+}
+
+.fact-row[data-tone='danger'] > .fact-state {
+  color: var(--danger-text);
+}
+
+.fact-name,
+.fact-detail {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fact-detail,
+.fact-value {
+  font-family: var(--font-mono);
+}
+
+.fact-value {
+  justify-self: end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

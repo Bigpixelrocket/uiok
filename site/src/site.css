@@ -640,6 +640,15 @@ a {
   align-self: flex-start;
 }
 
+/* Where the menu demo's secondary click opens its Menu. */
+.demo-context-target {
+  padding: var(--space-4) var(--space-8);
+  border: var(--line) dashed var(--border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-dim);
+  font-size: var(--font-size-small);
+}
+
 .chord-list {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

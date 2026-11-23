@@ -7,7 +7,9 @@
  * passes over it; its tooltip says why). Beside it, a compact menu of a
  * row's short commands, as a tool opens one (`.folder-menu-compact`), with
  * the desktop menu's other looks: a row that opens a submenu, a checked
- * setting, a disabled command, and plain separators.
+ * setting, a disabled command, and plain separators. Under them, `Menu`
+ * itself: Actions drops one from its button, and a secondary click on the
+ * box opens the same menu at the pointer.
  */
 
 import { ClipboardPaste, Copy, Eye, File, Folder, FolderOpen, PenLine, Trash2 } from 'lucide-react';
@@ -18,10 +20,12 @@ import { FilterIcon } from '@bigpixelrocket/uiok/filter';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { KeyChord } from '@bigpixelrocket/uiok/keychord';
 import {
+  Menu,
   matchQuery,
   menuQueryRefused,
   moveMenuCursor,
-  useBellBeat
+  useBellBeat,
+  type MenuEntry
 } from '@bigpixelrocket/uiok/menu';
 import { MarkedText } from '@bigpixelrocket/uiok/text';
 
@@ -275,6 +279,70 @@ function CommandMenu({
   );
 }
 
+/** `Menu`'s entries: verbs with chords, a disabled one, a separator, a heading, a destructive one, and a setting. */
+const ACTIONS: readonly MenuEntry[] = [
+  { id: 'open', label: 'Open', icon: FolderOpen, chord: { key: 'o', meta: true } },
+  { id: 'copy', label: 'Copy Path', icon: Copy, chord: { key: 'c', meta: true, alt: true } },
+  { id: 'paste', label: 'Paste', icon: ClipboardPaste, disabled: true, tip: 'Nothing copied yet' },
+  { kind: 'separator' },
+  { kind: 'heading', label: 'View' },
+  { id: 'hidden', label: 'Show Hidden Files', icon: Eye, checked: true },
+  { kind: 'separator' },
+  {
+    id: 'trash',
+    label: 'Move to Trash',
+    icon: Trash2,
+    danger: true,
+    chord: { key: 'Backspace', meta: true }
+  }
+];
+
+/** `Menu` dropped from a button, and opened at a secondary click's point. */
+function ActionsMenuDemo({ onPick }: { readonly onPick: (name: string) => void }) {
+  const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
+  const [where, setWhere] = useState<'anchor' | { x: number; y: number } | null>(null);
+  const close = (by: 'keyboard' | 'pointer') => {
+    setWhere(null);
+    if (by === 'keyboard') anchor?.focus();
+  };
+  return (
+    <div className="demo-row">
+      <Button
+        aria-expanded={where === 'anchor'}
+        aria-haspopup="menu"
+        onClick={() => setWhere((value) => (value === 'anchor' ? null : 'anchor'))}
+        ref={setAnchor}
+        size="small"
+      >
+        Actions
+      </Button>
+      <div
+        className="demo-context-target"
+        onContextMenu={(event) => {
+          event.preventDefault();
+          setWhere({ x: event.clientX, y: event.clientY });
+        }}
+      >
+        Secondary-click here
+      </div>
+      {where === null ? null : (
+        <Menu
+          anchor={where === 'anchor' ? anchor : null}
+          at={where === 'anchor' ? undefined : where}
+          compact
+          entries={ACTIONS}
+          label="Actions"
+          onClose={close}
+          onPick={(id) => {
+            onPick(id);
+            close('keyboard');
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
 /** The menu page's demo. */
 export function MenuDemo() {
   const [open, setOpen] = useState<'files' | 'commands' | null>(null);
@@ -305,6 +373,7 @@ export function MenuDemo() {
           {open === 'commands' ? <CommandMenu onClose={() => setOpen(null)} onPick={pick} /> : null}
         </div>
       </div>
+      <ActionsMenuDemo onPick={setPicked} />
       <code className="demo-readout">picked: {picked ?? 'nothing yet'}</code>
     </div>
   );

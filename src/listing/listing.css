@@ -348,6 +348,25 @@ button.crumb-label > .crumb-text {
    pressed looks are the base sheet's shared quiet recipes, which weigh the
    same, so a press shows over the hover. */
 
+/* A last crumb with siblings (PanePathBar's `siblings`): its words, which
+   give way, then a ⌄ that never does. On a page it stands in the page's
+   heading, which draws no box of its own. While its menu is up it keeps
+   the hovered face (the base sheet's open pop-up recipe). */
+.crumb-heading {
+  display: contents;
+  font: inherit;
+}
+
+button.crumb-label.crumb-siblings {
+  gap: var(--space-1);
+}
+
+button.crumb-label.crumb-siblings > svg {
+  position: relative;
+  z-index: var(--z-raised);
+  flex: none;
+}
+
 /* The trail's last crumb is where the pane is. */
 .crumb.here .crumb-label {
   color: var(--text);
@@ -1307,7 +1326,9 @@ button.crumb-label > .crumb-text {
    mark, and the pointer: no rule here may recolour a word on a selected
    row, whatever it weighs. The selection is left out with a :where(), so
    each rule keeps the weight an app's own rule is measured against. */
-:where(.listing-root) .row:is(.cursor, .marked):where(:not(.selected)) :is(.row-icon, .row-meta),
+:where(.listing-root)
+  .row:is(.cursor, .marked):where(:not(.selected))
+  :is(.row-icon, .row-meta:where(:not([data-tone]))),
 :where(.listing-root)
   .row:is(.cursor, .marked):where(:not(.selected))
   .pane-state:is(.pane-tone-muted, .pane-tone-busy),
@@ -1316,10 +1337,28 @@ button.crumb-label > .crumb-text {
   :is(.pane-act, .pane-icon-act):where(:not(.lit, :hover, .danger:focus-visible)),
 :where(.listing-root .pane-list.pointer)
   .row:hover:not(.selected)
-  :is(.row-icon, .row-meta, .pane-state:is(.pane-tone-muted, .pane-tone-busy)),
+  :is(
+    .row-icon,
+    .row-meta:where(:not([data-tone])),
+    .pane-state:is(.pane-tone-muted, .pane-tone-busy)
+  ),
 :where(.listing-root .pane-list.pointer)
   .row:hover:where(:not(.cursor, .marked, .selected))
   :is(.pane-act, .pane-icon-act):where(:not(.lit, :hover, .danger:focus-visible)) {
+  color: var(--text-on-surface);
+}
+
+/* A row whose item is not there yet (`.row-dim`: a version not
+   installed, a product not added): its name in the row-meta tone, one
+   step under the rows that are, rising to the on-surface tone on the
+   cursor, a mark, or under the pointer, as every quiet word does. A
+   selection paints it as it paints every name (below). */
+:where(.listing-root) .row.row-dim > .row-name {
+  color: var(--row-meta-text);
+}
+
+:where(.listing-root) .row.row-dim:is(.cursor, .marked):where(:not(.selected)) > .row-name,
+:where(.listing-root .pane-list.pointer) .row.row-dim:hover:where(:not(.selected)) > .row-name {
   color: var(--text-on-surface);
 }
 
@@ -1330,7 +1369,7 @@ button.crumb-label > .crumb-text {
   color: var(--text-dim);
 }
 
-:where(.listing-root) .row.pane-add > .row-icon {
+:where(.listing-root) .row.pane-add > :is(.row-icon, .tree-glyph) {
   color: var(--accent);
 }
 
@@ -1394,6 +1433,24 @@ button.crumb-label > .crumb-text {
   white-space: pre;
   color: var(--row-meta-text);
   font-variant-numeric: tabular-nums;
+}
+
+/* A cell in a tone (`Cell`'s `tone`, as `data-tone`): a version with an
+   update waiting in the warning tone, an offered one in the accent's, a
+   failure in the danger tone. Each text tone keeps 4.5:1 on the listing
+   and on the cursor and hover fills, so the quiet-word rules above leave a
+   toned cell alone; a selection still paints it in its own words (below),
+   which come later and weigh as much. */
+:where(.listing-root) .row .row-meta[data-tone='warning'] {
+  color: var(--warning-text);
+}
+
+:where(.listing-root) .row .row-meta[data-tone='accent'] {
+  color: var(--accent-text);
+}
+
+:where(.listing-root) .row .row-meta[data-tone='danger'] {
+  color: var(--danger-text);
 }
 
 /* Numbers line up on their column's right edge. */

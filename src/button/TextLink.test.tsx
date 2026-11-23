@@ -49,4 +49,21 @@ describe('TextLink', () => {
       declaredValues(link.querySelector('.text-link-words') as HTMLElement, 'font-family')
     ).toContain('var(--font-mono)');
   });
+
+  it('takes an accessible name of its own, and refuses the press while disabled', () => {
+    const onClick = vi.fn();
+
+    render(
+      <TextLink disabled label="View the whole log" onClick={onClick}>
+        View
+      </TextLink>
+    );
+
+    const link = screen.getByRole('button', { name: 'View the whole log' });
+    fireEvent.click(link);
+
+    expect(link.textContent).toBe('View');
+    expect((link as HTMLButtonElement).disabled).toBe(true);
+    expect(onClick).not.toHaveBeenCalled();
+  });
 });

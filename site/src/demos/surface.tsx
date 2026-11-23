@@ -20,7 +20,15 @@ import { Pin } from 'lucide-react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ICON_MD, ICON_SM, Spinner } from '@bigpixelrocket/uiok/icon';
-import { Card, GroupSwatch, Notice, Tag, type TagTone } from '@bigpixelrocket/uiok/surface';
+import {
+  Card,
+  FactRow,
+  FactTable,
+  GroupSwatch,
+  Notice,
+  Tag,
+  type TagTone
+} from '@bigpixelrocket/uiok/surface';
 import type { GroupHue } from '@bigpixelrocket/uiok/themes';
 
 import { DemoState, DemoStates } from '../DemoStates';
@@ -90,6 +98,31 @@ function Forced({
 export function SurfaceDemo() {
   return (
     <div className="demo-stack">
+      <h3 className="demo-subhead">Fact table</h3>
+      <FactTable label="Tools">
+        <FactRow
+          detail="/opt/homebrew/bin/brew"
+          name="Homebrew"
+          tone="ready"
+          toneLabel="Found"
+          value="4.6.11"
+        />
+        <FactRow
+          detail="/opt/homebrew/bin/mise"
+          name="mise"
+          tone="warning"
+          toneLabel="Out of date"
+          value="2025.1.0"
+        />
+        <FactRow
+          detail='~/.zshrc · eval "$(mise activate zsh)"'
+          name="zsh activation"
+          tone="danger"
+          toneLabel="Missing"
+          value="missing"
+        />
+        <FactRow name="fish activation" tone="muted" toneLabel="Not checked" />
+      </FactTable>
       <h3 className="demo-subhead">Notices</h3>
       <Notice actions={<Button size="small">Try Again</Button>} role="alert" tone="danger">
         The settings file could not be saved.

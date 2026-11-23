@@ -96,20 +96,21 @@ The frame is the space's root in the listing look: a column the panel's height t
 
 `TreeRow`:
 
-| Prop        | Type                          | Default | Purpose                                                                                                       |
-| ----------- | ----------------------------- | ------- | ------------------------------------------------------------------------------------------------------------- |
-| `rowKey`    | `string`                      |         | Names the row to the pane's cursor (`data-row-key`)                                                           |
-| `level`     | `number`                      | `0`     | How deep it stands; each level steps it in by `--space-6`                                                     |
-| `kind`      | `'node' \| 'band' \| 'group'` | `node`  | A band heads the rows under it (a server, a project) on the strip's ground; a group's name reads as a heading |
-| `toggle`    | `TreeRowToggle`               | none    | `{ open, onToggle, label }`: the chevron of a row with children                                               |
-| `glyph`     | `ReactNode`                   | none    | The node's glyph, in the quiet tone                                                                           |
-| `name`      | `ReactNode`                   |         | Its name, cut with an ellipsis (whole in its tooltip when a string)                                           |
-| `detail`    | `ReactNode`                   | none    | Quieter words after the name (×3)                                                                             |
-| `trailing`  | `ReactNode`                   | none    | The trailing column: a count, a port, a `StateMark`                                                           |
-| `tool`      | `ReactNode`                   | none    | The row's own tool (Hide, a `Switch`), shown on the cursor row only                                           |
-| `marked`    | `boolean`                     | `false` | Chosen though it is not the cursor row                                                                        |
-| `onOpen`    | `() => void`                  | none    | Opens the row's item on a click anywhere but its controls                                                     |
-| `focusable` | `boolean`                     | `false` | The row itself takes the focus: in the Tab order while it is the cursor row                                   |
+| Prop        | Type                          | Default | Purpose                                                                                                                                                                             |
+| ----------- | ----------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rowKey`    | `string`                      |         | Names the row to the pane's cursor (`data-row-key`)                                                                                                                                 |
+| `level`     | `number`                      | `0`     | How deep it stands; each level steps it in by `--space-6`                                                                                                                           |
+| `kind`      | `'node' \| 'band' \| 'group'` | `node`  | A band heads the rows under it (a server, a project) on the strip's ground; a group's name reads as a heading                                                                       |
+| `toggle`    | `TreeRowToggle`               | none    | `{ open, onToggle, label }`: the chevron of a row with children                                                                                                                     |
+| `glyph`     | `ReactNode`                   | none    | The node's glyph, in the quiet tone                                                                                                                                                 |
+| `name`      | `ReactNode`                   |         | Its name, cut with an ellipsis (whole in its tooltip when a string)                                                                                                                 |
+| `detail`    | `ReactNode`                   | none    | Quieter words after the name (×3)                                                                                                                                                   |
+| `trailing`  | `ReactNode`                   | none    | The trailing column: a count, a port, a `StateMark`                                                                                                                                 |
+| `tool`      | `ReactNode`                   | none    | The row's own tool (Hide, a `Switch`), shown on the cursor row only                                                                                                                 |
+| `marked`    | `boolean`                     | `false` | Chosen though it is not the cursor row                                                                                                                                              |
+| `onOpen`    | `() => void`                  | none    | Opens the row's item on a click anywhere but its controls                                                                                                                           |
+| `focusable` | `boolean`                     | `false` | The row itself takes the focus: in the Tab order while it is the cursor row                                                                                                         |
+| `add`       | `boolean`                     | `false` | The row adds one under its parent ("Add runtime…"): an accent plus in the glyph's slot unless `glyph` gives another, dim words that turn full on hover and the cursor (`.pane-add`) |
 
 Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`): the cursor row wears the cursor's look and `aria-current`, and the pointer moving over a row or the focus entering it moves the cursor there. On a cursor or marked row the quiet words (the glyph, the detail) take `--text-on-surface`. A band's quiet cursor (another pane focused, the window behind) keeps the strip's ground. Its controls leave the Tab order, since the tree's keys run them; the expansion and its keys stay the host's. While the `TreeList` holds the focus, its `aria-activedescendant` is the cursor row, so a screen reader follows the keys.
 

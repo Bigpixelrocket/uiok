@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { Play } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -53,6 +53,62 @@ describe('PanePathBar', () => {
     expect(button?.getAttribute('data-tooltip')).toBe('Back to servers');
     expect(button?.hasAttribute('data-tooltip-cut')).toBe(false);
     expect(button?.querySelector('.crumb-text')?.hasAttribute('data-tooltip')).toBe(false);
+  });
+});
+
+describe('PanePathBar siblings', () => {
+  it('turns the last crumb into a menu button that drops its siblings, the shown one first', () => {
+    const onPick = vi.fn();
+    render(
+      <PanePathBar
+        heading
+        siblings={{
+          label: 'Other versions',
+          entries: [
+            { id: '18', label: '18 · 18.1', current: 'Shown' },
+            { id: '17', label: '17 · 17.7' }
+          ],
+          onPick
+        }}
+        trail={['Services', 'PostgreSQL', '18']}
+      />
+    );
+    const crumb = screen.getByRole('button', { name: '18' });
+
+    expect(crumb.getAttribute('aria-haspopup')).toBe('menu');
+    expect(crumb.getAttribute('aria-expanded')).toBe('false');
+    expect(crumb.closest('h2')).not.toBe(null);
+
+    fireEvent.click(crumb);
+    const menu = screen.getByRole('menu', { name: 'Other versions' });
+    expect(crumb.getAttribute('aria-expanded')).toBe('true');
+    expect(menu.querySelector('.cursor')?.textContent).toContain('18 · 18.1');
+
+    fireEvent.keyDown(menu, { key: 'ArrowDown' });
+    fireEvent.keyDown(menu, { key: 'Enter' });
+    expect(onPick).toHaveBeenCalledWith('17');
+    expect(screen.queryByRole('menu')).toBe(null);
+    expect(document.activeElement).toBe(crumb);
+  });
+
+  it('takes its menu away on a second press of the crumb and on Escape', () => {
+    render(
+      <PanePathBar
+        siblings={{ label: 'Other versions', entries: [{ id: 'a', label: 'a' }], onPick: vi.fn() }}
+        trail={['Root', 'a']}
+      />
+    );
+    const crumb = screen.getByRole('button', { name: 'a' });
+
+    fireEvent.click(crumb);
+    fireEvent.mouseDown(crumb);
+    fireEvent.click(crumb);
+    expect(screen.queryByRole('menu')).toBe(null);
+
+    fireEvent.click(crumb);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    expect(screen.queryByRole('menu')).toBe(null);
+    expect(document.activeElement).toBe(crumb);
   });
 });
 

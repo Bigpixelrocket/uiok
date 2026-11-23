@@ -216,6 +216,40 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
+  it('keeps a toned cell in its tone at rest, on the cursor row, and under the pointer', () => {
+    applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
+    const cells = `<span class="row-meta" data-tone="warning">8.4.15</span>
+      <span class="row-meta" data-tone="accent">8.4.16</span>
+      <span class="row-meta" data-tone="danger">failed</span>`;
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-list pointer">
+      <div class="row">${cells}</div>
+      <div class="row cursor">${cells}</div>
+      <div class="row marked">${cells}</div>
+      <div class="row is-hovered">${cells}</div>
+    </div></section>`;
+
+    for (const row of document.querySelectorAll('.row')) {
+      const [warning, accent, danger] = row.querySelectorAll('.row-meta');
+
+      expect(colour(warning as Element)).toBe('var(--warning-text)');
+      expect(colour(accent as Element)).toBe('var(--accent-text)');
+      expect(colour(danger as Element)).toBe('var(--danger-text)');
+    }
+    document.body.innerHTML = '';
+  });
+
+  it('dims the name of a row whose item is not there yet, and lifts it on the cursor row', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="row row-dim" id="rest"><span class="row-name">8.5</span></div>
+      <div class="row row-dim cursor" id="cursor"><span class="row-name">8.5</span></div>
+    </section>`;
+
+    expect(colour(document.querySelector('#rest .row-name'))).toBe('var(--row-meta-text)');
+    expect(colour(document.querySelector('#cursor .row-name'))).toBe('var(--text-on-surface)');
+    document.body.innerHTML = '';
+  });
+
   it('lights the row actions in full words, never the accent, only on the cursor row of the pane that holds the keys', () => {
     applyStylesheets(styles);
     const pane = (active: boolean): string => `<div class="pane${active ? ' active' : ''}">
@@ -311,6 +345,8 @@ describe('the listing states', () => {
     applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
     const words = `<span class="row-icon"></span><span class="row-name">a</span>
       <span class="row-meta">2 MB</span>
+      <span class="row-meta" data-tone="warning">8.4.15</span>
+      <span class="row-meta" data-tone="accent">8.4.16</span>
       <span class="row-meta"><span class="pane-state pane-tone-muted"><span class="pane-state-dot"></span><span class="pane-state-word">stopped</span></span></span>
       <span class="row-meta"><span class="pane-state pane-tone-busy"><span class="pane-state-dot"></span><span class="pane-state-word">restarting</span></span></span>
       <span class="row-meta pane-path"><span class="pane-path-head">~/a/</span><span class="pane-path-tail">b/</span><span class="pane-path-name">c</span></span>
@@ -322,7 +358,7 @@ describe('the listing states', () => {
         <button class="pane-icon-act danger" type="button"></button>
       </span>`;
     const rows = ['cursor selected', 'marked selected', 'marked cursor selected', 'selected']
-      .map((states) => `<div class="row pane-add ${states}">${words}</div>`)
+      .map((states) => `<div class="row pane-add row-dim ${states}">${words}</div>`)
       .join('');
     // A lone pane, and the pane that holds the keys beside another: both
     // selections hold the keys (a pane that does not greys its own, below).

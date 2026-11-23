@@ -25,6 +25,7 @@ export {
   Strip,
   WellColumn,
   type CellProps,
+  type CellTone,
   type ColumnSort,
   type ListingColumn,
   type ListingProps,

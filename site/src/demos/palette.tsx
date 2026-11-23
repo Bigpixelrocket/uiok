@@ -1,7 +1,8 @@
 /**
  * A command palette: type to filter, ↑ ↓ move, Return runs, Escape clears
  * the query and then closes. Switch Branch… opens a second level, with a
- * note and a failure under its list; the chip, ←, or Backspace in an empty
+ * note and a failure under its list and the branch checked out marked with
+ * its current dot; the chip, ←, or Backspace in an empty
  * field steps back. Run Task… lists command lines (`.palette-command`) and
  * Open Recent… paths that give way at their start. A tag at the field's end
  * says what the commands act on, and a key legend closes the box. The
@@ -114,9 +115,10 @@ export function PaletteDemo() {
       label: 'Switch Branch…',
       hint: 'Check out another branch',
       icon: <GitBranch size={size} />,
-      level: ['main', 'release/1.4', 'fix/settings-type', 'feat/dark-charts'].map((name) =>
-        command(`branch-${name}`, name, `Check out ${name}`, <GitBranch size={size} />)
-      ),
+      level: ['main', 'release/1.4', 'fix/settings-type', 'feat/dark-charts'].map((name) => ({
+        ...command(`branch-${name}`, name, `Check out ${name}`, <GitBranch size={size} />),
+        ...(name === 'main' ? { meta: '2 days', current: 'Checked out' } : {})
+      })),
       notes: [
         { text: 'Branches as of 2 minutes ago.' },
         { text: 'Could not reach origin: offline.', failure: true }
@@ -153,7 +155,7 @@ export function PaletteDemo() {
         <code className="demo-readout">ran: {ran ?? 'nothing yet'}</code>
       </div>
       {open ? (
-        <div className="listing-root">
+        <>
           <CommandPalette
             commands={commands}
             aside={<span className="palette-meta demo-palette-aside">site</span>}
@@ -162,7 +164,7 @@ export function PaletteDemo() {
             onClose={() => setOpen(false)}
             placeholder="Type a command"
           />
-        </div>
+        </>
       ) : null}
     </div>
   );

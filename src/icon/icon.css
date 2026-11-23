@@ -1,0 +1,44 @@
+/* ---- Product marks (ProductMark) ----
+
+   A product's brand mark at the icon size, beside its name in a row, a
+   crumb, or a palette's option. The brand colour is the app's data
+   (--product-mark-colour, set on the mark); how much of it shows is the
+   theme's (--product-mark-mix), the rest the text tone, so a dark brand
+   colour still reads on a dark ground. A mark with no colour of its own
+   (currentColor) and a fallback glyph take the quiet icon tone. */
+.product-mark {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: var(--icon-md);
+  height: var(--icon-md);
+  color: var(--text-dim);
+}
+
+.product-mark > svg {
+  --product-mark-fill: color-mix(
+    in srgb,
+    var(--product-mark-colour, currentColor) var(--product-mark-mix),
+    var(--text)
+  );
+
+  width: var(--icon-md);
+  height: var(--icon-md);
+  fill: var(--product-mark-fill);
+}
+
+/* A mark published in hairlines gains an outline of its own colour,
+   rounded so its joins stay smooth; its width is in viewBox units, which
+   CSS pixels are inside an svg. */
+.product-mark .product-mark-outline {
+  stroke: var(--product-mark-fill);
+  stroke-width: calc(var(--product-mark-stroke) * 1px);
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+/* A fallback glyph is an icon: its strokes are lucide's, unfilled. */
+.product-mark.glyph > svg {
+  fill: none;
+}

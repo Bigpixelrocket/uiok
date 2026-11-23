@@ -96,6 +96,7 @@
   --cursor-row-bg: #dae3f4;
   --row-meta-text: #5c5f77;
   --glass-edge: rgb(255 255 255 / 60%);
+  --product-mark-mix: 100%;
   --hover-wash: rgb(255 255 255 / 50%);
   --pressed-wash: rgb(0 0 0 / 7%);
   --well-shade: rgb(0 0 0 / 7%);
@@ -234,6 +235,7 @@
     --cursor-row-bg: #2d334b;
     --row-meta-text: #9399b2;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(205 214 244 / 12%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -374,6 +376,7 @@
     --cursor-row-bg: #dae3f4;
     --row-meta-text: #5c5f77;
     --glass-edge: rgb(255 255 255 / 60%);
+    --product-mark-mix: 100%;
     --hover-wash: rgb(255 255 255 / 50%);
     --pressed-wash: rgb(0 0 0 / 7%);
     --well-shade: rgb(0 0 0 / 7%);
@@ -511,6 +514,7 @@
     --cursor-row-bg: #e6f0fb;
     --row-meta-text: #57606a;
     --glass-edge: rgb(255 255 255 / 60%);
+    --product-mark-mix: 100%;
     --hover-wash: rgb(31 35 40 / 3%);
     --pressed-wash: rgb(0 0 0 / 8%);
     --well-shade: rgb(0 0 0 / 7%);
@@ -648,6 +652,7 @@
     --cursor-row-bg: #e9e5bc;
     --row-meta-text: #665c54;
     --glass-edge: rgb(255 255 255 / 60%);
+    --product-mark-mix: 100%;
     --hover-wash: rgb(255 255 255 / 50%);
     --pressed-wash: rgb(0 0 0 / 7%);
     --well-shade: rgb(0 0 0 / 7%);
@@ -785,6 +790,7 @@
     --cursor-row-bg: #e7ebf6;
     --row-meta-text: #595b66;
     --glass-edge: rgb(255 255 255 / 60%);
+    --product-mark-mix: 100%;
     --hover-wash: rgb(56 58 66 / 3%);
     --pressed-wash: rgb(0 0 0 / 8%);
     --well-shade: rgb(0 0 0 / 7%);
@@ -922,6 +928,7 @@
     --cursor-row-bg: #e5e6e2;
     --row-meta-text: #656083;
     --glass-edge: rgb(255 255 255 / 60%);
+    --product-mark-mix: 100%;
     --hover-wash: rgb(255 255 255 / 58%);
     --pressed-wash: rgb(0 0 0 / 7%);
     --well-shade: rgb(0 0 0 / 7%);
@@ -1059,6 +1066,7 @@
     --cursor-row-bg: #e7eadf;
     --row-meta-text: #47626a;
     --glass-edge: rgb(255 255 255 / 60%);
+    --product-mark-mix: 100%;
     --hover-wash: rgb(255 255 255 / 50%);
     --pressed-wash: rgb(0 0 0 / 2%);
     --well-shade: rgb(0 0 0 / 7%);
@@ -1196,6 +1204,7 @@
     --cursor-row-bg: #cfd6e5;
     --row-meta-text: #4d5a8b;
     --glass-edge: rgb(255 255 255 / 60%);
+    --product-mark-mix: 100%;
     --hover-wash: rgb(255 255 255 / 50%);
     --pressed-wash: rgb(0 0 0 / 5%);
     --well-shade: rgb(0 0 0 / 7%);
@@ -1335,6 +1344,7 @@
     --cursor-row-bg: #3d455e;
     --row-meta-text: #a5adce;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(0 0 0 / 26%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -1473,6 +1483,7 @@
     --cursor-row-bg: #323a54;
     --row-meta-text: #a5adcb;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(202 211 245 / 13%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -1611,6 +1622,7 @@
     --cursor-row-bg: #2d334b;
     --row-meta-text: #9399b2;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(205 214 244 / 12%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -1749,6 +1761,7 @@
     --cursor-row-bg: #3d3951;
     --row-meta-text: #bcc2d3;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(248 248 242 / 11%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -1887,6 +1900,7 @@
     --cursor-row-bg: #101e35;
     --row-meta-text: #8b949e;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(230 237 243 / 12%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -2025,6 +2039,7 @@
     --cursor-row-bg: #313831;
     --row-meta-text: #bdae93;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(0 0 0 / 36%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -2163,6 +2178,7 @@
     --cursor-row-bg: #3b4854;
     --row-meta-text: #adb6c6;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(0 0 0 / 39%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -2301,6 +2317,7 @@
     --cursor-row-bg: #303e4e;
     --row-meta-text: #9da4b2;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(0 0 0 / 38%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -2439,6 +2456,7 @@
     --cursor-row-bg: #312b3f;
     --row-meta-text: #908caa;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(224 222 244 / 12%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -2577,6 +2595,7 @@
     --cursor-row-bg: #05384c;
     --row-meta-text: #93a1a1;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(147 161 161 / 13%);
     --well-shade: rgb(0 0 0 / 24%);
@@ -2715,6 +2734,7 @@
     --cursor-row-bg: #272e43;
     --row-meta-text: #8e96bc;
     --glass-edge: rgb(255 255 255 / 10%);
+    --product-mark-mix: 78%;
     --hover-wash: rgb(255 255 255 / 6%);
     --pressed-wash: rgb(192 202 245 / 13%);
     --well-shade: rgb(0 0 0 / 24%);

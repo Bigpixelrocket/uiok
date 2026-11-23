@@ -42,6 +42,12 @@ export interface SettingsLabels {
   readonly sidebar: string;
   /** The dialog's one verb, on Return and Escape: "Done". */
   readonly done: string;
+  /**
+   * A sidebar row's accessible name while it carries a chip: its page and
+   * the chip's words, apart, so they are not read as one word ("Updates,
+   * Update to 1.4.4").
+   */
+  readonly pageWithChip: (page: string, chip: string) => string;
   /** The Appearance page's words. */
   readonly appearance: AppearanceLabels;
 }
@@ -51,6 +57,7 @@ export const DEFAULT_SETTINGS_LABELS: SettingsLabels = {
   title: 'Settings',
   sidebar: 'Settings pages',
   done: 'Done',
+  pageWithChip: (page, chip) => `${page}, ${chip}`,
   appearance: {
     title: 'Theme',
     mode: 'Appearance',

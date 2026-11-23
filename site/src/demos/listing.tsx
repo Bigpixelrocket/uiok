@@ -8,7 +8,9 @@
  * list whose rows act on a click (the pointer's hover wash, an add row), a
  * list whose names are buttons (`.pane-row-open`), and a listing with
  * nothing in it. Then, under their own headings: strips with a
- * strip link and a pane message, a WellColumn and an empty one with its
+ * strip link and a pane message (a version with an update waiting in the
+ * warning tone, and a runtime not installed, dim, its offered version in the
+ * accent tone), a WellColumn and an empty one with its
  * note, a pane with nothing in it and one that could not load,
  * marked rows in a listing wider than its box with its action column pinned,
  * and rows with no icon that take the focus themselves, one with a value cut
@@ -79,7 +81,7 @@ const STRIP_GRID = `var(--icon-column) minmax(0, 1fr) ${column(10)} ${column(12)
 
 const RUNTIMES = [
   { key: 'node', name: 'Node.js', version: '24.11.0' },
-  { key: 'php', name: 'PHP', version: '8.4.12' }
+  { key: 'php', name: 'PHP', version: '8.4.12', tone: 'warning' as const }
 ];
 
 const WELL_TEXT = [
@@ -278,13 +280,7 @@ export function ListingDemo() {
                   rowKey={server}
                 />
               ))}
-              <Row
-                className="pane-add"
-                mark={<Plus size={ICON_MD} />}
-                name="Add server…"
-                onOpen={() => setOpened('add a server')}
-                rowKey="add"
-              />
+              <Row add name="Add server…" onOpen={() => setOpened('add a server')} rowKey="add" />
             </Listing>
           </div>
         </div>
@@ -354,7 +350,7 @@ export function ListingDemo() {
                 name={runtime.name}
                 rowKey={runtime.key}
               >
-                <Cell>{runtime.version}</Cell>
+                <Cell tone={runtime.tone}>{runtime.version}</Cell>
                 <Cell className="pane-action-cell">
                   <QuietAction
                     icon={ArrowDownToLine}
@@ -365,6 +361,11 @@ export function ListingDemo() {
                 </Cell>
               </Row>
             ))}
+            {/* Not installed: a dim name, the version it would bring in the accent tone. */}
+            <Row dim mark={<FileText size={ICON_MD} />} name="Python" rowKey="python">
+              <Cell tone="accent">3.13.9</Cell>
+              <Cell />
+            </Row>
           </Listing>
           <PaneMessage>Updates come from the runtime's own release feed.</PaneMessage>
           <Listing

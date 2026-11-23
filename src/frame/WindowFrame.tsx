@@ -1,5 +1,6 @@
 import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react';
 
+import { ListingScopeContext } from '../listing/ListingScope.js';
 import type { RegionHandlers } from '../pane/Pane.js';
 
 /** Whether a slot was given something to draw: idiomatic `cond && <Part />` passes false for none. */
@@ -84,24 +85,26 @@ export function WindowFrame({
   );
 
   return (
-    <div
-      className="window-frame space-root listing-root"
-      data-sidebar={shown ? 'shown' : 'hidden'}
-      style={{ '--window-band-width': `${sidebarWidth}px` } as CSSProperties}
-    >
-      <div className="window-frame-band">
-        <div className="window-frame-band-lead">{brand}</div>
-        <span aria-hidden className="window-frame-band-rest" />
-        {drawn(trailing) ? <div className="shell-trailing">{trailing}</div> : null}
-      </div>
-      {group === undefined ? (
-        parts
-      ) : (
-        <div className="window-frame-group" {...group}>
-          {parts}
+    <ListingScopeContext value>
+      <div
+        className="window-frame space-root listing-root"
+        data-sidebar={shown ? 'shown' : 'hidden'}
+        style={{ '--window-band-width': `${sidebarWidth}px` } as CSSProperties}
+      >
+        <div className="window-frame-band">
+          <div className="window-frame-band-lead">{brand}</div>
+          <span aria-hidden className="window-frame-band-rest" />
+          {drawn(trailing) ? <div className="shell-trailing">{trailing}</div> : null}
         </div>
-      )}
-      {drawn(legend) ? <div className="window-frame-legend">{legend}</div> : null}
-    </div>
+        {group === undefined ? (
+          parts
+        ) : (
+          <div className="window-frame-group" {...group}>
+            {parts}
+          </div>
+        )}
+        {drawn(legend) ? <div className="window-frame-legend">{legend}</div> : null}
+      </div>
+    </ListingScopeContext>
   );
 }

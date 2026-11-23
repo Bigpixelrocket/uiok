@@ -92,6 +92,45 @@ describe('PageTabs', () => {
     expect(tab.textContent).toBe('');
   });
 
+  it("draws a count after a name, in the tab's name and in the dim tone", () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <PageTabs
+        current="overview"
+        label="Service pages"
+        onSelect={() => undefined}
+        tabs={[
+          { id: 'overview', label: 'Overview', icon: FileText },
+          { id: 'members', label: 'Members', icon: Users, count: 3 },
+          { id: 'settings', label: 'Settings', icon: Settings, count: null }
+        ]}
+      />
+    );
+
+    const members = screen.getByRole('tab', { name: 'Members 3' });
+    const count = members.querySelector('.page-tab-count') as HTMLElement;
+
+    expect(count.textContent).toBe('3');
+    expect(declaredValues(count, 'color')).toContain('var(--text-dim)');
+    expect(screen.getByRole('tab', { name: 'Settings' }).querySelector('.page-tab-count')).toBe(
+      null
+    );
+  });
+
+  it('names an icon-only tab with its count', () => {
+    render(
+      <PageTabs
+        current="overview"
+        label="Service pages"
+        look="icons"
+        onSelect={() => undefined}
+        tabs={[{ id: 'overview', label: 'Updates', icon: Bell, count: 2 }]}
+      />
+    );
+
+    expect(screen.getByRole('tab', { name: 'Updates 2' }).dataset.tooltip).toBe('Updates 2');
+  });
+
   it('opens a tab on a click', () => {
     const onSelect = vi.fn();
 

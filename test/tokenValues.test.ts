@@ -230,6 +230,12 @@ const MIXED_PROPERTIES: readonly { file: string; property: string; reason: strin
     reason: "The stripes' band is a share of the ink a host passes as --stripe-ink."
   },
   {
+    file: 'src/icon/icon.css',
+    property: '--product-mark-fill',
+    reason:
+      "A product mark's fill is the brand colour an app passes as --product-mark-colour, mixed toward the text by the theme's --product-mark-mix."
+  },
+  {
     file: 'src/shell/shell.css',
     property: '--channel-tag-bg',
     reason: "A channel tag's pill is a share of the channel hue an app passes as --channel."
