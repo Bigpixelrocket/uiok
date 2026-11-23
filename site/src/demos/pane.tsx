@@ -2,7 +2,9 @@
  * A sidebar of servers beside a pane of services, on the two-pane keyboard
  * (`usePaneKeys`): ↑ ↓ Home End move the active pane's cursor, ← and →
  * switch panes, Return opens a server or a service's logs, ⌘⏎ starts or
- * stops the cursor's service. The legend under it reads what the cursor
+ * stops the cursor's service. Tab keeps the browser's order, or, with
+ * Listing first chosen, walks each pane's listing before its controls
+ * (`tabOrder: 'listing'`). The legend under it reads what the cursor
  * row offers. Click into the demo to give it the keys; they return to the
  * page when the focus leaves it. Under it, path bars with a fact in each
  * tone, at full width and in a 300px pane, where the trail gives way and
@@ -27,7 +29,7 @@ import {
   Star,
   Trash2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useId, useState } from 'react';
 
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 import { KeyLegendStrip, type LegendVerb } from '@bigpixelrocket/uiok/legend';
@@ -59,6 +61,7 @@ import {
   type Pane,
   type PaneKeyAction
 } from '@bigpixelrocket/uiok/pane';
+import { SegmentedChoice } from '@bigpixelrocket/uiok/segmented';
 
 import { PaneTabsDemo } from './paneTabs';
 
@@ -103,14 +106,24 @@ const readVerbs = (main: Element | null, cursor: string | null): MainVerbs => {
   };
 };
 
-const readKey = (event: KeyboardEvent): Action | null => {
-  const plain = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
-  if (plain && event.key === 'ArrowLeft') return { kind: 'focus', pane: 'sidebar' };
-  if (plain && event.key === 'ArrowRight') return { kind: 'focus', pane: 'main' };
-  const action = paneKeyAction(event);
-  // Tab keeps its native walk, so the keys can always leave the demo.
-  return action !== null && ['move', 'enter', 'toggle'].includes(action.kind) ? action : null;
-};
+/**
+ * How Tab walks the demo: the browser's own order, which can always leave
+ * it, or `usePaneKeys`' listing-first walk (`tabOrder: 'listing'`), which
+ * cycles inside the panes until a click elsewhere takes the focus out.
+ */
+type TabWalk = 'browser' | 'listing';
+
+const readKeyFor =
+  (walk: TabWalk) =>
+  (event: KeyboardEvent): Action | null => {
+    const plain = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
+    if (plain && event.key === 'ArrowLeft') return { kind: 'focus', pane: 'sidebar' };
+    if (plain && event.key === 'ArrowRight') return { kind: 'focus', pane: 'main' };
+    const action = paneKeyAction(event);
+    const kinds =
+      walk === 'listing' ? ['move', 'enter', 'toggle', 'switch-pane'] : ['move', 'enter', 'toggle'];
+    return action !== null && kinds.includes(action.kind) ? action : null;
+  };
 
 /**
  * Three path bars, each with a fact: a danger fact beside a star and a lit
@@ -368,6 +381,8 @@ export function PaneDemo() {
   const [shown, setShown] = useState(false);
   const [services, setServices] = useState(SERVERS);
   const [said, setSaid] = useState('');
+  const [walk, setWalk] = useState<TabWalk>('browser');
+  const walkLabel = useId();
   const rows = services[open] ?? [];
 
   const toggle = (id: string) =>
@@ -388,7 +403,9 @@ export function PaneDemo() {
     readVerbs,
     noVerbs: NO_MAIN_VERBS,
     follows: [rows],
-    readKey,
+    readKey: readKeyFor(walk),
+    tabOrder: walk === 'listing' ? 'listing' : 'document',
+    sidebarStops: true,
     cursorKey: (action) => action.kind === 'move' || action.kind === 'enter',
     run: (action, pane) => {
       if (action.kind === 'focus') panes.focusPane(action.pane);
@@ -452,6 +469,18 @@ export function PaneDemo() {
 
   return (
     <div className="demo-stack">
+      <div className="demo-row">
+        <span className="demo-label" id={walkLabel}>
+          Tab
+        </span>
+        <SegmentedChoice
+          choices={['browser', 'listing'] as const}
+          labelId={walkLabel}
+          onChange={setWalk}
+          render={(choice) => (choice === 'browser' ? "The browser's order" : 'Listing first')}
+          value={walk}
+        />
+      </div>
       <div
         className="listing-root pane-demo"
         onFocus={() => setShown(true)}
@@ -630,7 +659,11 @@ export function PaneDemo() {
         />
       </div>
       <code className="demo-readout">
-        {said === '' ? 'click into the panes, then use the keys' : said}
+        {said !== ''
+          ? said
+          : walk === 'listing'
+            ? 'click into the panes, then Tab: each pane’s listing comes before its controls; click outside to leave'
+            : 'click into the panes, then use the keys'}
       </code>
 
       <h3 className="demo-subhead">Tabs</h3>
