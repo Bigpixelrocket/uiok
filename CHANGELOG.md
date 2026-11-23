@@ -18,7 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
-- `SideBySide` stands its parts side by side only where each equal half holds its part at the part's min-content width, so content that will not narrow (a toolbar of tools that keep their size, a form) stacks though the room passes `from`, which is now a floor. Content that changes decides again with no resize of the pair: new parts, and any change to the nodes or words inside. The content is measured in one column, so the pair never grows shorter for the read and a scrolled pane keeps its scroll, and not at all under the floor; the scrollbar's hold is dropped for content that needs more than it did.
+- `SideBySide` stands its parts side by side only where each equal half holds its part at the part's min-content width, so content that will not narrow (a toolbar of tools that keep their size, a form) stacks though the room passes `from`, which is now a floor. Content that changes decides again with no resize of the pair: new parts, and any change to the nodes or words inside. The content is measured in one column, the first part's hairline kept, so the pair never grows shorter for the read and a scrolled pane keeps its scroll; not at all under the floor, nor in the hold when only the width moved, and once at most per render; the scrollbar's hold is dropped for content that needs more than it did.
 
 ### Fixed
 

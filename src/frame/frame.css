@@ -848,15 +848,15 @@
 /* For one read while the component measures (data-measuring, gone before
    the browser paints): one column as wide as the wider part's min-content
    width, the first part with the hairline it has side by side, so the
-   width read is the room the wider half needs there. One column, so the
-   pair never grows shorter for the read and a scrolled pane keeps its
-   scroll. */
+   width read is the room the wider half needs there. One column, and the
+   hairline under the first kept, so the pair never grows shorter for the
+   read and a scrolled pane keeps its scroll. */
 .side-by-side[data-measuring] {
   grid-template-columns: min-content;
 }
 
 .side-by-side[data-measuring] > .side-by-side-part:first-child {
-  border-block-end: none;
+  border-block-end: var(--line) solid var(--border);
   border-inline-end: var(--line) solid var(--border);
 }
 

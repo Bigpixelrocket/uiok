@@ -103,8 +103,13 @@ export function SideBySide({
   const measuredFrom = useRef<number | null>(null);
   // The room the content needed at the last measure.
   const measuredNeed = useRef(0);
-  // The measure of the latest render, for the content's own changes.
-  const measureNow = useRef<() => void>(() => undefined);
+  // Whether the content is as it was at the last measure, so the need read
+  // then still holds; a change to the content makes it uncertain.
+  const needKnown = useRef(false);
+  // The measure of the latest render, given whether the content changed.
+  const measureNow = useRef<(contentChanged: boolean) => void>(() => undefined);
+  // The parts the last commit drew, to tell new parts from a new `from`.
+  const drawn = useRef<readonly [ReactNode, ReactNode]>([first, second]);
 
   // Measured before the first paint, so the pair never draws in the other
   // layout first. A threshold a prop gives cannot reach a container query,
@@ -121,7 +126,9 @@ export function SideBySide({
     // comes into view) decides without it. The `from` last measured lives
     // in a ref, not in this effect, so an effect that runs again with the
     // same `from` (a page shown again through <Activity>) keeps the hold.
-    const measure = (): void => {
+    const measure = (contentChanged: boolean): void => {
+      if (contentChanged) needKnown.current = false;
+
       const width = element.clientWidth;
 
       if (width === 0) return;
@@ -133,12 +140,19 @@ export function SideBySide({
       // Under the floor nothing the content says could stand them side by
       // side, so it is not measured.
       if (width >= (holding ? from - SCROLLBAR_HOLD : from)) {
-        const need = Math.max(from, contentRoom(element));
+        // Held under `from` with the content as it was, only the width
+        // moved (a scrollbar): the need read last still holds, so the
+        // content is not laid out again for it.
+        const need =
+          holding && width < from && needKnown.current
+            ? measuredNeed.current
+            : Math.max(from, contentRoom(element));
         // Content that needs more than it did gets no hold: the hold is for
         // a scrollbar, not for content outgrowing its half.
         const hold = holding && need <= measuredNeed.current;
 
         measuredNeed.current = need;
+        needKnown.current = true;
         next = width >= (hold ? need - SCROLLBAR_HOLD : need);
       }
       shown.current = next;
@@ -146,17 +160,16 @@ export function SideBySide({
     };
 
     measureNow.current = measure;
-    measure();
 
     // The content's own changes, which keep the parts' boxes: nodes and
     // words only, never an attribute.
-    const content = new MutationObserver(measure);
+    const content = new MutationObserver(() => measure(true));
 
     content.observe(element, { characterData: true, childList: true, subtree: true });
     // Optional: jsdom has no ResizeObserver.
     if (typeof ResizeObserver === 'undefined') return () => content.disconnect();
 
-    const observer = new ResizeObserver(measure);
+    const observer = new ResizeObserver(() => measure(false));
 
     // The pair for its room; each part for content that changes its size.
     observer.observe(element);
@@ -167,10 +180,15 @@ export function SideBySide({
     };
   }, [from]);
 
-  // New parts from the host decide at once, before the paint.
+  // One measure a commit, after the observers are set: as the pair mounts
+  // or comes back into view, as `from` changes, and as new parts from the
+  // host decide at once, before the paint.
   useLayoutEffect(() => {
-    measureNow.current();
-  }, [first, second]);
+    const changed = drawn.current[0] !== first || drawn.current[1] !== second;
+
+    drawn.current = [first, second];
+    measureNow.current(changed);
+  }, [from, first, second]);
 
   return (
     <div className="side-by-side" data-layout={sideBySide ? 'side-by-side' : 'stacked'} ref={ref}>

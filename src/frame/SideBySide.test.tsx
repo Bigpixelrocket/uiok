@@ -16,9 +16,9 @@ const widen = (element: Element, width: number): void => {
   Object.defineProperty(element, 'clientWidth', { configurable: true, value: width });
 };
 
-const pair = (from: number) => (
+const pair = (from: number, firstWords = 'settings') => (
   <SideBySide
-    first={<p>settings</p>}
+    first={<p>{firstWords}</p>}
     firstLabel="Settings"
     from={from}
     second={<p>extensions</p>}
@@ -372,9 +372,9 @@ describe('SideBySide', () => {
       expect(reads).toBe(before);
     });
 
-    it('measures no content under the floor', () => {
+    it('measures no content under the floor, nor in the hold when only the width moved', () => {
       observe();
-      const { container } = render(pair(640));
+      const { container, rerender } = render(pair(640));
       const root = container.querySelector('.side-by-side') as HTMLElement;
 
       content(root, 100, 100);
@@ -382,14 +382,50 @@ describe('SideBySide', () => {
       act(() => observers.at(-1)?.());
       expect(root.dataset.layout).toBe('stacked');
       expect(reads).toBe(0);
-      // Within the hold under it, side by side, it still measures none.
       widen(root, 650);
       act(() => observers.at(-1)?.());
-      const measured = reads;
+      expect(root.dataset.layout).toBe('side-by-side');
+      let measured = reads;
+
+      // Within the hold under it, side by side, the width alone moved: the
+      // need read last still holds, and nothing is measured.
+      widen(root, 630);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      expect(reads).toBe(measured);
+      // Past the hold, stacked, it measures none either.
       widen(root, 619);
       act(() => observers.at(-1)?.());
       expect(root.dataset.layout).toBe('stacked');
       expect(reads).toBe(measured);
+      // New content makes the need uncertain: held at 630 again, it measures.
+      widen(root, 650);
+      act(() => observers.at(-1)?.());
+      widen(root, 630);
+      measured = reads;
+      rerender(pair(640, 'settings and more'));
+      expect(reads).toBeGreaterThan(measured);
+    });
+
+    it('measures once as it mounts', () => {
+      observe();
+      const counted = { reads: 0 };
+      const spy = vi
+        .spyOn(HTMLElement.prototype, 'getBoundingClientRect')
+        .mockImplementation(function (this: HTMLElement) {
+          if (this.parentElement?.hasAttribute('data-measuring')) counted.reads += 1;
+          return { width: 100 } as DOMRect;
+        });
+      const width = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(700);
+
+      try {
+        render(pair(400));
+        // One measure reads both parts once.
+        expect(counted.reads).toBe(2);
+      } finally {
+        spy.mockRestore();
+        width.mockRestore();
+      }
     });
 
     it('holds through a scrollbar only while the content needs no more than it did', () => {
@@ -423,10 +459,16 @@ describe('SideBySide', () => {
     expect(declaredValues(first, 'border-inline-end').at(-1)).toBe(
       'var(--line) solid var(--border)'
     );
-    expect(declaredValues(first, 'border-block-end').at(-1)).toBe('none');
+    // The hairline under the first stays, so a stacked pair is no shorter for the read.
+    expect(declaredValues(first, 'border-block-end').at(-1)).toBe(
+      'var(--line) solid var(--border)'
+    );
     // The measuring layout wins over a pair already side by side, too.
     root.dataset.layout = 'side-by-side';
     expect(declaredValues(root, 'grid-template-columns').at(-1)).toBe('min-content');
+    expect(declaredValues(first, 'border-block-end').at(-1)).toBe(
+      'var(--line) solid var(--border)'
+    );
   });
 
   it('draws two columns with the hairline after the first side by side, and one under it stacked', () => {
