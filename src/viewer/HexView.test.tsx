@@ -68,6 +68,19 @@ function copy(): ReturnType<typeof vi.fn> {
   return setData;
 }
 
+/** The window's mousemove and mouseup listeners added from now on and not yet removed. */
+function liveDragListeners(): () => { mousemove: number; mouseup: number } {
+  const add = vi.spyOn(window, 'addEventListener');
+  const remove = vi.spyOn(window, 'removeEventListener');
+  return () => {
+    const live = (type: string): number => {
+      const removed = new Set(remove.mock.calls.filter(([t]) => t === type).map(([, l]) => l));
+      return add.mock.calls.filter(([t, l]) => t === type && !removed.has(l)).length;
+    };
+    return { mousemove: live('mousemove'), mouseup: live('mouseup') };
+  };
+}
+
 describe('HexView', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -335,6 +348,74 @@ describe('HexView', () => {
 
     expect(copy()).toHaveBeenCalledWith('text/plain', 'efGHI');
     expect(document.querySelector('.hex-selected-primary')?.closest('.hex-text')).toBeTruthy();
+  });
+
+  it('ends a drag with the view: no listener or scroll timer survives an unmount', async () => {
+    const bytes = new Uint8Array(1024).map((_, index) => index % 256);
+    const { unmount } = render(
+      <HexView
+        reader={bridgeOver(
+          (offset) => bytes[offset] ?? 0,
+          () => bytes.length
+        )}
+        info={infoFor(bytes.length)}
+      />
+    );
+    await waitFor(() => expect(offsets().length).toBeGreaterThan(1));
+    vi.spyOn(bytesBox(), 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 800, height: 200 })
+    );
+    const live = liveDragListeners();
+    vi.useFakeTimers();
+
+    try {
+      fireEvent.mouseDown(bytesBox(), { button: 0, clientX: 20, clientY: 5 });
+      // Held below the box: the drag scrolls on a timer.
+      fireEvent.mouseMove(window, { clientX: 20, clientY: 300 });
+      unmount();
+      expect(live()).toEqual({ mousemove: 0, mouseup: 0 });
+
+      const interval = vi.spyOn(globalThis, 'setInterval');
+      fireEvent.mouseMove(window, { clientX: 20, clientY: 100 });
+      fireEvent.mouseMove(window, { clientX: 20, clientY: 300 });
+      fireEvent.mouseUp(window);
+      expect(interval).not.toHaveBeenCalled();
+      expect(vi.getTimerCount()).toBe(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('ends a drag whose mouseup never came when the next one starts', async () => {
+    const bytes = new Uint8Array(1024).map((_, index) => index % 256);
+    render(
+      <HexView
+        reader={bridgeOver(
+          (offset) => bytes[offset] ?? 0,
+          () => bytes.length
+        )}
+        info={infoFor(bytes.length)}
+      />
+    );
+    await waitFor(() => expect(offsets().length).toBeGreaterThan(1));
+    vi.spyOn(bytesBox(), 'getBoundingClientRect').mockReturnValue(
+      DOMRect.fromRect({ x: 0, y: 0, width: 800, height: 200 })
+    );
+    const live = liveDragListeners();
+    vi.useFakeTimers();
+
+    try {
+      fireEvent.mouseDown(bytesBox(), { button: 0, clientX: 20, clientY: 5 });
+      fireEvent.mouseMove(window, { clientX: 20, clientY: 300 });
+      fireEvent.mouseDown(bytesBox(), { button: 0, clientX: 20, clientY: 5 });
+      expect(live()).toEqual({ mousemove: 1, mouseup: 1 });
+      expect(vi.getTimerCount()).toBe(0);
+
+      fireEvent.mouseUp(window);
+      expect(live()).toEqual({ mousemove: 0, mouseup: 0 });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('says a selection is too large to copy instead of reading it', async () => {

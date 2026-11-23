@@ -5,7 +5,9 @@
  * sidebar tree with its quick row of filters (one line that scrolls
  * sideways under an edge fade when the sidebar is too narrow for them all,
  * a mouse wheel over it scrolling it sideways), a band, a group, rows
- * stepped in by level with a state and a switch, a note, the edge that
+ * stepped in by level with a state and a switch, a service's own menu on a
+ * secondary click (or the Menu key, Shift-F10, on the tree, which a button
+ * under the window focuses), a note, the edge that
  * resizes it, and a Hide/Show panel toggle; a main pane whose page holds a
  * list over the pane under it with the splitter between them, and a status
  * notice in its status line; a console docked under it at the height it
@@ -23,9 +25,12 @@ import {
   PanelLeft,
   Play,
   Server,
-  Settings2
+  RotateCw,
+  Settings2,
+  Square,
+  Trash2
 } from 'lucide-react';
-import { useState, type CSSProperties } from 'react';
+import { useRef, useState, type CSSProperties } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { Range, Switch } from '@bigpixelrocket/uiok/field';
@@ -60,6 +65,7 @@ import {
   StateMark,
   column
 } from '@bigpixelrocket/uiok/listing';
+import { Menu, type MenuEntry } from '@bigpixelrocket/uiok/menu';
 import { PaneBox, PaneList, PanePathBar, PaneStatus } from '@bigpixelrocket/uiok/pane';
 import { BrandMark, ChannelMarker, Lockup, TitleBar } from '@bigpixelrocket/uiok/shell';
 
@@ -169,193 +175,259 @@ function FrameWindowDemo() {
   const services = on.includes('running')
     ? SERVICES.filter((service) => running.includes(service.name))
     : SERVICES;
+  const treeKeys = [
+    'mac',
+    'services',
+    ...(open ? [...services.map((service) => service.name), 'add-service'] : [])
+  ];
+  const tree = useDemoCursor(treeKeys);
+  // The service whose menu is open, and where; a row's secondary click or
+  // the tree's Menu key opens it.
+  const [menu, setMenu] = useState<{ name: string; x: number; y: number } | null>(null);
+  const [said, setSaid] = useState('');
+  // The tree's home takes the focus by script only, so the keys reach it
+  // through the button under the window.
+  const treeList = useRef<HTMLDivElement>(null);
+  const menuEntries = (name: string): readonly MenuEntry[] => [
+    running.includes(name)
+      ? { id: 'stop', label: 'Stop', icon: Square }
+      : { id: 'start', label: 'Start', icon: Play },
+    { id: 'restart', label: 'Restart', icon: RotateCw, disabled: !running.includes(name) },
+    { kind: 'separator' },
+    { id: 'remove', label: 'Remove', icon: Trash2, danger: true }
+  ];
+  const pick = (name: string, id: string) => {
+    if (id === 'start' || id === 'stop') {
+      setRunning((now) => (id === 'start' ? [...now, name] : now.filter((each) => each !== name)));
+    }
+    setSaid(`${id} ${name}`);
+  };
 
   return (
-    <div className="frame-demo" data-channel="local">
-      <WindowFrame
-        brand={
-          <TitleBar trafficLights>
-            <Lockup
-              lead="Acme"
-              mark={
-                <BrandMark
-                  glyph={[
-                    {
-                      d: 'M5 7.5l5-2.5 5 2.5-5 2.5z M5 10.5l5 2.5 5-2.5 M5 13.5l5 2.5 5-2.5',
-                      look: 'line'
-                    }
-                  ]}
-                />
-              }
-              size="title"
-              strong="OK"
-            />
-            <ChannelMarker detail="feat/frame" label="Local" title="Local build from feat/frame" />
-          </TitleBar>
-        }
-        dock={
-          <Dock
-            bar="Console"
-            height={dockHeight}
-            label="Console"
-            onResize={setDockHeight}
-            onResizeEnd={setDockHeight}
-            open
-            pageMin={120}
-            resizeLabel="Resize the console"
-          >
-            <DockLog label="Activity">
-              {Array.from({ length: 40 }, (_, index) => (
-                <DockLogEntry key={index}>{`Started worker ${index + 1}`}</DockLogEntry>
-              ))}
-            </DockLog>
-          </Dock>
-        }
-        legend={<KeyLegendStrip pairLabel={(pair) => pair} verbs={verbs} />}
-        main={
-          <PaneBox active>
-            <PanePathBar trail={['Services', 'PostgreSQL 18']}>
-              {shown ? null : (
-                <ShowSidebarButton
-                  icon={PanelLeft}
-                  label="Show panel"
-                  onShow={() => setShown(true)}
-                />
-              )}
-            </PanePathBar>
-            <PanePage>
-              <PaneList home ref={split.upper}>
-                <SectionHead>Lines</SectionHead>
-                <Listing
-                  columns={[{ label: 'Version' }]}
-                  grid={`var(--icon-column) minmax(0, 1fr) ${column(10)}`}
-                  title="Line"
-                >
-                  {LINES.map((line) => (
-                    <Row key={line} name={line.split('.')[0]} rowKey={line}>
-                      <Cell>{line}</Cell>
-                    </Row>
-                  ))}
-                </Listing>
-              </PaneList>
-              <PaneSplitter split={split} />
-              <SplitDetail label="Selected line" split={split}>
-                <PageNote icon={CircleAlert}>MySQL 8.4 stopped with an error.</PageNote>
-                <PageNote busy>Reading PostgreSQL 18’s databases…</PageNote>
-              </SplitDetail>
-            </PanePage>
-            <PaneStatus
-              tools={
-                <Button onClick={() => setShown(false)} size="small">
-                  Hide panel
-                </Button>
-              }
-            >
-              <StatusNotice
-                icon={CircleAlert}
-                text="MySQL 8.4 could not start: the port is in use."
-                tone="danger"
-              />
-            </PaneStatus>
-          </PaneBox>
-        }
-        resizer={
-          <SidebarResizer
-            label="Resize the sidebar"
-            max={360}
-            min={160}
-            onResize={setWidth}
-            onResizeEnd={setWidth}
-            pageMin={240}
-            width={width}
-          />
-        }
-        sidebar={
-          shown ? (
-            <TreePane width={width}>
-              <PanePathBar trail={['Stack']} />
-              <FilterChips
-                chips={[
-                  { id: 'running', label: 'Running', icon: Play, count: running.length },
-                  { id: 'updates', label: 'Updates', icon: ArrowUp, count: 1 },
-                  { id: 'errors', label: 'Errors', icon: CircleAlert, count: 1 },
-                  { id: 'databases', label: 'Databases', icon: Database, count: 2 }
-                ]}
-                label="Filters"
-                on={on}
-                onToggle={(id) =>
-                  setOn((now) =>
-                    now.includes(id) ? now.filter((each) => each !== id) : [...now, id]
-                  )
+    <>
+      <div className="frame-demo" data-channel="local">
+        <WindowFrame
+          brand={
+            <TitleBar trafficLights>
+              <Lockup
+                lead="Acme"
+                mark={
+                  <BrandMark
+                    glyph={[
+                      {
+                        d: 'M5 7.5l5-2.5 5 2.5-5 2.5z M5 10.5l5 2.5 5-2.5 M5 13.5l5 2.5 5-2.5',
+                        look: 'line'
+                      }
+                    ]}
+                  />
                 }
+                size="title"
+                strong="OK"
               />
-              <TreeList label="Stack">
-                <TreeRow
-                  glyph={<Layers size={ICON_MD} />}
-                  kind="band"
-                  name="This Mac"
-                  rowKey="mac"
+              <ChannelMarker
+                detail="feat/frame"
+                label="Local"
+                title="Local build from feat/frame"
+              />
+            </TitleBar>
+          }
+          dock={
+            <Dock
+              bar="Console"
+              height={dockHeight}
+              label="Console"
+              onResize={setDockHeight}
+              onResizeEnd={setDockHeight}
+              open
+              pageMin={120}
+              resizeLabel="Resize the console"
+            >
+              <DockLog label="Activity">
+                {Array.from({ length: 40 }, (_, index) => (
+                  <DockLogEntry key={index}>{`Started worker ${index + 1}`}</DockLogEntry>
+                ))}
+              </DockLog>
+            </Dock>
+          }
+          legend={<KeyLegendStrip pairLabel={(pair) => pair} verbs={verbs} />}
+          main={
+            <PaneBox active>
+              <PanePathBar trail={['Services', 'PostgreSQL 18']}>
+                {shown ? null : (
+                  <ShowSidebarButton
+                    icon={PanelLeft}
+                    label="Show panel"
+                    onShow={() => setShown(true)}
+                  />
+                )}
+              </PanePathBar>
+              <PanePage>
+                <PaneList home ref={split.upper}>
+                  <SectionHead>Lines</SectionHead>
+                  <Listing
+                    columns={[{ label: 'Version' }]}
+                    grid={`var(--icon-column) minmax(0, 1fr) ${column(10)}`}
+                    title="Line"
+                  >
+                    {LINES.map((line) => (
+                      <Row key={line} name={line.split('.')[0]} rowKey={line}>
+                        <Cell>{line}</Cell>
+                      </Row>
+                    ))}
+                  </Listing>
+                </PaneList>
+                <PaneSplitter split={split} />
+                <SplitDetail label="Selected line" split={split}>
+                  <PageNote icon={CircleAlert}>MySQL 8.4 stopped with an error.</PageNote>
+                  <PageNote busy>Reading PostgreSQL 18’s databases…</PageNote>
+                </SplitDetail>
+              </PanePage>
+              <PaneStatus
+                tools={
+                  <Button onClick={() => setShown(false)} size="small">
+                    Hide panel
+                  </Button>
+                }
+              >
+                <StatusNotice
+                  icon={CircleAlert}
+                  text="MySQL 8.4 could not start: the port is in use."
+                  tone="danger"
                 />
-                <TreeRow
-                  glyph={<Server size={ICON_MD} />}
-                  kind="group"
-                  name="Services"
-                  rowKey="services"
-                  toggle={{
-                    open,
-                    onToggle: () => setOpen(!open),
-                    label: open ? 'Collapse Services' : 'Expand Services'
-                  }}
-                  trailing={services.length}
+              </PaneStatus>
+            </PaneBox>
+          }
+          resizer={
+            <SidebarResizer
+              label="Resize the sidebar"
+              max={360}
+              min={160}
+              onResize={setWidth}
+              onResizeEnd={setWidth}
+              pageMin={240}
+              width={width}
+            />
+          }
+          sidebar={
+            shown ? (
+              <TreePane width={width}>
+                <PanePathBar trail={['Stack']} />
+                <FilterChips
+                  chips={[
+                    { id: 'running', label: 'Running', icon: Play, count: running.length },
+                    { id: 'updates', label: 'Updates', icon: ArrowUp, count: 1 },
+                    { id: 'errors', label: 'Errors', icon: CircleAlert, count: 1 },
+                    { id: 'databases', label: 'Databases', icon: Database, count: 2 }
+                  ]}
+                  label="Filters"
+                  on={on}
+                  onToggle={(id) =>
+                    setOn((now) =>
+                      now.includes(id) ? now.filter((each) => each !== id) : [...now, id]
+                    )
+                  }
                 />
-                {open
-                  ? services.map((service) => (
-                      <TreeRow
-                        glyph={<Database size={ICON_MD} />}
-                        key={service.name}
-                        level={1}
-                        name={service.name}
-                        rowKey={service.name}
-                        tool={
-                          <Switch
-                            checked={running.includes(service.name)}
-                            label={`Run ${service.name}`}
-                            labelHidden
-                            onChange={(next) =>
-                              setRunning((now) =>
-                                next
-                                  ? [...now, service.name]
-                                  : now.filter((each) => each !== service.name)
-                              )
+                <RowCursorContext value={tree.cursor}>
+                  <TreeList label="Stack" onKeyDown={tree.onKeyDown} ref={treeList}>
+                    <TreeRow
+                      glyph={<Layers size={ICON_MD} />}
+                      kind="band"
+                      name="This Mac"
+                      rowKey="mac"
+                    />
+                    <TreeRow
+                      glyph={<Server size={ICON_MD} />}
+                      kind="group"
+                      name="Services"
+                      rowKey="services"
+                      toggle={{
+                        open,
+                        onToggle: () => setOpen(!open),
+                        label: open ? 'Collapse Services' : 'Expand Services'
+                      }}
+                      trailing={services.length}
+                    />
+                    {open
+                      ? services.map((service) => (
+                          <TreeRow
+                            glyph={<Database size={ICON_MD} />}
+                            key={service.name}
+                            level={1}
+                            name={service.name}
+                            onContextMenu={(event, key) =>
+                              setMenu({ name: key, x: event.clientX, y: event.clientY })
+                            }
+                            rowKey={service.name}
+                            tool={
+                              <Switch
+                                checked={running.includes(service.name)}
+                                label={`Run ${service.name}`}
+                                labelHidden
+                                onChange={(next) =>
+                                  setRunning((now) =>
+                                    next
+                                      ? [...now, service.name]
+                                      : now.filter((each) => each !== service.name)
+                                  )
+                                }
+                              />
+                            }
+                            trailing={
+                              <StateMark
+                                tone={service.tone}
+                                word={service.state === 'error' ? 'error' : service.port}
+                              />
                             }
                           />
-                        }
-                        trailing={
-                          <StateMark
-                            tone={service.tone}
-                            word={service.state === 'error' ? 'error' : service.port}
-                          />
-                        }
+                        ))
+                      : null}
+                    {open ? (
+                      <TreeRow
+                        add
+                        level={1}
+                        name="Add service…"
+                        onOpen={() => undefined}
+                        rowKey="add-service"
                       />
-                    ))
-                  : null}
-                {open ? (
-                  <TreeRow
-                    add
-                    level={1}
-                    name="Add service…"
-                    onOpen={() => undefined}
-                    rowKey="add-service"
-                  />
-                ) : null}
-                <TreeTool icon={Settings2} kind="note" level={1} text="Services need Homebrew." />
-              </TreeList>
-              <PaneStatus>{running.length} running</PaneStatus>
-            </TreePane>
-          ) : null
-        }
-        sidebarWidth={width}
-      />
-    </div>
+                    ) : null}
+                    <TreeTool
+                      icon={Settings2}
+                      kind="note"
+                      level={1}
+                      text="Services need Homebrew."
+                    />
+                  </TreeList>
+                </RowCursorContext>
+                <PaneStatus>{running.length} running</PaneStatus>
+              </TreePane>
+            ) : null
+          }
+          sidebarWidth={width}
+        />
+      </div>
+      {menu === null ? null : (
+        <Menu
+          at={{ x: menu.x, y: menu.y }}
+          compact
+          entries={menuEntries(menu.name)}
+          label={`${menu.name} actions`}
+          onClose={() => setMenu(null)}
+          onPick={(id) => {
+            pick(menu.name, id);
+            setMenu(null);
+          }}
+        />
+      )}
+      <div className="demo-row">
+        <Button onClick={() => treeList.current?.focus()} size="small">
+          Focus the tree
+        </Button>
+        <code className="demo-readout">
+          {said === ''
+            ? 'secondary-click a service in the tree; or focus the tree, move to a service with ↑ ↓, and press the Menu key or Shift-F10'
+            : said}
+        </code>
+      </div>
+    </>
   );
 }

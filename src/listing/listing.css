@@ -63,7 +63,7 @@
 :where(.listing-root) .pane {
   position: relative;
   isolation: isolate;
-  flex: 1 1 0;
+  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1759,14 +1759,27 @@ button.crumb-label.crumb-siblings > svg {
    flow as a sentence beside the glyph instead of as separate flex items.
    A glyph the host leads the words with lands in that box too: it keeps
    the glyph's place, the message's gap before the words, on the text's
-   middle. */
+   middle. The box takes the room after the glyph from a zero basis, so a
+   long sentence wraps in its own column beside the glyph (a hanging
+   indent), never under it. */
 :where(.listing-root) .pane-message-text {
+  flex: 1;
   min-width: 0;
 }
 
 :where(.listing-root) .pane-message-text > svg:first-child {
+  width: var(--icon-md);
+  height: var(--icon-md);
   margin-inline-end: var(--space-4);
   vertical-align: middle;
+}
+
+/* The words after a glyph of the host's own hang in their own column, as
+   they do beside the drawn one: the box steps in by the glyph and its gap,
+   and its first line steps back out to start with the glyph. */
+:where(.listing-root) .pane-message-text:has(> svg:first-child) {
+  padding-inline-start: calc(var(--icon-md) + var(--space-4));
+  text-indent: calc(-1 * (var(--icon-md) + var(--space-4)));
 }
 
 :where(.listing-root) .pane-message code {
@@ -2396,6 +2409,32 @@ button.crumb-label.crumb-siblings > svg {
   )
   :is(.row-icon, .row-name, .pane-path-name, .pane-act, .pane-icon-act, .pane-state) {
   color: var(--on-selected);
+}
+
+/* A link in words (TextLink) on an active selection takes the selection's
+   words, a dimmed one the selection's quiet words: in its own accent or
+   danger tone it would vanish on the accent fill. The list weighs as much as
+   its danger and disabled rules (two classes), so it wins over each. */
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  :is(.text-link, .text-link.danger) {
+  color: var(--on-selected);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .text-link:disabled {
+  color: var(--on-selected-dim);
 }
 
 /* A lit or red action under the pointer or the focus keeps the selection's

@@ -530,12 +530,13 @@ export function PaneTabs({
       .filter((part) => part !== undefined && part !== '')
       .join(', ');
 
+    // The box draws the tab and takes its presses; the tab a screen reader
+    // meets is its face, which holds no control. The close control stands
+    // beside the face in the box, so it is never inside the tab, and is the
+    // pointer's alone.
     return (
       <div
         {...tooltip(tab.tip, null, { value: true })}
-        aria-description={description === '' ? undefined : description}
-        aria-label={isPicked ? labels.picked(spoken) : spoken}
-        aria-selected={isFront}
         className={[
           'pane-tab',
           isFront ? 'active' : '',
@@ -588,30 +589,43 @@ export function PaneTabs({
           }
         }}
         ref={drag.tabRef(tab.id)}
-        role="tab"
+        role="presentation"
         style={
           {
             '--pane-tab-floor': `${floor.context + (tab.context === undefined ? 0 : 1) + floor.name}ch`
           } as CSSProperties
         }
       >
-        {tab.mark === undefined ? null : (
-          <span aria-hidden className="pane-tab-mark">
-            {tab.mark}
-          </span>
-        )}
-        <TabLabel tab={tab} />
-        {tab.dirty === true ? (
-          <span aria-hidden className="pane-tab-dirty" {...tooltip(labels.notSaved)}>
-            <StateMark tone="warning" word="" />
-          </span>
-        ) : null}
-        {tab.pinned === true ? (
-          <span aria-hidden className="pane-tab-pin" {...tooltip(labels.pinned)}>
-            <Pin size={ICON_SM} />
-          </span>
-        ) : closes(tab) ? (
+        <span
+          aria-description={description === '' ? undefined : description}
+          aria-label={isPicked ? labels.picked(spoken) : spoken}
+          aria-selected={isFront}
+          className="pane-tab-face"
+          role="tab"
+        >
+          {tab.mark === undefined ? null : (
+            <span aria-hidden className="pane-tab-mark">
+              {tab.mark}
+            </span>
+          )}
+          <TabLabel tab={tab} />
+          {tab.dirty === true ? (
+            <span aria-hidden className="pane-tab-dirty" {...tooltip(labels.notSaved)}>
+              <StateMark tone="warning" word="" />
+            </span>
+          ) : null}
+          {tab.pinned === true ? (
+            <span aria-hidden className="pane-tab-pin" {...tooltip(labels.pinned)}>
+              <Pin size={ICON_SM} />
+            </span>
+          ) : null}
+        </span>
+        {tab.pinned !== true && closes(tab) ? (
           <button
+            // A pointer's control: a tab list owns tabs alone, and a tab's
+            // own children are presentational, so assistive technology meets
+            // no close button and closes a tab with the host's close chord.
+            aria-hidden
             aria-label={labels.close(spoken)}
             className="pane-tab-close hit-target quiet-control"
             onClick={(event) => {

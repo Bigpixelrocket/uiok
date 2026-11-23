@@ -43,7 +43,7 @@ Every method acts on the same file and resolves to a `ViewerResult`: `{ ok: true
 | `reload`     |                        | `ViewerFileInfo` of the file as it is now; a failure keeps the file the viewer had                                                                                           |
 | `lineNumber` | `{ offset, encoding }` | `ViewerLineNumber`: the 1-based line holding byte `offset`, or `null` when the reader gave up on the ask. Until it answers, the gutter shows byte offsets                    |
 
-A read never asks for more than `VIEWER_MAX_READ_BYTES` (1 MB). Content kinds: `text`, `binary`, `image`, `svg`, `audio`, `video`, `pdf`; each opens in its own view and can switch to hex (an SVG also to its source). The native views (image, audio, video, PDF) load `mediaUrl`; the text and hex views read through `readRange` alone. The PDF view loads `mediaUrl` with `/<file name>` appended, which the browser's PDF viewer shows as its title, so a PDF's `mediaUrl` must serve the file whatever last segment follows it: a custom scheme or a server route that ignores it, not a `blob:` URL.
+A read never asks for more than `VIEWER_MAX_READ_BYTES` (1 MB). Content kinds: `text`, `binary`, `image`, `svg`, `audio`, `video`, `pdf`; each opens in its own view and can switch to hex (an SVG also to its source). The native views (image, audio, video, PDF) load `mediaUrl`; the text and hex views read through `readRange` alone. The PDF view loads `mediaUrl` with `/<file name>` appended, which the browser's PDF viewer shows as its title, so a PDF's `mediaUrl` must serve the file whatever last segment follows it (a custom scheme or a server route that ignores it, not a `blob:` URL) and must carry no query or fragment, since the name is appended to the URL's end. A name that is empty, `.`, or `..` is sent as `document.pdf` instead, so it never resolves to the parent path.
 
 The reader owns each `mediaUrl`'s lifetime: it must stay loadable for as long as its generation is open, since a switch to hex and back loads it again, and the reader retires it (revoking a `blob:` URL, say) once a reload opens the next generation or the viewer closes. A page that loads `mediaUrl` from a scheme of its own needs a Content Security Policy that allows it: `img-src` for images, `media-src` for audio and video, `frame-src` for a PDF.
 
@@ -60,7 +60,8 @@ Shiki is a dependency of this package, reached only from the worker: `ViewerWind
 | Keys                               | In           | Does                                                                    |
 | ---------------------------------- | ------------ | ----------------------------------------------------------------------- |
 | ↑ ↓, Page Up, Page Down, Home, End | text, hex    | Scroll by a row, a screen, or to an end                                 |
-| ⌘A, Shift with an arrow            | text, hex    | Select all, or extend the selection                                     |
+| ⌘A                                 | text, hex    | Select all                                                              |
+| Shift with an arrow                | hex          | Extend the selection by a byte sideways or a row up or down             |
 | ⌘C                                 | text, hex    | Copy the selection (at most 1 MB), as text, or as hex in the hex column |
 | ⌘L                                 | hex          | Go to Offset (an offset in hex, `1F40` or `0x1F40`)                     |
 | Escape                             | text, hex    | Clear the selection, then close                                         |

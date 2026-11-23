@@ -11,6 +11,7 @@ import {
   type ChangeEvent,
   type CSSProperties,
   type KeyboardEvent,
+  type MouseEvent,
   type ReactElement,
   type ReactNode,
   type Ref
@@ -18,7 +19,12 @@ import {
 
 import { ICON_MD } from '../icon/sizes.js';
 import { RowCursorContext } from '../listing/Listing.js';
-import { regionHandlers, type RegionHandlers } from '../pane/Pane.js';
+import {
+  regionHandlers,
+  unclaimedContextMenu,
+  useMenuKeyHome,
+  type RegionHandlers
+} from '../pane/Pane.js';
 import { InListingRowContext, InRowContext } from '../pane/PaneActions.js';
 import { cutTooltip } from '../tooltip/Tooltip.logic.js';
 import { useSharedRef } from './sharedRef.js';
@@ -96,9 +102,13 @@ export interface TreeListProps extends RegionHandlers {
  * finds the sidebar pane by, focusable by script and out of the Tab order.
  * Each row steps in by its level. While the list holds the focus, its
  * active descendant is the cursor row, so a screen reader follows the
- * cursor the keys move.
+ * cursor the keys move. As the home, it hands the keyboard's menu key (the
+ * Menu key, Shift-F10) to the cursor row's `onContextMenu`, as a page's
+ * `PaneList` does.
  */
 export function TreeList({ label, ref, children, ...handlers }: TreeListProps): ReactElement {
+  const region = regionHandlers(handlers);
+  const menuKey = useMenuKeyHome(true, region);
   const tree = useId();
   const cursor = useContext(RowCursorContext);
   const [list, attach] = useSharedRef(ref);
@@ -163,7 +173,8 @@ export function TreeList({ label, ref, children, ...handlers }: TreeListProps): 
       ref={attach}
       role="tree"
       tabIndex={-1}
-      {...regionHandlers(handlers)}
+      {...region}
+      {...menuKey}
     >
       <TreeIdContext.Provider value={scope}>{children}</TreeIdContext.Provider>
     </div>
@@ -207,6 +218,15 @@ export interface TreeRowProps {
   readonly marked?: boolean;
   /** Opens the row's item on a click anywhere but its controls. */
   readonly onOpen?: () => void;
+  /**
+   * A secondary click (the right button, a Control-click, the menu key) on
+   * the row, with the row's key, for the row's menu: open it at
+   * `event.clientX` and `event.clientY`. The row moves the pane's cursor to
+   * itself first, so the menu acts on the cursor row, and cancels the
+   * browser's own menu; a cancelled event is one the `TreeList` and
+   * `TreePane` around it leave alone, so one click never opens two menus.
+   */
+  readonly onContextMenu?: (event: MouseEvent<HTMLElement>, rowKey: string) => void;
   /** The row itself takes the focus: in the Tab order while it is the cursor row. */
   readonly focusable?: boolean;
   /**
@@ -223,8 +243,10 @@ export interface TreeRowProps {
  * trailing column and its own tool. Like a listing's `Row`, it follows the
  * pane's cursor (`RowCursorContext`), wearing the cursor row's look and
  * `aria-current`; the pointer moving over it or the focus entering it moves
- * the cursor there. Its controls leave the Tab order, since the tree's keys
- * run them. The expansion and its keys stay the host's.
+ * the cursor there, and one with `onContextMenu` takes the cursor on a
+ * secondary click, then hands the click and its key to the app for the
+ * row's menu. Its controls leave the Tab order, since the tree's keys run
+ * them. The expansion and its keys stay the host's.
  */
 export function TreeRow({
   rowKey,
@@ -238,6 +260,7 @@ export function TreeRow({
   tool,
   marked = false,
   onOpen,
+  onContextMenu,
   focusable = false,
   add = false
 }: TreeRowProps): ReactElement {
@@ -276,8 +299,17 @@ export function TreeRow({
           aria-selected={marked}
           className={classes}
           data-row-key={rowKey}
+          data-row-menu={onContextMenu === undefined ? undefined : ''}
           id={tree === null ? undefined : rowId(tree.id, rowKey)}
           onClick={onOpen}
+          onContextMenu={unclaimedContextMenu(
+            onContextMenu &&
+              ((event) => {
+                // The menu acts on the row it opened over, so that row is the cursor first.
+                if (!current) cursor.point(rowKey);
+                onContextMenu(event, rowKey);
+              })
+          )}
           onFocus={() => cursor.point(rowKey)}
           onPointerMove={() => {
             if (!current) cursor.point(rowKey);
@@ -331,7 +363,7 @@ export interface TreeToolProps {
   readonly level?: number;
   /** Its glyph, before the words. */
   readonly icon?: LucideIcon;
-  /** Its words. */
+  /** Its words; words in a string the sidebar cuts show whole in a tooltip. */
   readonly text?: ReactNode;
   /**
    * Its key among the tree's rows, which joins it to the pane's cursor
@@ -416,6 +448,8 @@ export function TreeTool({
         <span
           className="tree-note-text"
           role={rowKey !== undefined && kind === 'danger' ? 'alert' : undefined}
+          // Words a narrow sidebar cuts show whole in a tooltip, only while cut.
+          {...(typeof text === 'string' ? cutTooltip(text) : {})}
         >
           {text}
         </span>

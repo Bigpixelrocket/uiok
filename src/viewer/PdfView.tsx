@@ -5,14 +5,41 @@ import type { ViewerFileInfo } from './types.js';
 import type { ViewerViewProps } from './ViewerViews.js';
 
 /**
+ * The last segment for a file whose name is empty or a dot segment (`.` or
+ * `..`), which the URL parser would resolve to the media URL's parent, or
+ * cannot be encoded (a lone UTF-16 surrogate); it only feeds the PDF
+ * viewer's title.
+ */
+const UNNAMED_SEGMENT = 'document.pdf';
+
+/**
  * Where the PDF view loads the document: the file's media URL with its name
  * as a last segment, which Chromium's PDF viewer shows as the toolbar's
  * title (a document's own title metadata wins). The reader's media URL must
- * therefore serve the file whatever segment follows it (`ViewerFileInfo`'s
+ * therefore serve the file whatever segment follows it, and carry no query
+ * or fragment, which the segment would land in (`ViewerFileInfo`'s
  * `mediaUrl`); a `blob:` URL cannot, since its path is fixed.
+ *
+ * The name stays one segment below the media URL: `encodeURIComponent`
+ * escapes `/`, `?`, and `#`, and a name that is empty or a dot segment is
+ * replaced, since `.` and `..` are left as they are, as is a name
+ * `encodeURIComponent` refuses. A `%2e` in a name is escaped to `%252e`, so
+ * it is no dot segment either.
  */
 export function pdfDocumentUrl(info: ViewerFileInfo): string {
-  return `${info.mediaUrl}/${encodeURIComponent(info.name)}`;
+  const { name } = info;
+  let segment = UNNAMED_SEGMENT;
+
+  if (name !== '' && name !== '.' && name !== '..') {
+    try {
+      segment = encodeURIComponent(name);
+    } catch {
+      // A name with a lone surrogate, which only some file systems allow,
+      // has no UTF-8 form; the frame still opens, under the fallback name.
+    }
+  }
+
+  return `${info.mediaUrl}/${segment}`;
 }
 
 /**

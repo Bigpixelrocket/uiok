@@ -2,6 +2,7 @@ import type { LucideIcon } from 'lucide-react';
 import type { ReactElement } from 'react';
 
 import { ICON_SM } from '../icon/sizes.js';
+import { useInRow, type ControlVerb } from '../pane/PaneActions.js';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
 
 /** Props for {@link TextLink}. */
@@ -39,6 +40,15 @@ export interface TextLinkProps {
    * is its accessible description too, so a screen reader says why.
    */
   readonly tone?: 'danger';
+  /**
+   * What the keys run it for (`data-verb`, read by `verbControl`), for a link
+   * in a listing row such as a service's port: there it leaves the Tab
+   * order, as a row's `QuietAction` and `RowIconAction` do, so the cursor
+   * row's keys reach it instead of Tab, and a press runs it without opening
+   * the row. A `tabbable` row keeps it in the Tab order; outside a row it
+   * changes nothing but the attribute.
+   */
+  readonly verb?: ControlVerb;
 }
 
 /**
@@ -49,7 +59,9 @@ export interface TextLinkProps {
  * the host decides how to open what it names (an external browser, a tab),
  * so it never navigates the page itself. A `disabled` link dims and
  * refuses the press; `label` names it when its words are short; `tone`
- * `danger` sets it in the danger tone with its reason described. Styled by `.text-link` in
+ * `danger` sets it in the danger tone with its reason described. With a
+ * `verb`, a link in a listing row is one of the row's controls: out of the
+ * Tab order, reached by the cursor row's keys. Styled by `.text-link` in
  * `@bigpixelrocket/uiok/styles.css`.
  */
 export function TextLink({
@@ -61,15 +73,25 @@ export function TextLink({
   shortcut,
   label,
   disabled = false,
-  tone
+  tone,
+  verb
 }: TextLinkProps): ReactElement {
+  // A link the row's keys run is one of the row's controls.
+  const rowControl = useInRow() && verb !== undefined;
+
   return (
     <button
       aria-description={tone === 'danger' ? tip : undefined}
       aria-label={label}
       className={['text-link', code ? 'code' : '', tone ?? ''].filter(Boolean).join(' ')}
+      data-verb={verb}
       disabled={disabled}
-      onClick={onClick}
+      onClick={(event) => {
+        // A row's control runs alone, never opening the row around it too.
+        if (verb !== undefined) event.stopPropagation();
+        onClick();
+      }}
+      tabIndex={rowControl ? -1 : undefined}
       type="button"
       {...(tip === undefined && shortcut === undefined ? {} : tooltip(tip ?? children, shortcut))}
     >

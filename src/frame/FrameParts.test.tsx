@@ -1,16 +1,26 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import { createRoot } from 'react-dom/client';
 import { useState, type ReactNode } from 'react';
-import { CircleAlert, Server } from 'lucide-react';
+import { CircleAlert, Server, Settings2 } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { Switch } from '../field/Switch.js';
+import { ICON_MD } from '../icon/sizes.js';
 import { Listing, Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
+import { PaneMessage } from '../listing/PaneMessage.js';
 import { AppRoot, PageSlot, SpacePanel } from './AppRoot.js';
 import { Dock, dockHeight, DockLog, DockLogEntry } from './Dock.js';
-import { PageNote, SectionHead, ShowSidebarButton, Toolbar, ToolbarGap } from './PageParts.js';
+import {
+  PageNote,
+  PanePage,
+  SectionHead,
+  ShowSidebarButton,
+  Toolbar,
+  ToolbarGap
+} from './PageParts.js';
 import { heldSplitHeight, SplitDetail, usePaneSplit } from './PaneSplit.js';
-import { TreeFilterInput, TreeList, TreeRow, TreeTool } from './Tree.js';
+import { TreeFilterInput, TreeList, TreePane, TreeRow, TreeTool } from './Tree.js';
 import { PaneBox, PaneList } from '../pane/Pane.js';
 import { PaneSplitter } from './PaneSplit.js';
 import { WindowFrame } from './WindowFrame.js';
@@ -234,6 +244,90 @@ describe('TreeRow', () => {
     expect(second?.id).not.toBe('');
   });
 
+  /** A sidebar tree whose pane, list, and first two rows each have a menu, as a host draws one. */
+  const menuTree = (cursor: RowCursor, opened: string[]) =>
+    render(
+      <TreePane label="Sidebar" onContextMenu={() => opened.push('pane')}>
+        <RowCursorContext value={cursor}>
+          <TreeList label="Services" onContextMenu={() => opened.push('list')}>
+            <TreeRow
+              name="PostgreSQL"
+              onContextMenu={(event, key) => opened.push(`row ${key} ${event.clientX}`)}
+              rowKey="a"
+            />
+            <TreeRow
+              name="Redis"
+              onContextMenu={(event, key) => opened.push(`row ${key} ${event.clientX}`)}
+              rowKey="b"
+            />
+            <TreeRow name="Memcached" rowKey="c" />
+          </TreeList>
+        </RowCursorContext>
+      </TreePane>
+    );
+
+  const secondaryClick = (target: Element, clientX = 0): boolean => {
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX });
+    act(() => target.dispatchEvent(event));
+    return event.defaultPrevented;
+  };
+
+  it('takes the cursor on a secondary click, then opens its own menu, not its list’s or pane’s', () => {
+    const cursor = cursorAt('a');
+    const opened: string[] = [];
+    menuTree(cursor, opened);
+    const [first, second, third] = screen.getAllByRole('treeitem') as [
+      HTMLElement,
+      HTMLElement,
+      HTMLElement
+    ];
+
+    expect(first.hasAttribute('data-row-menu')).toBe(true);
+    expect(third.hasAttribute('data-row-menu')).toBe(false);
+    expect(secondaryClick(second, 30)).toBe(true);
+    // The row the menu opened over is the cursor before its menu runs.
+    expect(cursor.current()).toBe('b');
+    expect(second.getAttribute('aria-current')).toBe('true');
+    expect(opened).toEqual(['row b 30']);
+
+    // A row with no menu leaves the click to the list, the region around it.
+    secondaryClick(third);
+    expect(opened).toEqual(['row b 30', 'list']);
+    // A click a control in the row already took passes the row by.
+    const taken = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    taken.preventDefault();
+    act(() => first.dispatchEvent(taken));
+    expect(opened).toEqual(['row b 30', 'list']);
+  });
+
+  it('opens the cursor row’s menu for the Menu key or Shift-F10 on the tree’s home, and the list’s for a pointer', () => {
+    const cursor = cursorAt('b');
+    const opened: string[] = [];
+    menuTree(cursor, opened);
+    const tree = screen.getByRole('tree', { name: 'Services' });
+
+    tree.focus();
+    fireEvent.keyDown(tree, { key: 'ContextMenu' });
+    secondaryClick(tree);
+    expect(opened).toEqual(['row b 0']);
+
+    fireEvent.keyDown(tree, { key: 'F10', shiftKey: true });
+    secondaryClick(tree);
+    expect(opened).toEqual(['row b 0', 'row b 0']);
+
+    // A pointer's click on the list's empty space is the list's, even right after the key.
+    fireEvent.keyDown(tree, { key: 'F10', shiftKey: true });
+    fireEvent.pointerDown(tree);
+    secondaryClick(tree);
+    expect(opened).toEqual(['row b 0', 'row b 0', 'list']);
+
+    // A cursor row with no menu leaves the key's menu to the list.
+    act(() => cursor.point('c'));
+    fireEvent.keyDown(tree, { key: 'ContextMenu' });
+    secondaryClick(tree);
+    expect(opened).toEqual(['row b 0', 'row b 0', 'list', 'list']);
+  });
+
   it('lets a tool row with a key join the cursor as a row does', () => {
     const cursor = cursorAt('a');
 
@@ -399,24 +493,28 @@ describe('TreeRow', () => {
     const cursor = cursorAt('r999');
     const queued = vi.spyOn(globalThis, 'queueMicrotask');
 
-    await act(async () => {
-      render(
-        <RowCursorContext value={cursor}>
-          <TreeList label="Many">
-            {Array.from({ length: 1000 }, (_, index) => (
-              <TreeRow key={index} name={`r${index}`} rowKey={`r${index}`} />
-            ))}
-          </TreeList>
-        </RowCursorContext>
-      );
-    });
+    // Restored however the case ends, so a failure leaks no spy into later cases.
+    try {
+      await act(async () => {
+        render(
+          <RowCursorContext value={cursor}>
+            <TreeList label="Many">
+              {Array.from({ length: 1000 }, (_, index) => (
+                <TreeRow key={index} name={`r${index}`} rowKey={`r${index}`} />
+              ))}
+            </TreeList>
+          </RowCursorContext>
+        );
+      });
 
-    // One for the tree, the rest React's own; a microtask per row would be 1,000.
-    expect(queued.mock.calls.length).toBeLessThan(10);
-    expect(screen.getByRole('tree').getAttribute('aria-activedescendant')).toBe(
-      screen.getByText('r999').closest('[role="treeitem"]')?.id
-    );
-    queued.mockRestore();
+      // One for the tree, the rest React's own; a microtask per row would be 1,000.
+      expect(queued.mock.calls.length).toBeLessThan(10);
+      expect(screen.getByRole('tree').getAttribute('aria-activedescendant')).toBe(
+        screen.getByText('r999').closest('[role="treeitem"]')?.id
+      );
+    } finally {
+      queued.mockRestore();
+    }
   });
 
   it('runs the cleanup a host’s callback ref returns when the tree or dock goes', () => {
@@ -509,6 +607,19 @@ describe('TreeTool', () => {
 
     expect(tool.className).toBe('tree-tool danger');
     expect(tool.textContent).toBe('Homebrew is not installed.Retry');
+  });
+
+  it('shows a note’s words whole in a tooltip while the sidebar cuts them', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <TreeTool icon={Settings2} kind="note" level={1} text="Services need Homebrew to install." />
+    );
+    const words = screen.getByText('Services need Homebrew to install.');
+
+    expect(words.dataset.tooltip).toBe('Services need Homebrew to install.');
+    // Only while cut: the layer opens it only when the words overflow their box.
+    expect(words.hasAttribute('data-tooltip-cut')).toBe(true);
+    expect(declaredValues(words, 'text-overflow').at(-1)).toBe('ellipsis');
   });
 
   it('holds a filter field that reports each edit', () => {
@@ -668,6 +779,59 @@ describe('heldSplitHeight', () => {
 });
 
 describe('page parts', () => {
+  it('wraps a long note’s words beside its glyph, never under it', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <>
+        <PageNote icon={Server}>
+          PostgreSQL 18 stopped with an error, and its log says the data directory is in use.
+        </PageNote>
+        <PaneMessage tone="warning">The port is in use by another program on this Mac.</PaneMessage>
+      </>
+    );
+
+    for (const words of [
+      screen.getByText(/PostgreSQL 18 stopped/),
+      screen.getByText(/The port is in use/)
+    ]) {
+      // A box of its own from a zero basis beside the glyph, so its lines wrap in its column.
+      expect(words.classList.contains('pane-message-text')).toBe(true);
+      expect(declaredValues(words, 'flex').at(-1)).toBe('1 1 0%');
+      expect(declaredValues(words, 'min-width').at(-1)).toBe('0px');
+    }
+  });
+
+  it('hangs a long message’s words beside a glyph of the host’s own, as beside the drawn one', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <>
+        <PaneMessage tone="warning">
+          The port is in use by another program on this Mac, so the service waits.
+        </PaneMessage>
+        <PaneMessage tone="danger">
+          <CircleAlert aria-hidden size={ICON_MD} />
+          The data directory is locked by another server, so this one cannot start.
+        </PaneMessage>
+      </>
+    );
+    const drawn = screen.getByText(/The port is in use/);
+    const own = screen.getByText(/The data directory is locked/);
+
+    // The drawn glyph stands before the words' box, which hangs beside it.
+    expect(drawn.querySelector('svg')).toBeNull();
+    expect(declaredValues(drawn, 'flex').at(-1)).toBe('1 1 0%');
+    expect(declaredValues(drawn, 'text-indent')).toEqual([]);
+    // The host's glyph leads the words inside the box, which hangs them past it.
+    expect(own.firstElementChild?.tagName.toLowerCase()).toBe('svg');
+    expect(declaredValues(own, 'padding-inline-start').at(-1)).toBe(
+      'calc(var(--icon-md) + var(--space-4))'
+    );
+    expect(declaredValues(own, 'text-indent').at(-1)).toBe(
+      'calc(-1 * (var(--icon-md) + var(--space-4)))'
+    );
+    expect(declaredValues(own.firstElementChild as Element, 'width').at(-1)).toBe('var(--icon-md)');
+  });
+
   it('says a page is loading as a status, its spinner for the glyph', () => {
     render(<PageNote busy>Loading services…</PageNote>);
 
@@ -679,6 +843,39 @@ describe('page parts', () => {
     render(<SectionHead level={2}>Needs attention</SectionHead>);
 
     expect(screen.getByRole('heading', { level: 2, name: 'Needs attention' })).toBeTruthy();
+  });
+
+  it('insets a toolbar set straight in a pane’s body from its edges, and nowhere else', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const tools = (name: string) => (
+      <Toolbar>
+        <button type="button">{name}</button>
+      </Toolbar>
+    );
+    render(
+      <div className="listing-root">
+        <PaneBox>
+          <PanePage>{tools('In a page')}</PanePage>
+        </PaneBox>
+        <PaneBox>
+          <PaneList label="List">{tools('In a list')}</PaneList>
+        </PaneBox>
+        <PaneBox>
+          <PageSlot shown>{tools('In a slot')}</PageSlot>
+        </PaneBox>
+        <div>{tools('Elsewhere')}</div>
+      </div>
+    );
+    const inset = (name: string) =>
+      declaredValues(
+        screen.getByRole('button', { name }).parentElement as HTMLElement,
+        'padding-inline'
+      ).at(-1);
+
+    expect(inset('In a page')).toBe('var(--pane-row-inset)');
+    expect(inset('In a list')).toBe('var(--pane-row-inset)');
+    expect(inset('In a slot')).toBe('var(--pane-row-inset)');
+    expect(inset('Elsewhere')).toBeUndefined();
   });
 
   it('stands a toolbar’s end group at its far end', () => {

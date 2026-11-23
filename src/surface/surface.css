@@ -404,3 +404,13 @@
   gap: var(--space-8) var(--space-12);
   align-items: start;
 }
+
+/* Set straight in a pane's body (a PaneList, a PanePage, a PageSlot, which
+   draws no box of its own, or one part of a SideBySide), a list of facts
+   or a row of them keeps the rows' inset from the pane's edge, where a
+   section head, a pane message, and a row's icon start, and a step of room
+   above and below. Nested in a row of lists, or inside a card, it is the
+   container's to inset. */
+:is(.pane-list, .pane-page, .page-slot, .side-by-side-part) > :is(.fact-list, .fact-columns) {
+  padding: var(--space-4) var(--pane-row-inset);
+}

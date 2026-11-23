@@ -121,7 +121,8 @@ The backdrop is `position: fixed` on `--z-dialog`. The box carries the listing s
 ### `PaletteOption` (`PaletteOptionProps`)
 
 - `id`: the row's id, the field's `activeId` while it is the cursor.
-- `name`: words, or `MarkedText` with the query's matches; pass `label`, the accessible name, whenever `name` is `MarkedText`, since a screen reader may read the drawn words split at the highlights.
+- `name`: words, or `MarkedText` with the query's matches.
+- The row's accessible name is every word it draws, in the order drawn: its `name`, its `context`, then its trail (a `KeyChord` by its words, `current`'s value after it), so the name a voice user speaks is the text on screen (WCAG 2.5.3). `label` stands in for the drawn name's words alone, its context and trail still read after it: pass it whenever `name` is `MarkedText`, which a screen reader may read split at the highlights.
 - `mark`: the icon column's glyph (a `ProductMark`, a lucide icon).
 - `context` and `contextKind` (`'sentence'` by default, `'path'`, `'command'`): what the row says after its name, one line, cut with an ellipsis and whole in its tooltip; a path gives way at its start.
 - `trail`: the end column, a version or a count in the meta tone, or a `KeyChord`.
@@ -129,7 +130,7 @@ The backdrop is `position: fixed` on `--z-dialog`. The box carries the listing s
 - `checked`: the row is one of several picked together (the scripts a project includes). `true` draws the check mark in the icon column, the same mark a menu's setting wears, and `false` leaves the column empty; either way the row is an `option` with `aria-checked`, and `mark` is not drawn, so the column holds the tick alone. A press calls `onPick`, which toggles it. Absent, the row is a plain option.
 - `cursor`: the cursor fill and bar.
 - `disabled`: dimmed (`aria-disabled`), passed over by the pointer, its press refused; say why in `description`.
-- `description`: read after the name (`aria-description`). Absent, the row reads its `context`, a `trail` in words (a string or a number), and its `current` value, in that order, since its name alone hides them; give one to say why the row is disabled or to word a trail that is not text (a `KeyChord`), or `''` to read nothing.
+- `description`: read after the name (`aria-description`), for what the row does not draw, such as why it is disabled. The name already reads the context, the trail, and `current`, so a description never repeats them.
 - `onPick`, `onPoint`: a press, and the pointer moving onto it (move the cursor there). Neither runs while it is disabled.
 - `ref`: the row's element, to scroll the cursor row into view.
 
@@ -144,6 +145,7 @@ The backdrop is `position: fixed` on `--z-dialog`. The box carries the listing s
 
 - The box is `role="dialog"` with `aria-modal="true"`, so `MODAL_SELECTOR` and `watchOverlays` count it as open while it shows.
 - Escape anywhere in the box calls `onClose`, except during an input method's composition. A field handler that wants Escape to clear a query first calls `preventDefault()` and `stopPropagation()`.
+- Return in the query field (`PaletteQuery`) has its default cancelled before the caller's `onKeyDown` runs, outside an input method's composition, so a caller that runs a command and closes on Return, handing the focus back to the button that opened the palette, does not see that button clicked by the same key and the palette opened again. Return on a button inside the palette still presses it.
 - A press on the backdrop itself closes; a press inside the box (a row, the chip, a legend slot) is cancelled so the focus stays in the field. A press in the field is left alone, so the caret lands where it is pressed.
 - The level chip takes no focus (`tabIndex={-1}`); its tooltip names ← as the key that steps back, which the caller maps.
 - Checkable rows: Return toggles the cursor row, as a press does, and leaves the palette open, so the caller's `onKeyDown` calls the row's `onPick` for Return whether the row runs or ticks. Space cannot toggle: the field holds the focus and Space types into the query. The palette's own verb over the ticked rows (Add, Install) is a row of its own after them, or a chord such as ⌘Return in its legend, never Return.

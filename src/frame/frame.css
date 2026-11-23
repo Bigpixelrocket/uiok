@@ -747,6 +747,14 @@
   min-width: 0;
 }
 
+/* Set straight in a pane's body (a PaneList, a PanePage, a PageSlot, which
+   draws no box of its own, or one part of a SideBySide), its tools keep the
+   rows' inset from the pane's edges, where a section head and a row's icon
+   start, as a list of facts does. */
+:is(.pane-list, .pane-page, .page-slot, .side-by-side-part) > .pane-toolbar {
+  padding-inline: var(--pane-row-inset);
+}
+
 .pane-toolbar > * {
   flex: none;
 }

@@ -37,6 +37,13 @@ function strip(props: Partial<PaneTabsProps> = {}) {
 
 const tab = (name: string | RegExp) => screen.getByRole('tab', { name });
 
+/** The pointer's close control of the tab named `name`, hidden from assistive technology. */
+const closeOf = (name: string): HTMLElement =>
+  box(name).querySelector(':scope > .pane-tab-close') as HTMLElement;
+
+/** The box that draws the tab named `name`: its classes, data, and presses. */
+const box = (name: string | RegExp) => tab(name).closest('.pane-tab') as HTMLElement;
+
 /** Whether `element` wears the class `name`. */
 const has = (element: Element | null, name: string): boolean =>
   element?.classList.contains(name) ?? false;
@@ -61,7 +68,7 @@ describe('PaneTabs', () => {
       'events'
     ]);
     expect(tab('customers').getAttribute('aria-selected')).toBe('true');
-    expect(has(tab('customers'), 'active')).toBe(true);
+    expect(has(box('customers'), 'active')).toBe(true);
     expect(tab('shop').getAttribute('aria-selected')).toBe('false');
     expect(tabs.every((element) => !element.hasAttribute('tabindex'))).toBe(true);
   });
@@ -69,23 +76,51 @@ describe('PaneTabs', () => {
   it('marks each state with its class and describes the tip, pin, and unsaved changes', () => {
     strip();
 
-    expect(has(tab('payment_attempts'), 'following')).toBe(true);
-    expect(has(tab('shop/orders'), 'dirty')).toBe(true);
-    expect(tab('shop/orders').getAttribute('data-tone')).toBe('danger');
+    expect(has(box('payment_attempts'), 'following')).toBe(true);
+    expect(has(box('shop/orders'), 'dirty')).toBe(true);
+    expect(box('shop/orders').getAttribute('data-tone')).toBe('danger');
     expect(tab('shop/orders').getAttribute('aria-description')).toBe('Changes not saved');
-    expect(has(tab('shop'), 'pinned')).toBe(true);
+    expect(has(box('shop'), 'pinned')).toBe(true);
     expect(tab('shop').getAttribute('aria-description')).toBe('prod / shop, Pinned');
-    expect(tab('customers').getAttribute('data-tooltip')).toBe('prod / shop / customers');
-    expect(has(tab('shop').nextElementSibling, 'pane-pin-rule')).toBe(true);
-    expect(tab('shop').querySelector('.pane-tab-close')).toBeNull();
-    expect(tab('events').querySelector('.pane-tab-close')).toBeNull();
-    expect(tab('shop_archive/orders').style.getPropertyValue('--pane-tab-floor')).toBe('11ch');
+    expect(box('customers').getAttribute('data-tooltip')).toBe('prod / shop / customers');
+    expect(has(box('shop').nextElementSibling, 'pane-pin-rule')).toBe(true);
+    expect(box('shop').querySelector('.pane-tab-close')).toBeNull();
+    expect(box('events').querySelector('.pane-tab-close')).toBeNull();
+    expect(box('shop_archive/orders').style.getPropertyValue('--pane-tab-floor')).toBe('11ch');
+  });
+
+  it('holds no control inside a tab, its close control beside the tab in the box', () => {
+    strip();
+    const tabs = screen.getAllByRole('tab');
+    const interactive =
+      'button, a[href], input, select, textarea, [tabindex], [contenteditable], [role="button"], [role="link"], [role="menuitem"], [role="checkbox"], [role="switch"]';
+
+    expect(tabs.length).toBeGreaterThan(0);
+    for (const each of tabs) {
+      expect(
+        each.querySelectorAll(interactive),
+        each.getAttribute('aria-label') ?? ''
+      ).toHaveLength(0);
+      // Between the tab and its tab list stands only presentation, so the list still owns it.
+      expect(each.parentElement?.getAttribute('role')).toBe('presentation');
+      expect(each.parentElement?.parentElement?.getAttribute('role')).toBe('tablist');
+    }
+
+    // Hidden from assistive technology: a tab list owns tabs alone.
+    const close = closeOf('customers');
+
+    expect(close.closest('[role="tab"]')).toBeNull();
+    expect(close.parentElement).toBe(box('customers'));
+    expect(close.tabIndex).toBe(-1);
+    // The tab list's only children a screen reader meets are its tabs.
+    expect(close.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.queryAllByRole('button', { name: /^Close / })).toEqual([]);
   });
 
   it('names its close and New Tab buttons from the labels, New Tab with its chord', () => {
     const { onClose, onSelect } = strip();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Close customers' }));
+    fireEvent.click(closeOf('customers'));
     expect(onClose).toHaveBeenCalledWith('customers');
     expect(onSelect).not.toHaveBeenCalled();
 
@@ -121,7 +156,7 @@ describe('PaneTabs', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Neuer Tab' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'a schließen' })).toBeTruthy();
+    expect(document.querySelector('[aria-label="a schließen"]') as HTMLElement).toBeTruthy();
   });
 
   it('brings a pressed tab to the front, and leaves the front tab alone', () => {
@@ -172,8 +207,8 @@ describe('PaneTabs', () => {
   it('names a picked tab as picked and wears the picked look', () => {
     strip({ picked: ['archive'] });
 
-    expect(has(tab('shop_archive/orders, picked'), 'picked')).toBe(true);
-    expect(has(tab('customers'), 'picked')).toBe(false);
+    expect(has(box('shop_archive/orders, picked'), 'picked')).toBe(true);
+    expect(has(box('customers'), 'picked')).toBe(false);
   });
 
   it('hands its secondary click to the host', () => {
@@ -253,11 +288,11 @@ describe('PaneTabs dragging', () => {
     act(() => {
       fireEvent.pointerMove(window, { clientX: 152 });
     });
-    expect(has(tab('b'), 'dragging')).toBe(false);
+    expect(has(box('b'), 'dragging')).toBe(false);
     act(() => {
       fireEvent.pointerMove(window, { clientX: 160 });
     });
-    expect(has(tab('b'), 'dragging')).toBe(true);
+    expect(has(box('b'), 'dragging')).toBe(true);
     act(() => {
       fireEvent.pointerMove(window, { clientX: 220 });
     });
@@ -266,7 +301,7 @@ describe('PaneTabs dragging', () => {
     });
 
     expect(onReorder).toHaveBeenCalledWith(['a', 'c', 'b', 'd', 'e', 'f']);
-    expect(has(tab('b'), 'dragging')).toBe(false);
+    expect(has(box('b'), 'dragging')).toBe(false);
   });
 
   it('puts every tab back on Escape and reports nothing', () => {
@@ -318,7 +353,7 @@ describe('PaneTabs dragging', () => {
     });
 
     expect(onReorder).not.toHaveBeenCalled();
-    expect(has(tab('b'), 'dragging')).toBe(false);
+    expect(has(box('b'), 'dragging')).toBe(false);
     expect(screen.getAllByRole('tab').map((element) => element.textContent)).toEqual(
       PLAIN.map((item) => item.id)
     );

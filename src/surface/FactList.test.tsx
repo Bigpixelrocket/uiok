@@ -1,6 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
+import { PageSlot, PanePage, SideBySide } from '../frame/index.js';
+import { PaneBox, PaneList } from '../pane/Pane.js';
+import { Card } from './Card.js';
+
 import { Fact, FactColumns, FactList } from './FactList.js';
 
 describe('FactList', () => {
@@ -50,5 +55,56 @@ describe('FactList', () => {
       'danger'
     );
     expect(screen.getByText(/EADDRINUSE/).classList.contains('printed')).toBe(true);
+  });
+
+  it('keeps the rows’ inset from the pane’s edge set straight in a pane’s body, and only there', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const inset = 'var(--space-4) var(--pane-row-inset)';
+    const facts = (title: string) => (
+      <FactList title={title}>
+        <Fact name="Runs">php artisan serve</Fact>
+      </FactList>
+    );
+    render(
+      <div className="listing-root">
+        <PaneBox>
+          <PaneList label="Overview">{facts('In a list')}</PaneList>
+        </PaneBox>
+        <PaneBox>
+          <PanePage>
+            <FactColumns>
+              {facts('In columns')}
+              {facts('Beside it')}
+            </FactColumns>
+          </PanePage>
+        </PaneBox>
+        <PaneBox>
+          <PageSlot shown>{facts('In a slot')}</PageSlot>
+        </PaneBox>
+        <PaneBox>
+          <SideBySide
+            first={facts('First part')}
+            firstLabel="First"
+            from={640}
+            second={facts('Second part')}
+            secondLabel="Second"
+          />
+        </PaneBox>
+        <PaneList label="Cards">
+          <Card>{facts('In a card')}</Card>
+        </PaneList>
+      </div>
+    );
+    const padding = (name: string) =>
+      declaredValues(screen.getByRole('region', { name }), 'padding').at(-1);
+    const columns = screen.getByRole('region', { name: 'In columns' }).parentElement as HTMLElement;
+
+    expect(padding('In a list')).toBe(inset);
+    expect(declaredValues(columns, 'padding').at(-1)).toBe(inset);
+    expect(padding('In a slot')).toBe(inset);
+    expect(padding('First part')).toBe(inset);
+    // The row of lists insets them once; a card is its own container.
+    expect(padding('In columns')).toBeUndefined();
+    expect(padding('In a card')).toBeUndefined();
   });
 });

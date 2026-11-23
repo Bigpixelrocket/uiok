@@ -30,6 +30,7 @@ import {
   type RowCursor
 } from './Listing.js';
 import { TimelineCell, TimelineScale } from './Timeline.js';
+import { MarkedText } from '../text/MarkedText.js';
 
 const styles = readStylesheet('src/styles.css');
 
@@ -428,6 +429,90 @@ describe('a row', () => {
 
     (screen.getAllByRole('row')[1] as HTMLElement).click();
     expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows a host’s tip under the whole name and reads it, with its description, in the name’s cell', () => {
+    render(
+      <RowCursorContext value={cursorOn('a', [])}>
+        <Listing columns={[]} grid="20px 1fr" title="Services">
+          <Row name="postgres" nameDescription="Database" nameTip={'running · 5432'} rowKey="a" />
+          <Row name="redis" nameTip="stopped" rowKey="b" />
+          <Row name="mailpit" nameDescription="Mail catcher" rowKey="c" />
+          <Row name="meilisearch" rowKey="d" />
+        </Listing>
+      </RowCursorContext>
+    );
+    const cell = (name: string) => screen.getByRole('cell', { name });
+    const row = (name: string) => cell(name).closest('[role="row"]') as HTMLElement;
+
+    // The tip shows at every width, under the whole name, which a cut name still reads in.
+    expect(cell('postgres').dataset.tooltip).toBe('postgres\nrunning · 5432');
+    expect(cell('postgres').hasAttribute('data-tooltip-cut')).toBe(false);
+    // Read in the name's cell, as a table is walked: the description, then the tip.
+    expect(cell('postgres').getAttribute('aria-description')).toBe('Database, running · 5432');
+    expect(cell('redis').getAttribute('aria-description')).toBe('stopped');
+    // A row that takes no focus carries none: its cell is where it is read.
+    expect(row('postgres').hasAttribute('aria-description')).toBe(false);
+
+    // A description alone is read, not shown: a cut name keeps its own tooltip.
+    expect(cell('mailpit').getAttribute('aria-description')).toBe('Mail catcher');
+    expect(cell('mailpit').dataset.tooltip).toBe('mailpit');
+    expect(cell('mailpit').hasAttribute('data-tooltip-cut')).toBe(true);
+
+    // Neither: the name as it always was, its tooltip only while cut.
+    expect(cell('meilisearch').dataset.tooltip).toBe('meilisearch');
+    expect(cell('meilisearch').hasAttribute('data-tooltip-cut')).toBe(true);
+    expect(cell('meilisearch').hasAttribute('aria-description')).toBe(false);
+    expect(row('meilisearch').hasAttribute('aria-description')).toBe(false);
+  });
+
+  it('reads the name’s description where the focus lands: a focusable or tabbable row, a radio', () => {
+    render(
+      <RowCursorContext value={cursorOn('a', [])}>
+        <Listing columns={[]} grid="20px 1fr" title="Services">
+          <Row focusable name="postgres" nameDescription="Database" nameTip="running" rowKey="a" />
+          <Row name="redis" nameTip="stopped" rowKey="b" tabbable />
+          <Row
+            name="shop"
+            nameDescription="Database"
+            nameTip="utf8mb4"
+            radio={{ checked: true, group: 'db', onPick: () => undefined }}
+            rowKey="c"
+          />
+        </Listing>
+      </RowCursorContext>
+    );
+    const rows = screen.getAllByRole('row').slice(1);
+    const radio = screen.getByRole('radio', { name: 'shop' });
+
+    expect(rows[0]?.getAttribute('aria-description')).toBe('Database, running');
+    expect(rows[1]?.getAttribute('aria-description')).toBe('stopped');
+    expect(radio.getAttribute('aria-description')).toBe('Database, utf8mb4');
+    // The radio's cell carries it for a table's walk; the name's plain span carries no role, so none.
+    expect(radio.closest('[role="cell"]')?.getAttribute('aria-description')).toBe(
+      'Database, utf8mb4'
+    );
+    const name = screen.getByText('shop');
+    expect(name.hasAttribute('aria-description')).toBe(false);
+    expect(name.dataset.tooltip).toBe('shop\nutf8mb4');
+  });
+
+  it('takes a marked-up name’s words from the drawn name for the tip’s tooltip', () => {
+    render(
+      <RowCursorContext value={cursorOn('a', [])}>
+        <Listing columns={[]} grid="20px 1fr" title="Services">
+          <Row
+            name={<MarkedText positions={[0, 1]} text="postgres" />}
+            nameTip={'running · 5432'}
+            rowKey="a"
+          />
+        </Listing>
+      </RowCursorContext>
+    );
+
+    expect(screen.getByRole('cell', { name: 'postgres' }).dataset.tooltip).toBe(
+      'postgres\nrunning · 5432'
+    );
   });
 
   it('takes the cursor on a secondary click, then hands the click and its key to the app', () => {

@@ -161,7 +161,8 @@ export function SectionedDialog({
         if (box.top < view.top || box.bottom > view.bottom) {
           const before = column.scrollTop;
 
-          control.scrollIntoView({ block: 'nearest' });
+          // Optional: an engine with no scrollIntoView (jsdom) only focuses.
+          control.scrollIntoView?.({ block: 'nearest' });
           chosenScrollRef.current = chosenScrollRef.current || column.scrollTop !== before;
         }
       }

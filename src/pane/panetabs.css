@@ -86,8 +86,19 @@
   cursor: default;
 }
 
+/* The tab's face, the element a screen reader meets as the tab: its mark,
+   name, and dirty or pin mark in the box's row, the close control beside it
+   (a control is never inside a tab). */
+:where(.listing-root) .pane-tab-face {
+  display: inline-flex;
+  flex: 0 1 auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
 /* A mark ahead of the name takes its own room on top of the floor. */
-:where(.listing-root) .pane-tab:has(> .pane-tab-mark) {
+:where(.listing-root) .pane-tab:has(> .pane-tab-face > .pane-tab-mark) {
   min-width: calc(
     var(--pane-tab-floor, 0ch) + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) +
       2 * var(--line) + var(--icon-md) + var(--space-2)
@@ -95,7 +106,8 @@
 }
 
 /* A tab with no close control, pin, or mark of its own has nothing to keep room for. */
-:where(.listing-root) .pane-tab:not(:has(> :is(.pane-tab-close, .pane-tab-pin, .pane-tab-dirty))) {
+:where(.listing-root)
+  .pane-tab:not(:has(> .pane-tab-close, > .pane-tab-face > :is(.pane-tab-pin, .pane-tab-dirty))) {
   padding-right: var(--space-4);
 }
 

@@ -127,6 +127,10 @@ describe('shipped grammars', { timeout: GRAMMAR_TIMEOUT_MS }, () => {
     }
   );
 
+  it('rejects a language id that names no shipped grammar', async () => {
+    await expect(loadLineTokenizer('constructor' as SyntaxLanguageId)).rejects.toThrow();
+  });
+
   it("draws every theme color but the text's own from a palette token every theme sets as hex", async () => {
     const { styles: themeStyles } = await loadLineTokenizer('json');
     const roles = new Set(

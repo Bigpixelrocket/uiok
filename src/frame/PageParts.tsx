@@ -77,7 +77,8 @@ export function PageNote({ icon: Icon, busy = false, children }: PageNoteProps):
       ) : Icon === undefined ? null : (
         <Icon aria-hidden size={ICON_MD} />
       )}
-      <span>{children}</span>
+      {/* The words in the message's one box, which wraps beside the glyph. */}
+      <span className="pane-message-text">{children}</span>
     </p>
   );
 

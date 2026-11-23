@@ -209,6 +209,29 @@ describe('the field controls', () => {
     expect(group.style.getPropertyValue('--field-columns')).toBe('3');
   });
 
+  it('describes a group by its problem and note, and draws no note for false', () => {
+    const { rerender } = render(
+      <FieldGroup legend="Show" note="Applies to new windows." problem="Pick one.">
+        <Radio checked={false} label="Dark" name="mode" onChange={vi.fn()} value="dark" />
+      </FieldGroup>
+    );
+
+    const group = screen.getByRole('group', { name: 'Show' });
+    const described = (group.getAttribute('aria-describedby') ?? '')
+      .split(' ')
+      .map((id) => document.getElementById(id)?.textContent);
+    expect(described).toEqual(['Pick one.', 'Applies to new windows.']);
+
+    rerender(
+      <FieldGroup legend="Show" note={false}>
+        <Radio checked={false} label="Dark" name="mode" onChange={vi.fn()} value="dark" />
+      </FieldGroup>
+    );
+
+    expect(document.querySelector('.field-note')).toBeNull();
+    expect(group.hasAttribute('aria-describedby')).toBe(false);
+  });
+
   it('fills a slider up to its value and names a meter', () => {
     const onChange = vi.fn();
     render(

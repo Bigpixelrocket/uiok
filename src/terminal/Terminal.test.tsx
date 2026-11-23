@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { createRef } from 'react';
 import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
 import type { GhosttyTerminalSurfaceOptions } from './ghostty/surface.js';
 import { Terminal, type TerminalHandle } from './Terminal.js';
@@ -11,7 +12,7 @@ import {
   type TerminalAction,
   type TerminalKeyStroke
 } from './Terminal.logic.js';
-import { TerminalBox } from './TerminalBox.js';
+import { TERMINAL_BOX_HEIGHT, TerminalBox } from './TerminalBox.js';
 import { TerminalScrollbackContext } from './TerminalScrollback.js';
 
 // The engine itself is covered by the ghostty suites; here a stand-in records
@@ -457,6 +458,15 @@ describe('Terminal', () => {
       expect(screen.getByRole('menuitem', { name: /^Einsetzen/ })).toBeTruthy();
     });
 
+    it('names each item by its label, then its chord’s words, apart', async () => {
+      render(<Terminal ariaLabel="Shell" onInput={() => {}} />);
+      const surface = await ready();
+      openMenu(surface);
+
+      expect(screen.getByRole('menuitem', { name: 'Copy Command C' })).toBeTruthy();
+      expect(screen.getByRole('menuitem', { name: 'Paste Command V' })).toBeTruthy();
+    });
+
     it('opens through a portal on the body, in the menu look, so no box around the terminal clips it', async () => {
       const { container } = render(<Terminal ariaLabel="Shell" onInput={() => {}} />);
       const surface = await ready();
@@ -615,6 +625,22 @@ describe('TerminalBox', () => {
 
     rerender(<TerminalBox ariaLabel="Install log" height={180} />);
     expect(box.style.getPropertyValue('--terminal-box-height')).toBe('180px');
+  });
+
+  it('falls back to the default height token, which TERMINAL_BOX_HEIGHT matches, when nothing sets one', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = '<div class="terminal-box"></div>';
+    const box = document.querySelector('.terminal-box') as HTMLElement;
+
+    expect(declaredValues(box, 'height').at(-1)).toBe(
+      'var(--terminal-box-height, var(--terminal-box-default-height))'
+    );
+    expect(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--terminal-box-default-height')
+        .trim()
+    ).toBe(`${TERMINAL_BOX_HEIGHT}px`);
+    document.body.innerHTML = '';
   });
 
   it('fills its parent with no height of its own', async () => {

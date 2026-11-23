@@ -1,7 +1,8 @@
-import { useId, type ReactElement, type ReactNode, type Ref } from 'react';
+import type { ReactElement, ReactNode, Ref } from 'react';
 
 import { CurrentDot } from '../listing/CurrentDot.js';
 import { cutTooltip } from '../tooltip/Tooltip.logic.js';
+import { VisuallyHidden } from '../VisuallyHidden.js';
 
 /** Props for {@link PaletteList}. */
 export interface PaletteListProps {
@@ -40,9 +41,10 @@ export interface PaletteOptionProps {
   /** The row's name: words, or `MarkedText` with the query's matches lit. */
   readonly name: ReactNode;
   /**
-   * The row's accessible name. Pass it whenever `name` is markup
-   * (`MarkedText`): without it the row is named by the drawn words, which a
-   * screen reader may read split at the highlights ("Po stgreSQL").
+   * The drawn name's words for the row's accessible name, in their place
+   * before the context and trail. Pass it whenever `name` is markup
+   * (`MarkedText`): without it the name part is read from the drawn words,
+   * which a screen reader may split at the highlights ("Po stgreSQL").
    */
   readonly label?: string;
   /** The glyph in the icon column (a `ProductMark`, a lucide icon), decorative. */
@@ -74,11 +76,11 @@ export interface PaletteOptionProps {
    */
   readonly disabled?: boolean;
   /**
-   * Read after the name by assistive technology, in place of what the row
-   * derives: its context, a trail in words, and what `current` means, in
-   * that order. Give it to say why the row is disabled, or to word a trail
-   * that is not text (a `KeyChord`); an empty string reads nothing after
-   * the name.
+   * Read after the name by assistive technology, for what the row does not
+   * draw: why it is disabled ("Already added"). The name already reads the
+   * row's words in the order they are drawn, its context and trail (a
+   * `KeyChord` by its words) and what `current` means included, so the
+   * description never repeats them.
    */
   readonly description?: string;
   /** A press picks it; never called while it is disabled. */
@@ -98,9 +100,13 @@ export interface PaletteOptionProps {
  * is dimmed and never takes the cursor or a pick. A `checked` row, one of
  * several picked together, wears the check mark while it is ticked, as a
  * menu's setting does. The palette keeps the
- * focus in its field, so a press here never takes it. Its name is `label`
- * or its words; the context, a trail in words, and what `current` means
- * are read after it as its description, unless `description` says it.
+ * focus in its field, so a press here never takes it. Its accessible name
+ * is the words it draws, in the order drawn: its name, its context, and its
+ * trail with what `current` means, so the name holds every visible word
+ * (WCAG 2.5.3), read from its content; `label` stands in for the drawn
+ * name's words alone (a name marked up by a query), the context and trail
+ * still read after it.
+ * `description` adds what the row does not draw.
  */
 export function PaletteOption({
   id,
@@ -119,27 +125,20 @@ export function PaletteOption({
   onPoint,
   ref
 }: PaletteOptionProps): ReactElement {
-  // The name's own id, private to the row, so it never meets a caller's id.
-  const nameId = useId();
   const contextClass =
     contextKind === 'path' ? 'palette-context' : `palette-context palette-${contextKind}`;
-  // The row is named by its name alone, which hides the words drawn after
-  // it, so those are read as its description unless the caller words one.
-  const described =
-    description ??
-    [context, typeof trail === 'string' || typeof trail === 'number' ? String(trail) : '', current]
-      .filter((part): part is string => typeof part === 'string' && part !== '')
-      .join(', ');
+  const hasContext = context !== undefined && context !== '';
+  // An empty label is none, as an empty context or description is.
+  const hasLabel = label !== undefined && label !== '';
 
+  // Named from its content, every word it draws in the order drawn, so the
+  // name a voice user speaks is the text they see. The spaces between the
+  // parts are for that name: the row's grid and flex rows draw none.
   return (
     <div
       aria-checked={checked}
-      aria-description={described === '' ? undefined : described}
+      aria-description={description === undefined || description === '' ? undefined : description}
       aria-disabled={disabled || undefined}
-      aria-label={label ?? (typeof name === 'string' ? name : undefined)}
-      // A name in markup (MarkedText) names the row by its own words alone,
-      // never with the context and trail that the description reads.
-      aria-labelledby={label === undefined && typeof name !== 'string' ? nameId : undefined}
       aria-selected={cursor}
       className={cursor ? 'folder-menu-option cursor' : 'folder-menu-option'}
       id={id}
@@ -154,22 +153,32 @@ export function PaletteOption({
     >
       <span aria-hidden className="row-icon">
         {checked === undefined ? mark : null}
-      </span>
+      </span>{' '}
       <span className="palette-text">
-        <span className="row-name" id={nameId}>
+        {/* The words that stand for a drawn name in markup, read in its place. */}
+        {hasLabel ? <VisuallyHidden>{label}</VisuallyHidden> : null}
+        <span aria-hidden={hasLabel ? true : undefined} className="row-name">
           {name}
         </span>
-        {context === undefined || context === '' ? null : (
-          <span className={contextClass} {...cutTooltip(context)}>
-            {contextKind === 'path' ? <bdi>{context}</bdi> : context}
-          </span>
+        {!hasContext ? null : (
+          <>
+            {' '}
+            <span className={contextClass} {...cutTooltip(context)}>
+              {contextKind === 'path' ? <bdi>{context}</bdi> : context}
+            </span>
+          </>
         )}
-      </span>
+      </span>{' '}
       <span className="palette-trail">
         {trail === undefined || trail === null ? null : (
           <span className="palette-meta">{trail}</span>
         )}
-        {current === null ? null : <CurrentDot label={current} />}
+        {current === null ? null : (
+          <>
+            {' '}
+            <CurrentDot label={current} />
+          </>
+        )}
       </span>
     </div>
   );

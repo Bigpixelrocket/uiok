@@ -210,16 +210,12 @@
 .keylegend-more-place > .keylegend-more-list {
   top: auto;
   bottom: calc(100% + var(--space-2));
-  left: auto;
-  right: 0;
+  /* The list ends where the chip ends the strip: its inline end, the right
+     edge, or the left right to left. Logical insets follow the box's own
+     direction, so an LTR footer inside an RTL page keeps the left-to-right
+     place; not :dir(rtl), which a bundler's CSS transform rewrites into
+     :lang() selectors that an RTL box in an English page does not match. */
+  inset-inline: auto 0;
   width: max-content;
   min-width: 200px;
-}
-
-/* Right to left, the chip ends the strip on the left: the list ends there
-   too. :dir() follows the nearest direction, so an LTR footer inside an RTL
-   page keeps the left-to-right place. */
-.keylegend-more-place > .keylegend-more-list:dir(rtl) {
-  left: 0;
-  right: auto;
 }

@@ -7,7 +7,8 @@
  * swatch in each hue, hollow and with no group, and a tag in each tone, in
  * capitals, and with a tip; a notice quoting a server's words in code; and
  * an overline that keeps a name's case. A fact list's long values wrap
- * whole beside their names, three lists side by side.
+ * whole beside their names, three lists side by side, and two set in a
+ * pane's body, inset from its edge as its rows are.
  *
  * A cell that shows a pointer state carries `data-force` (with
  * `data-force-sel` naming the button inside it): the screenshot harness
@@ -21,6 +22,7 @@ import { Pin } from 'lucide-react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ICON_MD, ICON_SM, Spinner } from '@bigpixelrocket/uiok/icon';
+import { PaneBox, PaneList, PanePathBar } from '@bigpixelrocket/uiok/pane';
 import {
   Card,
   Fact,
@@ -154,6 +156,24 @@ export function SurfaceDemo() {
           </Fact>
         </FactList>
       </FactColumns>
+      <h3 className="demo-subhead">Fact lists in a pane</h3>
+      <div className="listing-root">
+        <PaneBox>
+          <PanePathBar trail={['Services', 'shop']} />
+          <PaneList label="shop">
+            <FactColumns>
+              <FactList title="Usage">
+                <Fact name="CPU">0.4%</Fact>
+                <Fact name="Memory">64 MB</Fact>
+              </FactList>
+              <FactList title="Command">
+                <Fact name="Runs">php artisan serve --port=8000</Fact>
+                <Fact name="In">~/Developer/shop</Fact>
+              </FactList>
+            </FactColumns>
+          </PaneList>
+        </PaneBox>
+      </div>
       <h3 className="demo-subhead">Notices</h3>
       <Notice actions={<Button size="small">Try Again</Button>} role="alert" tone="danger">
         The settings file could not be saved.

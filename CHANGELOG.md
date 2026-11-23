@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-11-23
+
+### Added
+
+- `TreeRow`'s `onContextMenu(event, rowKey)`: a secondary click for a tree row's menu, as a listing `Row`'s. The row moves the pane's cursor to itself before calling it and cancels the browser's own menu, so its handler wins over its `TreeList`'s and `TreePane`'s. With the focus on the tree's `TreeList`, the Menu key or Shift-F10 runs the cursor row's, its event placed under the row.
+- `TextLink`'s `verb` (`ControlVerb`, `data-verb`): a link in a listing row, such as a service's port, becomes one of the row's controls, out of the Tab order unless the row is `tabbable`, reached by the cursor row's keys through `verbControl`, and run without opening the row. Without a `verb`, or outside a row, a link keeps its Tab stop.
+- A `FactList` or `FactColumns` set straight in a pane's body (a `PaneList`, `PanePage`, `PageSlot`, or `SideBySide` part) keeps the rows' inset from the pane's edge (`--pane-row-inset`) and `--space-4` above and below, instead of sitting flush with it.
+- `Row`'s `nameTip` and `nameDescription`: the host's words about a row's name. `nameTip` (a narrow pane's dropped columns, say) is the name's tooltip at every width, under the whole name (a name in markup by its drawn words), in place of the tooltip a cut name shows alone. `nameDescription` (the row's kind) and the tip's words, in that order, describe the name's cell, the row when it takes the focus (`focusable`, `tabbable`), and a radio row's radio. Neither repeats the name.
+- The pane docs demo walks Tab listing first (`usePaneKeys`' `tabOrder: 'listing'`) beside the browser's own order, Escape giving the focus back to that choice, and the frame demo opens a tree row's menu, from a secondary click or, through its Focus the tree button, the keys.
+
+### Changed
+
+- Breaking: a `PaletteOption`'s accessible name is now every word it draws, in the order drawn (its name, its `context`, then its trail, a `KeyChord` by its words, and `current`'s value), read from its content, so it holds the text on screen (WCAG 2.5.3, axe `label-content-name-mismatch`). Its `aria-description` is now only the caller's `description`, for what the row does not draw (why it is disabled). 0.6.0 advised voicing a chord or the context through `description`: a caller that did so drops that text from `description`, or the row reads it twice. `label` now stands in for the drawn name's words alone (pass it for a `MarkedText` name), the context and trail still read after it; an empty `label` is none.
+
+### Fixed
+
+- A right-to-left box keeps its inline edge fade (`.scroll-fade-x`) on the right side and a submenu's chevron pointing left after an app's bundler processes the stylesheet, and the key legend's overflow list ends at the chip's left edge. Lightning CSS (Vite) rewrote `:dir(rtl)` into `:lang()` selectors, which a `dir="rtl"` box in an English page does not match; the fade and the chevron now follow the nearest `dir` attribute (`--scroll-fade-inline-to`, `--inline-flip`), reading `:dir()` only under `dir="auto"`, whose direction comes from its text, and the list sits by a logical inset.
+- Return on a command in a `Palette` no longer closes it and opens it again: the query field (`PaletteQuery`) cancels Return's default before the host's `onKeyDown` runs, so a host that hands the focus back to the button that opened the palette on close, even one that stops the key, does not see the browser click that button with the same key. Return on a button inside the palette still presses it.
+- A `TextLink` in a selected listing row takes the selection's words (`--on-selected`, a disabled one `--on-selected-dim`) while the selection is active, instead of its accent or danger tone on the accent fill, which could vanish (1:1 in Catppuccin Mocha). An inactive selection keeps the link's own tone.
+- `PaneTabs` no longer nests each tab's close control inside its `role="tab"` element (axe `nested-interactive`): the `.pane-tab` box is presentational and holds the tab, `.pane-tab-face`, with the close control beside it, out of the Tab order and the pointer's alone (`aria-hidden`, since a tab list owns tabs alone; the host's close chord closes a tab from the keyboard and assistive technology). The look, presses, drag, and folding are unchanged; a stylesheet that reached a tab's mark, name, dirty mark, or pin as the box's direct children reaches them under `.pane-tab-face`.
+- `KeyChord` draws its chord as a `<kbd role="img">`, so its name in words ("Shift Command N") is allowed and read, in a control round it too, where an `aria-label` on a bare `<kbd>` was not (axe `aria-prohibited-attr`). `KeyChords` keeps its "or" apart from the chords in a name read from the content, and `Menu` and the terminal's menu keep an item's label, its current mark's words, and its chord's apart in its name ("Copy Path Option Command C").
+- A `TreeTool`'s words (a note, a heading, a failed read) that a narrow sidebar cuts with an ellipsis show whole in a tooltip while cut, as a cut tree row's name does.
+- A `PageNote` or `PaneMessage` too long for one line wraps its words in their own column beside the glyph (a hanging indent), not under the glyph; `PageNote` draws its words in the same `.pane-message-text` box. A glyph of the host's own leading a `PaneMessage`'s words is drawn at `--icon-md`, and the words after it hang in their own column too.
+- A `Toolbar` set straight in a pane's body (a `PaneList`, `PanePage`, `PageSlot`, or `SideBySide` part) keeps the rows' inset (`--pane-row-inset`) from the pane's edges instead of touching them.
+- A `.terminal-box` that nothing gives a height falls back to the new fixed token `--terminal-box-default-height` (200px, `TERMINAL_BOX_HEIGHT`) instead of collapsing.
+- A mouse's second button pressed while another is held, after a Shift-F10 the browser left alone, opens the pane's menu again, not the cursor row's: `PaneList` forgets the menu key on a `mousedown` as well as a `pointerdown`.
+- `SectionedDialog` focuses a section's first control past the column's end without throwing where the engine has no `scrollIntoView` (jsdom).
+- `SideBySide` applies a changed `from` without the scrollbar hold on the first width measured against it, so a pair hidden while `from` rose comes back stacked if it is now too narrow; one hidden and shown again with the same `from` keeps its hold.
+- `ViewerWindow` no longer takes a file named `constructor`, an extension or interpreter such as `valueOf`, or a media type such as `toString` for an `Object.prototype` member, which posted a function to the highlighting worker and took the viewer down; the worker answers failed for a language it does not ship.
+- A PDF named `.`, `..`, or nothing, or whose name cannot be encoded (a lone surrogate), opens as `document.pdf` below its media URL instead of resolving to the URL's parent or failing. A PDF's `mediaUrl` carries no query or fragment.
+- A text or hex view's drag ends with the view and before the next drag starts, so a lost mouseup or an unmount leaves no window listeners or scroll timer behind.
+- The viewer says the copy failed on a page with no clipboard API (an insecure origin) instead of showing the raw error, and checks that a copy is still the latest in the same step that starts its write, so an overtaken copy never overwrites a newer one.
+- The image view leaves an arrow a control already handled alone, and its arrow keys and the hex view's selection steps are looked up by own keys only. The keyboard table no longer says Shift with an arrow extends a text view's selection; only the hex view's does.
+- `FieldGroup` names its note in the fieldset's `aria-describedby`, after the problem, and draws no note for `note={false}`, as `FieldRow` does.
+
 ## [0.6.0] - 2026-11-23
 
 ### Added
@@ -305,7 +340,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.3.0...v0.4.0

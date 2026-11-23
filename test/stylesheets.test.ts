@@ -169,6 +169,49 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
     document.body.innerHTML = '';
   });
 
+  it('reads the inline direction from the nearest dir attribute, :dir() only under dir="auto"', () => {
+    // A bundler's CSS transform (Lightning CSS, under Vite) rewrites :dir()
+    // into :lang() selectors, which a right-to-left box in an English page
+    // does not match, so the delivered sheet names an explicit direction by
+    // attribute, and reads :dir() only where the text sets it.
+    const delivered = readStylesheet('src/styles.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const dirSelectors = [...delivered.matchAll(/([^{}]*:dir\([^)]*\))\s*\{([^}]*)\}/g)].map(
+      ([, selector, body]) => [(selector ?? '').trim(), (body ?? '').replace(/\s+/g, ' ').trim()]
+    );
+    expect(dirSelectors).toEqual([
+      ["[dir='auto']:dir(rtl)", '--scroll-fade-inline-to: to left; --inline-flip: -1;'],
+      ["[dir='auto']:dir(ltr)", '--scroll-fade-inline-to: to right; --inline-flip: 1;']
+    ]);
+    expect(delivered).toContain('var(--scroll-fade-inline-to, to right)');
+    expect(delivered).toContain('scaleX(var(--inline-flip, 1))');
+
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.documentElement.lang = 'en';
+    document.body.innerHTML = `<div class="scroll-fade-x" id="plain"></div>
+      <div dir="rtl"><div class="scroll-fade-x" id="rtl"></div>
+        <div dir="ltr"><div class="scroll-fade-x" id="nested"></div></div></div>
+      <div class="scroll-fade-x" dir="rtl" id="own"></div>
+      <div class="scroll-fade-x" dir="auto" id="auto-rtl">שלום עולם</div>
+      <div dir="auto">hello <div class="scroll-fade-x" id="auto-ltr"></div></div>`;
+    const direction = (id: string): [string, string] => {
+      const style = getComputedStyle(document.getElementById(id) as HTMLElement);
+      return [
+        style.getPropertyValue('--scroll-fade-inline-to').trim(),
+        style.getPropertyValue('--inline-flip').trim()
+      ];
+    };
+
+    expect(direction('plain')).toEqual(['', '']);
+    expect(direction('rtl')).toEqual(['to left', '-1']);
+    expect(direction('nested')).toEqual(['to right', '1']);
+    expect(direction('own')).toEqual(['to left', '-1']);
+    // dir="auto" takes its direction from its text, which only :dir() reads.
+    expect(direction('auto-rtl')).toEqual(['to left', '-1']);
+    expect(direction('auto-ltr')).toEqual(['to right', '1']);
+    document.body.innerHTML = '';
+    document.documentElement.removeAttribute('lang');
+  });
+
   it('leaves a disabled control out of every hover and press highlight', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     // Each rule's selector as if the pointer were over and pressing everything.

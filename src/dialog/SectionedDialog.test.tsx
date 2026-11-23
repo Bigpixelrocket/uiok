@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { DialogLayer } from './DialogLayer.js';
 import { SectionedDialog, type DialogSection } from './SectionedDialog.js';
@@ -298,6 +298,43 @@ describe('SectionedDialog', () => {
     } finally {
       delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
     }
+  });
+
+  it("focuses a section's first Tab stop past the column's end where the engine cannot scroll to it", () => {
+    // jsdom has no scrollIntoView, and none is stubbed here. React reports
+    // a handler's throw on the window rather than to the caller.
+    expect(HTMLElement.prototype.scrollIntoView).toBeUndefined();
+    const thrown: unknown[] = [];
+    const onError = (event: ErrorEvent): void => {
+      thrown.push(event.error);
+      event.preventDefault();
+    };
+    window.addEventListener('error', onError);
+    onTestFinished(() => window.removeEventListener('error', onError));
+    render(
+      <SectionedDialog
+        labelId="edit"
+        onCancel={vi.fn()}
+        sections={[
+          SECTIONS[0]!,
+          {
+            id: 'depends',
+            title: 'Depends on',
+            children: <button type="button">Add Dependency</button>
+          }
+        ]}
+        title="Edit Command"
+      />
+    );
+    layOut(column());
+    const add = screen.getByRole('button', { name: 'Add Dependency' });
+
+    column().getBoundingClientRect = () => ({ top: 0, bottom: 300 }) as DOMRect;
+    add.getBoundingClientRect = () => ({ top: 650, bottom: 670 }) as DOMRect;
+    fireEvent.click(screen.getByRole('button', { name: 'Depends on' }), { detail: 0 });
+
+    expect(thrown).toEqual([]);
+    expect(document.activeElement).toBe(add);
   });
 
   it('keeps its notice outside the scrolling column', () => {

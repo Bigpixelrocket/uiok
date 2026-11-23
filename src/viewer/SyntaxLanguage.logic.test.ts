@@ -4,6 +4,7 @@ import {
   HIGHLIGHT_MAX_FILE_BYTES,
   highlightPlan,
   highlightStatus,
+  isSyntaxLanguage,
   languageFor,
   languageFromShebang
 } from './SyntaxLanguage.logic.js';
@@ -69,6 +70,22 @@ describe('language detection', () => {
 
   it('prefers the extension to the interpreter line', () => {
     expect(languageFor('tool.py', '#!/bin/sh')).toBe('python');
+  });
+
+  it.each(['constructor', '__proto__', 'toString', 'hasOwnProperty'])(
+    'finds no language in an inherited key such as %s',
+    (key) => {
+      expect(languageFor(key, '')).toBeNull();
+      expect(languageFor(`file.${key}`, '')).toBeNull();
+      expect(languageFor('script', `#!/usr/bin/env ${key}`)).toBeNull();
+      expect(languageFromShebang(`#!/bin/${key}`)).toBeNull();
+      expect(isSyntaxLanguage(key)).toBe(false);
+    }
+  );
+
+  it('knows a shipped language by its id', () => {
+    expect(isSyntaxLanguage('typescript')).toBe(true);
+    expect(isSyntaxLanguage(42)).toBe(false);
   });
 });
 

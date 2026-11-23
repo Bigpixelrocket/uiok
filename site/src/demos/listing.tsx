@@ -17,7 +17,8 @@
  * short, under a section heading drawn by a lone Strip. Last, a choice of
  * one database as radio rows (Space picks the cursor row, a move past the
  * end rings the pane's bell), with a note after the listing whose command
- * is inline code.
+ * is inline code. A narrow pane keeps names alone, each name's tooltip
+ * carrying the state and port its dropped columns held.
  */
 
 import {
@@ -179,6 +180,16 @@ const WIDE_GRID = `var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 
 
 /** A variable's name and value, the value cut short past 24 characters. */
 const VARIABLES_GRID = `var(--icon-column) minmax(min(var(--pane-name-floor), 100%), 1fr) ${column(24)} ${iconLinksColumn(1, 0)}`;
+
+/** A pane too narrow for any column but the name. */
+const NARROW_GRID = 'var(--icon-column) minmax(0, 1fr)';
+
+/** Services by name, state, and port: the columns a narrow pane drops. */
+const NARROW_SERVICES = [
+  ['PostgreSQL 18', 'running', '5432'],
+  ['Redis', 'stopped', '6379'],
+  ['Meilisearch with a long name', 'running', '7700']
+] as const;
 
 const VARIABLES = [
   ['NODE_ENV', 'production'],
@@ -596,6 +607,27 @@ export function ListingDemo() {
           <PaneMessage>
             Values are read when a service starts; restart it to pick up a change.
           </PaneMessage>
+        </div>
+      </div>
+
+      <h3 className="demo-subhead">A narrow pane whose dropped columns move into the name</h3>
+      {/* Too narrow for the State and Port columns, the rows keep their names alone;
+          each name's tooltip carries what the dropped columns held (nameTip), read
+          after the name with the row's kind (nameDescription). */}
+      <div className="pane demo-pane" style={{ maxWidth: 220 }}>
+        <div className="pane-list">
+          <Listing columns={[]} grid={NARROW_GRID} title="Service">
+            {NARROW_SERVICES.map(([name, state, port]) => (
+              <Row
+                key={name}
+                mark={<Server size={ICON_MD} />}
+                name={name}
+                nameDescription="Service"
+                nameTip={`${state} · ${port}`}
+                rowKey={name}
+              />
+            ))}
+          </Listing>
         </div>
       </div>
 

@@ -146,7 +146,9 @@ export interface PaletteQueryProps {
  * stands below its first level, the field (a combobox over the list it
  * names, holding the focus), then the count ("3 of 12") while a query
  * narrows the list, or, after a refused keystroke, why it was refused in the
- * count's place, and any tag the caller puts at the field's end. A refused
+ * count's place, and any tag the caller puts at the field's end. The field
+ * cancels Return's default before the caller's `onKeyDown` runs, so a focus
+ * the caller hands back on close cannot take the same key. A refused
  * keystroke also rings the visual bell on the row, once per refusal
  * (`useBellBeat`). The chip's words and the refusal come from the `palette`
  * label group.
@@ -193,7 +195,16 @@ export function PaletteQuery({
         aria-expanded
         aria-label={label}
         onChange={onChange}
-        onKeyDown={onKeyDown}
+        onKeyDown={(event) => {
+          // Return in the field runs the cursor row, so its default goes
+          // first, before the caller's handler can stop the key: a caller
+          // that closes on it and hands the focus back to the button that
+          // opened the palette would otherwise see the browser click that
+          // button with the same key and open the palette again. An input
+          // method's Return stays the input method's.
+          if (event.key === 'Enter' && !event.nativeEvent.isComposing) event.preventDefault();
+          onKeyDown(event);
+        }}
         placeholder={placeholder}
         ref={inputRef}
         role="combobox"

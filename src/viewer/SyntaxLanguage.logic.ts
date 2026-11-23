@@ -63,6 +63,22 @@ export const SYNTAX_LANGUAGES = {
 export type SyntaxLanguageId = keyof typeof SYNTAX_LANGUAGES;
 
 /**
+ * Whether `value` is a shipped language's id. Checks own keys only, so a
+ * name such as `constructor` or `__proto__` is no language.
+ */
+export function isSyntaxLanguage(value: unknown): value is SyntaxLanguageId {
+  return typeof value === 'string' && Object.hasOwn(SYNTAX_LANGUAGES, value);
+}
+
+/**
+ * `table`'s entry for `key`, an untrusted file name, extension, or
+ * interpreter; own keys only, so `constructor` or `__proto__` finds nothing.
+ */
+function ownEntry<Value>(table: Readonly<Record<string, Value>>, key: string): Value | undefined {
+  return Object.hasOwn(table, key) ? table[key] : undefined;
+}
+
+/**
  * Files past this size open as plain text. Highlighting costs the same per
  * screen at any size, since only the rows in view are tokenized, so this is
  * no speed limit: it keeps generated data plain. Measured on this Mac's
@@ -246,7 +262,7 @@ export function languageFromShebang(firstLine: string): SyntaxLanguageId | null 
     command = words.slice(1).find((word) => !word.startsWith('-') && !word.includes('=')) ?? '';
   }
 
-  return INTERPRETERS[command.replace(/[\d.]+$/u, '')] ?? null;
+  return ownEntry(INTERPRETERS, command.replace(/[\d.]+$/u, '')) ?? null;
 }
 
 /**
@@ -257,7 +273,7 @@ export function languageFromShebang(firstLine: string): SyntaxLanguageId | null 
  */
 export function languageFor(name: string, firstLine: string): SyntaxLanguageId | null {
   const lower = name.toLowerCase();
-  const known = FILE_NAMES[lower];
+  const known = ownEntry(FILE_NAMES, lower);
   if (known) return known;
 
   if (lower.endsWith('.blade.php')) return 'blade';
@@ -265,7 +281,7 @@ export function languageFor(name: string, firstLine: string): SyntaxLanguageId |
   if (lower.startsWith('.env.')) return 'dotenv';
 
   const dot = lower.lastIndexOf('.');
-  const byExtension = dot > 0 ? EXTENSIONS[lower.slice(dot + 1)] : undefined;
+  const byExtension = dot > 0 ? ownEntry(EXTENSIONS, lower.slice(dot + 1)) : undefined;
 
   return byExtension ?? languageFromShebang(firstLine);
 }

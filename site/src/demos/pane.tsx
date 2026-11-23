@@ -2,7 +2,11 @@
  * A sidebar of servers beside a pane of services, on the two-pane keyboard
  * (`usePaneKeys`): ↑ ↓ Home End move the active pane's cursor, ← and →
  * switch panes, Return opens a server or a service's logs, ⌘⏎ starts or
- * stops the cursor's service. The legend under it reads what the cursor
+ * stops the cursor's service, ⌘O opens its port (a `TextLink` with a verb,
+ * out of the Tab order). Tab keeps the browser's order, or, with
+ * Listing first chosen, walks each pane's listing before its controls
+ * (`tabOrder: 'listing'`); Escape from the panes gives the focus back to
+ * that choice. The legend under it reads what the cursor
  * row offers. Click into the demo to give it the keys; they return to the
  * page when the focus leaves it. Under it, path bars with a fact in each
  * tone, at full width and in a 300px pane, where the trail gives way and
@@ -27,8 +31,9 @@ import {
   Star,
   Trash2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
 
+import { TextLink } from '@bigpixelrocket/uiok/button';
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 import { KeyLegendStrip, type LegendVerb } from '@bigpixelrocket/uiok/legend';
 import {
@@ -59,6 +64,7 @@ import {
   type Pane,
   type PaneKeyAction
 } from '@bigpixelrocket/uiok/pane';
+import { SegmentedChoice } from '@bigpixelrocket/uiok/segmented';
 
 import { PaneTabsDemo } from './paneTabs';
 
@@ -103,14 +109,26 @@ const readVerbs = (main: Element | null, cursor: string | null): MainVerbs => {
   };
 };
 
-const readKey = (event: KeyboardEvent): Action | null => {
-  const plain = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
-  if (plain && event.key === 'ArrowLeft') return { kind: 'focus', pane: 'sidebar' };
-  if (plain && event.key === 'ArrowRight') return { kind: 'focus', pane: 'main' };
-  const action = paneKeyAction(event);
-  // Tab keeps its native walk, so the keys can always leave the demo.
-  return action !== null && ['move', 'enter', 'toggle'].includes(action.kind) ? action : null;
-};
+/**
+ * How Tab walks the demo: the browser's own order, which can always leave
+ * it, or `usePaneKeys`' listing-first walk (`tabOrder: 'listing'`), which
+ * cycles inside the panes until Escape gives the focus back to the choice.
+ */
+type TabWalk = 'browser' | 'listing';
+
+const readKeyFor =
+  (walk: TabWalk) =>
+  (event: KeyboardEvent): Action | null => {
+    const plain = !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey;
+    if (plain && event.key === 'ArrowLeft') return { kind: 'focus', pane: 'sidebar' };
+    if (plain && event.key === 'ArrowRight') return { kind: 'focus', pane: 'main' };
+    const action = paneKeyAction(event);
+    // ⌘O opens the cursor service's port, a link the row's keys reach.
+    if (action?.kind === 'chord') return action.letter === 'o' && !action.alt ? action : null;
+    const kinds =
+      walk === 'listing' ? ['move', 'enter', 'toggle', 'switch-pane'] : ['move', 'enter', 'toggle'];
+    return action !== null && kinds.includes(action.kind) ? action : null;
+  };
 
 /**
  * Three path bars, each with a fact: a danger fact beside a star and a lit
@@ -368,6 +386,11 @@ export function PaneDemo() {
   const [shown, setShown] = useState(false);
   const [services, setServices] = useState(SERVERS);
   const [said, setSaid] = useState('');
+  const [walk, setWalk] = useState<TabWalk>('browser');
+  const walkLabel = useId();
+  // Escape from the panes gives the focus back to the Tab choice, the
+  // demo's way out once Tab cycles inside the panes.
+  const walkChoice = useRef<HTMLDivElement>(null);
   const rows = services[open] ?? [];
 
   const toggle = (id: string) =>
@@ -388,7 +411,9 @@ export function PaneDemo() {
     readVerbs,
     noVerbs: NO_MAIN_VERBS,
     follows: [rows],
-    readKey,
+    readKey: readKeyFor(walk),
+    tabOrder: walk === 'listing' ? 'listing' : 'document',
+    sidebarStops: true,
     cursorKey: (action) => action.kind === 'move' || action.kind === 'enter',
     run: (action, pane) => {
       if (action.kind === 'focus') panes.focusPane(action.pane);
@@ -402,6 +427,12 @@ export function PaneDemo() {
         verbControl(
           paneRow(panes.mainRef.current, panes.rowCursor.current()),
           action.kind
+        )?.click();
+      }
+      if (action.kind === 'chord' && pane === 'main') {
+        verbControl(
+          paneRow(panes.mainRef.current, panes.rowCursor.current()),
+          'open-port'
         )?.click();
       }
     }
@@ -449,12 +480,38 @@ export function PaneDemo() {
       run: () => verbControl(cursorRow(), 'toggle')?.click()
     });
   }
+  if (panes.activePane === 'main' && panes.offered.rows) {
+    legend.push({
+      label: 'Open Port',
+      chord: { key: 'o', meta: true },
+      run: () => verbControl(cursorRow(), 'open-port')?.click()
+    });
+  }
 
   return (
     <div className="demo-stack">
+      <div className="demo-row" ref={walkChoice}>
+        <span className="demo-label" id={walkLabel}>
+          Tab
+        </span>
+        <SegmentedChoice
+          choices={['browser', 'listing'] as const}
+          labelId={walkLabel}
+          onChange={setWalk}
+          render={(choice) => (choice === 'browser' ? "The browser's order" : 'Listing first')}
+          value={walk}
+        />
+      </div>
       <div
         className="listing-root pane-demo"
         onFocus={() => setShown(true)}
+        onKeyDown={(event) => {
+          if (event.key !== 'Escape' || event.nativeEvent.isComposing) return;
+          const chosen = walkChoice.current?.querySelector<HTMLElement>('[aria-checked="true"]');
+          if (chosen == null) return;
+          event.preventDefault();
+          chosen.focus();
+        }}
         onPointerDown={() => setShown(true)}
         // A press on a part that takes no focus (a path bar, the status line) would move the
         // focus out to the page and take the keys with it; it keeps them in the active pane.
@@ -569,7 +626,16 @@ export function PaneDemo() {
                         word={service.running ? 'running' : 'stopped'}
                       />
                     </Cell>
-                    <Cell align="right">{service.port}</Cell>
+                    <Cell align="right">
+                      {/* Out of the Tab order: the cursor row's ⌘O opens it. */}
+                      <TextLink
+                        label={`Open port ${service.port} of ${service.name}`}
+                        onClick={() => setSaid(`opened localhost:${service.port}`)}
+                        verb="open-port"
+                      >
+                        {String(service.port)}
+                      </TextLink>
+                    </Cell>
                     <Cell className="pane-action-cell">
                       <QuietAction
                         icon={FileText}
@@ -630,7 +696,11 @@ export function PaneDemo() {
         />
       </div>
       <code className="demo-readout">
-        {said === '' ? 'click into the panes, then use the keys' : said}
+        {said !== ''
+          ? said
+          : walk === 'listing'
+            ? 'click into the panes, then Tab: each pane’s listing comes before its controls; Escape takes the focus back to the Tab choice'
+            : 'click into the panes, then use the keys'}
       </code>
 
       <h3 className="demo-subhead">Tabs</h3>
