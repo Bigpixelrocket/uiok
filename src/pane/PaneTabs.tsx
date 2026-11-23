@@ -15,7 +15,7 @@ import { createPortal } from 'react-dom';
 
 import { ICON_MD, ICON_SM } from '../icon/index.js';
 import type { Chord } from '../keyboard/Keyboard.logic.js';
-import type { PaneTabsLabels } from '../labels/paneTabs.js';
+import { DEFAULT_PANE_TABS_LABELS, type PaneTabsLabels } from '../labels/paneTabs.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { StateMark } from '../listing/Listing.js';
 import { movedPickableCursor, pickableCursor } from '../menu/MenuQuery.logic.js';
@@ -246,7 +246,7 @@ function FoldedTabs({ folded, labels, onSelect }: FoldedProps): ReactElement {
       <button
         aria-expanded={host !== null}
         aria-haspopup="menu"
-        aria-label={labels.foldedName(folded.length)}
+        aria-label={(labels.foldedName ?? DEFAULT_PANE_TABS_LABELS.foldedName)(folded.length)}
         className="pane-tabs-folded hit-target quiet-control"
         onClick={() => {
           if (host !== null) {

@@ -158,16 +158,16 @@ A folded pair's label ("Up/Down") is not a label here: the app owns its pair voc
 
 ### `paneTabs`
 
-| Field           | Type                                       | English default                                                                      |
-| --------------- | ------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `newTab`        | `string`                                   | New Tab                                                                              |
-| `close`         | `(name: string) => string`                 | "Close orders" (a tab's close control)                                               |
-| `picked`        | `(name: string) => string`                 | "orders, picked" (a picked tab's accessible name)                                    |
-| `pinned`        | `string`                                   | Pinned (a pinned tab's description and its pin's tooltip)                            |
-| `notSaved`      | `string`                                   | Changes not saved (a dirty tab's description and its mark's tooltip)                 |
-| `folded`        | `(count: number, dirty: number) => string` | "6 tabs folded here, 1 with changes not saved" (the count's tooltip and description) |
-| `foldedHeading` | `string`                                   | Folded here (the folded tabs' menu's heading)                                        |
-| `foldedName`    | `(count: number) => string`                | "6 more tabs" (the count's accessible name: what it shows and what a press opens)    |
+| Field           | Type                                       | English default                                                                                        |
+| --------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| `newTab`        | `string`                                   | New Tab                                                                                                |
+| `close`         | `(name: string) => string`                 | "Close orders" (a tab's close control)                                                                 |
+| `picked`        | `(name: string) => string`                 | "orders, picked" (a picked tab's accessible name)                                                      |
+| `pinned`        | `string`                                   | Pinned (a pinned tab's description and its pin's tooltip)                                              |
+| `notSaved`      | `string`                                   | Changes not saved (a dirty tab's description and its mark's tooltip)                                   |
+| `folded`        | `(count: number, dirty: number) => string` | "6 tabs folded here, 1 with changes not saved" (the count's tooltip and description)                   |
+| `foldedHeading` | `string`                                   | Folded here (the folded tabs' menu's heading)                                                          |
+| `foldedName`    | `(count: number) => string`, optional      | "6 more tabs" (the count's accessible name: what it shows and what a press opens); English when absent |
 
 ### `selectAll`
 

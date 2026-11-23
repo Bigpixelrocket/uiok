@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
+import type { PaneTabsLabels } from '../labels/paneTabs.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
 import { PaneTabs, type PaneTabItem, type PaneTabsProps } from './PaneTabs.js';
 
@@ -439,6 +440,35 @@ describe('PaneTabs folding', () => {
     { id: 'e', name: 'e' },
     { id: 'f', name: 'f' }
   ];
+
+  it('takes a tab strip label group written whole before the count had a name of its own', () => {
+    // A group typed as 0.7.0 shaped it, which `pnpm run typecheck` compiles:
+    // the count's name is optional, its English words standing in.
+    const before: PaneTabsLabels = {
+      newTab: 'Neuer Tab',
+      close: (name) => `${name} schließen`,
+      picked: (name) => `${name}, ausgewählt`,
+      pinned: 'Angeheftet',
+      notSaved: 'Nicht gesichert',
+      folded: (count) => `${count} Tabs hier eingeklappt`,
+      foldedHeading: 'Hier eingeklappt'
+    };
+
+    layout(350);
+    render(
+      <UiokProvider labels={{ paneTabs: before }}>
+        <div className="listing-root">
+          <div className="pane active">
+            <PaneTabs front="e" label="Main tabs" onClose={noop} onSelect={noop} tabs={FOLDING} />
+          </div>
+        </div>
+      </UiokProvider>
+    );
+
+    expect(
+      screen.getByRole('button', { name: '3 more tabs' }).getAttribute('aria-description')
+    ).toBe('3 Tabs hier eingeklappt');
+  });
 
   it('folds the tabs farthest from the front one into a count with a menu', () => {
     layout(350);

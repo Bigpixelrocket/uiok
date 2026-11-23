@@ -14,7 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `FilterChips`' `wrap`: chips that do not fit wrap onto further lines instead of scrolling sideways (no edge fade, no scroll, no sideways wheel), for a multi-choice control in a narrow cell. The chips stay buttons in the Tab order; the one scrolling line stays the default.
 - `TreeRow`'s `dim`: a row whose item is not there or cannot be used yet (an Add row while a tool it needs is missing) shows its name in the row-meta tone, full on the cursor, a mark, and hover, as a listing `Row`'s `dim` does. The row still takes the cursor and opens. A dim add row, on `Row` or `TreeRow`, reads as unavailable in every theme: its plus leaves the accent for the row-meta tone at `--disabled-opacity`, and its words never rise past the on-surface tone.
 - `PaneMessage`'s `icon`: a glyph of the host's own leading the words, at `--icon-md`, the words hanging beside it, in place of a tone's glyph.
-- `UiokLabels.paneTabs.foldedName(count)`: the folded tabs' count's accessible name, "6 more tabs".
+- `UiokLabels.paneTabs.foldedName(count)`: the folded tabs' count's accessible name, "6 more tabs". Optional on `PaneTabsLabels`, so a group typed whole against 0.7.0 still compiles; the English words stand in without it.
 
 ### Changed
 
