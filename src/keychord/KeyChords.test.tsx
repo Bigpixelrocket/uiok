@@ -16,14 +16,36 @@ describe('KeyChords', () => {
     );
 
     const chords = container.querySelectorAll('kbd');
-    const spoken = [...(container.firstElementChild?.childNodes ?? [])].map((node) =>
-      node instanceof HTMLElement && node.tagName === 'KBD'
-        ? node.getAttribute('aria-label')
-        : node.textContent
-    );
+    const spoken = [...(container.firstElementChild?.childNodes ?? [])]
+      .map((node) =>
+        node instanceof HTMLElement && node.tagName === 'KBD'
+          ? node.getAttribute('aria-label')
+          : node.textContent
+      )
+      .filter((part) => part?.trim() !== '');
 
     expect(chords).toHaveLength(2);
     expect(spoken).toEqual(['Shift Command N', 'or', 'Command N']);
+  });
+
+  it('reads as one sentence inside a control: each chord in words, "or" between', () => {
+    render(
+      <button type="button">
+        <KeyChords
+          chords={[
+            { key: 'n', meta: true, shift: true },
+            { key: 'n', meta: true }
+          ]}
+        />{' '}
+        New Window
+      </button>
+    );
+
+    expect(
+      screen.getByRole('button', { name: 'Shift Command N or Command N New Window' })
+    ).toBeTruthy();
+    // Each chord is named where it may carry a name: an image of its caps.
+    expect(screen.getAllByRole('img').map((chord) => chord.tagName)).toEqual(['KBD', 'KBD']);
   });
 
   it('draws nothing for no chords', () => {

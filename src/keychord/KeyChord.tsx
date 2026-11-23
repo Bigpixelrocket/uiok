@@ -110,9 +110,10 @@ export interface KeyChordProps {
 }
 
 /**
- * A chord as a row of key caps in a `<kbd>`. The accessible name is always
- * the full chord in words ("Shift Command N", from `UiokLabels.keys`), even
- * when the drawing omits a modifier a strip shows once. A chord with an
+ * A chord as a row of key caps in a `<kbd role="img">`. The accessible name
+ * is always the full chord in words ("Shift Command N", from
+ * `UiokLabels.keys`), even when the drawing omits a modifier a strip shows
+ * once, and a control round it reads it in its own name. A chord with an
  * empty key draws its modifiers alone.
  */
 export function KeyChord({
@@ -130,6 +131,9 @@ export function KeyChord({
     <kbd
       aria-label={chordSpoken(chord, keys)}
       className="keychord"
+      // A kbd has no role of its own to carry a name; as an image its name
+      // is the chord in words, and it is how a control round it reads it.
+      role="img"
       data-state={recording ? 'recording' : undefined}
       data-tone={tone}
     >
@@ -165,7 +169,14 @@ export function KeyChords({ chords, tone }: KeyChordsProps): ReactElement | null
     <span className="keychords">
       {chords.map((chord, index) => (
         <Fragment key={index}>
-          {index === 0 ? null : <span className="keychords-or">{keys.or}</span>}
+          {/* Spaces round the word, which the flex row does not draw, so a
+              name read from the content keeps the words apart. */}
+          {index === 0 ? null : (
+            <>
+              {' '}
+              <span className="keychords-or">{keys.or}</span>{' '}
+            </>
+          )}
           <KeyChord chord={chord} tone={tone} />
         </Fragment>
       ))}

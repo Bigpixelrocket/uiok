@@ -1,6 +1,6 @@
 # KeyChord (`@bigpixelrocket/uiok/keychord`)
 
-A keyboard chord drawn as a row of key caps, with the whole chord in words as its accessible name, and the shortcut index that lists every key a window answers.
+A keyboard chord drawn as a row of key caps, with the whole chord in words as its accessible name, and the shortcut index that lists every key a window answers. A chord is a `<kbd role="img">` named by its words ("Shift Command N"), so a button or a row round it reads the words, not the glyphs; `KeyChords` puts spaces round its "or", so its chords read "Shift Command N or Command N".
 
 ## Example
 
