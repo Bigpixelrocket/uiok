@@ -6,6 +6,7 @@ import {
   useId,
   useLayoutEffect,
   useMemo,
+  useRef,
   useSyncExternalStore,
   type ChangeEvent,
   type CSSProperties,
@@ -112,25 +113,40 @@ export function TreeList({ label, ref, children, ...handlers }: TreeListProps): 
 
     const key = cursor.current();
     const id = key === null ? null : rowId(tree, key);
-    const drawnRow =
-      id !== null &&
-      [...element.querySelectorAll('[role="treeitem"]')].some((row) => row.id === id);
+    // One lookup by id (the tree's prefix makes it unique in the document),
+    // never a scan of the rows.
+    const row = id === null ? null : element.ownerDocument.getElementById(id);
+    const drawnRow = row !== null && element.contains(row);
 
-    if (drawnRow) element.setAttribute('aria-activedescendant', id);
+    if (drawnRow && id !== null) element.setAttribute('aria-activedescendant', id);
     else element.removeAttribute('aria-activedescendant');
   }, [cursor, list, tree]);
 
-  // After every render and on every cursor move; and a microtask after a
-  // row mounts or unmounts, by whatever state drew it, once React has put
-  // it in or taken it out of the list.
+  // After every render and on every cursor move; and once a commit has put
+  // rows in or taken them out, by whatever state drew them: one microtask
+  // per commit, however many rows came or went, calling the latest sync.
+  const latestSync = useRef(sync);
+  const pending = useRef(false);
+
   useLayoutEffect(() => {
+    latestSync.current = sync;
     sync();
     return cursor.subscribe(sync);
   });
 
   const scope = useMemo<TreeScope>(
-    () => ({ id: tree, rowsChanged: () => queueMicrotask(sync) }),
-    [tree, sync]
+    () => ({
+      id: tree,
+      rowsChanged: () => {
+        if (pending.current) return;
+        pending.current = true;
+        queueMicrotask(() => {
+          pending.current = false;
+          latestSync.current();
+        });
+      }
+    }),
+    [tree]
   );
 
   return (
