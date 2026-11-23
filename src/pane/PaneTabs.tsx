@@ -241,7 +241,7 @@ function FoldedTabs({ folded, labels, onSelect }: FoldedProps): ReactElement {
       <button
         aria-expanded={host !== null}
         aria-haspopup="menu"
-        aria-label={labels.foldedHeading}
+        aria-label={labels.foldedName(folded.length)}
         className="pane-tabs-folded hit-target quiet-control"
         onClick={() => {
           if (host !== null) {

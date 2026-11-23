@@ -427,7 +427,7 @@ describe('PaneTabs folding', () => {
       'f'
     ]);
 
-    const count = screen.getByRole('button', { name: 'Folded here' });
+    const count = screen.getByRole('button', { name: '3 more tabs' });
 
     expect(count.getAttribute('aria-haspopup')).toBe('menu');
     expect(count.getAttribute('aria-expanded')).toBe('false');
@@ -479,7 +479,7 @@ describe('PaneTabs folding', () => {
         front: 'e',
         tabs: FOLDING.map((item) => (item.id === 'c' ? { ...item, tip: 'local / c' } : item))
       });
-      fireEvent.click(screen.getByRole('button', { name: 'Folded here' }));
+      fireEvent.click(screen.getByRole('button', { name: /^\d+ more tabs?$/ }));
 
       const menu = screen.getByRole('menu');
 
@@ -499,7 +499,7 @@ describe('PaneTabs folding', () => {
     layout(350);
     strip({ front: 'e', tabs: FOLDING });
 
-    const count = screen.getByRole('button', { name: 'Folded here' });
+    const count = screen.getByRole('button', { name: /^\d+ more tabs?$/ });
     const at = (top: number): DOMRect =>
       ({ top, bottom: top + 20, left: 0, right: 40, width: 40, height: 20 }) as DOMRect;
 
@@ -518,7 +518,7 @@ describe('PaneTabs folding', () => {
   it('closes its menu when the window changes size, the focus back on the count', () => {
     layout(350);
     const { onSelect } = strip({ front: 'e', tabs: FOLDING });
-    const count = screen.getByRole('button', { name: 'Folded here' });
+    const count = screen.getByRole('button', { name: /^\d+ more tabs?$/ });
 
     count.focus();
     fireEvent.click(count);
@@ -535,7 +535,7 @@ describe('PaneTabs folding', () => {
   it('closes its menu on Escape and hands the focus back to the count', () => {
     layout(350);
     const { onSelect } = strip({ front: 'e', tabs: FOLDING });
-    const count = screen.getByRole('button', { name: 'Folded here' });
+    const count = screen.getByRole('button', { name: /^\d+ more tabs?$/ });
 
     count.focus();
     fireEvent.click(count);
@@ -566,6 +566,6 @@ describe('PaneTabs folding', () => {
     layout(1000);
     strip({ front: 'e', tabs: FOLDING });
 
-    expect(screen.queryByRole('button', { name: 'Folded here' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^\d+ more tabs?$/ })).toBeNull();
   });
 });

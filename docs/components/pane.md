@@ -107,7 +107,7 @@ const order = tabs.map((tab) => tab.id);
 
 The strip never wraps or scrolls. Tabs behind the front one shrink together to a floor (eight characters of the name, three of the context, each with its ellipsis), the context giving way before the name loses a character. Past the floor they fold into a count after New Tab, farthest from the front tab first, the later of two as far; as many fold in one step as the shortfall needs. Pinned, front, and following tabs never fold; pinned and front tabs never shrink. Closing tabs, or a wider pane, gives the room back. The strip measures its header with a `ResizeObserver` and starts the folding over when the header, the trailing slot, the tab in front, or a tab's words, marks, or controls change.
 
-The count (`button.pane-tabs-folded[aria-haspopup=menu]`) reads "+N" with a chevron, with the warning mark before it while a folded tab is dirty; its accessible name is "Folded here" and its tooltip and description count the folded tabs. It opens the menu look (`.folder-menu`, marked `data-overlay`) under it, or over it when the window has room only there (a window that changes size closes it), headed "Folded here", listing the folded tabs in strip order with their mark, context and name, a warning mark when dirty, and a danger mark for a danger-toned tab. Each row is described as its tab is, by the tab's `tip` and its unsaved changes, and the keys scroll the row they reach into view.
+The count (`button.pane-tabs-folded[aria-haspopup=menu]`) reads "+N" with a chevron, with the warning mark before it while a folded tab is dirty; its accessible name says what it shows and opens ("3 more tabs", `foldedName`) and its tooltip and description count the folded tabs. It opens the menu look (`.folder-menu`, marked `data-overlay`) under it, or over it when the window has room only there (a window that changes size closes it), headed "Folded here", listing the folded tabs in strip order with their mark, context and name, a warning mark when dirty, and a danger mark for a danger-toned tab. Each row is described as its tab is, by the tab's `tip` and its unsaved changes, and the keys scroll the row they reach into view.
 
 ### Pointer and keyboard
 
@@ -238,4 +238,4 @@ The compact controls are drawn 20px high; each one's hit area reaches `--hit-tar
 
 ## Labels read
 
-`PaneTabs` reads `paneTabs` ([labels](../labels.md)): `newTab`, `close`, `picked`, `pinned`, `notSaved`, `folded`, `foldedHeading`. Every other word in this area is a prop.
+`PaneTabs` reads `paneTabs` ([labels](../labels.md)): `newTab`, `close`, `picked`, `pinned`, `notSaved`, `folded`, `foldedHeading`, `foldedName`. Every other word in this area is a prop.
