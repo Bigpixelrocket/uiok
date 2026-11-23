@@ -1,5 +1,5 @@
 import { act, render, screen } from '@testing-library/react';
-import { Activity } from 'react';
+import { Activity, useState, type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
@@ -198,25 +198,31 @@ describe('SideBySide', () => {
       );
     };
 
+    /** How many times a part's width was read while the pair measured. */
+    let reads = 0;
+
     /**
-     * Gives the parts min-content widths, read only while the pair lays them
-     * out to measure (`data-measuring`); laid out otherwise, they read 0, so
-     * a width read outside the measuring layout would ask for nothing.
+     * Gives the parts min-content widths, as the one measuring column
+     * (`data-measuring`) lays them out: each part as wide as the wider. Laid
+     * out otherwise they read 0, so a width read outside the measuring
+     * layout would ask for nothing.
      */
     const content = (root: HTMLElement, first: number, second: number): void => {
-      const [firstPart, secondPart] = root.children;
-
-      for (const [part, width] of [
-        [firstPart, first],
-        [secondPart, second]
-      ] as const) {
-        (part as HTMLElement).getBoundingClientRect = () =>
-          ({ width: root.hasAttribute('data-measuring') ? width : 0 }) as DOMRect;
+      for (const part of root.children) {
+        (part as HTMLElement).getBoundingClientRect = () => {
+          if (!root.hasAttribute('data-measuring')) return { width: 0 } as DOMRect;
+          reads += 1;
+          return { width: Math.max(first, second) } as DOMRect;
+        };
       }
     };
 
+    /** Lets a MutationObserver's callback run. */
+    const settle = () => act(async () => undefined);
+
     afterEach(() => {
       watched.length = 0;
+      reads = 0;
     });
 
     it('stacks wide content above the floor, standing it side by side once each half holds its part', () => {
@@ -293,23 +299,134 @@ describe('SideBySide', () => {
       act(() => observers.at(-1)?.());
       expect(root.dataset.layout).toBe('stacked');
     });
+
+    it('decides again when new parts change only the content, the parts’ boxes as they were', () => {
+      observe();
+      const parts = (tools: number) => (
+        <SideBySide
+          first={<p>{'tool '.repeat(tools)}</p>}
+          firstLabel="Settings"
+          from={400}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const { container, rerender } = render(parts(1));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+
+      content(root, 200, 100);
+      widen(root, 500);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // A tool more, and no resize reported: it stacks.
+      content(root, 300, 100);
+      rerender(parts(2));
+      expect(root.dataset.layout).toBe('stacked');
+      // And back.
+      content(root, 200, 100);
+      rerender(parts(1));
+      expect(root.dataset.layout).toBe('side-by-side');
+    });
+
+    it('decides again when a part’s own content changes inside it, and never for attributes', async () => {
+      observe();
+      let grow: (wide: boolean) => void = () => undefined;
+      function Tools(): ReactElement {
+        const [wide, setWide] = useState(false);
+
+        grow = setWide;
+        return <p>{wide ? 'Edit Reset Reload Open' : 'Edit'}</p>;
+      }
+      const { container } = render(
+        <SideBySide
+          first={<Tools />}
+          firstLabel="Settings"
+          from={400}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+
+      content(root, 200, 100);
+      widen(root, 500);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+
+      content(root, 300, 100);
+      await act(async () => grow(true));
+      await settle();
+      expect(root.dataset.layout).toBe('stacked');
+      content(root, 200, 100);
+      await act(async () => grow(false));
+      await settle();
+      expect(root.dataset.layout).toBe('side-by-side');
+
+      // The layout's attributes and a row's classes wake no measure.
+      const before = reads;
+      for (let turn = 0; turn < 5; turn += 1) {
+        root.dataset.layout = turn % 2 === 0 ? 'stacked' : 'side-by-side';
+        root.firstElementChild?.classList.toggle('cursor');
+        await settle();
+      }
+      expect(reads).toBe(before);
+    });
+
+    it('measures no content under the floor', () => {
+      observe();
+      const { container } = render(pair(640));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+
+      content(root, 100, 100);
+      widen(root, 500);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+      expect(reads).toBe(0);
+      // Within the hold under it, side by side, it still measures none.
+      widen(root, 650);
+      act(() => observers.at(-1)?.());
+      const measured = reads;
+      widen(root, 619);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+      expect(reads).toBe(measured);
+    });
+
+    it('holds through a scrollbar only while the content needs no more than it did', () => {
+      observe();
+      const { container } = render(pair(400));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+
+      content(root, 300, 300);
+      widen(root, 610);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // The same need, a scrollbar's width under it: held.
+      widen(root, 595);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // The content now needs more than the room: no hold, though the room is within 20px.
+      content(root, 305, 300);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+    });
   });
 
-  it('measures each part at its min-content width, with the hairline it has side by side', () => {
+  it('measures in one column as wide as the wider part, with the hairline the first has side by side', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     const { container } = render(pair(640));
     const root = container.querySelector('.side-by-side') as HTMLElement;
     const first = root.firstElementChild as HTMLElement;
 
     root.setAttribute('data-measuring', '');
-    expect(declaredValues(root, 'grid-template-columns').at(-1)).toBe('min-content min-content');
+    expect(declaredValues(root, 'grid-template-columns').at(-1)).toBe('min-content');
     expect(declaredValues(first, 'border-inline-end').at(-1)).toBe(
       'var(--line) solid var(--border)'
     );
     expect(declaredValues(first, 'border-block-end').at(-1)).toBe('none');
     // The measuring layout wins over a pair already side by side, too.
     root.dataset.layout = 'side-by-side';
-    expect(declaredValues(root, 'grid-template-columns').at(-1)).toBe('min-content min-content');
+    expect(declaredValues(root, 'grid-template-columns').at(-1)).toBe('min-content');
   });
 
   it('draws two columns with the hairline after the first side by side, and one under it stacked', () => {

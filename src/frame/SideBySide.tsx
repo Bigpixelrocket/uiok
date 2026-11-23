@@ -32,10 +32,13 @@ export interface SideBySideProps {
 /**
  * The room the two parts need to stand side by side, in pixels: twice the
  * wider part's min-content width, as the columns are equal. Measured by
- * laying the parts out in `min-content` columns for one read
- * (`data-measuring`, which the stylesheet reads) and back again before the
- * browser paints, so the reader never sees it. A part with no laid-out
- * width (jsdom, a page held out of sight) asks for nothing.
+ * laying the parts out in one `min-content` column for one read
+ * (`data-measuring`, which the stylesheet reads), whose width is the wider
+ * part's, and back again before the browser paints, so the reader never
+ * sees it. One column, not two: stacked, the parts stay where they stand,
+ * and side by side they stack, so the pair never grows shorter for the
+ * read and a scrolled pane around it keeps its scroll. A part with no
+ * laid-out width (jsdom, a page held out of sight) asks for nothing.
  */
 const contentRoom = (element: HTMLElement): number => {
   const [first, second] = element.children;
@@ -67,11 +70,17 @@ const contentRoom = (element: HTMLElement): number => {
  *
  * The min-content widths are read in the same `ResizeObserver` callback
  * that reads the room (one forced layout per resize frame, never a read and
- * a write interleaved), which also watches each part, so content that
- * changes a part's size decides again with no resize of the pair. They are
- * the content's own and do not change with the layout chosen, so choosing
- * one cannot loop. A part whose content shrinks to nothing (a listing's
- * names cut by an ellipsis) asks for little; its `from` keeps it apart.
+ * a write interleaved), and never while the room is under the floor, where
+ * nothing they say could stand the pair side by side. Content that changes
+ * them decides again with no resize of the pair, as the parts' own boxes
+ * stay as wide as their columns: new `first` or `second`, and any change to
+ * the nodes or words inside (a `MutationObserver`, which reads no attribute,
+ * so the layout's own attributes and a row's cursor never wake it). The
+ * widths are the content's own and do not change with the layout chosen,
+ * so choosing one cannot loop. The scrollbar's hold is kept while the need
+ * stays or shrinks; content that needs more than it did decides without
+ * it. A part whose content shrinks to nothing (a listing's names cut by an
+ * ellipsis) asks for little; its `from` keeps it apart.
  *
  * It is a layout alone: each part is a group named by its label, in the
  * page's reading order (the first, then the second), and holds no cursor
@@ -87,8 +96,15 @@ export function SideBySide({
 }: SideBySideProps): ReactElement {
   const ref = useRef<HTMLDivElement>(null);
   const [sideBySide, setSideBySide] = useState(false);
+  // The layout chosen last, read where the state's updater cannot be: the
+  // floor under which no measure runs depends on it.
+  const shown = useRef(false);
   // The `from` the last laid-out width was measured against.
   const measuredFrom = useRef<number | null>(null);
+  // The room the content needed at the last measure.
+  const measuredNeed = useRef(0);
+  // The measure of the latest render, for the content's own changes.
+  const measureNow = useRef<() => void>(() => undefined);
 
   // Measured before the first paint, so the pair never draws in the other
   // layout first. A threshold a prop gives cannot reach a container query,
@@ -110,24 +126,51 @@ export function SideBySide({
 
       if (width === 0) return;
 
-      const hold = measuredFrom.current === from;
-      const need = Math.max(from, contentRoom(element));
+      const holding = shown.current && measuredFrom.current === from;
+      let next = false;
 
       measuredFrom.current = from;
-      setSideBySide((now) => width >= (now && hold ? need - SCROLLBAR_HOLD : need));
+      // Under the floor nothing the content says could stand them side by
+      // side, so it is not measured.
+      if (width >= (holding ? from - SCROLLBAR_HOLD : from)) {
+        const need = Math.max(from, contentRoom(element));
+        // Content that needs more than it did gets no hold: the hold is for
+        // a scrollbar, not for content outgrowing its half.
+        const hold = holding && need <= measuredNeed.current;
+
+        measuredNeed.current = need;
+        next = width >= (hold ? need - SCROLLBAR_HOLD : need);
+      }
+      shown.current = next;
+      setSideBySide(next);
     };
 
+    measureNow.current = measure;
     measure();
+
+    // The content's own changes, which keep the parts' boxes: nodes and
+    // words only, never an attribute.
+    const content = new MutationObserver(measure);
+
+    content.observe(element, { characterData: true, childList: true, subtree: true });
     // Optional: jsdom has no ResizeObserver.
-    if (typeof ResizeObserver === 'undefined') return undefined;
+    if (typeof ResizeObserver === 'undefined') return () => content.disconnect();
 
     const observer = new ResizeObserver(measure);
 
     // The pair for its room; each part for content that changes its size.
     observer.observe(element);
     for (const part of element.children) observer.observe(part);
-    return () => observer.disconnect();
+    return () => {
+      observer.disconnect();
+      content.disconnect();
+    };
   }, [from]);
+
+  // New parts from the host decide at once, before the paint.
+  useLayoutEffect(() => {
+    measureNow.current();
+  }, [first, second]);
 
   return (
     <div className="side-by-side" data-layout={sideBySide ? 'side-by-side' : 'stacked'} ref={ref}>
