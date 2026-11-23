@@ -63,7 +63,7 @@
 :where(.listing-root) .pane {
   position: relative;
   isolation: isolate;
-  flex: 1 1 0;
+  flex: 1;
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -1759,8 +1759,11 @@ button.crumb-label.crumb-siblings > svg {
    flow as a sentence beside the glyph instead of as separate flex items.
    A glyph the host leads the words with lands in that box too: it keeps
    the glyph's place, the message's gap before the words, on the text's
-   middle. */
+   middle. The box takes the room after the glyph from a zero basis, so a
+   long sentence wraps in its own column beside the glyph (a hanging
+   indent), never under it. */
 :where(.listing-root) .pane-message-text {
+  flex: 1;
   min-width: 0;
 }
 

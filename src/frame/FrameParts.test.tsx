@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { Switch } from '../field/Switch.js';
 import { Listing, Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
+import { PaneMessage } from '../listing/PaneMessage.js';
 import { AppRoot, PageSlot, SpacePanel } from './AppRoot.js';
 import { Dock, dockHeight, DockLog, DockLogEntry } from './Dock.js';
 import { PageNote, SectionHead, ShowSidebarButton, Toolbar, ToolbarGap } from './PageParts.js';
@@ -770,6 +771,28 @@ describe('heldSplitHeight', () => {
 });
 
 describe('page parts', () => {
+  it('wraps a long note’s words beside its glyph, never under it', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <>
+        <PageNote icon={Server}>
+          PostgreSQL 18 stopped with an error, and its log says the data directory is in use.
+        </PageNote>
+        <PaneMessage tone="warning">The port is in use by another program on this Mac.</PaneMessage>
+      </>
+    );
+
+    for (const words of [
+      screen.getByText(/PostgreSQL 18 stopped/),
+      screen.getByText(/The port is in use/)
+    ]) {
+      // A box of its own from a zero basis beside the glyph, so its lines wrap in its column.
+      expect(words.classList.contains('pane-message-text')).toBe(true);
+      expect(declaredValues(words, 'flex').at(-1)).toBe('1 1 0%');
+      expect(declaredValues(words, 'min-width').at(-1)).toBe('0px');
+    }
+  });
+
   it('says a page is loading as a status, its spinner for the glyph', () => {
     render(<PageNote busy>Loading services…</PageNote>);
 
