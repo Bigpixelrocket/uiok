@@ -375,7 +375,7 @@ describe('the listing states', () => {
     const rows = [...document.querySelectorAll('.row')];
 
     for (const theme of [DEFAULT_LIGHT_THEME, DEFAULT_DARK_THEME]) {
-      const tokens = { ...FIXED_TOKENS, ...themeTokens(theme) };
+      const tokens: Readonly<Record<string, string>> = { ...FIXED_TOKENS, ...themeTokens(theme) };
       const resolved = (element: Element | null): string =>
         colour(element).replace(
           /^var\((--[a-z0-9-]+)\)$/,
@@ -383,7 +383,7 @@ describe('the listing states', () => {
         );
 
       for (let index = 0; index < rows.length; index += 2) {
-        const [add, dim] = [rows[index], rows[index + 1]] as Element[];
+        const [add, dim] = [rows[index], rows[index + 1]] as [Element, Element];
         const glyph = (row: Element) =>
           row.querySelector('.tree-glyph') ?? row.querySelector('.row-icon');
 
