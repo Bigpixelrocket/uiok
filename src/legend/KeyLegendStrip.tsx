@@ -158,23 +158,39 @@ const MODIFIER_KEYS = new Set([
  * for the strip's life reads the alert from a ref, so neither the order the
  * strip and a host's key listeners were added in nor which runs first
  * matters: the alert a key raises is a new object, which the dismissal of
- * the one before it does not name.
+ * the one before it does not name. Nor does the key that raised it dismiss
+ * it, even when a host's earlier listener commits it at once (`flushSync`)
+ * and the ref already holds it as the strip's listener runs: each alert is
+ * stamped as it commits, on the clock the engine stamps events with (a new
+ * `Event`'s `timeStamp`), and a key dismisses only an alert stamped before
+ * the key went down. A tie counts as raised by the key, since a clock that
+ * coarse cannot tell; the next key, later, dismisses it.
  */
 function useDismissOnKey(
   alert: LegendAlert | null,
   dismiss: ((dismissed: LegendAlert) => void) | undefined
 ): void {
-  const latest = useRef({ alert, dismiss });
+  const latest = useRef<{
+    readonly alert: LegendAlert | null;
+    readonly dismiss: typeof dismiss;
+    readonly raisedAt: number;
+  }>({ alert: null, dismiss, raisedAt: -Infinity });
 
   useLayoutEffect(() => {
-    latest.current = { alert, dismiss };
+    const now = latest.current;
+    const raisedAt = alert === now.alert ? now.raisedAt : new Event('uiok-legend-alert').timeStamp;
+
+    latest.current = { alert, dismiss, raisedAt };
   });
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent): void => {
-      const { alert: showing, dismiss: run } = latest.current;
+      const { alert: showing, dismiss: run, raisedAt } = latest.current;
 
-      if (showing !== null && !MODIFIER_KEYS.has(event.key)) run?.(showing);
+      if (showing === null || MODIFIER_KEYS.has(event.key)) return;
+      // Raised while this key was going down: the key's, not the one it dismisses.
+      if (raisedAt >= event.timeStamp) return;
+      run?.(showing);
     };
 
     window.addEventListener('keydown', onKey, true);
@@ -182,6 +198,25 @@ function useDismissOnKey(
     return () => window.removeEventListener('keydown', onKey, true);
   }, []);
 }
+
+/**
+ * A number for each alert object, the same for the same object: the key its
+ * words are drawn under, so each alert raised, a repeat of the same words
+ * included, puts a new node in the live region for a screen reader to say.
+ */
+const alertOccurrences = new WeakMap<LegendAlert, number>();
+let alertCount = 0;
+
+const occurrenceOf = (alert: LegendAlert): number => {
+  let occurrence = alertOccurrences.get(alert);
+
+  if (occurrence === undefined) {
+    alertCount += 1;
+    occurrence = alertCount;
+    alertOccurrences.set(alert, occurrence);
+  }
+  return occurrence;
+};
 
 /** Keeps the focus where it was on a press, so a click on a slot leaves the keys where they were. */
 const keepFocus = (event: MouseEvent): void => event.preventDefault();
@@ -323,10 +358,16 @@ export function KeyLegendStrip({
           <LegendMore keys={keys} legend={legend} verbs={foldedVerbs} />
         ) : null}
       </span>
-      {/* Always in the document, so a screen reader hears each alert put in it. */}
+      {/* Always in the document, so a screen reader hears each alert put in
+          it; a new node for each alert, so a repeat of the same words is
+          heard again. */}
       <span className="keylegend-alert" role="status">
         {shownAlert === null ? null : (
-          <span className="keylegend-alert-text" {...cutTooltip(shownAlert.text)}>
+          <span
+            className="keylegend-alert-text"
+            key={occurrenceOf(shownAlert)}
+            {...cutTooltip(shownAlert.text)}
+          >
             {shownAlert.text}
           </span>
         )}

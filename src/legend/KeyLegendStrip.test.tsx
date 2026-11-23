@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { useState, type ReactElement } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { flushSync } from 'react-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
@@ -306,6 +307,21 @@ describe('KeyLegendStrip', () => {
   });
 
   describe('with an alert', () => {
+    // Keys a person presses come at distinct times, and the strip tells the
+    // key that raised an alert from a later one by when each happened; jsdom
+    // stamps events with Date.now(), so the clock moves on before each key.
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+    });
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    /** Presses `init`'s key on `target` a moment after the last. */
+    const press = (target: Element, init: KeyboardEventInit): void => {
+      vi.setSystemTime(Date.now() + 50);
+      fireEvent.keyDown(target, init);
+    };
     /** A host that refuses x with an alert, which the legend asks it to clear. */
     function Refusing({ onDismiss }: { readonly onDismiss: () => void }): ReactElement {
       const [alert, setAlert] = useState<LegendAlert | null>(null);
@@ -360,19 +376,19 @@ describe('KeyLegendStrip', () => {
       render(<Refusing onDismiss={onDismiss} />);
       const field = screen.getByRole('textbox', { name: 'Field' });
 
-      fireEvent.keyDown(field, { key: 'x' });
+      press(field, { key: 'x' });
       expect(screen.getByRole('status').textContent).toBe('Nothing to open here');
 
-      for (const key of ['Shift', 'AltGraph']) fireEvent.keyDown(field, { key });
+      for (const key of ['Shift', 'AltGraph']) press(field, { key });
       expect(screen.getByRole('status').textContent).toBe('Nothing to open here');
 
-      fireEvent.keyDown(field, { key: 'ArrowDown' });
+      press(field, { key: 'ArrowDown' });
       expect(onDismiss).toHaveBeenCalled();
       expect(screen.getByRole('status').textContent).toBe('');
       const calls = onDismiss.mock.calls.length;
 
       // Cleared, the next key asks nothing.
-      fireEvent.keyDown(field, { key: 'ArrowDown' });
+      press(field, { key: 'ArrowDown' });
       expect(onDismiss).toHaveBeenCalledTimes(calls);
     });
 
@@ -423,6 +439,75 @@ describe('KeyLegendStrip', () => {
       );
     }
 
+    /**
+     * A host that raises its refusal of x from a window listener of its own,
+     * committed at once (`flushSync`), so the alert is the strip's before
+     * the strip's own listener hears the same key.
+     */
+    function CommittingHost(): ReactElement {
+      const [alert, setAlert] = useState<LegendAlert | null>(null);
+
+      raise = (text) => flushSync(() => setAlert({ text }));
+      return (
+        <KeyLegendStrip
+          alert={alert}
+          onAlertDismiss={(dismissed) => setAlert((now) => (now === dismissed ? null : now))}
+          verbs={verbs()}
+        />
+      );
+    }
+
+    let raise: (text: string) => void = () => undefined;
+    const refuseX = (event: KeyboardEvent): void => {
+      if (event.key === 'x') raise('Nothing to open here');
+    };
+
+    for (const hostFirst of [true, false]) {
+      it(`keeps an alert committed at once by the key that raised it, the host's listener added ${hostFirst ? 'first' : 'last'}`, () => {
+        if (hostFirst) window.addEventListener('keydown', refuseX, true);
+        render(<CommittingHost />);
+        if (!hostFirst) window.addEventListener('keydown', refuseX, true);
+        try {
+          const said = (): string | null => screen.getByRole('status').textContent;
+
+          press(document.body, { key: 'x' });
+          expect(said()).toBe('Nothing to open here');
+          // Raised again while one shows: the new one stays.
+          press(document.body, { key: 'x' });
+          expect(said()).toBe('Nothing to open here');
+          press(document.body, { key: 'ArrowDown' });
+          expect(said()).toBe('');
+        } finally {
+          window.removeEventListener('keydown', refuseX, true);
+        }
+      });
+    }
+
+    it('puts a new node in the live region for a repeat of the same words', () => {
+      const { rerender } = render(
+        <KeyLegendStrip alert={{ text: 'Nothing to remove' }} verbs={verbs()} />
+      );
+      const region = screen.getByRole('status');
+      const first = region.firstElementChild;
+      const changes: MutationRecord[] = [];
+      const observer = new MutationObserver((records) => changes.push(...records));
+
+      observer.observe(region, { childList: true, subtree: true, characterData: true });
+      rerender(<KeyLegendStrip alert={{ text: 'Nothing to remove' }} verbs={verbs()} />);
+      changes.push(...observer.takeRecords());
+      observer.disconnect();
+
+      expect(region.textContent).toBe('Nothing to remove');
+      expect(region.firstElementChild).not.toBe(first);
+      expect(changes.some((change) => change.addedNodes.length > 0)).toBe(true);
+      // The same alert drawn again is the same node: nothing new to say.
+      const shown = { text: 'Nothing to remove' };
+      rerender(<KeyLegendStrip alert={shown} verbs={verbs()} />);
+      const node = region.firstElementChild;
+      rerender(<KeyLegendStrip alert={shown} verbs={verbs()} />);
+      expect(region.firstElementChild).toBe(node);
+    });
+
     for (const legendLater of [false, true]) {
       it(`shows every refusal of keys in a row, the legend’s listener added ${legendLater ? 'last' : 'first'}`, () => {
         render(<RefusingView legendLater={legendLater} />);
@@ -431,16 +516,16 @@ describe('KeyLegendStrip', () => {
         const said = (): string | null => screen.getByRole('status').textContent;
 
         page.focus();
-        fireEvent.keyDown(page, { key: 'o', metaKey: true });
+        press(page, { key: 'o', metaKey: true });
         expect(said()).toBe('Nothing to open');
         // A different refusal on the next key replaces it.
-        fireEvent.keyDown(page, { key: 'Backspace', metaKey: true });
+        press(page, { key: 'Backspace', metaKey: true });
         expect(said()).toBe('Nothing to remove');
         // The same words again stay too: the alert is a new one.
-        fireEvent.keyDown(page, { key: 'Backspace', metaKey: true });
+        press(page, { key: 'Backspace', metaKey: true });
         expect(said()).toBe('Nothing to remove');
         // A key nothing refuses clears it.
-        fireEvent.keyDown(page, { key: 'ArrowDown' });
+        press(page, { key: 'ArrowDown' });
         expect(said()).toBe('');
       });
     }
