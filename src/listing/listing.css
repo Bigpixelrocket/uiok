@@ -1384,6 +1384,32 @@ button.crumb-label.crumb-siblings > svg {
   color: var(--text);
 }
 
+/* An add row that cannot add yet (`.pane-add.row-dim`: what it needs is
+   missing) reads as unavailable in every theme. Its plus gives up the
+   accent and is drawn at the disabled opacity in every state but a
+   selection: where a theme's quiet tones are one (Latte draws the dim,
+   row-meta, and on-surface words alike, and a cursor row takes an add
+   row's plus to the on-surface tone too), colour alone cannot say it, and
+   the plus is a glyph, not words, so it keeps no contrast floor of its
+   own. Its words rest in the row-meta tone and rise, as the plus does, only
+   to the on-surface tone on the cursor, a mark, the focus, or under the
+   pointer, as a dim row's name does, never to full words. A selection
+   paints it as it paints every row. */
+:where(.listing-root) .row.pane-add.row-dim:where(:not(.selected)) {
+  color: var(--row-meta-text);
+}
+
+:where(.listing-root) .row.pane-add.row-dim:where(:not(.selected)) > :is(.row-icon, .tree-glyph) {
+  color: var(--row-meta-text);
+  opacity: var(--disabled-opacity);
+}
+
+:where(.listing-root)
+  .row.pane-add.row-dim:where(:not(.selected)):is(:hover, :focus-visible, .cursor, .marked)
+  > :is(.row-icon, .tree-glyph, .row-name) {
+  color: var(--text-on-surface);
+}
+
 :where(.listing-root) .row-icon {
   display: inline-flex;
   align-items: center;

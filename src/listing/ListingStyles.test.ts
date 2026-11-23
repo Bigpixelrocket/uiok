@@ -8,6 +8,8 @@
 import { describe, expect, it, onTestFinished } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
+import { DEFAULT_DARK_THEME, DEFAULT_LIGHT_THEME } from '../themes/catalog.js';
+import { FIXED_TOKENS, themeTokens } from '../themes/tokens.js';
 
 const sheet = readStylesheet('src/listing/listing.css');
 const styles = readStylesheet('src/styles.css');
@@ -311,6 +313,73 @@ describe('the listing states', () => {
 
     expect(colour(document.querySelector('#rest .row-name'))).toBe('var(--row-meta-text)');
     expect(colour(document.querySelector('#cursor .row-name'))).toBe('var(--text-on-surface)');
+    document.body.innerHTML = '';
+  });
+
+  it('draws a dim add row as unavailable in Latte and Mocha, at rest, on the cursor, and under the pointer', () => {
+    applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
+    const listingRow = (classes: string) =>
+      `<div class="row pane-add ${classes}"><span class="row-icon"></span><span class="row-name">Add service…</span></div>`;
+    const treeRow = (classes: string) =>
+      `<div class="row pane-add ${classes}"><span class="row-icon"></span><span class="tree-glyph"></span><span class="row-name tree-name">Add service…</span></div>`;
+    const states = ['', 'cursor', 'marked', 'is-hovered'];
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-list pointer">
+      ${states.map((state) => listingRow(state) + listingRow(`row-dim ${state}`)).join('')}
+    </div><div class="pane-list tree pointer">
+      ${states.map((state) => treeRow(state) + treeRow(`row-dim ${state}`)).join('')}
+    </div></section>`;
+    const rows = [...document.querySelectorAll('.row')];
+
+    for (const theme of [DEFAULT_LIGHT_THEME, DEFAULT_DARK_THEME]) {
+      const tokens = { ...FIXED_TOKENS, ...themeTokens(theme) };
+      const resolved = (element: Element | null): string =>
+        colour(element).replace(
+          /^var\((--[a-z0-9-]+)\)$/,
+          (_, name: string) => tokens[name] ?? name
+        );
+
+      for (let index = 0; index < rows.length; index += 2) {
+        const [add, dim] = [rows[index], rows[index + 1]] as Element[];
+        const glyph = (row: Element) =>
+          row.querySelector('.tree-glyph') ?? row.querySelector('.row-icon');
+
+        const look = (row: Element) => {
+          const plus = glyph(row);
+          const opacity = getComputedStyle(plus as Element).getPropertyValue('opacity');
+
+          return `${resolved(plus)} ${opacity.replace(/^var\((--[a-z-]+)\)$/, (_, name: string) => tokens[name] ?? name) || '1'}`;
+        };
+
+        // The plus never wears the accent on a dim row, and never looks as an add row's does,
+        // even where the theme's quiet tones are one.
+        expect(resolved(glyph(dim))).not.toBe(tokens['--accent']);
+        expect([theme.id, dim.className, look(dim) === look(add)]).toEqual([
+          theme.id,
+          dim.className,
+          false
+        ]);
+        // Its words never rise to full words.
+        expect(colour(dim.querySelector('.row-name'))).not.toBe('var(--text)');
+      }
+    }
+    // At rest in the row-meta tone; on the cursor, a mark, or the pointer, the on-surface tone.
+    const dims = rows.filter((row) => row.classList.contains('row-dim'));
+    expect(dims.map((row) => colour(row.querySelector('.row-icon')))).toEqual([
+      'var(--row-meta-text)',
+      'var(--text-on-surface)',
+      'var(--text-on-surface)',
+      'var(--text-on-surface)',
+      'var(--row-meta-text)',
+      'var(--text-on-surface)',
+      'var(--text-on-surface)',
+      'var(--text-on-surface)'
+    ]);
+    // Faded in every state, a glyph that cannot act now.
+    for (const row of dims) {
+      expect(declaredValues(row.querySelector('.row-icon') as Element, 'opacity').at(-1)).toBe(
+        'var(--disabled-opacity)'
+      );
+    }
     document.body.innerHTML = '';
   });
 
