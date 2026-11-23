@@ -29,6 +29,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - `menuKeyAction(event, rtl)` maps → and ← (`open`, `back`), and its `close` says whether it closes one level (Escape, `all: false`) or the whole menu (Tab, `all: true`). A `Menu` now holds → and ← too, which no longer reach its owner while it is open.
 - `KeyLabels` takes `or` ("or" in English). An app that builds a whole `keys` group of its own, not an override through `UiokProvider`, adds it.
+- `DialogLabels` takes `sections` ("Sections" in English), the name of a `SectionedDialog`'s sidebar. An app that builds a whole `dialog` group of its own adds it.
 - `PaneMessage` draws its words in one `.pane-message-text`, so inline code flows with them.
 - `PaneMessage` and `PageNote` drawn outside every listing scope carry the scope themselves (a `.listing-root` around them), as `Listing` does, so a note after a listing keeps its look anywhere.
 
