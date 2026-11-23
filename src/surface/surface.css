@@ -126,13 +126,13 @@
    problem (.field-problem), a listing's refusal (.pane-message.danger),
    and a palette's failure note (.palette-failure) lead with the danger
    tone's CircleAlert, drawn as a mask in --danger, so they read as the same status line a notice is, words in --text. A host
-   that draws its own glyph first (an svg, inside a PaneMessage's words
-   too) gets no second one. */
+   that draws its own glyph first (an svg, or a PaneMessage's icon) gets
+   no second one. */
 :is(
     .field-problem,
     :where(.listing-root) .pane-message.danger,
     :where(.palette-notes) .palette-failure
-  ):not(:has(> svg:first-child, > .pane-message-text > svg:first-child))::before {
+  ):not(:has(> svg:first-child, > .pane-message-led))::before {
   content: '';
   flex: none;
   width: var(--icon-md);

@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { Info } from 'lucide-react';
 import { describe, expect, it } from 'vitest';
 
 import { ModalDialog } from '../dialog/ModalDialog.js';
@@ -75,5 +76,56 @@ describe('PaneMessage and PageNote outside a listing scope', () => {
     expect(declaredValues(message('Refused').querySelector('svg') as Element, 'color').at(-1)).toBe(
       'var(--danger)'
     );
+  });
+
+  it('leads with the icon given, its words hanging beside it, the tone’s glyph left out', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <PaneMessage icon={Info} tone="warning">
+        Slow query
+      </PaneMessage>
+    );
+    const message = screen.getByText('Slow query').closest('.pane-message') as HTMLElement;
+    const words = message.querySelector('.pane-message-text') as HTMLElement;
+    const glyph = words.firstElementChild as Element;
+
+    expect(glyph.tagName.toLowerCase()).toBe('svg');
+    expect(glyph.getAttribute('aria-hidden')).toBe('true');
+    expect(words.classList.contains('pane-message-led')).toBe(true);
+    expect(declaredValues(words, 'padding-inline-start').at(-1)).toBe(
+      'calc(var(--icon-md) + var(--space-4))'
+    );
+    expect(declaredValues(glyph, 'width').at(-1)).toBe('var(--icon-md)');
+    expect(declaredValues(glyph, 'color').at(-1)).toBe('var(--warning)');
+    expect(drawsToneGlyph(message)).toBe(false);
+  });
+
+  it('keeps an icon inside the sentence in the words, with no hanging indent, the tone’s glyph kept', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <>
+        <PaneMessage tone="danger">
+          Press <svg data-testid="inline" /> to run.
+        </PaneMessage>
+        <PaneMessage>
+          {' '}
+          <svg data-testid="leading" />
+          Older hosts lead with their own glyph.
+        </PaneMessage>
+      </>
+    );
+    const inline = screen.getByTestId('inline');
+    const words = inline.parentElement as HTMLElement;
+
+    expect(words.classList.contains('pane-message-led')).toBe(false);
+    expect(declaredValues(words, 'padding-inline-start')).toEqual([]);
+    expect(declaredValues(words, 'text-indent')).toEqual([]);
+    expect(declaredValues(inline, 'width')).toEqual([]);
+    expect(declaredValues(inline, 'color')).toEqual([]);
+    expect(drawsToneGlyph(words.closest('.pane-message') as Element)).toBe(true);
+    // A glyph first in the words, blank space aside, still leads them.
+    expect(
+      screen.getByTestId('leading').parentElement?.classList.contains('pane-message-led')
+    ).toBe(true);
   });
 });

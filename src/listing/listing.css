@@ -1713,16 +1713,14 @@ button.crumb-label.crumb-siblings > svg {
 
 /* A warning (.warning): the warning tone's TriangleAlert, drawn as a mask
    in --warning as the danger line's glyph is, then the words in --text. A
-   host that draws its own glyph first (an svg, inside a PaneMessage's
-   words too) gets no second one. */
+   host that draws its own glyph first (an svg, or a PaneMessage's icon)
+   gets no second one. */
 :where(.listing-root) .pane-message.warning {
   color: var(--text);
 }
 
 :where(.listing-root)
-  .pane-message.warning:not(
-    :has(> svg:first-child, > .pane-message-text > svg:first-child)
-  )::before {
+  .pane-message.warning:not(:has(> svg:first-child, > .pane-message-led))::before {
   content: '';
   flex: none;
   width: var(--icon-md);
@@ -1733,14 +1731,14 @@ button.crumb-label.crumb-siblings > svg {
 }
 
 :where(.listing-root) .pane-message.warning > svg:first-child,
-:where(.listing-root) .pane-message.warning > .pane-message-text > svg:first-child {
+:where(.listing-root) .pane-message.warning > .pane-message-led > svg:first-child {
   flex: none;
   color: var(--warning);
 }
 
 /* A refusal's own glyph takes the danger tone, as the drawn one does. */
 :where(.listing-root) .pane-message.danger > svg:first-child,
-:where(.listing-root) .pane-message.danger > .pane-message-text > svg:first-child {
+:where(.listing-root) .pane-message.danger > .pane-message-led > svg:first-child {
   flex: none;
   color: var(--danger);
 }
@@ -1757,17 +1755,19 @@ button.crumb-label.crumb-siblings > svg {
 
 /* A message's words in one box (PaneMessage), so text and inline code
    flow as a sentence beside the glyph instead of as separate flex items.
-   A glyph the host leads the words with lands in that box too: it keeps
-   the glyph's place, the message's gap before the words, on the text's
-   middle. The box takes the room after the glyph from a zero basis, so a
-   long sentence wraps in its own column beside the glyph (a hanging
-   indent), never under it. */
+   A glyph leading the words (`.pane-message-led`: PaneMessage's icon, or
+   an svg first in its words, which the component checks, since
+   :first-child would also take an icon after some words) lands in that
+   box too: it keeps the glyph's place, the message's gap before the words,
+   on the text's middle. The box takes the room after the glyph from a
+   zero basis, so a long sentence wraps in its own column beside the glyph
+   (a hanging indent), never under it. */
 :where(.listing-root) .pane-message-text {
   flex: 1;
   min-width: 0;
 }
 
-:where(.listing-root) .pane-message-text > svg:first-child {
+:where(.listing-root) .pane-message-led > svg:first-child {
   width: var(--icon-md);
   height: var(--icon-md);
   margin-inline-end: var(--space-4);
@@ -1777,7 +1777,7 @@ button.crumb-label.crumb-siblings > svg {
 /* The words after a glyph of the host's own hang in their own column, as
    they do beside the drawn one: the box steps in by the glyph and its gap,
    and its first line steps back out to start with the glyph. */
-:where(.listing-root) .pane-message-text:has(> svg:first-child) {
+:where(.listing-root) .pane-message-text.pane-message-led {
   padding-inline-start: calc(var(--icon-md) + var(--space-4));
   text-indent: calc(-1 * (var(--icon-md) + var(--space-4)));
 }
