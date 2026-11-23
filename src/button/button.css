@@ -309,3 +309,10 @@
 .text-link:disabled {
   color: var(--text-dim);
 }
+
+/* What it opens is failing (`tone="danger"`): the words and glyph in the
+   danger text tone, which keeps 4.5:1 as the accent's does; the reason is
+   its tooltip and description. A disabled one still dims. */
+.text-link.danger:not(:disabled) {
+  color: var(--danger-text);
+}

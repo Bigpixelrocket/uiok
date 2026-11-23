@@ -59,6 +59,7 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | `keyGlyphs`      | `Partial<Record<string, string>>` | `Enter` ↩, `Backspace` ⌫, `Delete` ⌦, `Escape` ⎋, arrows, `PageUp` ⇞, and so on                                                       |
 | `spaceCap`       | `string`                          | `space`                                                                                                                               |
 | `escapeCap`      | `string`                          | `esc`                                                                                                                                 |
+| `or`             | `string`                          | `or`, between two chords that run one verb (`KeyChords`)                                                                              |
 
 A key missing from `names` is spoken as its capital ("N"); one missing from `keyGlyphs` is written as its capital.
 

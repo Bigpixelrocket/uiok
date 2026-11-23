@@ -35,16 +35,17 @@ import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 `TextLink` (`TextLinkProps`) is a link in words inside a sentence, a section, or a status line: a manual page ("DROP DATABASE in the manual"), or a name in a sentence that opens its place.
 
-| Prop       | Type          | Default | Meaning                                                                                              |
-| ---------- | ------------- | ------- | ---------------------------------------------------------------------------------------------------- |
-| `children` | `string`      |         | The words, also its accessible name                                                                  |
-| `onClick`  | `() => void`  |         | Opens what it names; the host decides how (a browser, a tab)                                         |
-| `icon`     | `LucideIcon?` |         | A glyph before the words at `ICON_SM` (a book for a manual page)                                     |
-| `code`     | `boolean?`    | `false` | The words in the code face, for a name or value                                                      |
-| `tip`      | `string?`     |         | A tooltip that says more than the words (the page's address)                                         |
-| `shortcut` | `string?`     |         | The chord that opens it, written after the tooltip's words                                           |
-| `label`    | `string?`     |         | The accessible name, when the words alone do not say what it opens ("View the whole log" for "View") |
-| `disabled` | `boolean?`    | `false` | Refuses the press for now: dim words, no underline, out of the Tab order                             |
+| Prop       | Type          | Default | Meaning                                                                                                                                            |
+| ---------- | ------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `children` | `string`      |         | The words, also its accessible name                                                                                                                |
+| `onClick`  | `() => void`  |         | Opens what it names; the host decides how (a browser, a tab)                                                                                       |
+| `icon`     | `LucideIcon?` |         | A glyph before the words at `ICON_SM` (a book for a manual page)                                                                                   |
+| `code`     | `boolean?`    | `false` | The words in the code face, for a name or value                                                                                                    |
+| `tip`      | `string?`     |         | A tooltip that says more than the words (the page's address)                                                                                       |
+| `shortcut` | `string?`     |         | The chord that opens it, written after the tooltip's words                                                                                         |
+| `label`    | `string?`     |         | The accessible name, when the words alone do not say what it opens ("View the whole log" for "View")                                               |
+| `disabled` | `boolean?`    | `false` | Refuses the press for now: dim words, no underline, out of the Tab order                                                                           |
+| `tone`     | `'danger'?`   |         | What it opens is failing (a log file whose writes fail): `--danger-text` words and glyph, and `tip` (the reason) is its accessible description too |
 
 It is a `button`, never an `a`: it never navigates the page itself. It takes the focus with the shared ring and runs on Return or Space.
 

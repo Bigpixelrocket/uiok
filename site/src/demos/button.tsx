@@ -120,6 +120,18 @@ export function ButtonDemo() {
         </TextLink>
         , which stopped an hour ago.
       </p>
+      {/* A link to something failing: the danger tone, its reason in its tooltip. */}
+      <p className="field-note">
+        Log:{' '}
+        <TextLink
+          code
+          onClick={press('web.log')}
+          tip="Writes fail: the disk is full."
+          tone="danger"
+        >
+          storage/logs/web.log
+        </TextLink>
+      </p>
       {/* A short word named in full for a screen reader, and one with nothing to open yet. */}
       <p className="field-note">
         <TextLink label="View the whole log" onClick={press('View')}>

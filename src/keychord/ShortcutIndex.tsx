@@ -1,7 +1,7 @@
 import { useId, type ReactElement, type ReactNode } from 'react';
 
 import type { Chord } from '../keyboard/Keyboard.logic.js';
-import { KeyChord } from './KeyChord.js';
+import { KeyChords } from './KeyChord.js';
 
 /** Props for {@link ShortcutIndex}. */
 export interface ShortcutIndexProps {
@@ -67,8 +67,9 @@ export interface ShortcutRowProps {
 /**
  * One verb of a `ShortcutGroup`: its name (and a detail under it) at the
  * start, its chords as key caps at the end, in the index's one chord
- * column; several chords wrap within the column, aligned to its end. Each
- * chord is named in words for assistive technology (`KeyChord`).
+ * column; several chords are parted by "or" (`KeyChords`) and wrap within
+ * the column, aligned to its end. Each chord is named in words for
+ * assistive technology (`KeyChord`).
  */
 export function ShortcutRow({
   verb,
@@ -88,9 +89,7 @@ export function ShortcutRow({
         {chords.length === 0 ? (
           <span className="shortcut-none">{none}</span>
         ) : (
-          chords.map((chord, index) => (
-            <KeyChord chord={chord} key={index} tone={changed ? 'accent' : undefined} />
-          ))
+          <KeyChords chords={chords} tone={changed ? 'accent' : undefined} />
         )}
       </dd>
     </div>

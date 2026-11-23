@@ -12,6 +12,7 @@ import {
   KeyChord,
   ShortcutGroup,
   ShortcutIndex,
+  KeyChords,
   ShortcutRow,
   type KeyChordTone
 } from '@bigpixelrocket/uiok/keychord';
@@ -96,6 +97,15 @@ export function KeyChordDemo() {
           </span>
         </DemoState>
       </DemoStates>
+      <h3 className="demo-subhead">Several chords for one verb</h3>
+      <p className="keycap">
+        <KeyChords
+          chords={[
+            { key: 'n', meta: true, shift: true },
+            { key: 'n', meta: true }
+          ]}
+        />
+      </p>
       <h3 className="demo-subhead">Shortcut index</h3>
       <ShortcutIndex label="Keyboard shortcuts">
         <ShortcutGroup title="Services">

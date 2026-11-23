@@ -17,7 +17,7 @@ import {
   Slash,
   type LucideIcon
 } from 'lucide-react';
-import type { ReactElement } from 'react';
+import { Fragment, type ReactElement } from 'react';
 
 import type { Chord } from '../keyboard/Keyboard.logic.js';
 import {
@@ -137,5 +137,36 @@ export function KeyChord({
         <Key key={index} labels={keys} part={part} />
       ))}
     </kbd>
+  );
+}
+
+/** Props for {@link KeyChords}. */
+export interface KeyChordsProps {
+  /** The chords that run one verb, in the order to show them. */
+  readonly chords: readonly Chord[];
+  /** Every chord's look (`KeyChord`'s `tone`). */
+  readonly tone?: KeyChordTone;
+}
+
+/**
+ * Several chords that run one verb, each its own `KeyChord`, parted by the
+ * `keys.or` word ("⇧⌘N or ⌘N"), drawn quiet between them and read between
+ * their names ("Shift Command N or Command N"), so two chords never run
+ * together as one. One chord draws alone; none draws nothing. Put `keycap`
+ * on an element round it to draw each chord as a key cap. Draws
+ * `.keychords` with `.keychords-or` between the chords.
+ */
+export function KeyChords({ chords, tone }: KeyChordsProps): ReactElement {
+  const { keys } = useLabels();
+
+  return (
+    <span className="keychords">
+      {chords.map((chord, index) => (
+        <Fragment key={index}>
+          {index === 0 ? null : <span className="keychords-or">{keys.or}</span>}
+          <KeyChord chord={chord} tone={tone} />
+        </Fragment>
+      ))}
+    </span>
   );
 }

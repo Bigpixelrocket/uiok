@@ -16,10 +16,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `ShortcutIndex`, `ShortcutGroup`, and `ShortcutRow` (`@bigpixelrocket/uiok/keychord`): every key a window answers, in groups of verbs whose chords stand in one column across the groups, with a changed chord's accent caps, a verb with no chord, and a dimmed verb.
 - `Row`'s `radio` (`RowRadio`): a row that is one choice of several, led by a radio named by the row's name, its cursor key reached through a `verb`.
 - `PaneBox`'s `bell`: the visual bell, which shoves the cursor row sideways for one beat each time its count rises, or flashes the selection fill under reduced motion.
+- `TextLink`'s `tone` (`danger`): a link to something failing (a log file whose writes fail) in the danger tone, its `tip` (the reason) its accessible description too.
+- `KeyChords` (`@bigpixelrocket/uiok/keychord`): several chords for one verb, parted by the new `keys` label `or`, drawn and read between them, so two chords never run together; `ShortcutRow` draws its chords with it.
 - `usePaneKeys`'s `tabOrder` and `nextTabStop`'s `order` (`TabOrder`): `listing` walks each pane's listing first, then its other controls, then the other pane's listing, over the pure rule `listingFirstStop` (`WalkPane`).
 
 ### Changed
 
+- `KeyLabels` takes `or` ("or" in English). An app that builds a whole `keys` group of its own, not an override through `UiokProvider`, adds it.
+- `PaneMessage` draws its words in one `.pane-message-text`, so inline code flows with them.
 - `PaneMessage` and `PageNote` drawn outside every listing scope carry the scope themselves (a `.listing-root` around them), as `Listing` does, so a note after a listing keeps its look anywhere.
 
 ## [0.5.0] - 2026-11-23

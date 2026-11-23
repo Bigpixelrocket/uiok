@@ -7,6 +7,7 @@ import { applyStylesheets, declaredValues, readStylesheet } from '../../test/sty
 import { ModalDialog } from '../dialog/ModalDialog.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
 import { Palette } from '../palette/Palette.js';
+import { SettingsDialog } from '../shell/SettingsDialog.js';
 import {
   QuietAction,
   RowIconAction,
@@ -509,6 +510,30 @@ describe('a cell', () => {
         <Listing columns={columns} grid="1fr" title="Lines" />
       </ModalDialog>
     );
+    expect(screen.getByRole('dialog').classList.contains('listing-root')).toBe(true);
+    expect(screen.getByRole('table').className).toBe('pane-listing');
+
+    rerender(
+      <SettingsDialog
+        groups={[
+          {
+            id: 'app',
+            title: 'App',
+            pages: [
+              {
+                id: 'files',
+                title: 'Files',
+                Icon: () => null,
+                subsections: [],
+                body: <Listing columns={columns} grid="1fr" title="Lines" />
+              }
+            ]
+          }
+        ]}
+        onClose={() => undefined}
+      />
+    );
+    // The Settings dialog is a ModalDialog, so its pages stand in the scope too.
     expect(screen.getByRole('dialog').classList.contains('listing-root')).toBe(true);
     expect(screen.getByRole('table').className).toBe('pane-listing');
 

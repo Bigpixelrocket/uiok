@@ -66,4 +66,20 @@ describe('TextLink', () => {
     expect((link as HTMLButtonElement).disabled).toBe(true);
     expect(onClick).not.toHaveBeenCalled();
   });
+
+  it('draws a failing target in the danger tone, its reason described', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <TextLink onClick={vi.fn()} tip="The disk is full, so writes fail." tone="danger">
+        storage/logs/web.log
+      </TextLink>
+    );
+
+    const link = screen.getByRole('button', { name: 'storage/logs/web.log' });
+
+    expect(link.className).toBe('text-link danger');
+    expect(link.getAttribute('aria-description')).toBe('The disk is full, so writes fail.');
+    expect(link.dataset.tooltip).toBe('The disk is full, so writes fail.');
+    expect(declaredValues(link, 'color')).toContain('var(--danger-text)');
+  });
 });

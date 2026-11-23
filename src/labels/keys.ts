@@ -24,6 +24,11 @@ export interface KeyLabels {
   readonly spaceCap: string;
   /** What the Escape key cap says when a chord is drawn: "esc". */
   readonly escapeCap: string;
+  /**
+   * The word between two chords that run the same verb (`KeyChords`), drawn
+   * and read between them: "or".
+   */
+  readonly or: string;
 }
 
 /** English key names and macOS glyphs: the `keys` group `UiokProvider` starts from. */
@@ -79,5 +84,6 @@ export const DEFAULT_KEY_LABELS: KeyLabels = {
     PageDown: '⇟'
   },
   spaceCap: 'space',
-  escapeCap: 'esc'
+  escapeCap: 'esc',
+  or: 'or'
 };

@@ -118,6 +118,22 @@
   outline-offset: var(--line);
 }
 
+/* ---- Several chords (KeyChords) ----
+
+   Chords that run one verb, parted by a quiet word ("or") so two never
+   read as one run of keys; they wrap whole, never inside a chord. */
+.keychords {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.keychords-or {
+  color: var(--text-dim);
+  font-size: var(--font-size-caption);
+}
+
 /* ---- Shortcut index (ShortcutIndex, ShortcutGroup, ShortcutRow) ----
 
    Every key a window answers, in groups: one grid down the whole index
@@ -178,10 +194,12 @@
 
 .shortcut-chords {
   display: flex;
-  flex-wrap: wrap;
   justify-content: flex-end;
-  gap: var(--space-2) var(--space-4);
   margin: 0;
+}
+
+.shortcut-chords > .keychords {
+  justify-content: flex-end;
 }
 
 .shortcut-none {
