@@ -94,6 +94,60 @@ describe('SideBySide', () => {
     expect(layouts).toEqual(['side-by-side', 'side-by-side', 'side-by-side', 'side-by-side']);
   });
 
+  it('applies a threshold changed while hidden whole when the pair comes back into view', () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          observers.push(callback);
+        }
+        observe() {}
+        disconnect() {}
+      }
+    );
+    const { container, rerender } = render(pair(640));
+    const root = container.querySelector('.side-by-side') as HTMLElement;
+
+    widen(root, 670);
+    act(() => observers.at(-1)?.());
+    expect(root.dataset.layout).toBe('side-by-side');
+
+    // Held out of sight, the threshold rises past the width it comes back at.
+    widen(root, 0);
+    act(() => observers.at(-1)?.());
+    rerender(pair(680));
+    expect(root.dataset.layout).toBe('side-by-side');
+    widen(root, 670);
+    act(() => observers.at(-1)?.());
+    expect(root.dataset.layout).toBe('stacked');
+  });
+
+  it('applies a threshold changed in view whole, then holds through a scrollbar', () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        constructor(callback: () => void) {
+          observers.push(callback);
+        }
+        observe() {}
+        disconnect() {}
+      }
+    );
+    const { container, rerender } = render(pair(640));
+    const root = container.querySelector('.side-by-side') as HTMLElement;
+
+    widen(root, 670);
+    act(() => observers.at(-1)?.());
+    rerender(pair(680));
+    expect(root.dataset.layout).toBe('stacked');
+    widen(root, 690);
+    act(() => observers.at(-1)?.());
+    expect(root.dataset.layout).toBe('side-by-side');
+    widen(root, 675);
+    act(() => observers.at(-1)?.());
+    expect(root.dataset.layout).toBe('side-by-side');
+  });
+
   it('draws two columns with the hairline after the first side by side, and one under it stacked', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     const { container } = render(pair(640));
