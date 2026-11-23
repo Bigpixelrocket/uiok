@@ -113,6 +113,8 @@ import { Fact, FactColumns, FactList } from '@bigpixelrocket/uiok/surface';
 
 The names are in the interface face in `--text-dim`, in a column as wide as the longest name up to two fifths of the list (a longer name wraps); the values in the code face in `--text`, wrapping anywhere. `tone` sets a value's words in `--danger-text` (`danger`, a failure) or `--warning-text` (`warning`, a state that needs a look). `printed` keeps a value's line breaks and runs of spaces as a program printed them (`white-space: pre-wrap`). An empty `name` lets a value run on under the fact above. The words can be swept and copied.
 
+Set straight in a pane's body (a direct child of a `PaneList`, a `PanePage`, a `PageSlot`, or one part of a `SideBySide`), a `FactList` or a `FactColumns` keeps the rows' inset from the pane's edge (`--pane-row-inset` inline, `--space-4` above and below), so its names start where a section head, a pane message, and a row's icon do. A list inside a `FactColumns` or a `Card` is its container's to inset.
+
 ## Notice
 
 A message about something on the page, drawn as a desktop application's status text, never a web page's alert: a plain line on the surface it sits on, a small status glyph in the tone's colour, then the words in `--text`, and an optional small button after the words. It has no tinted fill, no frame, and no side bar.
