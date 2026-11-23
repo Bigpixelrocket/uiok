@@ -75,19 +75,23 @@ export function deliverCopy(
   // the copy failed, including on a page with no clipboard API (one served
   // from an insecure origin), where the call itself throws. A copy a newer
   // one overtook, or one of a view that has gone, writes and says nothing.
+  // The ticket is checked and the write started in one callback, so no
+  // newer copy can land between them and be overwritten by this one.
   text
-    .then((value) =>
-      current()
-        ? Promise.resolve()
-            .then(() => navigator.clipboard.writeText(value))
-            .then(
-              () => true,
-              () => {
-                throw new Error(labels.copyFailed);
-              }
-            )
-        : false
-    )
+    .then((value) => {
+      if (!current()) return false;
+
+      try {
+        return navigator.clipboard.writeText(value).then(
+          () => true,
+          () => {
+            throw new Error(labels.copyFailed);
+          }
+        );
+      } catch {
+        throw new Error(labels.copyFailed);
+      }
+    })
     .then(
       (written) => {
         if (written && current()) say(null);
