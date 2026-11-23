@@ -2,7 +2,9 @@
  * A small window in the frame, drawn from components alone (no class, no
  * style, no element of the demo's own inside the window): the title bar
  * with a lockup, its brand mark, and a local build's channel marker; a
- * sidebar tree with its quick row of filters, a band, a group, rows
+ * sidebar tree with its quick row of filters (one line that scrolls
+ * sideways under an edge fade when the sidebar is too narrow for them all,
+ * a mouse wheel over it scrolling it sideways), a band, a group, rows
  * stepped in by level with a state and a switch, a note, the edge that
  * resizes it, and a Hide/Show panel toggle; a main pane whose page holds a
  * list over the pane under it with the splitter between them, and a status
@@ -275,7 +277,9 @@ function FrameWindowDemo() {
               <FilterChips
                 chips={[
                   { id: 'running', label: 'Running', icon: Play, count: running.length },
-                  { id: 'updates', label: 'Updates', icon: ArrowUp, count: 1 }
+                  { id: 'updates', label: 'Updates', icon: ArrowUp, count: 1 },
+                  { id: 'errors', label: 'Errors', icon: CircleAlert, count: 1 },
+                  { id: 'databases', label: 'Databases', icon: Database, count: 2 }
                 ]}
                 label="Filters"
                 on={on}

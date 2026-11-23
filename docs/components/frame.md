@@ -122,6 +122,13 @@ Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`
 
 `FilterChips` draws a quick row of filters under a pane's path bar: quiet buttons with a glyph, a word, and a count, pressed (`aria-pressed="true"`) while a filter is on.
 
+The row is one line however many chips it holds:
+
+- **It scrolls sideways.** Chips that do not fit scroll inside the row, with no scrollbar drawn, under the base sheet's inline edge fade (`.scroll-fade-x`), which fades only an edge that has more past it. The rule under the row stays solid.
+- **A mouse wheel turns it.** A vertical wheel over the row scrolls it sideways while it has chips hidden that way, down and right toward its end (left in a right-to-left page), a line-counting wheel moving a row's height (24px) a line. A trackpad's sideways swipe, Shift with a wheel, and any gesture more sideways than vertical stay the browser's own. Once the row stands at the end the wheel points to, or holds nothing hidden, the wheel is left alone and the page under it scrolls as usual. The pure rule is `sidewaysWheel` in `FilterChips.logic.ts`.
+- **The keys bring a chip into view.** A chip Tab reaches scrolls whole into view (`scrollIntoView({ block: 'nearest', inline: 'nearest' })`), past the fade.
+- **Nothing scrolls smoothly.** The wheel and the keys move the row at once (`scroll-behavior: auto` on the row), so `prefers-reduced-motion: reduce` has no motion here to stop.
+
 | Prop       | Type                    | Purpose                                  |
 | ---------- | ----------------------- | ---------------------------------------- |
 | `chips`    | `readonly FilterChip[]` | `{ id, label, icon?, count? }`, in order |
