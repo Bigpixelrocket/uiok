@@ -10,7 +10,7 @@ import { AppRoot, PageSlot, SpacePanel } from './AppRoot.js';
 import { Dock, dockHeight, DockLog, DockLogEntry } from './Dock.js';
 import { PageNote, SectionHead, ShowSidebarButton, Toolbar, ToolbarGap } from './PageParts.js';
 import { heldSplitHeight, SplitDetail, usePaneSplit } from './PaneSplit.js';
-import { TreeFilterInput, TreeList, TreeRow, TreeTool } from './Tree.js';
+import { TreeFilterInput, TreeList, TreePane, TreeRow, TreeTool } from './Tree.js';
 import { PaneBox, PaneList } from '../pane/Pane.js';
 import { PaneSplitter } from './PaneSplit.js';
 import { WindowFrame } from './WindowFrame.js';
@@ -232,6 +232,90 @@ describe('TreeRow', () => {
     expect(first?.classList.contains('cursor')).toBe(false);
     expect(tree.getAttribute('aria-activedescendant')).toBe(second?.id);
     expect(second?.id).not.toBe('');
+  });
+
+  /** A sidebar tree whose pane, list, and first two rows each have a menu, as a host draws one. */
+  const menuTree = (cursor: RowCursor, opened: string[]) =>
+    render(
+      <TreePane label="Sidebar" onContextMenu={() => opened.push('pane')}>
+        <RowCursorContext value={cursor}>
+          <TreeList label="Services" onContextMenu={() => opened.push('list')}>
+            <TreeRow
+              name="PostgreSQL"
+              onContextMenu={(event, key) => opened.push(`row ${key} ${event.clientX}`)}
+              rowKey="a"
+            />
+            <TreeRow
+              name="Redis"
+              onContextMenu={(event, key) => opened.push(`row ${key} ${event.clientX}`)}
+              rowKey="b"
+            />
+            <TreeRow name="Memcached" rowKey="c" />
+          </TreeList>
+        </RowCursorContext>
+      </TreePane>
+    );
+
+  const secondaryClick = (target: Element, clientX = 0): boolean => {
+    const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX });
+    act(() => target.dispatchEvent(event));
+    return event.defaultPrevented;
+  };
+
+  it('takes the cursor on a secondary click, then opens its own menu, not its list’s or pane’s', () => {
+    const cursor = cursorAt('a');
+    const opened: string[] = [];
+    menuTree(cursor, opened);
+    const [first, second, third] = screen.getAllByRole('treeitem') as [
+      HTMLElement,
+      HTMLElement,
+      HTMLElement
+    ];
+
+    expect(first.hasAttribute('data-row-menu')).toBe(true);
+    expect(third.hasAttribute('data-row-menu')).toBe(false);
+    expect(secondaryClick(second, 30)).toBe(true);
+    // The row the menu opened over is the cursor before its menu runs.
+    expect(cursor.current()).toBe('b');
+    expect(second.getAttribute('aria-current')).toBe('true');
+    expect(opened).toEqual(['row b 30']);
+
+    // A row with no menu leaves the click to the list, the region around it.
+    secondaryClick(third);
+    expect(opened).toEqual(['row b 30', 'list']);
+    // A click a control in the row already took passes the row by.
+    const taken = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+    taken.preventDefault();
+    act(() => first.dispatchEvent(taken));
+    expect(opened).toEqual(['row b 30', 'list']);
+  });
+
+  it('opens the cursor row’s menu for the Menu key or Shift-F10 on the tree’s home, and the list’s for a pointer', () => {
+    const cursor = cursorAt('b');
+    const opened: string[] = [];
+    menuTree(cursor, opened);
+    const tree = screen.getByRole('tree', { name: 'Services' });
+
+    tree.focus();
+    fireEvent.keyDown(tree, { key: 'ContextMenu' });
+    secondaryClick(tree);
+    expect(opened).toEqual(['row b 0']);
+
+    fireEvent.keyDown(tree, { key: 'F10', shiftKey: true });
+    secondaryClick(tree);
+    expect(opened).toEqual(['row b 0', 'row b 0']);
+
+    // A pointer's click on the list's empty space is the list's, even right after the key.
+    fireEvent.keyDown(tree, { key: 'F10', shiftKey: true });
+    fireEvent.pointerDown(tree);
+    secondaryClick(tree);
+    expect(opened).toEqual(['row b 0', 'row b 0', 'list']);
+
+    // A cursor row with no menu leaves the key's menu to the list.
+    act(() => cursor.point('c'));
+    fireEvent.keyDown(tree, { key: 'ContextMenu' });
+    secondaryClick(tree);
+    expect(opened).toEqual(['row b 0', 'row b 0', 'list', 'list']);
   });
 
   it('lets a tool row with a key join the cursor as a row does', () => {

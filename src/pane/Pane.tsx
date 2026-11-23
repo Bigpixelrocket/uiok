@@ -161,13 +161,7 @@ export function PaneList({
   ...handlers
 }: PaneListProps): ReactElement {
   const region = regionHandlers(handlers);
-  // Whether the keyboard's menu key (the Menu key, Shift-F10) was the last
-  // thing pressed: only it makes a menu the keyboard's, until the menu it
-  // asks for, another key, or a press of the pointer or a mouse button. The
-  // event alone cannot tell: Chromium sends the Menu key's as a mouse's
-  // pointer event. A mouse's second button pressed while another is held
-  // brings a mousedown but no pointerdown, so both clear it.
-  const menuKey = useRef(false);
+  const menuKey = useMenuKeyHome(home, region);
 
   return (
     <div
@@ -177,32 +171,59 @@ export function PaneList({
       ref={ref}
       tabIndex={home ? -1 : undefined}
       {...region}
-      onContextMenu={(event) => {
-        const fromKeys = menuKey.current;
-        menuKey.current = false;
-        if (home && fromKeys && event.target === event.currentTarget) menuOnCursorRow(event);
-        region.onContextMenu?.(event);
-      }}
-      onKeyDownCapture={(event) => {
-        menuKey.current =
-          event.key === 'ContextMenu' ||
-          (event.key === 'F10' &&
-            event.shiftKey &&
-            !event.ctrlKey &&
-            !event.altKey &&
-            !event.metaKey);
-        region.onKeyDownCapture?.(event);
-      }}
-      onMouseDownCapture={() => {
-        menuKey.current = false;
-      }}
-      onPointerDownCapture={() => {
-        menuKey.current = false;
-      }}
+      {...menuKey}
     >
       {children}
     </div>
   );
+}
+
+/**
+ * The handlers that make a pane's home (`PaneList` with `home`, a tree's
+ * `TreeList`) hand the keyboard's menu key (the Menu key, Shift-F10) to its
+ * cursor row's menu, around the region's own handlers (`regionHandlers`),
+ * which they call in turn. Spread after the region's. Not a home, the
+ * element keeps the region's menu alone.
+ */
+export function useMenuKeyHome(
+  home: boolean,
+  region: RegionHandlers
+): Pick<
+  DOMAttributes<HTMLElement>,
+  'onContextMenu' | 'onKeyDownCapture' | 'onMouseDownCapture' | 'onPointerDownCapture'
+> {
+  // Whether the keyboard's menu key (the Menu key, Shift-F10) was the last
+  // thing pressed: only it makes a menu the keyboard's, until the menu it
+  // asks for, another key, or a press of the pointer or a mouse button. The
+  // event alone cannot tell: Chromium sends the Menu key's as a mouse's
+  // pointer event. A mouse's second button pressed while another is held
+  // brings a mousedown but no pointerdown, so both clear it.
+  const menuKey = useRef(false);
+
+  return {
+    onContextMenu: (event) => {
+      const fromKeys = menuKey.current;
+      menuKey.current = false;
+      if (home && fromKeys && event.target === event.currentTarget) menuOnCursorRow(event);
+      region.onContextMenu?.(event);
+    },
+    onKeyDownCapture: (event) => {
+      menuKey.current =
+        event.key === 'ContextMenu' ||
+        (event.key === 'F10' &&
+          event.shiftKey &&
+          !event.ctrlKey &&
+          !event.altKey &&
+          !event.metaKey);
+      region.onKeyDownCapture?.(event);
+    },
+    onMouseDownCapture: () => {
+      menuKey.current = false;
+    },
+    onPointerDownCapture: () => {
+      menuKey.current = false;
+    }
+  };
 }
 
 /**
