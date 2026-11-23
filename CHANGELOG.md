@@ -22,7 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Fixed
 
-- A `Row` name in markup gives its `nameTip` tooltip its words as assistive technology reads them, read again whenever they change: words under `aria-hidden="true"` or `hidden` are left out, so a cut `NameCut` name shows once, whole, and a component inside the name that renames it on its own updates the tooltip.
+- A `Row` name in markup gives its `nameTip` tooltip its words as assistive technology reads them, read again whenever they change: words under `aria-hidden="true"` or `hidden` are left out, a labelled glyph reads as its label (`aria-labelledby`, `aria-label`, or an `img`'s `alt`), so a cut `NameCut` name shows once, whole, and a component inside the name that renames it on its own updates the tooltip.
 - `PaneMessage` hangs its words beside a glyph only when one leads them (`icon`, or an svg that is the first thing in its words), not beside an icon inside the sentence, which now keeps its own size while a tone keeps its glyph.
 - A tooltip's label and shortcut are a word apart in its accessible name ("New Tab ⌘T", not "New Tab⌘T").
 - An open tooltip follows its element's tooltip attributes, so a `Row` name renamed under it shows its new words at once, and the tooltip closes when its words go.

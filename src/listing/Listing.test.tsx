@@ -593,6 +593,31 @@ describe('a row', () => {
       expect(tip()).toBe('Draft Database Postgres\nRunning');
     });
 
+    it('reads a labelled glyph as its label, and follows the label as it changes', async () => {
+      let relabel: (to: string) => void = () => undefined;
+      function Badged(): ReactElement {
+        const [label, setLabel] = useState('Production');
+
+        relabel = setLabel;
+        return (
+          <>
+            <svg aria-label={label} role="img">
+              <text>★</text>
+            </svg>
+            Replica
+            <span aria-label="ignored">, primary</span>
+            <img alt="eu-west" src="data:," />
+          </>
+        );
+      }
+      const tip = tipOf(<Badged />);
+
+      // A plain span's label is not read: its words are.
+      expect(tip()).toBe('Production Replica, primary eu-west\nRunning');
+      await act(async () => relabel('Staging'));
+      expect(tip()).toBe('Staging Replica, primary eu-west\nRunning');
+    });
+
     it('reads a cut NameCut name once, whole', () => {
       const tip = tipOf(
         <NameCut parts={nameParts([{ name: 'quarterly-report-final-version-2.sql' }])} />

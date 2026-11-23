@@ -634,15 +634,53 @@ function nameTooltip(name: ReactNode, nameText: string | null, tip: string | und
   });
 }
 
+/** Roles that take no name of their own, so a label on them is not read. */
+const UNNAMED_ROLES = new Set(['none', 'presentation', 'generic']);
+
+/**
+ * An element's own text alternative, read in place of its content, or null
+ * when it has none: the text of the elements `aria-labelledby` names, else
+ * `aria-label`, on an element whose role takes a name (an `svg` or an
+ * `img`, or one with an explicit role but none, presentation, or generic; a
+ * plain `span`'s label is not read); else an `img`'s `alt`.
+ */
+function textAlternative(element: Element): string | null {
+  const role = element.getAttribute('role');
+  const tag = element.localName;
+  const named = role === null ? tag === 'svg' || tag === 'img' : !UNNAMED_ROLES.has(role);
+
+  if (named) {
+    const ids = element.getAttribute('aria-labelledby')?.trim();
+    const root = element.getRootNode() as Partial<Pick<Document, 'getElementById'>>;
+
+    if (ids && typeof root.getElementById === 'function') {
+      const text = ids
+        .split(/\s+/)
+        .map((id) => root.getElementById?.(id)?.textContent ?? '')
+        .join(' ')
+        .trim();
+
+      if (text !== '') return text;
+    }
+    const label = element.getAttribute('aria-label')?.trim();
+
+    if (label) return label;
+  }
+  if (tag === 'img') return element.getAttribute('alt');
+  return null;
+}
+
 /**
  * A marked-up name's words as assistive technology reads them: every text
- * node but those under an `aria-hidden="true"` or `hidden` element, its
- * runs of space made one. So a name drawn twice, once for sight
+ * node but those under an `aria-hidden="true"` or `hidden` element, an
+ * element's own text alternative (`textAlternative`) in place of its
+ * content, its runs of space made one. So a name drawn twice, once for sight
  * (`aria-hidden`) and once read whole (`.visually-hidden`), as `NameCut`
  * draws a cut name, gives its words once, the whole name; a glyph or word
- * drawn for sight alone is left out; and words given to assistive
- * technology alone (`.visually-hidden`) are read, as they are part of the
- * name the row's description follows.
+ * drawn for sight alone is left out, a glyph labelled "Production" reads
+ * as its label; and words given to assistive technology alone
+ * (`.visually-hidden`) are read, as they are part of the name the row's
+ * description follows.
  */
 function readName(box: Node): string {
   let words = '';
@@ -654,11 +692,16 @@ function readName(box: Node): string {
     if (node.nodeType !== Node.ELEMENT_NODE) return;
     const element = node as Element;
 
-    if (
-      node !== box &&
-      (element.getAttribute('aria-hidden') === 'true' || element.hasAttribute('hidden'))
-    ) {
-      return;
+    if (node !== box) {
+      if (element.getAttribute('aria-hidden') === 'true' || element.hasAttribute('hidden')) return;
+
+      const alternative = textAlternative(element);
+
+      // A word of its own, apart from the words around it.
+      if (alternative !== null) {
+        words += ` ${alternative} `;
+        return;
+      }
     }
     for (const child of node.childNodes) walk(child);
   };
@@ -758,7 +801,7 @@ export function Row({
     // on the box is an attribute too, and must not wake it again.
     observer.observe(box, {
       attributes: true,
-      attributeFilter: ['aria-hidden', 'hidden'],
+      attributeFilter: ['aria-hidden', 'hidden', 'aria-label', 'aria-labelledby', 'alt', 'role'],
       characterData: true,
       childList: true,
       subtree: true
