@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { useState, type ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
@@ -299,6 +300,77 @@ describe('KeyLegendStrip', () => {
       } finally {
         restore();
       }
+    });
+  });
+
+  describe('with an alert', () => {
+    /** A host that refuses x with an alert, which the legend asks it to clear. */
+    function Refusing({ onDismiss }: { readonly onDismiss: () => void }): ReactElement {
+      const [alert, setAlert] = useState<string | null>(null);
+
+      return (
+        <>
+          <input
+            aria-label="Field"
+            onKeyDown={(event) => {
+              if (event.key === 'x') setAlert('Nothing to open here');
+            }}
+          />
+          <KeyLegendStrip
+            alert={alert}
+            onAlertDismiss={() => {
+              onDismiss();
+              setAlert(null);
+            }}
+            verbs={verbs()}
+          />
+        </>
+      );
+    }
+
+    it('shows the alert beside the verbs in a polite live region that is always there', () => {
+      const { rerender } = render(<KeyLegendStrip verbs={verbs()} />);
+      const region = screen.getByRole('status');
+
+      expect(region.textContent).toBe('');
+      rerender(<KeyLegendStrip alert="Nothing to open here" verbs={verbs()} />);
+      expect(screen.getByRole('status')).toBe(region);
+      expect(region.textContent).toBe('Nothing to open here');
+      expect(region.closest('footer')?.getAttribute('aria-label')).toBe('Keyboard shortcuts');
+    });
+
+    it('cuts a long alert with an ellipsis, whole in its tooltip, in the warning’s words', () => {
+      applyStylesheets(readStylesheet('src/styles.css'));
+      render(<KeyLegendStrip alert="Nothing to open here" verbs={verbs()} />);
+      const text = screen.getByRole('status').firstElementChild as HTMLElement;
+
+      expect(text.dataset.tooltip).toBe('Nothing to open here');
+      expect(text.hasAttribute('data-tooltip-cut')).toBe(true);
+      expect(declaredValues(text, 'text-overflow').at(-1)).toBe('ellipsis');
+      expect(declaredValues(text, 'overflow').at(-1)).toBe('hidden');
+      expect(declaredValues(text, 'white-space').at(-1)).toBe('nowrap');
+      expect(declaredValues(text, 'color').at(-1)).toBe('var(--warning-text)');
+    });
+
+    it('asks the host to clear it on the next key, not the one that raised it nor a modifier alone', () => {
+      const onDismiss = vi.fn();
+      render(<Refusing onDismiss={onDismiss} />);
+      const field = screen.getByRole('textbox', { name: 'Field' });
+
+      fireEvent.keyDown(field, { key: 'x' });
+      expect(screen.getByRole('status').textContent).toBe('Nothing to open here');
+      expect(onDismiss).not.toHaveBeenCalled();
+
+      fireEvent.keyDown(field, { key: 'Shift', shiftKey: true });
+      expect(onDismiss).not.toHaveBeenCalled();
+
+      fireEvent.keyDown(field, { key: 'ArrowDown' });
+      expect(onDismiss).toHaveBeenCalledOnce();
+      expect(screen.getByRole('status').textContent).toBe('');
+
+      // Cleared, the next key asks nothing.
+      fireEvent.keyDown(field, { key: 'ArrowDown' });
+      expect(onDismiss).toHaveBeenCalledOnce();
     });
   });
 });
