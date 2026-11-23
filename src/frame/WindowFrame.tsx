@@ -2,6 +2,10 @@ import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react';
 
 import type { RegionHandlers } from '../pane/Pane.js';
 
+/** Whether a slot was given something to draw: idiomatic `cond && <Part />` passes false for none. */
+export const drawn = (node: ReactNode): boolean =>
+  node !== null && node !== undefined && node !== false && node !== '';
+
 /**
  * The one element a host keeps its sidebar and main pane in (for its keys
  * or its drop zone): its handlers and ref. It draws no box, so the parts
@@ -33,6 +37,12 @@ export interface WindowFrameProps {
   /** The key legend across the window's foot (`KeyLegendStrip`). */
   readonly legend?: ReactNode;
   /**
+   * What stands at the band's trailing end, out of the drag region (the
+   * `UpdatePill`), for a window whose main pane has no tabs; a pane with
+   * tabs takes it as `PaneTabs`' `trailing` instead.
+   */
+  readonly trailing?: ReactNode;
+  /**
    * Gathers the sidebar, its edge, the main pane, the tray, and the dock in
    * one element with these handlers; none leaves them the frame's own children.
    */
@@ -59,16 +69,17 @@ export function WindowFrame({
   tray = null,
   dock = null,
   legend = null,
+  trailing = null,
   group
 }: WindowFrameProps): ReactElement {
-  const shown = sidebar !== null && sidebar !== undefined && sidebar !== false;
+  const shown = drawn(sidebar);
   const parts = (
     <>
       {shown ? <div className="window-frame-slot window-frame-sidebar">{sidebar}</div> : null}
       {shown ? resizer : null}
       <div className="window-frame-slot window-frame-main">{main}</div>
-      {tray === null ? null : <div className="window-frame-slot window-frame-tray">{tray}</div>}
-      {dock === null ? null : <div className="window-frame-slot window-frame-dock">{dock}</div>}
+      {drawn(tray) ? <div className="window-frame-slot window-frame-tray">{tray}</div> : null}
+      {drawn(dock) ? <div className="window-frame-slot window-frame-dock">{dock}</div> : null}
     </>
   );
 
@@ -81,6 +92,7 @@ export function WindowFrame({
       <div className="window-frame-band">
         <div className="window-frame-band-lead">{brand}</div>
         <span aria-hidden className="window-frame-band-rest" />
+        {drawn(trailing) ? <div className="shell-trailing">{trailing}</div> : null}
       </div>
       {group === undefined ? (
         parts
@@ -89,7 +101,7 @@ export function WindowFrame({
           {parts}
         </div>
       )}
-      {legend === null ? null : <div className="window-frame-legend">{legend}</div>}
+      {drawn(legend) ? <div className="window-frame-legend">{legend}</div> : null}
     </div>
   );
 }

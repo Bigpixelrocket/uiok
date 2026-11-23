@@ -52,7 +52,7 @@ const groups = (onClear = vi.fn()): readonly SettingsGroup[] => [
         Icon: Download,
         subsections: [],
         fills: true,
-        trailing: <span className="settings-sidebar-chip">2.5.0</span>,
+        chip: '2.5.0',
         body: <p>Update card</p>
       }
     ]

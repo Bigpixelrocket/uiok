@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import type { RegionHandlers } from '../pane/Pane.js';
+import { drawn } from './WindowFrame.js';
 
 /**
  * The height a dock takes: the height its host keeps, between `min` and
@@ -80,6 +81,8 @@ export interface DockProps extends RegionHandlers {
   readonly pageMin?: number;
   /** The pane holds the keyboard: its frame wears the accent. */
   readonly active?: boolean;
+  /** `danger` draws its frame in the danger colour (a production server's console). */
+  readonly tone?: 'danger';
   /**
    * Hears each height a drag of its top edge reaches; none draws no edge.
    * The edge's accessible name is `resizeLabel`.
@@ -112,6 +115,7 @@ export function Dock({
   height,
   pageMin = 160,
   active = false,
+  tone,
   onResize,
   onResizeEnd,
   resizeLabel,
@@ -186,6 +190,7 @@ export function Dock({
     <section
       aria-label={label}
       className={classes}
+      data-tone={tone}
       ref={attach}
       style={{ height: shown }}
       {...handlers}
@@ -201,7 +206,7 @@ export function Dock({
           role="separator"
         />
       )}
-      {bar === null ? null : <div className="dock-bar">{bar}</div>}
+      {drawn(bar) ? <div className="dock-bar">{bar}</div> : null}
       <div className="dock-body">{children}</div>
     </section>
   );

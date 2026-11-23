@@ -17,7 +17,7 @@ describe('EmptyState', () => {
         body="Runtimes come from mise, services from Homebrew."
         detail="Homebrew 4.6.11 · mise 2026.11.2"
         icon={Layers}
-        note="Bigpixelrocket's projects.toml holds 3 projects."
+        note="A projects file elsewhere holds 3 projects."
         steps={[
           { title: 'Pick a folder', detail: 'any folder of this Mac' },
           { title: 'Start them' }

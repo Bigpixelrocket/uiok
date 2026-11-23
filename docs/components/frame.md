@@ -73,19 +73,20 @@ import { TitleBar } from '@bigpixelrocket/uiok/shell';
 
 ## `WindowFrame` (`WindowFrameProps`)
 
-| Prop           | Type               | Default | Purpose                                                                                                         |
-| -------------- | ------------------ | ------- | --------------------------------------------------------------------------------------------------------------- |
-| `brand`        | `ReactNode`        |         | The title bar at the band's leading end, as wide as the sidebar                                                 |
-| `sidebar`      | `ReactNode`        | none    | The sidebar's pane (`TreePane`); none hides it and gives its room to the main pane, the tray, the dock          |
-| `resizer`      | `ReactNode`        | none    | The sidebar's edge (`SidebarResizer`), drawn while the sidebar shows                                            |
-| `sidebarWidth` | `number`           |         | The sidebar's width in pixels, which the title bar matches, kept while the sidebar is hidden                    |
-| `main`         | `ReactNode`        |         | The main pane (`PaneBox`); a `PaneTabs` header at its top rises into the band beside the title bar              |
-| `tray`         | `ReactNode`        | none    | A strip that takes its turn under the main pane (files being imported)                                          |
-| `dock`         | `ReactNode`        | none    | The dock under the main pane (`Dock`)                                                                           |
-| `legend`       | `ReactNode`        | none    | The key legend across the foot                                                                                  |
-| `group`        | `WindowFrameGroup` | none    | Gathers the sidebar, its edge, the main pane, the tray, and the dock in one element with these handlers and ref |
+| Prop           | Type               | Default | Purpose                                                                                                                                               |
+| -------------- | ------------------ | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `brand`        | `ReactNode`        |         | The title bar at the band's leading end, as wide as the sidebar                                                                                       |
+| `sidebar`      | `ReactNode`        | none    | The sidebar's pane (`TreePane`); none hides it and gives its room to the main pane, the tray, the dock                                                |
+| `resizer`      | `ReactNode`        | none    | The sidebar's edge (`SidebarResizer`), drawn while the sidebar shows                                                                                  |
+| `sidebarWidth` | `number`           |         | The sidebar's width in pixels, which the title bar matches, kept while the sidebar is hidden                                                          |
+| `main`         | `ReactNode`        |         | The main pane (`PaneBox`); a `PaneTabs` header at its top rises into the band beside the title bar                                                    |
+| `tray`         | `ReactNode`        | none    | A strip that takes its turn under the main pane (files being imported)                                                                                |
+| `dock`         | `ReactNode`        | none    | The dock under the main pane (`Dock`)                                                                                                                 |
+| `legend`       | `ReactNode`        | none    | The key legend across the foot                                                                                                                        |
+| `group`        | `WindowFrameGroup` | none    | Gathers the sidebar, its edge, the main pane, the tray, and the dock in one element with these handlers and ref                                       |
+| `trailing`     | `ReactNode`        | none    | At the band's trailing end, out of the drag region (the `UpdatePill`), for a main pane with no tabs; one with tabs takes it as `PaneTabs`' `trailing` |
 
-The frame is the space's root in the listing look: a column the panel's height that sizes every box by its border and resets its buttons, code, fieldsets, and legends at zero weight. While no tab shows, the band's empty end is the window's drag region, as is a tab row's empty end. With the sidebar hidden the main pane's tabs keep the place they have beside the title bar, so no tab moves. A host that keeps its sidebar and main pane in one element (for its keys or its drop zone) passes `group`: the element draws no box, so the parts keep their places in the grid.
+The frame is the space's root in the listing look: a column the panel's height that sizes every box by its border and resets its buttons, code, fieldsets, and legends at zero weight. While no tab shows, the band's empty end is the window's drag region, as is a tab row's empty end. With the sidebar hidden the main pane's tabs keep the place they have beside the title bar, so no tab moves. A slot given `false` (`cond && <Part />`) draws nothing, as one left out does. A host that keeps its sidebar and main pane in one element (for its keys or its drop zone) passes `group`: the element draws no box, so the parts keep their places in the grid.
 
 `SidebarResizer` (`label`, `width`, `min`, `max`, `pageMin`, `onResize`, `onResizeEnd`) is the sidebar's edge, in the gap beside the page: the pointer drags it, kept between `min` and the widest the room allows less `pageMin` (`draggedWidth`, its pure rule).
 
@@ -135,7 +136,7 @@ Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`
 
 ## Dock
 
-`Dock` (`open`, `label`, `height`, `pageMin`, `active`, `onResize`, `onResizeEnd`, `resizeLabel`, `bar`, `ref`, the region handlers, `children`) is a pane in `WindowFrame`'s `dock`: its toolbar (`bar`), then its body, which scrolls, at the `height` the host keeps. It never grows with what it shows, and in a window too short for both it gives way so the main pane over it keeps `pageMin` (160px unless given; `dockHeight` is the rule). With `onResize` its top edge, in the gap over it, is a separator named `resizeLabel` that drags its height; `onResizeEnd` hears the height to keep. Closed, it takes no room and keeps its state. `DockLog` (`label`, `empty`) is a log in its body, entries over a hairline each with the newest at the foot, saying `empty` while it has none; entries far from the foot skip layout until scrolled to. `DockLogEntry` (`actions`) is one entry with its verbs under it. `DockInput` holds what the dock takes typed in at the log's foot, ringed while it holds the keyboard, growing to half the dock and then scrolling.
+`Dock` (`open`, `label`, `height`, `pageMin`, `active`, `tone`, `onResize`, `onResizeEnd`, `resizeLabel`, `bar`, `ref`, the region handlers, `children`) is a pane in `WindowFrame`'s `dock`: its toolbar (`bar`), then its body, which scrolls, at the `height` the host keeps. It never grows with what it shows, and in a window too short for both it gives way so the main pane over it keeps `pageMin` (160px unless given; `dockHeight` is the rule). With `onResize` its top edge, in the gap over it, is a separator named `resizeLabel` that drags its height; `onResizeEnd` hears the height to keep. `tone="danger"` draws its frame in the danger colour, as a `PaneBox`'s. Closed, it takes no room and keeps its state. `DockLog` (`label`, `empty`) is a log in its body, entries over a hairline each with the newest at the foot, saying `empty` while it has none; entries far from the foot skip layout until scrolled to. `DockLogEntry` (`actions`) is one entry with its verbs under it. `DockInput` holds what the dock takes typed in at the log's foot, ringed while it holds the keyboard, growing to half the dock and then scrolling.
 
 ## A list over the pane under it
 

@@ -4,6 +4,7 @@ import type { ReactElement, ReactNode } from 'react';
 import { Button } from '../button/Button.js';
 import { Spinner } from '../icon/Spinner.js';
 import { ICON_MD, ICON_SM } from '../icon/sizes.js';
+import { drawn } from './WindowFrame.js';
 
 /** Props of a part that only lays out what it holds. */
 export interface PagePartProps {
@@ -31,7 +32,7 @@ export function Toolbar({ children, end }: ToolbarProps): ReactElement {
   return (
     <div className="pane-toolbar">
       {children}
-      {end === undefined ? null : <div className="pane-toolbar-end">{end}</div>}
+      {drawn(end) ? <div className="pane-toolbar-end">{end}</div> : null}
     </div>
   );
 }

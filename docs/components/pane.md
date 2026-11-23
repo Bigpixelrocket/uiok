@@ -58,7 +58,7 @@ function View() {
 
 ## Panes
 
-`PaneBox` (`active`, `label`, `as`, `ref`, and the region handlers: keys, focus, pointer down, drag and drop) is a pane: a framed column of its tab strip or path bar, its list, and its status line, a `section` unless `as="aside"`. `active` marks the pane that holds the keyboard, its frame in the accent; the others show their cursor row quietly. `PaneList` (`home`, `pointer`, `label`, `ref`, the region handlers) is its scrolling body: `home` makes it the list the keys return to and Page Up and Page Down measure (`data-pane-home`, focusable by script, out of the Tab order), and `pointer` lights the row under the pointer, for rows that act on a click. A sidebar's pane is the frame's `TreePane` ([Frame](frame.md)).
+`PaneBox` (`active`, `label`, `tone`, `as`, `ref`, and the region handlers: keys, focus, pointer down, drag and drop) is a pane: a framed column of its tab strip or path bar, its list, and its status line, a `section` unless `as="aside"`. `active` marks the pane that holds the keyboard, its frame in the accent; the others show their cursor row quietly. `tone="danger"` draws its frame and its front tab's outline in the danger colour (a production server). `PaneList` (`home`, `pointer`, `label`, `ref`, the region handlers) is its scrolling body: `home` makes it the list the keys return to and Page Up and Page Down measure (`data-pane-home`, focusable by script, out of the Tab order), and `pointer` lights the row under the pointer, for rows that act on a click. A sidebar's pane is the frame's `TreePane` ([Frame](frame.md)).
 
 ## Tabs
 
@@ -76,7 +76,7 @@ import {
 const [picks, setPicks] = useState<TabPicks | null>(null);
 const order = tabs.map((tab) => tab.id);
 
-<div className="pane active" data-tone={production ? 'danger' : undefined}>
+<PaneBox active tone={production ? 'danger' : undefined}>
   <PaneTabs
     front={front}
     label="Tabs"
@@ -95,7 +95,7 @@ const order = tabs.map((tab) => tab.id);
     tabs={tabs}
   />
   <PanePathBar trail={trail} />…
-</div>;
+</PaneBox>;
 ```
 
 ### Props

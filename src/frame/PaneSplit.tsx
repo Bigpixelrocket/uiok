@@ -119,7 +119,16 @@ export function usePaneSplit(
   const upper = useRef<HTMLDivElement | null>(null);
   const lower = useRef<HTMLElement | null>(null);
   const drag = useRef<AbortController | null>(null);
-  const [height, setHeight] = useState<number | null>(() => heldHeights.get(name) ?? null);
+  const [held, setHeld] = useState<{ readonly name: string; readonly height: number | null }>(
+    () => ({ name, height: heldHeights.get(name) ?? null })
+  );
+  // A page that changes its split's name while mounted takes that page's
+  // kept height, not the one it was showing.
+  const height = held.name === name ? held.height : (heldHeights.get(name) ?? null);
+  const setHeight = useCallback(
+    (next: number | null): void => setHeld({ name, height: next }),
+    [name]
+  );
 
   const settle = useCallback((): void => {
     const top = upper.current;
@@ -174,6 +183,8 @@ export function usePaneSplit(
 
   useLayoutEffect(settle, [settle, layoutKey]);
 
+  // Observed again when the layout changes, so a list that mounts after a
+  // load (its ref null at first) is watched from then on.
   useEffect(() => {
     const frame = upper.current?.parentElement;
 
@@ -185,7 +196,7 @@ export function usePaneSplit(
 
     observer.observe(frame);
     return () => observer.disconnect();
-  }, [settle]);
+  }, [settle, layoutKey]);
 
   useEffect(() => () => drag.current?.abort(), []);
 

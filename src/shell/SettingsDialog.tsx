@@ -45,8 +45,8 @@ export interface SettingsPage {
    * its own box (an updates page's notes) while the rest stays put.
    */
   readonly fills?: boolean;
-  /** What the page's sidebar row shows after its title (an offered build's chip). */
-  readonly trailing?: ReactNode;
+  /** A short label the page's sidebar row shows after its title as a warning chip (an offered build's version); none for none. */
+  readonly chip?: string | null;
   readonly body: ReactNode;
 }
 
@@ -250,7 +250,7 @@ function SettingsSidebar({
               >
                 <item.Icon aria-hidden size={ICON_MD} />
                 <span {...cutTooltip(item.title)}>{item.title}</span>
-                {item.trailing}
+                {item.chip ? <span className="settings-sidebar-chip">{item.chip}</span> : null}
               </button>
               {item.id === page.id && item.subsections.length > 0 ? (
                 <div className="settings-sidebar-subsections">

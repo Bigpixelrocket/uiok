@@ -1,6 +1,7 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { CircleAlert, Server } from 'lucide-react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { Switch } from '../field/Switch.js';
 import { RowCursorContext, type RowCursor } from '../listing/Listing.js';
@@ -9,6 +10,8 @@ import { Dock, dockHeight, DockLog, DockLogEntry } from './Dock.js';
 import { PageNote, SectionHead, ShowSidebarButton, Toolbar, ToolbarGap } from './PageParts.js';
 import { heldSplitHeight, SplitDetail, usePaneSplit } from './PaneSplit.js';
 import { TreeFilterInput, TreeList, TreeRow, TreeTool } from './Tree.js';
+import { PaneBox, PaneList } from '../pane/Pane.js';
+import { PaneSplitter } from './PaneSplit.js';
 import { WindowFrame } from './WindowFrame.js';
 
 /** A cursor the test moves by hand, as `usePaneKeys` gives a host. */
@@ -72,6 +75,76 @@ describe('WindowFrame', () => {
     expect(frame.querySelector(':scope > .window-frame-band')).not.toBeNull();
     fireEvent.drop(group);
     expect(onDrop).toHaveBeenCalledOnce();
+  });
+});
+
+describe('WindowFrame slots', () => {
+  it('draws no slot for a part given as false, as `cond && <Part />` passes', () => {
+    const { container } = render(
+      <WindowFrame
+        brand="b"
+        dock={false}
+        legend={false}
+        main="m"
+        sidebar={false}
+        sidebarWidth={240}
+        tray={false}
+        trailing={false}
+      />
+    );
+
+    expect(
+      container.querySelector(
+        '.window-frame-tray, .window-frame-dock, .window-frame-legend, .window-frame-sidebar, .shell-trailing'
+      )
+    ).toBeNull();
+  });
+
+  it('stands a tabless window’s trailing part at the band’s end, out of its drag region', () => {
+    const { container } = render(
+      <WindowFrame
+        brand="b"
+        main="m"
+        sidebarWidth={240}
+        trailing={<button type="button">Update</button>}
+      />
+    );
+
+    expect(container.querySelector('.window-frame-band > .shell-trailing')?.textContent).toBe(
+      'Update'
+    );
+  });
+
+  it('draws no empty bar or toolbar end for false', () => {
+    const { container } = render(
+      <>
+        <Dock bar={false} height={120} label="Console" open>
+          body
+        </Dock>
+        <Toolbar end={false}>
+          <button type="button">Start</button>
+        </Toolbar>
+      </>
+    );
+
+    expect(container.querySelector('.dock-bar, .pane-toolbar-end')).toBeNull();
+  });
+});
+
+describe('pane tone', () => {
+  it('draws a danger pane or dock in the danger tone', () => {
+    const { container } = render(
+      <>
+        <PaneBox tone="danger">pane</PaneBox>
+        <Dock height={120} label="Console" open tone="danger">
+          body
+        </Dock>
+      </>
+    );
+
+    expect(
+      [...container.querySelectorAll('.pane')].map((pane) => pane.getAttribute('data-tone'))
+    ).toEqual(['danger', 'danger']);
   });
 });
 
@@ -325,5 +398,82 @@ describe('page parts', () => {
     render(<ShowSidebarButton label="Show panel" onShow={onShow} />);
     act(() => screen.getByRole('button', { name: 'Show panel' }).click());
     expect(onShow).toHaveBeenCalledOnce();
+  });
+});
+
+describe('usePaneSplit', () => {
+  const observed: Element[] = [];
+
+  afterEach(() => {
+    observed.length = 0;
+    vi.unstubAllGlobals();
+  });
+
+  /** A page whose list mounts only once loaded, as a page under a load does. */
+  function Page({ name, loaded }: { readonly name: string; readonly loaded: boolean }): ReactNode {
+    const split = usePaneSplit(name, loaded);
+
+    return (
+      <PaneBox>
+        {loaded ? <PanePageFor split={split} /> : <PageNote busy>Loading…</PageNote>}
+      </PaneBox>
+    );
+  }
+
+  function PanePageFor({ split }: { readonly split: ReturnType<typeof usePaneSplit> }): ReactNode {
+    return (
+      <div>
+        <PaneList ref={split.upper}>rows</PaneList>
+        <PaneSplitter split={split} />
+        <SplitDetail split={split}>detail</SplitDetail>
+      </div>
+    );
+  }
+
+  it('watches the list for a window resize once it mounts after a load', () => {
+    vi.stubGlobal(
+      'ResizeObserver',
+      class {
+        observe(element: Element): void {
+          observed.push(element);
+        }
+        disconnect(): void {}
+      }
+    );
+    const { rerender } = render(<Page loaded={false} name="watch" />);
+
+    expect(observed).toHaveLength(0);
+    rerender(<Page loaded name="watch" />);
+    expect(observed.length).toBeGreaterThan(0);
+  });
+
+  it('takes the kept height of the split it is renamed to', () => {
+    const { result, rerender } = renderHook(({ name }) => usePaneSplit(name, null), {
+      initialProps: { name: 'first' }
+    });
+    const pointer = { button: 0, clientY: 300, preventDefault: () => undefined };
+    const pane = document.createElement('div');
+    const list = document.createElement('div');
+
+    document.body.append(list, pane);
+    act(() => {
+      result.current.upper.current = list as HTMLDivElement;
+      result.current.lower.current = pane;
+    });
+    act(() => result.current.drag(pointer as never));
+    act(() => {
+      window.dispatchEvent(new MouseEvent('pointermove', { clientY: 250 }));
+      window.dispatchEvent(new MouseEvent('pointerup'));
+    });
+    // jsdom lays nothing out, so the held height fits to no room; what
+    // matters is whether a held height applies at all.
+    expect(pane.style.flex).not.toBe('');
+
+    rerender({ name: 'second' });
+    expect(pane.style.flex).toBe('');
+    rerender({ name: 'first' });
+    expect(pane.style.flex).not.toBe('');
+    list.remove();
+    pane.remove();
   });
 });

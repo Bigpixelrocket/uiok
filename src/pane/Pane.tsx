@@ -24,6 +24,11 @@ export interface PaneBoxProps extends RegionHandlers {
   readonly active?: boolean;
   /** The pane's accessible name, when its path bar does not name it. */
   readonly label?: string;
+  /**
+   * `danger` draws its frame, and its front tab's outline, in the danger
+   * colour at rest, active, and in an inactive window (a production server).
+   */
+  readonly tone?: 'danger';
   /** The element it draws: a `section` by default, an `aside` for a sidebar. */
   readonly as?: 'section' | 'aside';
   readonly ref?: Ref<HTMLElement>;
@@ -40,13 +45,20 @@ export interface PaneBoxProps extends RegionHandlers {
 export function PaneBox({
   active = false,
   label,
+  tone,
   as: Element = 'section',
   ref,
   children,
   ...handlers
 }: PaneBoxProps): ReactElement {
   return (
-    <Element aria-label={label} className={active ? 'pane active' : 'pane'} ref={ref} {...handlers}>
+    <Element
+      aria-label={label}
+      className={active ? 'pane active' : 'pane'}
+      data-tone={tone}
+      ref={ref}
+      {...handlers}
+    >
       {children}
     </Element>
   );
