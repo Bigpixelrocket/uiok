@@ -30,7 +30,8 @@ export interface PaneMessageProps {
  * outside every listing scope (a page of the app's own, a popover), it
  * carries the scope itself (a `.listing-root` around it), as `Listing`
  * does, so it keeps its look. For what `Listing`'s `empty` and `PageNote`
- * do not cover. Draws `.pane-message` (`.danger`, `.warning`, `.empty`).
+ * do not cover. Draws `.pane-message` (`.danger`, `.warning`, `.empty`), its
+ * words in one `.pane-message-text`, so a `Code` inside flows with them.
  */
 export function PaneMessage({ children, tone, live = false }: PaneMessageProps): ReactElement {
   const scoped = useContext(ListingScopeContext);
@@ -39,7 +40,9 @@ export function PaneMessage({ children, tone, live = false }: PaneMessageProps):
       className={tone === undefined ? 'pane-message' : `pane-message ${tone}`}
       role={live ? 'status' : undefined}
     >
-      {children}
+      {/* One box for the sentence, so its text runs and inline code flow
+          as one line of words in the message's flex row. */}
+      <span className="pane-message-text">{children}</span>
     </p>
   );
 

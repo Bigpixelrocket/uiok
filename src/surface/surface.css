@@ -361,20 +361,20 @@
   user-select: text;
 }
 
-.fact {
+.fact-list-item {
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
   align-items: baseline;
 }
 
-.fact-name {
+.fact-list-name {
   min-width: 0;
   color: var(--text-dim);
   overflow-wrap: break-word;
 }
 
-.fact-value {
+.fact-list-value {
   min-width: 0;
   margin: 0;
   color: var(--text);
@@ -382,15 +382,15 @@
   overflow-wrap: anywhere;
 }
 
-.fact-value.printed {
+.fact-list-value.printed {
   white-space: pre-wrap;
 }
 
-.fact[data-tone='danger'] > .fact-value {
+.fact-list-item[data-tone='danger'] > .fact-list-value {
   color: var(--danger-text);
 }
 
-.fact[data-tone='warning'] > .fact-value {
+.fact-list-item[data-tone='warning'] > .fact-list-value {
   color: var(--warning-text);
 }
 

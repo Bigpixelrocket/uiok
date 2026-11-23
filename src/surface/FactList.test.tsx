@@ -46,7 +46,9 @@ describe('FactList', () => {
       </FactList>
     );
 
-    expect(screen.getByText('exited 1').closest('.fact')?.getAttribute('data-tone')).toBe('danger');
+    expect(screen.getByText('exited 1').closest('.fact-list-item')?.getAttribute('data-tone')).toBe(
+      'danger'
+    );
     expect(screen.getByText(/EADDRINUSE/).classList.contains('printed')).toBe(true);
   });
 });

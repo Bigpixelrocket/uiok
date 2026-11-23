@@ -735,43 +735,47 @@ function DatabaseChoice() {
     onKeyDown(event);
   };
 
+  // A pane grows along its parent's main axis; in a row it takes the width
+  // and keeps its content's height.
   return (
-    <PaneBox active bell={bell}>
-      <div
-        aria-label="Databases: arrows move, Space picks"
-        className="pane-list"
-        onKeyDown={onKeys}
-        ref={list}
-        tabIndex={0}
-      >
-        <RowCursorContext value={cursor}>
-          <Listing
-            columns={[{ label: 'Size', align: 'right' }]}
-            grid={`var(--icon-column) minmax(0, 1fr) ${column(10)}`}
-            title="Databases"
-          >
-            {DATABASES.map((database) => (
-              <Row
-                key={database.name}
-                name={database.name}
-                radio={{
-                  checked: database.name === picked,
-                  group: 'demo-database',
-                  onPick: () => setPicked(database.name),
-                  verb: 'pick'
-                }}
-                rowKey={database.name}
-              >
-                <Cell align="right">{database.size}</Cell>
-              </Row>
-            ))}
-          </Listing>
-        </RowCursorContext>
-        <PaneMessage>
-          Opening <Code>{picked}</Code> signs in as your login user, the way{' '}
-          <Code>brew services start postgresql@18</Code> set the server up.
-        </PaneMessage>
-      </div>
-    </PaneBox>
+    <div className="demo-row">
+      <PaneBox active bell={bell}>
+        <div
+          aria-label="Databases: arrows move, Space picks"
+          className="pane-list"
+          onKeyDown={onKeys}
+          ref={list}
+          tabIndex={0}
+        >
+          <RowCursorContext value={cursor}>
+            <Listing
+              columns={[{ label: 'Size', align: 'right' }]}
+              grid={`var(--icon-column) minmax(0, 1fr) ${column(10)}`}
+              title="Databases"
+            >
+              {DATABASES.map((database) => (
+                <Row
+                  key={database.name}
+                  name={database.name}
+                  radio={{
+                    checked: database.name === picked,
+                    group: 'demo-database',
+                    onPick: () => setPicked(database.name),
+                    verb: 'pick'
+                  }}
+                  rowKey={database.name}
+                >
+                  <Cell align="right">{database.size}</Cell>
+                </Row>
+              ))}
+            </Listing>
+          </RowCursorContext>
+          <PaneMessage>
+            Opening <Code>{picked}</Code> signs in as your login user, the way{' '}
+            <Code>brew services start postgresql@18</Code> set the server up.
+          </PaneMessage>
+        </div>
+      </PaneBox>
+    </div>
   );
 }

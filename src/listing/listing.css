@@ -1743,6 +1743,12 @@ button.crumb-label.crumb-siblings > svg {
   line-height: var(--line-height-compact);
 }
 
+/* A message's words in one box (PaneMessage), so text and inline code
+   flow as a sentence beside the glyph instead of as separate flex items. */
+:where(.listing-root) .pane-message-text {
+  min-width: 0;
+}
+
 :where(.listing-root) .pane-message code {
   font-family: var(--font-mono);
 }

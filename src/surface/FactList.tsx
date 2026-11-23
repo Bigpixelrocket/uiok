@@ -61,9 +61,9 @@ export interface FactProps {
  */
 export function Fact({ name, children, tone, printed = false }: FactProps): ReactElement {
   return (
-    <div className="fact" data-tone={tone}>
-      <dt className="fact-name">{name}</dt>
-      <dd className={printed ? 'fact-value printed' : 'fact-value'}>{children}</dd>
+    <div className="fact-list-item" data-tone={tone}>
+      <dt className="fact-list-name">{name}</dt>
+      <dd className={printed ? 'fact-list-value printed' : 'fact-list-value'}>{children}</dd>
     </div>
   );
 }

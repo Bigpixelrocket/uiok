@@ -15,7 +15,8 @@ describe('PaneMessage and PageNote outside a listing scope', () => {
     );
 
     expect(
-      screen.getByText('Start the server to see its databases.').parentElement?.className
+      screen.getByText('Start the server to see its databases.').closest('.pane-message')
+        ?.parentElement?.className
     ).toBe('listing-root');
     expect(screen.getByText('Installs from the tap.').closest('.listing-root')).not.toBeNull();
   });
@@ -27,7 +28,7 @@ describe('PaneMessage and PageNote outside a listing scope', () => {
       </ModalDialog>
     );
 
-    const message = screen.getByText('The tap is not trusted.');
+    const message = screen.getByText('The tap is not trusted.').closest('p') as HTMLElement;
 
     expect(message.className).toBe('pane-message warning');
     expect(message.parentElement?.getAttribute('role')).toBe('dialog');
