@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-11-23
+
+### Added
+
+- `TreeRow`'s `onContextMenu(event, rowKey)`: a secondary click for a tree row's menu, as a listing `Row`'s. The row moves the pane's cursor to itself before calling it and cancels the browser's own menu, so its handler wins over its `TreeList`'s and `TreePane`'s. With the focus on the tree's `TreeList`, the Menu key or Shift-F10 runs the cursor row's, its event placed under the row.
+- The pane docs demo walks Tab listing first (`usePaneKeys`' `tabOrder: 'listing'`) beside the browser's own order, and the frame demo opens a tree row's menu.
+
+### Fixed
+
+- A right-to-left box keeps its inline edge fade (`.scroll-fade-x`) on the right side and a submenu's chevron pointing left after an app's bundler processes the stylesheet, and the key legend's overflow list ends at the chip's left edge. Lightning CSS (Vite) rewrote `:dir(rtl)` into `:lang()` selectors, which a `dir="rtl"` box in an English page does not match; the fade and the chevron now follow the nearest `dir` attribute (`--scroll-fade-inline-to`, `--inline-flip`), and the list sits by a logical inset.
+- Return on a command in a `Palette` no longer closes it and opens it again: the palette cancels Return's default, so a host that hands the focus back to the button that opened it on close does not see the browser click that button with the same key.
+- A mouse's second button pressed while another is held, after a Shift-F10 the browser left alone, opens the pane's menu again, not the cursor row's: `PaneList` forgets the menu key on a `mousedown` as well as a `pointerdown`.
+- `SectionedDialog` focuses a section's first control past the column's end without throwing where the engine has no `scrollIntoView` (jsdom).
+- `SideBySide` applies a changed `from` without the scrollbar hold on the first width measured against it, so a pair hidden while `from` rose comes back stacked if it is now too narrow.
+- `ViewerWindow` no longer takes a file named `constructor`, an extension or interpreter such as `valueOf`, or a media type such as `toString` for an `Object.prototype` member, which posted a function to the highlighting worker and took the viewer down; the worker answers failed for a language it does not ship.
+- A PDF named `.`, `..`, or nothing, or whose name cannot be encoded (a lone surrogate), opens as `document.pdf` below its media URL instead of resolving to the URL's parent or failing. A PDF's `mediaUrl` carries no query or fragment.
+- A text or hex view's drag ends with the view and before the next drag starts, so a lost mouseup or an unmount leaves no window listeners or scroll timer behind.
+- The viewer says the copy failed on a page with no clipboard API (an insecure origin) instead of showing the raw error, and checks that a copy is still the latest in the same step that starts its write, so an overtaken copy never overwrites a newer one.
+- The image view leaves an arrow a control already handled alone, and its arrow keys and the hex view's selection steps are looked up by own keys only. The keyboard table no longer says Shift with an arrow extends a text view's selection; only the hex view's does.
+- `FieldGroup` names its note in the fieldset's `aria-describedby`, after the problem, and draws no note for `note={false}`, as `FieldRow` does.
+
 ## [0.6.0] - 2026-11-23
 
 ### Added
@@ -305,7 +326,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.3.0...v0.4.0
