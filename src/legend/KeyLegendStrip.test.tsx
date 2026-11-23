@@ -1,13 +1,10 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
-import { useState, type ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
 import type { LegendPair } from './KeyLegend.logic.js';
-import { paneKeyAction, type PaneKeyAction } from '../pane/PaneKeys.logic.js';
-import { usePaneKeys } from '../pane/usePaneKeys.js';
-import { KeyLegendStrip, type LegendAlert, type LegendVerb } from './KeyLegendStrip.js';
+import { KeyLegendStrip, type LegendVerb } from './KeyLegendStrip.js';
 
 const PAIR_LABELS: Readonly<Record<string, string>> = { upDown: 'Up/Down' };
 const pairLabel = (pair: LegendPair): string => PAIR_LABELS[pair] ?? pair;
@@ -303,146 +300,5 @@ describe('KeyLegendStrip', () => {
         restore();
       }
     });
-  });
-
-  describe('with an alert', () => {
-    /** A host that refuses x with an alert, which the legend asks it to clear. */
-    function Refusing({ onDismiss }: { readonly onDismiss: () => void }): ReactElement {
-      const [alert, setAlert] = useState<LegendAlert | null>(null);
-
-      return (
-        <>
-          <input
-            aria-label="Field"
-            onKeyDown={(event) => {
-              if (event.key === 'x') setAlert({ text: 'Nothing to open here' });
-            }}
-          />
-          <KeyLegendStrip
-            alert={alert}
-            onAlertDismiss={(dismissed) => {
-              onDismiss();
-              setAlert((now) => (now === dismissed ? null : now));
-            }}
-            verbs={verbs()}
-          />
-        </>
-      );
-    }
-
-    it('shows the alert beside the verbs in a polite live region that is always there', () => {
-      const { rerender } = render(<KeyLegendStrip verbs={verbs()} />);
-      const region = screen.getByRole('status');
-
-      expect(region.textContent).toBe('');
-      rerender(<KeyLegendStrip alert={{ text: 'Nothing to open here' }} verbs={verbs()} />);
-      expect(screen.getByRole('status')).toBe(region);
-      expect(region.textContent).toBe('Nothing to open here');
-      expect(region.closest('footer')?.getAttribute('aria-label')).toBe('Keyboard shortcuts');
-    });
-
-    it('cuts a long alert with an ellipsis, whole in its tooltip, in the warning’s words', () => {
-      applyStylesheets(readStylesheet('src/styles.css'));
-      render(<KeyLegendStrip alert={{ text: 'Nothing to open here' }} verbs={verbs()} />);
-      const text = screen.getByRole('status').firstElementChild as HTMLElement;
-
-      expect(text.dataset.tooltip).toBe('Nothing to open here');
-      expect(text.hasAttribute('data-tooltip-cut')).toBe(true);
-      expect(declaredValues(text, 'text-overflow').at(-1)).toBe('ellipsis');
-      expect(declaredValues(text, 'overflow').at(-1)).toBe('hidden');
-      expect(declaredValues(text, 'white-space').at(-1)).toBe('nowrap');
-      expect(declaredValues(text, 'color').at(-1)).toBe('var(--warning-text)');
-      expect(declaredValues(text, 'margin-inline-start').at(-1)).toBe('var(--space-6)');
-    });
-
-    it('asks the host to clear it on the next key, not the one that raised it nor a modifier alone', () => {
-      const onDismiss = vi.fn();
-      render(<Refusing onDismiss={onDismiss} />);
-      const field = screen.getByRole('textbox', { name: 'Field' });
-
-      fireEvent.keyDown(field, { key: 'x' });
-      expect(screen.getByRole('status').textContent).toBe('Nothing to open here');
-
-      for (const key of ['Shift', 'AltGraph']) fireEvent.keyDown(field, { key });
-      expect(screen.getByRole('status').textContent).toBe('Nothing to open here');
-
-      fireEvent.keyDown(field, { key: 'ArrowDown' });
-      expect(onDismiss).toHaveBeenCalled();
-      expect(screen.getByRole('status').textContent).toBe('');
-      const calls = onDismiss.mock.calls.length;
-
-      // Cleared, the next key asks nothing.
-      fireEvent.keyDown(field, { key: 'ArrowDown' });
-      expect(onDismiss).toHaveBeenCalledTimes(calls);
-    });
-
-    /**
-     * A view whose two-pane keys refuse ⌘O and ⌘⌫, each with an alert, and a
-     * legend that shows it: inside the view from the start (its listener
-     * added first), or mounted after (added last).
-     */
-    function RefusingView({ legendLater }: { readonly legendLater: boolean }): ReactElement {
-      const [alert, setAlert] = useState<LegendAlert | null>(null);
-      const [legend, setLegend] = useState(!legendLater);
-      const panes = usePaneKeys<PaneKeyAction, object>({
-        shown: true,
-        loaded: true,
-        initialPane: 'main',
-        page: 'page',
-        sidebarKeys: [],
-        openKey: null,
-        readVerbs: () => ({}),
-        noVerbs: {},
-        follows: [],
-        readKey: paneKeyAction,
-        cursorKey: () => false,
-        run: (action) => {
-          if (action.kind === 'chord' && action.letter === 'o') {
-            setAlert({ text: 'Nothing to open' });
-          }
-          if (action.kind === 'remove') setAlert({ text: 'Nothing to remove' });
-        }
-      });
-
-      return (
-        <div ref={panes.rootRef}>
-          <button onClick={() => setLegend(true)} type="button">
-            Show legend
-          </button>
-          <div className="pane" ref={panes.mainRef}>
-            <div aria-label="Page" data-pane-home="page" tabIndex={-1} />
-          </div>
-          {legend ? (
-            <KeyLegendStrip
-              alert={alert}
-              onAlertDismiss={(dismissed) => setAlert((now) => (now === dismissed ? null : now))}
-              verbs={verbs()}
-            />
-          ) : null}
-        </div>
-      );
-    }
-
-    for (const legendLater of [false, true]) {
-      it(`shows every refusal of keys in a row, the legend’s listener added ${legendLater ? 'last' : 'first'}`, () => {
-        render(<RefusingView legendLater={legendLater} />);
-        if (legendLater) fireEvent.click(screen.getByRole('button', { name: 'Show legend' }));
-        const page = screen.getByLabelText('Page');
-        const said = (): string | null => screen.getByRole('status').textContent;
-
-        page.focus();
-        fireEvent.keyDown(page, { key: 'o', metaKey: true });
-        expect(said()).toBe('Nothing to open');
-        // A different refusal on the next key replaces it.
-        fireEvent.keyDown(page, { key: 'Backspace', metaKey: true });
-        expect(said()).toBe('Nothing to remove');
-        // The same words again stay too: the alert is a new one.
-        fireEvent.keyDown(page, { key: 'Backspace', metaKey: true });
-        expect(said()).toBe('Nothing to remove');
-        // A key nothing refuses clears it.
-        fireEvent.keyDown(page, { key: 'ArrowDown' });
-        expect(said()).toBe('');
-      });
-    }
   });
 });

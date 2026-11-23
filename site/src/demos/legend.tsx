@@ -3,18 +3,12 @@
  * in the dock. The site's own legend runs along the window's bottom edge.
  * The narrow strip below shows the overflow: places that do not fit are left
  * out whole, so the strip ends on a complete key and verb. The last strip
- * folds them into a "+N" chip whose list runs them. Under it, a strip
- * whose Delete is refused: it says why beside the verbs until the next key.
+ * folds them into a "+N" chip whose list runs them.
  */
 
 import { useState, type CSSProperties } from 'react';
 
-import {
-  KeyLegendStrip,
-  type LegendAlert,
-  type LegendPair,
-  type LegendVerb
-} from '@bigpixelrocket/uiok/legend';
+import { KeyLegendStrip, type LegendPair, type LegendVerb } from '@bigpixelrocket/uiok/legend';
 
 const PAIR_LABELS: Readonly<Record<string, string>> = {
   upDown: 'Up/Down',
@@ -28,7 +22,6 @@ const pairLabel = (pair: LegendPair): string => PAIR_LABELS[pair] ?? pair;
 /** The key legend page's demo. */
 export function LegendDemo() {
   const [ran, setRan] = useState('nothing yet');
-  const [alert, setAlert] = useState<LegendAlert | null>(null);
   const verb = (label: string, chord: LegendVerb['chord'], pair?: LegendPair): LegendVerb => ({
     label,
     chord,
@@ -57,24 +50,6 @@ export function LegendDemo() {
         <KeyLegendStrip overflow="more" pairLabel={pairLabel} verbs={verbs} />
       </div>
       <code className="demo-readout">ran: {ran}</code>
-      <div className="legend-frame">
-        <KeyLegendStrip
-          alert={alert}
-          onAlertDismiss={(dismissed) => setAlert((now) => (now === dismissed ? null : now))}
-          pairLabel={pairLabel}
-          verbs={verbs.map((each) =>
-            each.label === 'Delete'
-              ? {
-                  ...each,
-                  run: () => setAlert({ text: 'Nothing to delete: the folder is read-only' })
-                }
-              : each
-          )}
-        />
-      </div>
-      <code className="demo-readout">
-        {alert === null ? 'click Delete for its refusal' : 'press any key to clear the refusal'}
-      </code>
     </div>
   );
 }

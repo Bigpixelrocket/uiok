@@ -11,9 +11,4 @@ export {
   type MoreListAction,
   type Pairable
 } from './KeyLegend.logic.js';
-export {
-  KeyLegendStrip,
-  type KeyLegendStripProps,
-  type LegendAlert,
-  type LegendVerb
-} from './KeyLegendStrip.js';
+export { KeyLegendStrip, type KeyLegendStripProps, type LegendVerb } from './KeyLegendStrip.js';
