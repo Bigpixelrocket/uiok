@@ -106,6 +106,18 @@ describe('PaletteOption', () => {
       />
     );
     expect(named('PostgreSQL The PostgreSQL server 18.1')).toBe(option);
+
+    // An empty label is none: the drawn name reads.
+    rerender(
+      <PaletteOption
+        context="The PostgreSQL server"
+        id="pg"
+        label=""
+        name="PostgreSQL"
+        onPick={() => undefined}
+      />
+    );
+    expect(named('PostgreSQL The PostgreSQL server')).toBe(option);
   });
 
   it('picks on a press and points on a move, and refuses both while disabled', () => {

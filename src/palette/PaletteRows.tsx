@@ -128,6 +128,8 @@ export function PaletteOption({
   const contextClass =
     contextKind === 'path' ? 'palette-context' : `palette-context palette-${contextKind}`;
   const hasContext = context !== undefined && context !== '';
+  // An empty label is none, as an empty context or description is.
+  const hasLabel = label !== undefined && label !== '';
 
   // Named from its content, every word it draws in the order drawn, so the
   // name a voice user speaks is the text they see. The spaces between the
@@ -154,8 +156,8 @@ export function PaletteOption({
       </span>{' '}
       <span className="palette-text">
         {/* The words that stand for a drawn name in markup, read in its place. */}
-        {label === undefined ? null : <VisuallyHidden>{label}</VisuallyHidden>}
-        <span aria-hidden={label === undefined ? undefined : true} className="row-name">
+        {hasLabel ? <VisuallyHidden>{label}</VisuallyHidden> : null}
+        <span aria-hidden={hasLabel ? true : undefined} className="row-name">
           {name}
         </span>
         {!hasContext ? null : (
