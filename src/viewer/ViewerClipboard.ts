@@ -71,17 +71,21 @@ export function deliverCopy(
   }
 
   // A read ends after the copy event, so the text goes to the clipboard on
-  // its own; a failed read explains itself. A copy a newer one overtook, or
-  // one of a view that has gone, writes and says nothing.
+  // its own; a failed read explains itself. A failed write says only that
+  // the copy failed, including on a page with no clipboard API (one served
+  // from an insecure origin), where the call itself throws. A copy a newer
+  // one overtook, or one of a view that has gone, writes and says nothing.
   text
     .then((value) =>
       current()
-        ? navigator.clipboard.writeText(value).then(
-            () => true,
-            () => {
-              throw new Error(labels.copyFailed);
-            }
-          )
+        ? Promise.resolve()
+            .then(() => navigator.clipboard.writeText(value))
+            .then(
+              () => true,
+              () => {
+                throw new Error(labels.copyFailed);
+              }
+            )
         : false
     )
     .then(

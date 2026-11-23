@@ -74,4 +74,27 @@ describe('copy tickets', () => {
 
     expect(say.mock.calls).toEqual([['Selection too large.']]);
   });
+
+  it.each([
+    ['no clipboard', {}],
+    ['a clipboard without writeText', { clipboard: {} }],
+    [
+      'a writeText that throws',
+      {
+        clipboard: {
+          writeText: () => {
+            throw new TypeError('Illegal invocation');
+          }
+        }
+      }
+    ]
+  ])('says the copy failed on a page with %s', async (_, clipboard) => {
+    vi.stubGlobal('navigator', { ...navigator, clipboard: undefined, ...clipboard });
+    const say = vi.fn();
+
+    deliverCopy({ text: 'abc' }, null, say, DEFAULT_VIEWER_LABELS);
+
+    await vi.waitFor(() => expect(say).toHaveBeenCalled());
+    expect(say.mock.calls).toEqual([[DEFAULT_VIEWER_LABELS.copyFailed]]);
+  });
 });
