@@ -203,6 +203,28 @@ describe("the keyboard's menu key, told from a pointer's click", () => {
     expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([1, 0]);
   });
 
+  it("takes the Menu key's menu as the keyboard's though the browser calls it a mouse's", () => {
+    // Chromium sends the Menu key's contextmenu as a PointerEvent whose
+    // pointerType is mouse and whose button is -1.
+    const onRow = vi.fn();
+    const onPane = vi.fn();
+    mount(onRow, onPane);
+    const home = screen.getByLabelText('Files', { selector: '.pane-list' });
+
+    home.focus();
+    fireEvent.keyDown(home, { key: 'ContextMenu' });
+    fireEvent(
+      home,
+      new PointerEvent('contextmenu', {
+        bubbles: true,
+        cancelable: true,
+        button: -1,
+        pointerType: 'mouse'
+      })
+    );
+    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([0, 1]);
+  });
+
   it("takes a menu as the keyboard's only right after the menu key, once", () => {
     const onRow = vi.fn();
     const onPane = vi.fn();

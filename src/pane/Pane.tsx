@@ -163,7 +163,8 @@ export function PaneList({
   const region = regionHandlers(handlers);
   // Whether the keyboard's menu key (the Menu key, Shift-F10) was the last
   // thing pressed: only it makes a menu the keyboard's, until the menu it
-  // asks for, another key, or a press of the pointer.
+  // asks for, another key, or a press of the pointer. The event alone cannot
+  // tell: Chromium sends the Menu key's as a mouse's pointer event.
   const menuKey = useRef(false);
 
   return (
@@ -175,7 +176,7 @@ export function PaneList({
       tabIndex={home ? -1 : undefined}
       {...region}
       onContextMenu={(event) => {
-        const fromKeys = menuKey.current && !fromPointer(event.nativeEvent);
+        const fromKeys = menuKey.current;
         menuKey.current = false;
         if (home && fromKeys && event.target === event.currentTarget) menuOnCursorRow(event);
         region.onContextMenu?.(event);
@@ -198,10 +199,6 @@ export function PaneList({
     </div>
   );
 }
-
-/** Whether a secondary click says it came from a mouse, a pen, or a touch. */
-const fromPointer = (event: Event): boolean =>
-  'pointerType' in event && ['mouse', 'pen', 'touch'].includes(String(event.pointerType));
 
 /**
  * The keyboard's menu key aimed at a pane's home, which holds the focus
