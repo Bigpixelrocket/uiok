@@ -103,6 +103,11 @@ describe('ansiSegments', () => {
     ]);
     // A 7-bit OSC ended by the 8-bit terminator keeps the words after it.
     expect(ansiSegments(`${ESC}]0;title${st}after`)).toEqual([{ text: 'after' }]);
+    // A control string's payload stays hidden through an 8-bit control inside it.
+    expect(ansiSegments(`visible${ESC}Xhidden\u0085marker${ESC}\\after`)).toEqual([
+      { text: 'visible' },
+      { text: 'after' }
+    ]);
     // A lone 8-bit control shows nothing.
     expect(ansiSegments(`x\u0085y${st}z`)).toEqual([{ text: 'x' }, { text: 'y' }, { text: 'z' }]);
   });

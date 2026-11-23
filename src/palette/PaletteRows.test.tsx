@@ -150,6 +150,28 @@ describe('PaletteOption', () => {
 
     expect(option.getAttribute('aria-description')).toBe('The PostgreSQL server, 18.1, Installed');
   });
+
+  it("keeps its name's id apart from any option's id", () => {
+    render(
+      <>
+        <PaletteOption
+          id="command"
+          name={<MarkedText positions={[0]} text="Open" />}
+          onPick={() => undefined}
+        />
+        <PaletteOption
+          id="command-name"
+          name={<MarkedText positions={[0]} text="Close" />}
+          onPick={() => undefined}
+        />
+      </>
+    );
+
+    // The query names its cursor row by id, which must find the row, not a name inside another.
+    expect(document.getElementById('command-name')?.getAttribute('role')).toBe('option');
+    expect(screen.getByRole('option', { name: 'Open' }).id).toBe('command');
+    expect(screen.getByRole('option', { name: 'Close' }).id).toBe('command-name');
+  });
 });
 
 describe('PaletteNotes', () => {

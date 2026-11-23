@@ -63,16 +63,16 @@ function skipRange(text: string, from: number, low: number, high: number): numbe
 
 /**
  * The end of a control string (OSC, DCS, SOS, PM, APC) whose payload starts
- * at `from`: past its BEL or ST (`ESC \` or the 8-bit ST), at an escape or
- * another 8-bit control that starts the next sequence, or at the end of the
- * text when it never ends.
+ * at `from`: past its BEL or ST (`ESC \` or the 8-bit ST), at an escape
+ * that starts the next sequence, or at the end of the text when it never
+ * ends. Any other byte, an 8-bit control included, is payload (SOS may
+ * carry anything but SOS and ST), so none of it shows.
  */
 function controlStringEnd(text: string, from: number): number {
   for (let at = from; at < text.length; at += 1) {
     const code = text.charCodeAt(at);
     if (code === BEL || code === ST) return at + 1;
     if (code === ESC) return text.charCodeAt(at + 1) === 0x5c ? at + 2 : at;
-    if (within(code, 0x80, 0x9f)) return at;
   }
   return text.length;
 }

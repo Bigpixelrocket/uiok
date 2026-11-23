@@ -118,21 +118,32 @@ describe('Menu', () => {
     expect(isNativeKeyboardTarget(menu.querySelector('[role="menuitem"]'))).toBe(true);
   });
 
-  it('stays inside the window when the window shrinks, keeping the focus where it is', () => {
+  it("stays inside the window when the window shrinks, its cursor's item in view and the focus kept", () => {
     const height = window.innerHeight;
+    const shown: string[] = [];
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: function (this: HTMLElement) {
+        shown.push(this.textContent ?? '');
+      }
+    });
     try {
-      const { menu } = open({ at: { x: 10, y: 400 } });
+      const { menu } = open({ at: { x: 10, y: 400 }, initial: 'remove' });
       const item = screen.getByRole('menuitem', { name: /Copy Path/ });
 
       expect(menu.style.top).toBe('400px');
+      expect(shown).toEqual(['Remove…']);
       Object.defineProperty(window, 'innerHeight', { configurable: true, value: 300 });
       fireEvent(window, new Event('resize'));
       // jsdom measures the menu as no height, so it stands a margin above the window's end.
       expect(menu.style.top).toBe('296px');
+      // The resize may have hidden the cursor's item, so it is brought back into view.
+      expect(shown).toEqual(['Remove…', 'Remove…']);
       expect(document.activeElement).toBe(menu);
       expect(item.isConnected).toBe(true);
     } finally {
       Object.defineProperty(window, 'innerHeight', { configurable: true, value: height });
+      delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
     }
   });
 

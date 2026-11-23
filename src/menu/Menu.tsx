@@ -143,7 +143,7 @@ export function Menu({
 
   // Placed after layout, when its own size is known, and given the keys;
   // placed again when the window resizes, so it never stands outside it,
-  // without moving the focus or the scroll.
+  // with the cursor's item kept in view and the focus left where it is.
   useLayoutEffect(() => {
     const menu = rootRef.current;
     if (menu === null) return;
@@ -161,12 +161,18 @@ export function Menu({
       menu.style.top = `${spot.top}px`;
     };
 
+    // A window that shrinks under a tall menu can hide the cursor's item.
+    const replace = (): void => {
+      place();
+      revealItem(itemId, cursorRef.current);
+    };
+
     place();
     menu.focus({ preventScroll: true });
     // A menu taller than the window scrolls; it opens with its cursor in view.
     revealItem(itemId, cursorRef.current);
-    window.addEventListener('resize', place);
-    return () => window.removeEventListener('resize', place);
+    window.addEventListener('resize', replace);
+    return () => window.removeEventListener('resize', replace);
   }, [at, anchor, itemId]);
 
   // A press outside closes it, but one on its anchor, which toggles it.

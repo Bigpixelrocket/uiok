@@ -121,7 +121,7 @@ The backdrop is `position: fixed` on `--z-dialog`. The box carries the listing s
 ### `PaletteOption` (`PaletteOptionProps`)
 
 - `id`: the row's id, the field's `activeId` while it is the cursor.
-- `name`: words, or `MarkedText` with the query's matches; `label` is the accessible name when `name` is not a string.
+- `name`: words, or `MarkedText` with the query's matches; pass `label`, the accessible name, whenever `name` is `MarkedText`, since a screen reader may read the drawn words split at the highlights.
 - `mark`: the icon column's glyph (a `ProductMark`, a lucide icon).
 - `context` and `contextKind` (`'sentence'` by default, `'path'`, `'command'`): what the row says after its name, one line, cut with an ellipsis and whole in its tooltip; a path gives way at its start.
 - `trail`: the end column, a version or a count in the meta tone, or a `KeyChord`.

@@ -1,4 +1,4 @@
-import type { ReactElement, ReactNode, Ref } from 'react';
+import { useId, type ReactElement, type ReactNode, type Ref } from 'react';
 
 import { CurrentDot } from '../listing/CurrentDot.js';
 import { cutTooltip } from '../tooltip/Tooltip.logic.js';
@@ -40,8 +40,9 @@ export interface PaletteOptionProps {
   /** The row's name: words, or `MarkedText` with the query's matches lit. */
   readonly name: ReactNode;
   /**
-   * The row's accessible name, when `name` is not a string; absent, a
-   * markup name's own words name it.
+   * The row's accessible name. Pass it whenever `name` is markup
+   * (`MarkedText`): without it the row is named by the drawn words, which a
+   * screen reader may read split at the highlights ("Po stgreSQL").
    */
   readonly label?: string;
   /** The glyph in the icon column (a `ProductMark`, a lucide icon), decorative. */
@@ -108,6 +109,8 @@ export function PaletteOption({
   onPoint,
   ref
 }: PaletteOptionProps): ReactElement {
+  // The name's own id, private to the row, so it never meets a caller's id.
+  const nameId = useId();
   const contextClass =
     contextKind === 'path' ? 'palette-context' : `palette-context palette-${contextKind}`;
   // The row is named by its name alone, which hides the words drawn after
@@ -125,7 +128,7 @@ export function PaletteOption({
       aria-label={label ?? (typeof name === 'string' ? name : undefined)}
       // A name in markup (MarkedText) names the row by its own words alone,
       // never with the context and trail that the description reads.
-      aria-labelledby={label === undefined && typeof name !== 'string' ? `${id}-name` : undefined}
+      aria-labelledby={label === undefined && typeof name !== 'string' ? nameId : undefined}
       aria-selected={cursor}
       className={cursor ? 'folder-menu-option cursor' : 'folder-menu-option'}
       id={id}
@@ -142,7 +145,7 @@ export function PaletteOption({
         {mark}
       </span>
       <span className="palette-text">
-        <span className="row-name" id={`${id}-name`}>
+        <span className="row-name" id={nameId}>
           {name}
         </span>
         {context === undefined || context === '' ? null : (
