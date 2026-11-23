@@ -292,6 +292,10 @@ describe('TreeTool', () => {
 });
 
 describe('Dock', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
   it('takes no room while closed and keeps its body', () => {
     const { container, rerender } = render(
       <Dock bar="Console" height={200} label="Console" open={false}>
@@ -346,7 +350,6 @@ describe('Dock', () => {
 
     expect(observed).toContain(container.querySelector('.window-frame'));
     expect(observed).toContain(container.querySelector('.window-frame-main'));
-    vi.unstubAllGlobals();
   });
 
   it('draws its edge for a drag, with its height as the separator’s value', () => {
