@@ -141,15 +141,26 @@ function useHeldModifiers(): ReadonlySet<LayerModifier> {
   return held;
 }
 
-/** The keys that are modifiers alone, which neither press a key nor clear an alert. */
+/**
+ * The keys that are modifiers alone, which neither press a key nor clear an
+ * alert: the UI Events modifier key values, and `OS`, which older browsers
+ * sent for the Windows key.
+ */
 const MODIFIER_KEYS = new Set([
-  'Shift',
-  'Control',
   'Alt',
   'AltGraph',
-  'Meta',
-  'Fn',
   'CapsLock',
+  'Control',
+  'Fn',
+  'FnLock',
+  'Hyper',
+  'Meta',
+  'NumLock',
+  'ScrollLock',
+  'Shift',
+  'Super',
+  'Symbol',
+  'SymbolLock',
   'OS'
 ]);
 
@@ -179,8 +190,13 @@ function useDismissOnKey(
 
   useLayoutEffect(() => {
     const now = latest.current;
+    // No alert keeps no event: the key that dismissed the last is held by nothing.
     const raisedBy =
-      alert === now.alert ? now.raisedBy : ((window as { event?: Event }).event ?? null);
+      alert === null
+        ? null
+        : alert === now.alert
+          ? now.raisedBy
+          : ((window as { event?: Event }).event ?? null);
 
     latest.current = { alert, dismiss, raisedBy };
   });

@@ -369,7 +369,8 @@ describe('KeyLegendStrip', () => {
       press(field, { key: 'x' });
       expect(screen.getByRole('status').textContent).toBe('Nothing to open here');
 
-      for (const key of ['Shift', 'AltGraph']) press(field, { key });
+      for (const key of ['Shift', 'AltGraph', 'NumLock', 'ScrollLock', 'Hyper'])
+        press(field, { key });
       expect(screen.getByRole('status').textContent).toBe('Nothing to open here');
 
       press(field, { key: 'ArrowDown' });
