@@ -1,5 +1,6 @@
 /**
- * A page tab strip and its smaller pill strip; Left and Right move between
+ * A page tab strip and its smaller pill strip, some tabs with a count;
+ * Left and Right move between
  * tabs, and a narrow strip fades the edges that hide tabs. Under them, the
  * name-only and icon-only looks, a strip with no current tab (a home page
  * that is no tab), and a strip too narrow for its tabs.
@@ -33,9 +34,9 @@ export function TabsDemo() {
         onSelect={setPage}
         tabs={[
           { id: 'overview', label: 'Overview', icon: FileText },
-          { id: 'members', label: 'Members', icon: Users },
+          { id: 'members', label: 'Members', icon: Users, count: 12 },
           { id: 'settings', label: 'Settings', icon: Settings },
-          { id: 'alerts', label: 'Alerts', icon: Bell },
+          { id: 'alerts', label: 'Alerts', icon: Bell, count: 2 },
           { id: 'search', label: 'Search', icon: Search }
         ]}
       />
@@ -48,7 +49,7 @@ export function TabsDemo() {
           tabs={[
             { id: 'general', label: 'General', icon: Gauge },
             { id: 'security', label: 'Security', icon: Shield },
-            { id: 'storage', label: 'Storage', icon: Database }
+            { id: 'storage', label: 'Storage', icon: Database, count: 3 }
           ]}
         />
       ) : null}

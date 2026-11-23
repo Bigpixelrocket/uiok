@@ -147,7 +147,7 @@ describe('Palette', () => {
     const dialog = screen.getByRole('dialog', { name: 'Commands' });
 
     expect(dialog.matches(MODAL_SELECTOR)).toBe(true);
-    expect(dialog.className).toBe('folder-menu palette');
+    expect(dialog.className).toBe('folder-menu palette listing-root');
     expect(document.activeElement).toBe(field());
     expect(field().getAttribute('aria-controls')).toBe(screen.getByRole('listbox').id);
   });
@@ -294,7 +294,7 @@ describe('Palette', () => {
     );
     const dialog = screen.getByRole('dialog');
 
-    expect(dialog.className).toBe('folder-menu palette commands');
+    expect(dialog.className).toBe('folder-menu palette listing-root commands');
     expect(dialog.hasAttribute('aria-busy')).toBe(false);
 
     rerender(

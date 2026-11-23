@@ -244,6 +244,15 @@ export function FrameDemo() {
                       />
                     ))
                   : null}
+                {open ? (
+                  <TreeRow
+                    add
+                    level={1}
+                    name="Add service…"
+                    onOpen={() => undefined}
+                    rowKey="add-service"
+                  />
+                ) : null}
                 <TreeTool icon={Settings2} kind="note" level={1} text="Services need Homebrew." />
               </TreeList>
               <PaneStatus>{running.length} running</PaneStatus>

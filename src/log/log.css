@@ -55,3 +55,83 @@
   color: var(--text-dim);
   font-family: var(--font-ui);
 }
+
+/* A line's SGR styling (LogWell's `ansi`): each ANSI colour drawn in the
+   theme's text tone nearest its meaning, each legible on the well, never
+   the terminal's own palette, which is tuned for the terminal's ground. A
+   background is a filled run in the tone's solid fill and its on-colour,
+   as a badge is. Black and white take the text's own two tones. */
+.log-ansi[data-fg='black'] {
+  color: var(--text-dim);
+}
+
+.log-ansi[data-fg='red'] {
+  color: var(--danger-text);
+}
+
+.log-ansi[data-fg='green'] {
+  color: var(--success-text);
+}
+
+.log-ansi[data-fg='yellow'] {
+  color: var(--warning-text);
+}
+
+.log-ansi[data-fg='blue'] {
+  color: var(--accent-text);
+}
+
+.log-ansi[data-fg='magenta'] {
+  color: var(--log-source-2);
+}
+
+.log-ansi[data-fg='cyan'] {
+  color: var(--log-source-5);
+}
+
+.log-ansi[data-fg='white'] {
+  color: var(--text);
+}
+
+.log-ansi[data-bg] {
+  padding-inline: var(--space-1);
+  border-radius: var(--radius-xs);
+  background: var(--fill);
+  color: var(--text);
+}
+
+.log-ansi[data-bg='red'] {
+  background: var(--danger);
+  color: var(--on-danger);
+}
+
+.log-ansi[data-bg='green'] {
+  background: var(--success);
+  color: var(--on-success);
+}
+
+.log-ansi[data-bg='yellow'] {
+  background: var(--warning);
+  color: var(--on-warning);
+}
+
+.log-ansi:is([data-bg='blue'], [data-bg='magenta'], [data-bg='cyan']) {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.log-ansi[data-bold] {
+  font-weight: var(--font-weight-strong);
+}
+
+.log-ansi[data-dim]:not([data-bg]) {
+  color: var(--text-dim);
+}
+
+.log-ansi[data-italic] {
+  font-style: italic;
+}
+
+.log-ansi[data-underline] {
+  text-decoration: underline;
+}

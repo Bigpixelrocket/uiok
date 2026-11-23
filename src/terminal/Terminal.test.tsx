@@ -11,6 +11,7 @@ import {
   type TerminalAction,
   type TerminalKeyStroke
 } from './Terminal.logic.js';
+import { TerminalBox } from './TerminalBox.js';
 import { TerminalScrollbackContext } from './TerminalScrollback.js';
 
 // The engine itself is covered by the ghostty suites; here a stand-in records
@@ -598,5 +599,39 @@ describe('Terminal', () => {
     expect(onConsumed).toHaveBeenCalledWith(6);
     handle.current?.write('more');
     expect(onConsumed).toHaveBeenLastCalledWith(4);
+  });
+});
+
+describe('TerminalBox', () => {
+  it('frames a read-only terminal at a fixed height, 200px unless given', async () => {
+    const { container, rerender } = render(<TerminalBox ariaLabel="Install log" />);
+    await ready();
+    const box = container.querySelector('.terminal-box') as HTMLElement;
+
+    expect(box.className).toBe('terminal-box');
+    expect(box.style.getPropertyValue('--terminal-box-height')).toBe('200px');
+    expect(box.querySelector(':scope > .terminal.terminal-box-screen')).not.toBe(null);
+    expect(screen.queryByRole('textbox')).toBe(null);
+
+    rerender(<TerminalBox ariaLabel="Install log" height={180} />);
+    expect(box.style.getPropertyValue('--terminal-box-height')).toBe('180px');
+  });
+
+  it('fills its parent with no height of its own', async () => {
+    const { container } = render(<TerminalBox ariaLabel="Console" fill />);
+    await ready();
+    const box = container.querySelector('.terminal-box') as HTMLElement;
+
+    expect(box.className).toBe('terminal-box fill');
+    expect(box.style.getPropertyValue('--terminal-box-height')).toBe('');
+  });
+
+  it('hands the terminal its handle, so output written draws in it', async () => {
+    const handle = createRef<TerminalHandle>();
+    render(<TerminalBox ariaLabel="Install log" ref={handle} />);
+    const surface = await ready();
+
+    act(() => handle.current?.write('21.6 MiB\r31.2 MiB'));
+    expect(surface.calls.at(-1)).toBe('enqueue:21.6 MiB\r31.2 MiB');
   });
 });

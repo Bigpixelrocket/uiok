@@ -13,6 +13,12 @@ export interface PageTab<Id extends string> {
   readonly label: string;
   /** The tab's icon. */
   readonly icon: LucideIcon;
+  /**
+   * How many things the page holds or asks about ("Updates 2", "Databases
+   * 3"), drawn after the name in the dim tone and read as part of the tab's
+   * name; none when absent or null. The app formats it for its language.
+   */
+  readonly count?: string | number | null;
 }
 
 /**
@@ -282,9 +288,9 @@ export function PageTabs<Id extends string>({
         ref={strip}
         role="tablist"
       >
-        {tabs.map(({ id, label: name, icon: Icon }) => (
+        {tabs.map(({ id, label: name, icon: Icon, count = null }) => (
           <button
-            aria-label={look === 'icons' ? name : undefined}
+            aria-label={look === 'icons' ? (count === null ? name : `${name} ${count}`) : undefined}
             aria-selected={id === current}
             className="page-tab"
             data-page-tab={id}
@@ -293,11 +299,16 @@ export function PageTabs<Id extends string>({
             role="tab"
             tabIndex={id === focusable ? 0 : -1}
             type="button"
-            {...(look === 'icons' ? tooltip(name) : {})}
+            {...(look === 'icons' ? tooltip(count === null ? name : `${name} ${count}`) : {})}
           >
             {look !== 'text' && <Icon aria-hidden size={ICON_MD} />}
             {/* data-label sizes the name for its bold weight, so no tab moves when the current one changes. */}
             {look !== 'icons' && <span data-label={name}>{name}</span>}
+            {look !== 'icons' && count !== null && (
+              <span className="page-tab-count" data-label={String(count)}>
+                {count}
+              </span>
+            )}
           </button>
         ))}
       </div>

@@ -93,7 +93,7 @@ import {
 />;
 ```
 
-Each request to show Settings on a page is a `SettingsPageRequest` (`{ pageId, seq }`), the number growing with every request so a repeat for the page already chosen still turns to it. A page whose body takes the column's height (its notes scroll in a box of their own) sets `fills`. A page's `chip` stands after its sidebar title as a warning chip (an offered build's version, `settings-sidebar-chip`).
+Each request to show Settings on a page is a `SettingsPageRequest` (`{ pageId, seq }`), the number growing with every request so a repeat for the page already chosen still turns to it. A page whose body takes the column's height (its notes scroll in a box of their own) sets `fills`. A page's `chip` stands after its sidebar title as a warning chip (an offered build's version, `settings-sidebar-chip`): words alone, or a `SettingsChip` (`text`, `icon`, a lucide glyph before the words such as an up arrow or a restart, and `tip`, its tooltip). While a row carries a chip its accessible name is `settings.pageWithChip(title, tip ?? text)` ("Updates, Update to 1.4.4"), so the page and the chip are read apart, never as one word.
 
 A page with keys of its own (a shortcut editor's find and recording) hands them to the dialog while it shows with `useSettingsPageKeys({ legend, onLeave, done })`: its legend replaces Done, `onLeave` runs on Escape and the leave slot instead of closing, and `done` puts Done back as the primary while Return has nothing of the page's to do. It gives them back as it unmounts. `settingsLegend(keys, onDone, done)` is the legend the dialog draws, and `SettingsPageKeysContext` is where a page renders on its own without a dialog. A page marks the control it brings into view as it opens with `SETTINGS_REVEAL_ATTRIBUTE` (`ThemeChoices` does for the theme in use), and a sticky head over its subsections with `SETTINGS_PAGE_HEAD_ATTRIBUTE`. `spiedSubsection` and `subsectionScrollTop` are the pure rules of which subsection the sidebar marks and where a sidebar click scrolls.
 
@@ -101,7 +101,7 @@ A page with keys of its own (a shortcut editor's find and recording) hands them 
 
 ### Labels read
 
-`settings`: `title`, `sidebar`, and `done` (`SettingsDialog`), `appearance` (`AppearanceSettings`). `dialog`: `cancel` (`SignInDialog`'s leave verb). See [labels](../labels.md).
+`settings`: `title`, `sidebar`, `done`, and `pageWithChip` (`SettingsDialog`), `appearance` (`AppearanceSettings`). `dialog`: `cancel` (`SignInDialog`'s leave verb). See [labels](../labels.md).
 
 ## Settings dialog
 

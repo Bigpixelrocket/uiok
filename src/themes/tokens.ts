@@ -191,6 +191,13 @@ const BY_APPEARANCE: Readonly<
       /** The accent's opacity under the terminal's selection. */
       readonly terminalSelection: number;
       /**
+       * How much of a product's brand colour its mark shows
+       * (`--product-mark-mix`), the rest the text tone: all of it on a light
+       * ground, lifted toward the text on a dark one, where a dark brand
+       * colour would sink.
+       */
+      readonly productMarkMix: `${number}%`;
+      /**
        * Black's share in a well's inner top shade (`--well-shade`), and the
        * most a pressed outlined control darkens (`--pressed-wash`).
        */
@@ -217,6 +224,7 @@ const BY_APPEARANCE: Readonly<
     hoverWhite: 50,
     fileListLift: 30,
     terminalSelection: 22,
+    productMarkMix: '100%',
     pressedBlack: 7,
     shadow: { raised: 12, popover: 18, modal: 28, modalContact: 12, modalRing: 0 }
   },
@@ -227,6 +235,7 @@ const BY_APPEARANCE: Readonly<
     hoverWhite: 6,
     fileListLift: 0,
     terminalSelection: 28,
+    productMarkMix: '78%',
     pressedBlack: 24,
     shadow: { raised: 30, popover: 45, modal: 55, modalContact: 35, modalRing: 35 }
   }
@@ -1037,6 +1046,9 @@ function derivedTokens(
     // HOVER_FROM_REST from rest (white, or the text's tint on a white panel;
     // see hoverShare); a pressed outlined control darkens instead.
     '--glass-edge': look.glassEdge,
+    // How much of a product's brand colour its mark (ProductMark) shows, the
+    // rest the text tone; the brand colour itself is the app's data.
+    '--product-mark-mix': look.productMarkMix,
     '--hover-wash': translucent(hoverTone, hoverShare),
     // A pressed outlined control: black where it darkens the ground enough
     // and keeps the text, else the text's tint (see pressedWash).
@@ -1622,7 +1634,14 @@ const BASE_TOKEN_NAMES = [
   '--tree-indent',
   '--log-source',
   '--log-source-width',
-  '--text-gutter-width'
+  '--text-gutter-width',
+  '--terminal-box-height',
+  '--product-mark-colour',
+  '--product-mark-fill',
+  '--product-mark-stroke',
+  '--timeline-start',
+  '--timeline-end',
+  '--timeline-at'
 ] as const;
 
 /** Every token name uiok defines: the fixed tokens, those a theme sets, and the stylesheet's own. */

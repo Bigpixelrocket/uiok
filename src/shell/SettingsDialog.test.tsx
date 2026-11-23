@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { Download, Palette } from 'lucide-react';
+import { ArrowUp, Download, Palette } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -86,6 +86,32 @@ describe('SettingsDialog', () => {
       'location'
     );
     expect(screen.getByRole('button', { name: 'Fonts' }).getAttribute('aria-current')).toBeNull();
+  });
+
+  it('reads a row and its chip apart, and draws a chip with a glyph and a tooltip', () => {
+    const { rerender } = render(<SettingsDialog groups={groups()} onClose={vi.fn()} />);
+
+    expect(screen.getByRole('button', { name: 'Updates, 2.5.0' })).toBeTruthy();
+
+    const withGlyph = groups().map((group) => ({
+      ...group,
+      pages: group.pages.map((page) =>
+        page.id === 'updates'
+          ? { ...page, chip: { text: '2.5.0', icon: ArrowUp, tip: 'Update to 2.5.0' } }
+          : page
+      )
+    }));
+    rerender(<SettingsDialog groups={withGlyph} onClose={vi.fn()} />);
+
+    const row = screen.getByRole('button', { name: 'Updates, Update to 2.5.0' });
+    const chip = row.querySelector('.settings-sidebar-chip') as HTMLElement;
+
+    expect(chip.dataset.tooltip).toBe('Update to 2.5.0');
+    expect(chip.querySelector('svg')).not.toBe(null);
+    expect(chip.textContent).toBe('2.5.0');
+    expect(screen.getByRole('button', { name: 'Shortcuts' }).hasAttribute('aria-label')).toBe(
+      false
+    );
   });
 
   it('turns to a page from the sidebar, telling the host which page shows', () => {

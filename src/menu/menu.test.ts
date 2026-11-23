@@ -50,4 +50,21 @@ describe('menu look', () => {
     expect(declaredValues(note, '-webkit-line-clamp').at(-1)).toBe('2');
     document.body.innerHTML = '';
   });
+
+  it('caps a popup menu to the window less its margins, and scrolls the rest', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="folder-menu menu-popup" role="menu">
+      <div class="entry-menu-heading">Versions</div>
+      <div class="folder-menu-option" role="menuitem">18</div>
+      <div class="folder-menu-separator" role="separator"></div>
+    </div>`;
+    const menu = document.querySelector('.menu-popup') as Element;
+
+    expect(declaredValues(menu, 'max-height').at(-1)).toBe('calc(100vh - 2 * var(--space-2))');
+    expect(getComputedStyle(menu).overflowY).toBe('auto');
+    // The cap counts the padding and border, and the entries scroll rather than shrink.
+    expect(getComputedStyle(menu).boxSizing).toBe('border-box');
+    for (const entry of menu.children) expect(getComputedStyle(entry).flexShrink).toBe('0');
+    document.body.innerHTML = '';
+  });
 });

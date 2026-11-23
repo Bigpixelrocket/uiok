@@ -120,6 +120,16 @@ export function ButtonDemo() {
         </TextLink>
         , which stopped an hour ago.
       </p>
+      {/* A short word named in full for a screen reader, and one with nothing to open yet. */}
+      <p className="field-note">
+        <TextLink label="View the whole log" onClick={press('View')}>
+          View
+        </TextLink>{' '}
+        ·{' '}
+        <TextLink disabled label="View the log (nothing written yet)" onClick={press('never')}>
+          View
+        </TextLink>
+      </p>
       <code className="demo-readout">pressed: {pressed}</code>
     </div>
   );

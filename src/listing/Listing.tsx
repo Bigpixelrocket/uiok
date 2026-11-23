@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import {
   createContext,
   useContext,
@@ -12,7 +12,7 @@ import {
   type RefObject
 } from 'react';
 
-import { ICON_SM, Spinner } from '../icon/index.js';
+import { ICON_MD, ICON_SM, Spinner } from '../icon/index.js';
 import type { SortDirection } from '../labels/listing.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import {
@@ -22,6 +22,7 @@ import {
   type LinkLook
 } from '../pane/PaneActions.js';
 import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
+import { ListingScopeContext } from './ListingScope.js';
 import { pathParts } from './PathParts.logic.js';
 
 /**
@@ -420,7 +421,9 @@ export interface ListingProps {
  * inside its pane. A listing with no rows says so in `empty`: a quiet row
  * under the strip instead of a table (`.pane-message.empty`, starting where
  * a row's icon starts, in the rows' type, dim), its column labels left out, so no
- * header stands over a row that is not one.
+ * header stands over a row that is not one. Drawn outside the listing
+ * scope (the frame, a dialog, and a palette carry it), it carries
+ * `.listing-root` itself, so a listing looks the same anywhere.
  */
 export function Listing({
   title,
@@ -433,7 +436,12 @@ export function Listing({
   titleLabel,
   children
 }: ListingProps): ReactElement {
-  const classes = className === undefined ? 'pane-listing' : `pane-listing ${className}`;
+  // Outside every listing scope (a page of the app's own, a popover) the
+  // listing carries the scope itself, so its rows keep their look.
+  const scoped = useContext(ListingScopeContext);
+  const classes = ['pane-listing', scoped ? '' : 'listing-root', className ?? '']
+    .filter(Boolean)
+    .join(' ');
   const chosen = useContext(RowLinkLookContext);
   const listing = useRef<HTMLElement & HTMLDivElement>(null);
   const fitting = typeof grid === 'function';
@@ -508,6 +516,36 @@ export interface RowProps {
   /** The name cell's own class, beside `row-name`. */
   readonly nameClass?: string;
   readonly className?: string;
+  /**
+   * The row's item is not there yet (a version not installed, a product
+   * not added): its name in the quieter row-meta tone (`.row-dim`).
+   */
+  readonly dim?: boolean;
+  /**
+   * The row adds one to its listing ("Add service…"), at the listing's
+   * foot: an accent plus in the mark's slot unless `mark` gives another
+   * glyph, and dim words that turn full under the pointer, the focus, and
+   * on the cursor row (`.pane-add`).
+   */
+  readonly add?: boolean;
+  /**
+   * Picked in a selection (`.selected`, `aria-selected`): the solid accent
+   * fill while its pane holds the keys, the neutral fill otherwise.
+   */
+  readonly selected?: boolean;
+  /** Ticked in a checkbox column (`.marked`): the marked tint and its leading bar. */
+  readonly marked?: boolean;
+  /**
+   * A change waiting to be applied: `changed` washes the row in the
+   * warning tone with its leading bar, `removed` strikes its name and
+   * cells out on the danger wash (`.row-changed`, `.row-removed`).
+   */
+  readonly change?: 'changed' | 'removed' | null;
+  /**
+   * The row stands out from its peers (the slowest path of a plan, the
+   * busiest item): its name in the strong weight (`.row-emphasis`).
+   */
+  readonly emphasis?: boolean;
   /** Opens the row's item on a click anywhere but its controls. */
   readonly onOpen?: () => void;
   /**
@@ -545,6 +583,12 @@ export function Row({
   name,
   nameClass,
   className,
+  dim = false,
+  add = false,
+  selected = false,
+  marked = false,
+  change = null,
+  emphasis = false,
   onOpen,
   level = 0,
   tabbable = false,
@@ -566,7 +610,20 @@ export function Row({
       <InRowContext.Provider value={!tabbable}>
         <div
           aria-current={current ? 'true' : undefined}
-          className={['row', current ? 'cursor' : '', className ?? ''].filter(Boolean).join(' ')}
+          aria-selected={selected || undefined}
+          className={[
+            'row',
+            current ? 'cursor' : '',
+            dim ? 'row-dim' : '',
+            add ? 'pane-add' : '',
+            selected ? 'selected' : '',
+            marked ? 'marked' : '',
+            change === null ? '' : `row-${change}`,
+            emphasis ? 'row-emphasis' : '',
+            className ?? ''
+          ]
+            .filter(Boolean)
+            .join(' ')}
           data-row-key={rowKey}
           onClick={onOpen}
           onFocus={() => cursor.point(rowKey)}
@@ -580,7 +637,7 @@ export function Row({
           tabIndex={focusable ? (current || entry ? 0 : -1) : undefined}
         >
           <span aria-hidden className="row-icon">
-            {mark}
+            {mark === undefined && add ? <Plus size={ICON_MD} /> : mark}
           </span>
           <span
             className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
@@ -598,21 +655,61 @@ export function Row({
   );
 }
 
+/**
+ * A cell's tone: `warning` a value with something waiting on it (an
+ * update), `accent` a value offered (the version an update brings),
+ * `danger` a value that failed.
+ */
+export type CellTone = 'warning' | 'accent' | 'danger';
+
 /** Props for {@link Cell}. */
 export interface CellProps {
   /** Right-aligned, for numbers. */
   readonly align?: 'right';
+  /**
+   * Its words in a tone, which holds on the cursor row and under the
+   * pointer; the row-meta tone when absent. A selection paints it in its
+   * own words, as every cell.
+   */
+  readonly tone?: CellTone;
+  /**
+   * What the cell holds when it is not a value: `action`, the row's verbs
+   * at its end (`QuietAction`, `RowIconAction`; `.pane-action-cell`), or
+   * `hover`, secondary icon controls in view on every row in their quiet
+   * tone (`.pane-hover-cell`).
+   */
+  readonly kind?: 'action' | 'hover';
+  /** The value is missing (SQL NULL): its words in the row-meta tone's italic (`.value-null`). */
+  readonly missing?: boolean;
   readonly className?: string;
   /** The cell's whole text, for one cut short, as its tooltip and description; none when null. */
   readonly tip?: string | null;
   readonly children?: ReactNode;
 }
 
-/** A cell of a row after its name, in the listing's metadata look (`.row-meta`). */
-export function Cell({ align, className, tip, children }: CellProps): ReactElement {
+/**
+ * A cell of a row after its name, in the listing's metadata look
+ * (`.row-meta`), in the row-meta tone or the `tone` given.
+ */
+export function Cell({
+  align,
+  tone,
+  kind,
+  missing = false,
+  className,
+  tip,
+  children
+}: CellProps): ReactElement {
   return (
     <span
-      className={['row-meta', align === 'right' ? 'align-right' : '', className ?? '']
+      data-tone={tone}
+      className={[
+        'row-meta',
+        align === 'right' ? 'align-right' : '',
+        kind === undefined ? '' : `pane-${kind}-cell`,
+        missing ? 'value-null' : '',
+        className ?? ''
+      ]
         .filter(Boolean)
         .join(' ')}
       role="cell"

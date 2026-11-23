@@ -341,7 +341,9 @@
   --row-fill: var(--strip);
 }
 
-/* The disclosure chevron in a row's first column (`TreeToggle`). */
+/* The disclosure chevron in a row's first column (`TreeToggle`), in the
+   rows' dim icon tone (a row's words may be darker). One class, so the
+   cursor, mark, selection, and hover tones over a row's icon still win. */
 .tree-chev {
   display: inline-flex;
   align-items: center;
@@ -350,7 +352,7 @@
   border: 0;
   border-radius: var(--radius-xs);
   background: none;
-  color: inherit;
+  color: var(--text-dim);
 }
 
 .tree-chev:hover {
@@ -385,8 +387,10 @@
   color: var(--row-meta-text);
 }
 
-/* On a cursor or marked row the quiet words take the surface's text. */
-.row:is(.cursor, .marked):where(:not(.selected)) :is(.tree-detail, .tree-glyph),
+/* On a cursor or marked row the quiet words take the surface's text, and
+   the glyph too but on an add row, which keeps its accent plus. */
+.row:is(.cursor, .marked):where(:not(.selected)) .tree-detail,
+.row:is(.cursor, .marked):where(:not(.selected, .pane-add)) .tree-glyph,
 .tree-tool.cursor,
 .tree-tool.cursor .tree-note-glyph {
   color: var(--text-on-surface);
@@ -462,6 +466,14 @@
   );
 }
 
+/* A tree note that is also a listing's empty line (`.pane-message.empty`,
+   "No tables") keeps the tree's size and padding, which that two-class
+   rule would otherwise replace with the rows' size and no padding. */
+.tree-tool.pane-message.empty {
+  padding-block: var(--space-1);
+  font-size: var(--font-size-small);
+}
+
 /* A heading over a group of rows further down the tree. */
 .tree-tool.tree-heading {
   margin-top: var(--space-3);
@@ -503,6 +515,16 @@
   font: inherit;
   font-size: var(--font-size-small);
   text-overflow: ellipsis;
+}
+
+/* Its row's underline shows the focus, so no field ring: two classes'
+   weight, past the base stylesheet's ring, which comes later. Forced
+   colours draw no shadow, so there the underline is gone and the ring
+   stays. */
+@media (forced-colors: none) {
+  .tree-filter-input:focus-visible {
+    outline: 0;
+  }
 }
 
 /* ---- A pane's quick row ---- */

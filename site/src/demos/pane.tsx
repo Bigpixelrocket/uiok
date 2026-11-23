@@ -6,7 +6,8 @@
  * row offers. Click into the demo to give it the keys; they return to the
  * page when the focus leaves it. Under it, path bars with a fact in each
  * tone, at full width and in a 300px pane, where the trail gives way and
- * the fact cuts its words with the whole fact as a tooltip. Then a trail
+ * the fact cuts its words with the whole fact as a tooltip, and a last
+ * crumb whose ⌄ drops its siblings as a menu. Then a trail
  * deeper than a 300px row can hold, which keeps its last crumbs and fades its
  * start, a fact whose mark is a host's own glyph, a hand-written trail with a
  * home crumb and a brief one, and the three looks a row link takes. Above
@@ -157,6 +158,24 @@ function PathFacts({
             tip="Start the dev server"
             word="Start"
           />
+        </PanePathBar>
+      </section>
+      <section className={pane}>
+        {/* The last crumb drops its siblings as a menu, the one shown marked. */}
+        <PanePathBar
+          heading
+          siblings={{
+            label: 'Other versions',
+            entries: ['18 · 18.1', '17 · 17.7', '16 · 16.11'].map((line, index) => ({
+              id: line,
+              label: line,
+              current: index === 0 ? 'Shown' : null
+            })),
+            onPick: (id) => say(`went to ${id}`)
+          }}
+          trail={[{ label: 'Services', onOpen: () => say('went to Services') }, 'PostgreSQL', '18']}
+        >
+          <PathFact mark={<StateMark tone="ready" word="" />}>18.1 · port 5432</PathFact>
         </PanePathBar>
       </section>
       <section className={pane}>

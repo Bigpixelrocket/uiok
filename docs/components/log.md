@@ -20,13 +20,18 @@ import { LogWell } from '@bigpixelrocket/uiok/log';
 
 ## `LogWell` (`LogWellProps`)
 
-| Prop      | Type                 | Default | Purpose                                                                                       |
-| --------- | -------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `lines`   | `readonly LogLine[]` |         | `{ key, source?, text, tone? }`: what wrote it, its words, and a tone the host marks          |
-| `label`   | `string`             |         | The log's accessible name                                                                     |
-| `sources` | `readonly string[]`  | `[]`    | The sources in the order their colours go, so each keeps its colour; any other takes the next |
-| `follow`  | `boolean`            | `true`  | Keeps the newest line in view while the reader is at the foot; a reader scrolled up stays put |
-| `empty`   | `string`             |         | The words shown while the log has no line                                                     |
+| Prop      | Type                 | Default | Purpose                                                                                                |
+| --------- | -------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| `lines`   | `readonly LogLine[]` |         | `{ key, source?, text, tone? }`: what wrote it, its words, and a tone the host marks                   |
+| `label`   | `string`             |         | The log's accessible name                                                                              |
+| `sources` | `readonly string[]`  | `[]`    | The sources in the order their colours go, so each keeps its colour; any other takes the next          |
+| `follow`  | `boolean`            | `true`  | Keeps the newest line in view while the reader is at the foot; a reader scrolled up stays put          |
+| `empty`   | `string`             |         | The words shown while the log has no line                                                              |
+| `ansi`    | `boolean`            | `false` | Reads the SGR escape sequences in each string line: colours, backgrounds, bold, dim, italic, underline |
+
+### ANSI colour (`ansi`)
+
+With `ansi`, a line whose text is a string is read by `ansiSegments(text)` into runs (`AnsiSegment`: `text`, `fg`, `bg` as `AnsiColour` names, `bold`, `dim`, `italic`, `underline`). The eight colours and their bright forms map to the theme's text tones, never the terminal's palette, which is tuned for the terminal's own ground: red `--danger-text`, green `--success-text`, yellow `--warning-text`, blue `--accent-text`, magenta and cyan the `--log-source-2` and `--log-source-5` hues, black `--text-dim`, white `--text`. A background draws a filled run, a badge, in the tone's solid fill and its on-colour (`--danger` with `--on-danger`, blue, magenta, and cyan on `--accent`). Dim sets a plain run in `--text-dim`; a dim filled run keeps its fill's on-colour, which stays legible on the fill. Inverse swaps them; 256-colour, true-colour, and underline-colour codes (38, 48, 58, in their `;` and `:` forms) are skipped whole, and a `:` group is one parameter (`4:3` a curly underline, drawn as underline, `4:0` underline off). Only a CSI ending in `m` with no private marker (`<`, `=`, `>`, `?`) and no intermediate byte is read as SGR; every other escape sequence (cursor moves, titles, DCS, SOS, PM, and APC strings with their payload, up to their BEL or string terminator) is dropped, in its 7-bit form (`ESC [`, `ESC ]`) or its 8-bit one (a C1 control, U+0080 to U+009F), and so is an escape cut off at the end of the line and any lone 8-bit control, so no control byte shows. Reading is linear in the line's length, and the text is never read as markup. Runs are `.log-ansi` spans with `data-fg`, `data-bg`, `data-bold`, `data-dim`, `data-italic`, and `data-underline`. Without `ansi`, a string is drawn as written.
 
 A line's `tone` is `danger` (a failure, in `--danger-text`), `warning` (`--warning-text`), or `dim` (one of the log's own notes, `--text-dim`). With no source on any line the words stand alone, with no prefix column.
 

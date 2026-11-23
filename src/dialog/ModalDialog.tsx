@@ -15,6 +15,7 @@ import { createPortal } from 'react-dom';
 
 import { isKeyKept } from '../keyboard/BrowserKeys.js';
 import { isTextEditingTarget } from '../keyboard/Keyboard.logic.js';
+import { ListingScopeContext } from '../listing/ListingScope.js';
 import { cutTooltip } from '../tooltip/Tooltip.logic.js';
 import { DialogLayerContext } from './DialogLayer.js';
 import { DialogLegend } from './DialogLegend.js';
@@ -309,7 +310,12 @@ function DialogFrame({
         aria-describedby={describedBy}
         aria-labelledby={labelId}
         aria-modal="true"
-        className={['dialog', size === undefined ? null : `dialog-size-${size}`, className]
+        className={[
+          'dialog',
+          'listing-root',
+          size === undefined ? null : `dialog-size-${size}`,
+          className
+        ]
           .filter(Boolean)
           .join(' ')}
         data-pinned={pinned !== null || undefined}
@@ -374,7 +380,9 @@ function DialogFrame({
             {title}
           </h2>
         </div>
-        <NestedFocusContext value={claimNestedFocus}>{children}</NestedFocusContext>
+        <NestedFocusContext value={claimNestedFocus}>
+          <ListingScopeContext value>{children}</ListingScopeContext>
+        </NestedFocusContext>
         {legend && <DialogLegend legend={legend} onLeave={onCancel} />}
       </div>
     </div>

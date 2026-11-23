@@ -29,13 +29,13 @@ import { PageTabs } from '@bigpixelrocket/uiok/tabs';
 | Prop       | Type                          | Meaning                                                               |
 | ---------- | ----------------------------- | --------------------------------------------------------------------- |
 | `label`    | `string`                      | The strip's accessible name                                           |
-| `tabs`     | `readonly PageTab<Id>[]`      | `{ id, label, icon }` (a lucide icon), in drawing order               |
+| `tabs`     | `readonly PageTab<Id>[]`      | `{ id, label, icon, count? }` (a lucide icon), in drawing order       |
 | `current`  | `Id \| null`                  | The shown page's tab; null marks none (a home page that is no tab)    |
 | `onSelect` | `(id: Id) => void`            | The tab a click or an arrow opens                                     |
 | `pills`    | `boolean`                     | The smaller, rounded second strip                                     |
 | `look`     | `'icons' \| 'text' \| 'both'` | Icon and name (the default), name alone, or icon alone named on hover |
 
-Each tab carries `data-page-tab="<id>"`.
+Each tab carries `data-page-tab="<id>"`. A tab's `count` ("Updates 2", "Databases 3"; a string or a number the app formats, none when null) is drawn after its name in `--text-dim` with figures of one width (`.page-tab-count`), in the current tab's words on the current tab, and joins the tab's accessible name; an icons-only tab names it in its label and tooltip.
 
 ## Overflow
 

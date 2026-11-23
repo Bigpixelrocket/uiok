@@ -4,7 +4,8 @@
  * and the state, path, and terminal-well cells; `CurrentDot` marks the
  * current one in a list, `EmptyState` fills a pane with nothing in it
  * yet or one that could not load, and `PaneMessage` is one line about a
- * listing (a hint, a refusal, a warning).
+ * listing (a hint, a refusal, a warning); `TimelineCell` and
+ * `TimelineScale` draw a row's span on a shared scale.
  */
 
 export { type SortDirection } from '../labels/listing.js';
@@ -25,6 +26,7 @@ export {
   Strip,
   WellColumn,
   type CellProps,
+  type CellTone,
   type ColumnSort,
   type ListingColumn,
   type ListingProps,
@@ -38,3 +40,10 @@ export {
 } from './Listing.js';
 export { PaneMessage, type PaneMessageProps, type PaneMessageTone } from './PaneMessage.js';
 export { pathParts, type PathParts } from './PathParts.logic.js';
+export {
+  TimelineCell,
+  TimelineScale,
+  type TimelineCellProps,
+  type TimelineScaleProps,
+  type TimelineTick
+} from './Timeline.js';

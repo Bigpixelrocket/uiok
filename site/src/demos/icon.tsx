@@ -1,15 +1,25 @@
 /**
  * The four icon sizes: the three that sit beside text, each with the text
  * size it belongs with, and the glyph alone over an empty state or a
- * failure; then the Spinner at each text size. Every icon keeps lucide's
- * default stroke, which the largest holds at 2px on screen.
+ * failure; then the Spinner at each text size; then ProductMark, each
+ * product's brand mark from the demo's own data, and a fallback glyph.
+ * Every icon keeps lucide's default stroke, which the largest holds at 2px
+ * on screen.
  */
 
-import { FolderOpen } from 'lucide-react';
+import { Database, FolderOpen } from 'lucide-react';
 
-import { ICON_LG, ICON_MD, ICON_SM, ICON_XL, Spinner } from '@bigpixelrocket/uiok/icon';
+import {
+  ICON_LG,
+  ICON_MD,
+  ICON_SM,
+  ICON_XL,
+  ProductMark,
+  Spinner
+} from '@bigpixelrocket/uiok/icon';
 
 import { DemoState, DemoStates } from '../DemoStates';
+import { DEMO_MARKS } from './marks';
 
 const SIZES = [
   { name: 'ICON_SM', size: ICON_SM, text: 'var(--font-size-small)' },
@@ -58,6 +68,25 @@ export function IconDemo() {
             </span>
           </DemoState>
         ))}
+      </DemoStates>
+      <DemoStates minCell="140px" title="ProductMark">
+        {Object.values(DEMO_MARKS).map((mark) => (
+          <DemoState
+            key={mark.title}
+            label={mark.colour === 'currentColor' ? `${mark.title}, plain` : mark.title}
+          >
+            <span className="demo-row">
+              <ProductMark mark={mark} />
+              {mark.title}
+            </span>
+          </DemoState>
+        ))}
+        <DemoState label="No mark: the fallback glyph">
+          <span className="demo-row">
+            <ProductMark fallback={Database} />
+            CouchDB
+          </span>
+        </DemoState>
       </DemoStates>
     </div>
   );

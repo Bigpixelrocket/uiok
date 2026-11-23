@@ -1,5 +1,7 @@
 /**
- * Filtered menus: the fuzzy matcher (`matchQuery`), the rules every filtered
+ * Menus: `Menu`, a menu of verbs or places opened at a point or dropped
+ * from an element, with `placeMenu` and `menuKeyAction` under it; and for
+ * filtered menus: the fuzzy matcher (`matchQuery`), the rules every filtered
  * menu and palette shares (a refused keystroke, the cursor's moves, the trail
  * of levels opened in place), the visual bell's beat, and the menu look in
  * menu.css under `.listing-root`.
@@ -20,3 +22,20 @@ export {
   type PickableRow
 } from './MenuQuery.logic.js';
 export { useBellBeat } from './useBellBeat.js';
+export {
+  Menu,
+  type MenuEntry,
+  type MenuHeadingEntry,
+  type MenuItemEntry,
+  type MenuProps,
+  type MenuSeparatorEntry
+} from './Menu.js';
+export {
+  MENU_MARGIN,
+  menuKeyAction,
+  placeMenu,
+  type MenuBox,
+  type MenuKeyAction,
+  type MenuPoint,
+  type MenuSize
+} from './Menu.logic.js';

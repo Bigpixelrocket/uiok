@@ -176,12 +176,13 @@ A folded pair's label ("Up/Down") is not a label here: the app owns its pair voc
 
 ### `settings`
 
-| Field        | Type               | English default                     |
-| ------------ | ------------------ | ----------------------------------- |
-| `title`      | `string`           | Settings (the dialog's title)       |
-| `sidebar`    | `string`           | Settings pages (the sidebar's name) |
-| `done`       | `string`           | Done (the dialog's one verb)        |
-| `appearance` | `AppearanceLabels` | The Appearance page's words, below  |
+| Field          | Type                                     | English default                                                           |
+| -------------- | ---------------------------------------- | ------------------------------------------------------------------------- |
+| `title`        | `string`                                 | Settings (the dialog's title)                                             |
+| `sidebar`      | `string`                                 | Settings pages (the sidebar's name)                                       |
+| `done`         | `string`                                 | Done (the dialog's one verb)                                              |
+| `pageWithChip` | `(page: string, chip: string) => string` | "Updates, Update to 1.4.4" (a sidebar row's name while it carries a chip) |
+| `appearance`   | `AppearanceLabels`                       | The Appearance page's words, below                                        |
 
 `AppearanceLabels`: `title` (Theme), `mode` (Appearance), `modes` (`system` System, `light` Light, `dark` Dark), `modeNote(mode, systemDark)` ("Follows the system, which is light now.", "Light whatever the system uses."), `lightTheme` (Light theme), `lightNote` (Shown while the appearance is light.), `darkTheme` (Dark theme), `darkNote`, and `inUse` (In use now). `AppearanceMode` is `'system' | 'light' | 'dark'`.
 

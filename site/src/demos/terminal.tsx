@@ -2,8 +2,10 @@
  * The terminal in its three uses: a read-only build log with colours (select
  * text, then ⌘C or a secondary click for the menu), a live terminal that
  * echoes what you type (Return starts a line, Ring the bell flashes it), and
- * an idle output well that has printed nothing yet; then the state a
- * terminal shows when its engine cannot start.
+ * an idle output well that has printed nothing yet; a TerminalBox, the
+ * 200px framed console a dialog shows, where a download's progress line
+ * redraws in place; then the state a terminal shows when its engine cannot
+ * start.
  */
 
 import { CircleAlert } from 'lucide-react';
@@ -12,7 +14,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { useLabels } from '@bigpixelrocket/uiok/labels';
-import { Terminal, type TerminalHandle } from '@bigpixelrocket/uiok/terminal';
+import { Terminal, TerminalBox, type TerminalHandle } from '@bigpixelrocket/uiok/terminal';
 
 const ESC = '\u001b';
 const c = (code: string, text: string) => `${ESC}[${code}m${text}${ESC}[0m`;
@@ -99,6 +101,28 @@ function EchoTerminal() {
   );
 }
 
+/** A framed console whose last line redraws in place, as a download's progress does. */
+function ProgressConsole() {
+  const ref = useRef<TerminalHandle>(null);
+
+  useEffect(() => {
+    let done = 0;
+    // Start clean: a development build runs this effect twice.
+    ref.current?.reset();
+    ref.current?.write('\u001b[2m❯\u001b[0m mise install php@8.5.4\r\n');
+    const timer = window.setInterval(() => {
+      done = done >= 31 ? 0 : done + 1;
+      const bar = '━'.repeat(done) + ' '.repeat(31 - done);
+      ref.current?.write(
+        `\r\u001b[2mmise\u001b[0m php@8.5.4  \u001b[34m${bar}\u001b[0m ${done}/31 MiB`
+      );
+    }, 200);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return <TerminalBox ariaLabel="Install log" ref={ref} />;
+}
+
 /**
  * The terminal's start failure, drawn with the markup the Terminal renders
  * in its place when the engine cannot load, since the demo's own engine
@@ -130,6 +154,8 @@ export function TerminalDemo() {
       <div className="demo-terminal short">
         <Terminal ariaLabel="Output" />
       </div>
+      <span className="demo-label">TerminalBox, a dialog's console</span>
+      <ProgressConsole />
       <span className="demo-label">Start failure</span>
       <div className="demo-terminal short">
         <StartFailure />

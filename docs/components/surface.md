@@ -1,6 +1,6 @@
-# Notices, cards, swatches, tags, selection, and shared recipes (`@bigpixelrocket/uiok/surface`)
+# Notices, cards, swatches, tags, fact tables, selection, and shared recipes (`@bigpixelrocket/uiok/surface`)
 
-Surfaces a page draws round its own content, each a component: `Notice`, `Card`, `GroupSwatch`, and `Tag`, with their looks in `@bigpixelrocket/uiok/styles.css`, and the shared recipes below.
+Surfaces a page draws round its own content, each a component: `Notice`, `Card`, `FactTable` with `FactRow`, `GroupSwatch`, and `Tag`, with their looks in `@bigpixelrocket/uiok/styles.css`, and the shared recipes below.
 
 ## GroupSwatch
 
@@ -49,6 +49,38 @@ import { Tag } from '@bigpixelrocket/uiok/surface';
 | `danger`  | `--danger-wash`  | `--danger-text`     |
 
 Which tone an environment takes is the app's call; a common choice is Production `danger`, Staging `warning`, Local `ready`. Classes: `.tag[data-tone]`, `.caps`. A tag cut by its column ends in an ellipsis.
+
+## FactTable
+
+A short table of facts on a settings page or a detail page, one thing a row: what a page checks and reports (the tools it runs, where each is, its version), not what the user edits (a `FieldRow`'s) and not a list the keys move through (a `Listing`).
+
+```tsx
+import { FactRow, FactTable } from '@bigpixelrocket/uiok/surface';
+
+<FactTable label="Tools">
+  <FactRow
+    detail="/opt/homebrew/bin/brew"
+    name="Homebrew"
+    tone="ready"
+    toneLabel="Found"
+    value="4.6.11"
+  />
+  <FactRow
+    detail="~/.zshrc"
+    name="Shell activation"
+    tone="warning"
+    toneLabel="Not found"
+    value="missing"
+  />
+</FactTable>;
+```
+
+| Part        | Props                                                       | Draws                                                                                        |
+| ----------- | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `FactTable` | `label` (the table's accessible name), `children`           | `.fact-table` (`role="table"`), the rows' columns shared through a subgrid, a hairline above |
+| `FactRow`   | `tone` (`FactTone`), `toneLabel`, `name`, `detail`, `value` | `.fact-row[data-tone]`: the state glyph, the name, the detail, the value, a hairline under   |
+
+`FactTone` is `'ready'` (a check, `--success-text`), `'warning'` (a triangle, `--warning-text`), `'danger'` (a cross, `--danger-text`), or `'muted'` (a dashed ring, `--text-dim`): each a shape of its own, so the state reads without its hue, named by `toneLabel` as an image with that tooltip. The name is in the interface face, the detail and the value in the code face, the value right-aligned in figures of one width; a name or a string detail cut short shows whole in its tooltip. The words can be swept and copied. Put a page's note about the table under it as a `FieldNote`.
 
 ## Notice
 

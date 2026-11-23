@@ -1,13 +1,17 @@
+import { ChevronDown } from 'lucide-react';
 import {
   Fragment,
   useLayoutEffect,
   useRef,
+  useState,
   type CSSProperties,
   type ReactElement,
   type ReactNode
 } from 'react';
 
-import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
+import { ICON_SM } from '../icon/sizes.js';
+import { Menu, type MenuEntry, type MenuItemEntry } from '../menu/Menu.js';
+import { cutTooltip, describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
 import { InPathBarContext } from './PaneActions.js';
 import { clearWordTips, giveWordTips } from './toolWords.js';
 
@@ -18,6 +22,19 @@ export interface PaneCrumb {
   readonly onOpen: () => void;
   /** What a press does, when the label alone does not say it. */
   readonly tip?: string;
+}
+
+/**
+ * The other places beside the last crumb's (a service's other versions, a
+ * project's other commands), which a ⌄ after its words opens as a `Menu`.
+ */
+export interface PaneSiblings {
+  /** The menu's accessible name and what the ⌄ says it opens: "Other versions". */
+  readonly label: string;
+  /** The places, the one shown among them with its `current`; `MenuEntry`s. */
+  readonly entries: readonly MenuEntry[];
+  /** Goes to the place picked, by its entry's id; the menu closes itself. */
+  readonly onPick: (id: string) => void;
 }
 
 /** Props for {@link PanePathBar}. */
@@ -36,6 +53,12 @@ export interface PanePathBarProps {
   readonly heading?: boolean;
   /** Drawn after the last crumb's label, inside its crumb: the `CurrentDot` of the one shown. */
   readonly here?: ReactNode;
+  /**
+   * The last crumb's siblings: the crumb becomes a button with a ⌄ after
+   * its words that drops them as a menu under it, the cursor on the one
+   * shown (the entry with `current`).
+   */
+  readonly siblings?: PaneSiblings | null;
   /** Facts and compact controls at the bar's end. */
   readonly children?: ReactNode;
 }
@@ -177,6 +200,76 @@ function showFocusedCrumb(trail: HTMLElement, crumb: Element): void {
 }
 
 /**
+ * The last crumb with its siblings: a button with the crumb's words and a
+ * ⌄ (`aria-haspopup="menu"`) that drops the siblings' `Menu` under it and
+ * takes it away again; picking one or a key that closes the menu gives
+ * the focus back to the crumb. On a page's path bar it stands in the
+ * page's heading.
+ */
+function SiblingsCrumb({
+  label,
+  heading,
+  siblings
+}: {
+  readonly label: string;
+  readonly heading: boolean;
+  readonly siblings: PaneSiblings;
+}): ReactElement {
+  const [crumb, setCrumb] = useState<HTMLButtonElement | null>(null);
+  const [open, setOpen] = useState(false);
+  const current = siblings.entries.find(
+    (entry): entry is MenuItemEntry =>
+      (entry.kind === undefined || entry.kind === 'item') &&
+      entry.current !== undefined &&
+      entry.current !== null
+  );
+  const close = (by: 'keyboard' | 'pointer'): void => {
+    setOpen(false);
+    if (by === 'keyboard') crumb?.focus();
+  };
+  const button = (
+    <button
+      aria-expanded={open}
+      aria-haspopup="menu"
+      className="crumb-label crumb-siblings"
+      // A press while the menu is open closes it and gives the focus back
+      // here, since the menu that held it goes away.
+      onClick={() => (open ? close('keyboard') : setOpen(true))}
+      // While the menu holds the focus, a press here closes it, not the focus.
+      onMouseDown={(event) => {
+        if (open) event.preventDefault();
+      }}
+      ref={setCrumb}
+      type="button"
+      {...tooltip(`${label} · ${siblings.label}`)}
+    >
+      <span className="crumb-text">{label}</span>
+      <ChevronDown aria-hidden size={ICON_SM} />
+    </button>
+  );
+
+  return (
+    <>
+      {heading ? <h2 className="crumb-heading">{button}</h2> : button}
+      {open && crumb !== null && (
+        <Menu
+          anchor={crumb}
+          compact
+          entries={siblings.entries}
+          initial={current?.id ?? null}
+          label={siblings.label}
+          onClose={close}
+          onPick={(id) => {
+            siblings.onPick(id);
+            close('keyboard');
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+/**
  * The row a pane opens with: a path bar, in the listing look (under
  * `.listing-root`). Its crumbs say where the pane is; one handed as a
  * `PaneCrumb` is a control that goes there. A narrow pane, or a longer
@@ -184,6 +277,8 @@ function showFocusedCrumb(trail: HTMLElement, crumb: Element): void {
  * way first, the last one only once they have. A cut crumb opens its whole
  * text as a tooltip, and a crumb in full view opens none (a control's
  * `tip`, when it has one, says what a press does instead, cut or not).
+ * A bar with `siblings` makes its last crumb a ⌄ button that drops the
+ * places beside it (a service's other versions) as a `Menu`.
  * Facts and controls sit at the bar's end (`.path-tools`): a state
  * as `PathFact`, compact verbs as `QuietAction` and `.path-star` icon
  * buttons. In a bar too narrow for everything, things give way in one
@@ -199,6 +294,7 @@ export function PanePathBar({
   mark,
   heading = false,
   here,
+  siblings = null,
   children
 }: PanePathBarProps): ReactElement {
   const rowRef = useRef<HTMLDivElement>(null);
@@ -300,14 +396,18 @@ export function PanePathBar({
           const Label = last && heading ? 'h2' : 'span';
 
           return (
-            <Fragment key={`${index}:${label}`}>
+            // The siblings crumb keeps one key whatever its words, so picking
+            // a sibling that renames it keeps the button the focus went back to.
+            <Fragment key={last && siblings !== null ? 'siblings' : `${index}:${label}`}>
               {index > 0 && (
                 <span aria-hidden className="crumb-separator">
                   /
                 </span>
               )}
               <span className={last ? 'crumb here' : 'crumb'}>
-                {typeof crumb === 'string' ? (
+                {last && siblings !== null ? (
+                  <SiblingsCrumb heading={heading} label={label} siblings={siblings} />
+                ) : typeof crumb === 'string' ? (
                   <Label className="crumb-label">
                     {/* The words are cut in a block box, where the
                         ellipsis draws; the tooltip opens only while they

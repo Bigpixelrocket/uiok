@@ -1,12 +1,19 @@
 # Palette (`@bigpixelrocket/uiok/palette`)
 
-A command palette's frame: `Palette`, the modal box over a backdrop, and `PaletteQuery`, its query row. The caller supplies the commands, filters them, keeps the cursor, and draws the rows, any notes, and a key legend inside, using the menu parts ([menu](menu.md)).
+A command palette as components: `Palette`, the modal box over a backdrop, `PaletteQuery`, its query row, and its rows: `PaletteList` of `PaletteOption`s under `PaletteHeading`s, a `PaletteNote` for an empty list, and `PaletteNotes` with notes and a `PaletteFailure` under the list. The caller supplies the items, filters them, and keeps the cursor with the menu rules ([menu](menu.md)); every part is a component with props, so a palette needs no class name or raw element.
 
 ## Example
 
 ```tsx
-import { Palette, PaletteQuery } from '@bigpixelrocket/uiok/palette';
+import {
+  Palette,
+  PaletteList,
+  PaletteNote,
+  PaletteOption,
+  PaletteQuery
+} from '@bigpixelrocket/uiok/palette';
 import { matchQuery, menuQueryRefused, moveMenuCursor } from '@bigpixelrocket/uiok/menu';
+import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { KeyChord } from '@bigpixelrocket/uiok/keychord';
 import { MarkedText } from '@bigpixelrocket/uiok/text';
 
@@ -60,35 +67,29 @@ function CommandPalette({ onClose }: { onClose: () => void }) {
           if (event.key === 'Tab') event.preventDefault();
         }}
       />
-      <div className="folder-menu-options" id={listId} role="listbox">
+      <PaletteList id={listId} label="Commands">
         {rows.map((row, index) => (
-          <div
-            aria-selected={index === cursor}
-            className={index === cursor ? 'folder-menu-option cursor' : 'folder-menu-option'}
+          <PaletteOption
+            context={row.command.hint}
+            cursor={index === cursor}
             id={`${listId}-${index}`}
             key={row.command.id}
-            onClick={row.command.run}
-            role="option"
-          >
-            <span className="row-icon">{row.command.icon}</span>
-            <span className="palette-text">
-              <span className="row-name">
-                <MarkedText positions={row.positions} text={row.command.label} />
-              </span>
-              <span className="palette-context palette-sentence">{row.command.hint}</span>
-            </span>
-            <span className="palette-trail">
-              <KeyChord chord={row.command.chord} />
-            </span>
-          </div>
+            label={row.command.label}
+            mark={<row.command.icon aria-hidden size={ICON_MD} />}
+            name={<MarkedText positions={row.positions} text={row.command.label} />}
+            onPick={row.command.run}
+            onPoint={() => setCursor(index)}
+            trail={<KeyChord chord={row.command.chord} />}
+          />
         ))}
-      </div>
+        {rows.length === 0 && <PaletteNote>No command matches.</PaletteNote>}
+      </PaletteList>
     </Palette>
   );
 }
 ```
 
-The backdrop is `position: fixed` on `--z-dialog`; the palette needs no scope.
+The backdrop is `position: fixed` on `--z-dialog`. The box carries the listing scope (`.listing-root`), so a `Listing` or `Row` drawn inside keeps its look wherever the palette mounts.
 
 ## Props
 
@@ -96,7 +97,7 @@ The backdrop is `position: fixed` on `--z-dialog`; the palette needs no scope.
 
 - `label`: the dialog's accessible name.
 - `onClose`: called on Escape inside the box and on a press on the backdrop.
-- `className`: classes added after `folder-menu palette`.
+- `className`: classes added after `folder-menu palette listing-root`.
 - `busy`: sets `aria-busy` while the palette waits on a request.
 - `children`: the query row, the list, notes, and a legend.
 
@@ -110,6 +111,33 @@ The backdrop is `position: fixed` on `--z-dialog`; the palette needs no scope.
 - `bell`: the number of refused keystrokes so far; each increase rings the visual bell (`useBellBeat`).
 - `level` (`PaletteLevel`: `title`, `onBack`, `disabled`): the level below the first the palette stands in, drawn as a chip before the field; a click steps back.
 - `aside`: a tag at the field's end, such as what the rows act on.
+
+### `PaletteList` (`PaletteListProps`)
+
+- `id`: the listbox's id, which `PaletteQuery`'s `listId` names.
+- `label`: the list's accessible name ("Runtimes", "PHP versions").
+- `children`: `PaletteOption`s, `PaletteHeading`s, and a `PaletteNote` while it is empty.
+
+### `PaletteOption` (`PaletteOptionProps`)
+
+- `id`: the row's id, the field's `activeId` while it is the cursor.
+- `name`: words, or `MarkedText` with the query's matches; pass `label`, the accessible name, whenever `name` is `MarkedText`, since a screen reader may read the drawn words split at the highlights.
+- `mark`: the icon column's glyph (a `ProductMark`, a lucide icon).
+- `context` and `contextKind` (`'sentence'` by default, `'path'`, `'command'`): what the row says after its name, one line, cut with an ellipsis and whole in its tooltip; a path gives way at its start.
+- `trail`: the end column, a version or a count in the meta tone, or a `KeyChord`.
+- `current`: draws a `CurrentDot` after the trail, its value what current means ("Installed").
+- `cursor`: the cursor fill and bar.
+- `disabled`: dimmed (`aria-disabled`), passed over by the pointer, its press refused; say why in `description`.
+- `description`: read after the name (`aria-description`). Absent, the row reads its `context`, a `trail` in words (a string or a number), and its `current` value, in that order, since its name alone hides them; give one to say why the row is disabled or to word a trail that is not text (a `KeyChord`), or `''` to read nothing.
+- `onPick`, `onPoint`: a press, and the pointer moving onto it (move the cursor there). Neither runs while it is disabled.
+- `ref`: the row's element, to scroll the cursor row into view.
+
+### `PaletteHeading`, `PaletteNote`, `PaletteNotes`, `PaletteFailure`
+
+- `PaletteHeading` (`children`: the group's name): one row tall, drawn and not listed (`role="presentation"`).
+- `PaletteNote` (`children`): a note in the interface face over the rows' names, two lines at most. In the list it says why the list is empty; in `PaletteNotes` it speaks for the list as a whole.
+- `PaletteNotes` (`children`): the notes ruled off under the list; draw it only while it has something to say.
+- `PaletteFailure` (`message`, `detail`): a failed pick under the list, the danger glyph, the message in strong words and its detail after, announced as an alert.
 
 ## Behaviour
 

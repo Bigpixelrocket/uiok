@@ -1,4 +1,4 @@
-import type { LucideIcon } from 'lucide-react';
+import { Plus, type LucideIcon } from 'lucide-react';
 import {
   createContext,
   useCallback,
@@ -209,6 +209,12 @@ export interface TreeRowProps {
   readonly onOpen?: () => void;
   /** The row itself takes the focus: in the Tab order while it is the cursor row. */
   readonly focusable?: boolean;
+  /**
+   * The row adds one under its parent ("Add runtime…"): an accent plus in
+   * the glyph's slot unless `glyph` gives another, and dim words that turn
+   * full under the pointer and on the cursor row, as a listing's add row.
+   */
+  readonly add?: boolean;
 }
 
 /**
@@ -232,7 +238,8 @@ export function TreeRow({
   tool,
   marked = false,
   onOpen,
-  focusable = false
+  focusable = false,
+  add = false
 }: TreeRowProps): ReactElement {
   const cursor = useContext(RowCursorContext);
   const tree = useContext(TreeIdContext);
@@ -253,7 +260,8 @@ export function TreeRow({
     kind === 'band' ? 'tree-band' : '',
     kind === 'group' ? 'tree-group' : '',
     current ? 'cursor' : '',
-    marked ? 'marked' : ''
+    marked ? 'marked' : '',
+    add ? 'pane-add' : ''
   ]
     .filter(Boolean)
     .join(' ');
@@ -284,7 +292,7 @@ export function TreeRow({
             <TreeToggle label={toggle.label} onToggle={toggle.onToggle} open={toggle.open} />
           )}
           <span aria-hidden className="tree-glyph">
-            {glyph}
+            {glyph === undefined && add ? <Plus size={ICON_MD} /> : glyph}
           </span>
           <span
             className="row-name tree-name"

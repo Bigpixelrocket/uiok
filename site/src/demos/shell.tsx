@@ -12,6 +12,7 @@
  */
 
 import {
+  ArrowUp,
   ArrowUpDown,
   Box,
   CircleAlert,
@@ -34,10 +35,10 @@ import { useId, useState, type CSSProperties, type ReactElement, type ReactNode 
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
-import { ICON_MD, ICON_XL } from '@bigpixelrocket/uiok/icon';
+import { ICON_MD, ICON_SM, ICON_XL } from '@bigpixelrocket/uiok/icon';
 import { RunHeader } from '@bigpixelrocket/uiok/run';
 import { DARK_THEME_IDS, LIGHT_THEME_IDS, type ThemeId } from '@bigpixelrocket/uiok/themes';
-import { cutTooltip } from '@bigpixelrocket/uiok/tooltip';
+import { cutTooltip, tooltip } from '@bigpixelrocket/uiok/tooltip';
 
 import { ThemeChoices } from '../ThemePicker';
 
@@ -360,7 +361,12 @@ function SettingsDialog({ onClose }: { readonly onClose: () => void }): ReactEle
                 >
                   <Icon size={ICON_MD} />
                   <span {...cutTooltip(title)}>{title}</span>
-                  {id === 'updates' ? <span className="settings-sidebar-chip">2.5.0</span> : null}
+                  {id === 'updates' ? (
+                    <span className="settings-sidebar-chip" {...tooltip('Update to 2.5.0')}>
+                      <ArrowUp aria-hidden size={ICON_SM} />
+                      2.5.0
+                    </span>
+                  ) : null}
                 </button>
                 {id === page && subsections.length > 1 ? (
                   <div className="settings-sidebar-subsections">

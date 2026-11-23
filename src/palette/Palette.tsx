@@ -11,6 +11,7 @@ import type {
 import { FilterIcon } from '../filter/FilterIcon.js';
 import { ICON_SM } from '../icon/index.js';
 import { useLabels } from '../labels/UiokProvider.js';
+import { ListingScopeContext } from '../listing/ListingScope.js';
 import { useBellBeat } from '../menu/useBellBeat.js';
 import { tooltip } from '../tooltip/Tooltip.logic.js';
 
@@ -49,8 +50,9 @@ export interface PaletteProps {
  * answers its own keys first. A press inside never takes the focus from the
  * field. The caller draws the query row (`PaletteQuery`), the list, any
  * notes, and the legend inside, and owns filtering and the cursor
- * (`matchQuery`, `menuQueryRefused`, `moveMenuCursor`). Draw it inside the
- * listing scope (`.listing-root`).
+ * (`matchQuery`, `menuQueryRefused`, `moveMenuCursor`). The box carries
+ * the listing scope (`.listing-root`), so rows and listings drawn in it keep
+ * their look wherever the palette mounts.
  */
 export function Palette({
   label,
@@ -77,7 +79,9 @@ export function Palette({
         aria-label={label}
         aria-modal="true"
         className={
-          className === undefined ? 'folder-menu palette' : `folder-menu palette ${className}`
+          className === undefined
+            ? 'folder-menu palette listing-root'
+            : `folder-menu palette listing-root ${className}`
         }
         onKeyDown={(event) => {
           if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
@@ -88,7 +92,7 @@ export function Palette({
         onMouseDown={keepFocus}
         role="dialog"
       >
-        {children}
+        <ListingScopeContext value>{children}</ListingScopeContext>
       </div>
     </div>
   );

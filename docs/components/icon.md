@@ -1,4 +1,4 @@
-# Icon sizes and the spinner (`@bigpixelrocket/uiok/icon`)
+# Icon sizes, the spinner, and product marks (`@bigpixelrocket/uiok/icon`)
 
 The four sizes an icon may take, as numbers for lucide's `size` prop. They mirror the `--icon-sm`, `--icon-md`, `--icon-lg`, and `--icon-xl` tokens, which size an icon drawn from CSS ([tokens](../tokens.md)).
 
@@ -44,3 +44,29 @@ import { Spinner } from '@bigpixelrocket/uiok/icon';
   <Spinner /> Saving
 </span>;
 ```
+
+## ProductMark
+
+`ProductMark` draws a product's brand mark (a language, a database, a tool) beside its name: in a row's icon column, a crumb's mark slot, a palette's option, or a menu item's `mark`. The library ships no marks and no brand colours: the app owns its table of products and hands one mark in as data, so the library stays free of any product list.
+
+| Prop       | Type                       | Use                                                                                           |
+| ---------- | -------------------------- | --------------------------------------------------------------------------------------------- |
+| `mark`     | `ProductMarkShape \| null` | The mark; null or absent draws `fallback`                                                     |
+| `fallback` | `LucideIcon`               | The glyph drawn with no mark (a database's, a terminal's), in the quiet icon tone or a row's  |
+| `label`    | `string`                   | The mark's name when it stands alone (`role="img"`); absent, it is decorative beside its name |
+
+A `ProductMarkShape` is `title` (the product's name, the mark's tooltip), `path` (path data on a 24-unit square), `colour` (the brand's colour as a CSS colour, or `currentColor` for a mark published in plain black, which then takes the quiet icon tone, or in a row's icon column that column's tone, on the cursor and a selection too), and optionally `viewBox` (the part of the artwork to show) and `stroke` (an outline in viewBox units for a mark published in hairlines).
+
+```tsx
+import { Database } from 'lucide-react';
+import { ProductMark, type ProductMarkShape } from '@bigpixelrocket/uiok/icon';
+
+const PHP: ProductMarkShape = { title: 'PHP', colour: '#777bb4', path: 'M7.01 10.207h-.944l…' };
+
+<Row mark={<ProductMark mark={PHP} />} name="PHP" rowKey="php" />;
+<Row mark={<ProductMark fallback={Database} />} name="CouchDB" rowKey="couchdb" />;
+```
+
+### How the brand colour is carried
+
+The brand colour is data, not a theme colour: no theme can know a product's colour, and the library may hold no colour literal. So the app passes it in, and the mark sets it as `--product-mark-colour` on itself. The theme still decides how it shows: the fill is `color-mix(in srgb, var(--product-mark-colour) var(--product-mark-mix), var(--text))`, where `--product-mark-mix` is a theme token, `100%` in a light theme and `78%` in a dark one, lifting a dark brand colour toward the text so it does not sink into a dark ground. The mark draws at `--icon-md`, as every row glyph.
