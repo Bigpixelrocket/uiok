@@ -1,5 +1,7 @@
 import type { DOMAttributes, ReactElement, ReactNode, Ref } from 'react';
 
+import { useBellBeat } from '../menu/useBellBeat.js';
+
 /**
  * The event handlers a host hangs on a pane or a region of the window for
  * its keys, its focus, and its drop zone; nothing that styles it.
@@ -31,6 +33,14 @@ export interface PaneBoxProps extends RegionHandlers {
   readonly tone?: 'danger';
   /** The element it draws: a `section` by default, an `aside` for a sidebar. */
   readonly as?: 'section' | 'aside';
+  /**
+   * The visual bell: a count the host raises each time a key could not act
+   * (a move past the last row, a verb the cursor row does not offer). Each
+   * rise shoves the cursor row sideways for one beat; under reduced motion
+   * the row flashes the selection fill instead. The count's value means
+   * nothing; only its change rings.
+   */
+  readonly bell?: number;
   readonly ref?: Ref<HTMLElement>;
   /** Its tabs (`PaneTabs`), path bar, list, and status line, top to bottom. */
   readonly children?: ReactNode;
@@ -40,21 +50,27 @@ export interface PaneBoxProps extends RegionHandlers {
  * A pane in the listing look (under the listing root a `WindowFrame`
  * wears): a framed column of its tab strip or path bar, its list, and its
  * status line. `active` marks the pane that holds the keyboard; the others
- * show their cursor row quietly.
+ * show their cursor row quietly. `bell` rings on its cursor row
+ * (`useBellBeat`; `.bell-0`, `.bell-1`).
  */
 export function PaneBox({
   active = false,
   label,
   tone,
   as: Element = 'section',
+  bell = 0,
   ref,
   children,
   ...handlers
 }: PaneBoxProps): ReactElement {
+  const beat = useBellBeat(bell);
+
   return (
     <Element
       aria-label={label}
-      className={active ? 'pane active' : 'pane'}
+      className={['pane', active ? 'active' : '', beat === null ? '' : `bell-${beat}`]
+        .filter(Boolean)
+        .join(' ')}
       data-tone={tone}
       ref={ref}
       {...handlers}

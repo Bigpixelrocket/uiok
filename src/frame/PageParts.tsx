@@ -1,9 +1,10 @@
 import type { LucideIcon } from 'lucide-react';
-import type { ReactElement, ReactNode } from 'react';
+import { useContext, type ReactElement, type ReactNode } from 'react';
 
 import { Button } from '../button/Button.js';
 import { Spinner } from '../icon/Spinner.js';
 import { ICON_MD, ICON_SM } from '../icon/sizes.js';
+import { ListingScopeContext } from '../listing/ListingScope.js';
 import { drawn } from './WindowFrame.js';
 
 /** Props of a part that only lays out what it holds. */
@@ -63,11 +64,13 @@ export interface PageNoteProps {
 }
 
 /**
- * A loading or empty line in a page, where its rows would be: its glyph or
- * spinner beside the words, from the rows' inset.
+ * A loading or empty line in a page, where its rows would be, or a note
+ * after a listing: its glyph or spinner beside the words, from the rows'
+ * inset. Drawn outside every listing scope, it carries the scope itself.
  */
 export function PageNote({ icon: Icon, busy = false, children }: PageNoteProps): ReactElement {
-  return (
+  const scoped = useContext(ListingScopeContext);
+  const note = (
     <p className="pane-message pane-page-note" role={busy ? 'status' : undefined}>
       {busy ? (
         <Spinner size={ICON_MD} />
@@ -77,6 +80,10 @@ export function PageNote({ icon: Icon, busy = false, children }: PageNoteProps):
       <span>{children}</span>
     </p>
   );
+
+  // Outside every listing scope it carries the scope itself, as a listing
+  // does, so it keeps its look anywhere.
+  return scoped ? note : <div className="listing-root">{note}</div>;
 }
 
 /** The one command that answers an empty list (Add service), under its `PageNote`. */

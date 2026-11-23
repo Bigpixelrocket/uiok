@@ -50,6 +50,7 @@ export {
   type TabStop
 } from './PaneKeys.js';
 export {
+  listingFirstStop,
   movedIndex,
   NO_MAIN_VERBS,
   paneKeyAction,
@@ -58,6 +59,8 @@ export {
   type PaneKeyAction,
   type PaneKeyOptions,
   type PaneKeyStroke,
+  type TabOrder,
+  type WalkPane,
   type PaneMove
 } from './PaneKeys.logic.js';
 export { PaneTabs, type PaneTabItem, type PaneTabsProps } from './PaneTabs.js';

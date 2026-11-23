@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
 import { paneRow, verbControl } from './PaneKeys.js';
-import { paneKeyAction, type PaneKeyAction } from './PaneKeys.logic.js';
+import { paneKeyAction, type PaneKeyAction, type TabOrder } from './PaneKeys.logic.js';
 import { usePaneKeys } from './usePaneKeys.js';
 
 /**
@@ -17,9 +17,12 @@ import { usePaneKeys } from './usePaneKeys.js';
 function Panes({
   sidebarStops,
   sidebar = true,
-  held = false
+  held = false,
+  tabOrder
 }: {
   readonly sidebarStops: boolean;
+  /** The order Tab walks the panes in. */
+  readonly tabOrder?: TabOrder;
   /** The sidebar shows; false hides it, as a window does. */
   readonly sidebar?: boolean;
   /** A page held mounted out of sight comes before the front page. */
@@ -38,7 +41,8 @@ function Panes({
     readKey: paneKeyAction,
     cursorKey: (action) => action.kind === 'move' || action.kind === 'enter',
     run: () => undefined,
-    sidebarStops
+    sidebarStops,
+    tabOrder
   });
 
   return (
@@ -106,6 +110,42 @@ const focus = (name: string): void => {
 
   control?.focus();
 };
+
+describe('usePaneKeys Tab, listing first', () => {
+  it("goes from the page's listing through its controls, the ones above it included, then to the sidebar", () => {
+    render(<Panes sidebarStops={false} tabOrder="listing" />);
+
+    expect(focused()).toBe('Tree');
+    const forward = ['Page', 'Edit', 'Collation', 'Manual', 'Log', 'Tree', 'Page'];
+    expect(forward.map(() => tab())).toEqual(forward);
+    // Shift-Tab steps back through the page to its listing, and from a
+    // listing switches panes.
+    focus('Collation');
+    expect(tab(true)).toBe('Edit');
+    expect(tab(true)).toBe('Page');
+    expect(tab(true)).toBe('Tree');
+    expect(tab(true)).toBe('Page');
+  });
+
+  it("walks the sidebar's controls after its listing when the view asks", () => {
+    render(<Panes sidebarStops tabOrder="listing" />);
+
+    const forward = ['Refresh', 'Filter', 'Collapse all', 'Page', 'Edit'];
+    expect(forward.map(() => tab())).toEqual(forward);
+    focus('Filter');
+    expect(tab(true)).toBe('Refresh');
+    expect(tab(true)).toBe('Tree');
+  });
+
+  it('cycles through the page alone when the window hides the sidebar', () => {
+    render(<Panes sidebar={false} sidebarStops={false} tabOrder="listing" />);
+
+    expect(focused()).toBe('Page');
+    expect(tab(true)).toBe('Log');
+    expect(tab()).toBe('Page');
+    expect(tab()).toBe('Edit');
+  });
+});
 
 describe('usePaneKeys Tab', () => {
   it('stays in the page when the window hides the sidebar', () => {

@@ -472,6 +472,7 @@ meter::-webkit-meter-even-less-good-value {
   .palette-level,
   .settings-sidebar-page,
   .settings-sidebar-subsection,
+  .sectioned-dialog-nav-row,
   .quiet-control,
   .quiet-track-item,
   .toggle-chip
@@ -490,6 +491,7 @@ meter::-webkit-meter-even-less-good-value {
     .pane-strip-link,
     .settings-sidebar-page,
     .settings-sidebar-subsection,
+    .sectioned-dialog-nav-row,
     .quiet-control,
     .toggle-chip
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
@@ -551,6 +553,7 @@ meter::-webkit-meter-even-less-good-value {
     .disclosure,
     .settings-sidebar-page,
     .settings-sidebar-subsection,
+    .sectioned-dialog-nav-row,
     .quiet-control,
     .quiet-track-item,
     .toggle-chip

@@ -117,3 +117,83 @@
   outline: var(--line) solid var(--accent);
   outline-offset: var(--line);
 }
+
+/* ---- Shortcut index (ShortcutIndex, ShortcutGroup, ShortcutRow) ----
+
+   Every key a window answers, in groups: one grid down the whole index
+   (each group and each row a subgrid of it), so the chord column stands at
+   the index's end at one width from the first group to the last. A verb
+   takes the room left; its chords sit at the column's end, several
+   wrapping within it. A hairline parts the groups. */
+.shortcut-index {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  column-gap: var(--space-8);
+  font: var(--font-size-small) / var(--line-height-compact) var(--font-ui);
+}
+
+.shortcut-group,
+.shortcut-group-rows,
+.shortcut-row {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  margin: 0;
+}
+
+.shortcut-group {
+  padding-block: var(--space-6);
+}
+
+.shortcut-group:first-child {
+  padding-block-start: 0;
+}
+
+.shortcut-group + .shortcut-group {
+  border-top: var(--line) solid var(--border);
+}
+
+.shortcut-group-title {
+  grid-column: 1 / -1;
+  margin: 0 0 var(--space-3);
+}
+
+.shortcut-row {
+  align-items: center;
+  min-height: var(--row-height-dense);
+  padding-block: var(--space-1);
+}
+
+.shortcut-verb {
+  min-width: 0;
+  color: var(--text);
+  overflow-wrap: break-word;
+}
+
+.shortcut-detail {
+  display: block;
+  color: var(--text-dim);
+  font-size: var(--font-size-caption);
+}
+
+.shortcut-chords {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.shortcut-none {
+  color: var(--text-dim);
+}
+
+/* A verb not available where the index was opened: a tone down, its caps
+   too. */
+.shortcut-row.dim > .shortcut-verb {
+  color: var(--text-dim);
+}
+
+.shortcut-row.dim > .shortcut-chords {
+  opacity: var(--disabled-opacity);
+}

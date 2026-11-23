@@ -23,7 +23,7 @@ import {
   shownHome,
   type TabStop
 } from './PaneKeys.js';
-import { movedIndex, sameVerbs, type PaneMove } from './PaneKeys.logic.js';
+import { movedIndex, sameVerbs, type PaneMove, type TabOrder } from './PaneKeys.logic.js';
 
 /** The two panes of a two-pane view: the sidebar and the page beside it. */
 export type Pane = 'sidebar' | 'main';
@@ -69,6 +69,13 @@ export interface PaneKeysOptions<Action extends { readonly kind: string }, Verbs
    * runs. Without it, Tab from the sidebar goes to the page's home.
    */
   readonly sidebarStops?: boolean;
+  /**
+   * The order Tab walks the panes in (`TabOrder`): `document` (the
+   * default), every stop where the document puts it; `listing`, each
+   * pane's listing first, then its other controls, so Tab from the window
+   * lands in the page's listing however many controls stand above it.
+   */
+  readonly tabOrder?: TabOrder;
   /**
    * The view reads each pane's cursor row in render (`mainKey`,
    * `sidebarKey`), so a cursor move draws the view again: the default.
@@ -462,7 +469,15 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
             ? 'page'
             : (node as HTMLElement);
       const back = 'back' in action && action.back === true;
-      const to = nextTabStop(main, home, from, back, walked, sidebar === null);
+      const to = nextTabStop(
+        main,
+        home,
+        from,
+        back,
+        walked,
+        sidebar === null,
+        current.tabOrder ?? 'document'
+      );
 
       event.preventDefault();
       event.stopPropagation();

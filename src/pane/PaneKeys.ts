@@ -7,6 +7,7 @@
  */
 
 import type { ControlVerb } from './PaneActions.js';
+import { listingFirstStop, type TabOrder, type WalkPane } from './PaneKeys.logic.js';
 
 /**
  * The elements in `root` matching `selector` that show: none inside a
@@ -124,6 +125,9 @@ const inDocumentOrder = (a: Element, b: Element): number =>
  * its listing keeps them in the Tab order (`Row`'s `tabbable`); a sidebar
  * row's never are. With `alone` (no sidebar shown) the page's stops make
  * the one cycle, wrapping at either end, and the sidebar is never named.
+ * With `order` `listing`, each pane's listing comes first instead of where
+ * the document puts it (`listingFirstStop`): the page's listing, its other
+ * stops, then the sidebar's listing and, with `sidebar`, its stops.
  */
 export function nextTabStop(
   main: Element,
@@ -131,8 +135,31 @@ export function nextTabStop(
   from: TabStop,
   back: boolean,
   sidebar: SidebarTabStops | null = null,
-  alone = false
+  alone = false,
+  order: TabOrder = 'document'
 ): TabStop {
+  if (order === 'listing') {
+    const page: WalkPane<TabStop> = {
+      home: 'page',
+      stops: tabStops(main).filter((stop) => stop !== home)
+    };
+    const side: WalkPane<TabStop> | null = alone
+      ? null
+      : {
+          home: 'sidebar',
+          stops:
+            sidebar === null
+              ? []
+              : tabStops(sidebar.pane).filter(
+                  (stop) => stop !== sidebar.home && stop.closest('[data-row-key]') === null
+                )
+        };
+    const at: TabStop =
+      from === home ? 'page' : sidebar !== null && from === sidebar.home ? 'sidebar' : from;
+
+    return listingFirstStop(page, side, at, back);
+  }
+
   if (from === 'sidebar' && sidebar === null) return 'page';
 
   const at = from === 'sidebar' ? (sidebar?.home ?? home) : from === 'page' ? home : from;

@@ -33,6 +33,7 @@ export {
   type PathCellProps,
   type RowCursor,
   type RowProps,
+  type RowRadio,
   type StateMarkProps,
   type StateTone,
   type StripProps,
