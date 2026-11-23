@@ -35,6 +35,16 @@ export interface LegendVerb {
   readonly pair?: LegendPair;
 }
 
+/**
+ * An alert a key legend shows beside its verbs: its words. The host raises
+ * each as a new object, which is how `onAlertDismiss` names the one a key
+ * dismissed.
+ */
+export interface LegendAlert {
+  /** The words, short: why the last key did nothing. */
+  readonly text: string;
+}
+
 /** Props for {@link KeyLegendStrip}: the verbs in order, and the labels of the pairs among them. */
 export interface KeyLegendStripProps {
   /** The verbs the keyboard offers now, left to right; the strip draws them as given. */
@@ -56,16 +66,20 @@ export interface KeyLegendStripProps {
    * A short alert beside the verbs, in the host's words: why the last key
    * did nothing ("Nothing to open here"). Spoken politely by a screen
    * reader, cut with an ellipsis (whole in its tooltip) when the strip is
-   * narrow. Null or absent shows none.
+   * narrow. Each alert the host raises is a new object, so the strip tells
+   * a repeat of the same words from the alert it already shows. Null or
+   * absent shows none.
    */
-  readonly alert?: string | null;
+  readonly alert?: LegendAlert | null;
   /**
-   * Called on the next key pressed after the alert shows (a modifier alone
-   * is no key), so the host clears it; the key that raised the alert never
-   * clears it. The host owns the alert, so without this it stays until the
-   * host clears it.
+   * Called with the alert showing when the next key goes down (a modifier
+   * alone is no key). Clear it only while it is still the alert you show,
+   * `setAlert((now) => (now === dismissed ? null : now))`, so an alert that
+   * same key raises stays, whichever of the strip's and the host's key
+   * listeners runs first. Without it the alert stays until the host clears
+   * it.
    */
-  readonly onAlertDismiss?: () => void;
+  readonly onAlertDismiss?: (dismissed: LegendAlert) => void;
 }
 
 /** The dock's keys, as they sit at the keyboard's left edge: Shift on its row, then Control, Option, Command. */
@@ -128,29 +142,45 @@ function useHeldModifiers(): ReadonlySet<LayerModifier> {
 }
 
 /** The keys that are modifiers alone, which neither press a key nor clear an alert. */
-const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'Fn', 'CapsLock', 'OS']);
+const MODIFIER_KEYS = new Set([
+  'Shift',
+  'Control',
+  'Alt',
+  'AltGraph',
+  'Meta',
+  'Fn',
+  'CapsLock',
+  'OS'
+]);
 
 /**
- * Calls `dismiss` on the next key pressed while `alert` shows. The listener
- * is on the window's capture phase, which the key that raised the alert has
- * already passed, so only a later key reaches it.
+ * Calls `dismiss` with the alert showing when a key goes down. One listener
+ * for the strip's life reads the alert from a ref, so neither the order the
+ * strip and a host's key listeners were added in nor which runs first
+ * matters: the alert a key raises is a new object, which the dismissal of
+ * the one before it does not name.
  */
-function useDismissOnKey(alert: string | null, dismiss: (() => void) | undefined): void {
-  const latest = useRef(dismiss);
+function useDismissOnKey(
+  alert: LegendAlert | null,
+  dismiss: ((dismissed: LegendAlert) => void) | undefined
+): void {
+  const latest = useRef({ alert, dismiss });
 
-  latest.current = dismiss;
+  useLayoutEffect(() => {
+    latest.current = { alert, dismiss };
+  });
 
   useEffect(() => {
-    if (alert === null) return undefined;
-
     const onKey = (event: KeyboardEvent): void => {
-      if (!MODIFIER_KEYS.has(event.key)) latest.current?.();
+      const { alert: showing, dismiss: run } = latest.current;
+
+      if (showing !== null && !MODIFIER_KEYS.has(event.key)) run?.(showing);
     };
 
     window.addEventListener('keydown', onKey, true);
 
     return () => window.removeEventListener('keydown', onKey, true);
-  }, [alert]);
+  }, []);
 }
 
 /** Keeps the focus where it was on a press, so a click on a slot leaves the keys where they were. */
@@ -207,7 +237,7 @@ function useWrappedCount(row: HTMLElement | null, places: string): number {
  * caller decides which verbs are listed and in which order; the strip draws
  * them. An `alert` from the host (why the last key did nothing) shows at
  * the strip's end in a polite live region until the next key, when the
- * strip calls `onAlertDismiss`. Its own name, its verb group's name, and a
+ * strip calls `onAlertDismiss` with it. Its own name, its verb group's name, and a
  * paired cap's name come from `UiokLabels.legend`, chords in words from
  * `UiokLabels.keys`.
  */
@@ -220,7 +250,7 @@ export function KeyLegendStrip({
 }: KeyLegendStripProps): ReactElement {
   const { keys, legend } = useLabels();
   const held = useHeldModifiers();
-  const shownAlert = alert === '' ? null : alert;
+  const shownAlert = alert !== null && alert.text !== '' ? alert : null;
 
   useDismissOnKey(shownAlert, onAlertDismiss);
   const units = legendUnits(verbs, pairLabel === undefined ? UNPAIRED : { pairLabel });
@@ -296,8 +326,8 @@ export function KeyLegendStrip({
       {/* Always in the document, so a screen reader hears each alert put in it. */}
       <span className="keylegend-alert" role="status">
         {shownAlert === null ? null : (
-          <span className="keylegend-alert-text" {...cutTooltip(shownAlert)}>
-            {shownAlert}
+          <span className="keylegend-alert-text" {...cutTooltip(shownAlert.text)}>
+            {shownAlert.text}
           </span>
         )}
       </span>

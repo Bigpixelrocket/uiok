@@ -31,13 +31,13 @@ const verbs: LegendVerb[] = [
 
 ## Props (`KeyLegendStripProps`)
 
-| Prop             | Type                           | Meaning                                                                                                                       |
-| ---------------- | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| `verbs`          | `readonly LegendVerb[]`        | The verbs, left to right, as the strip draws them; the app decides which and in which order                                   |
-| `pairLabel`      | `(pair: LegendPair) => string` | The shared label of a folded pair ("Up/Down"), in the language in use. Without it, none folds                                 |
-| `overflow`       | `'drop' \| 'more'`             | What happens to places that do not fit: `'drop'` (default) leaves them off; `'more'` folds them into a "+N" chip              |
-| `alert`          | `string \| null`               | A short alert at the strip's end, in the host's words: why the last key did nothing ("Nothing to open here"). None by default |
-| `onAlertDismiss` | `() => void`                   | Called on the next key after the alert shows, so the host clears it                                                           |
+| Prop             | Type                               | Meaning                                                                                                                                                                      |
+| ---------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `verbs`          | `readonly LegendVerb[]`            | The verbs, left to right, as the strip draws them; the app decides which and in which order                                                                                  |
+| `pairLabel`      | `(pair: LegendPair) => string`     | The shared label of a folded pair ("Up/Down"), in the language in use. Without it, none folds                                                                                |
+| `overflow`       | `'drop' \| 'more'`                 | What happens to places that do not fit: `'drop'` (default) leaves them off; `'more'` folds them into a "+N" chip                                                             |
+| `alert`          | `LegendAlert \| null`              | A short alert at the strip's end, `{ text }` in the host's words: why the last key did nothing ("Nothing to open here"). A new object for each alert raised. None by default |
+| `onAlertDismiss` | `(dismissed: LegendAlert) => void` | Called with the alert showing when the next key goes down; clear it only while it is still the one you show                                                                  |
 
 A `LegendVerb` is `{ label, chord, run, pair? }`: the words, the `Chord` that runs it, what a click runs, and the pair it is one direction of.
 
@@ -58,7 +58,7 @@ A pair's label is a message of its own in every language ("Up/Down", "Haut/Bas")
 - Every verb button is out of the Tab order (`tabIndex={-1}`); its chord is the keyboard's way to it. A press keeps the focus where it was, so a click leaves the keyboard on whatever it was driving.
 - A plain place's accessible name is the chord in words, then the verb ("Command C Copy"); its tooltip names the verb and the chord. A paired cap shows no label of its own, so its name comes from `legend.capName` ("Up Move Up") and its tooltip names the verb and the chord.
 - The dock reads the modifiers from every key down and up on the window and lets go of all of them when the window loses focus, since a switch to another app never sends the key up.
-- An `alert` stands at the strip's end in `--warning-text`, as long as the room after the verbs allows (half the strip at most), cut with an ellipsis and whole in its tooltip (`cutTooltip`). It sits in a polite live region (`role="status"`) that is always in the strip, so a screen reader speaks each new alert without interrupting. The host owns it: the strip calls `onAlertDismiss` on the next key pressed (a modifier alone is none), heard on the window's capture phase, which the key that raised the alert has already passed, and the host sets `alert` back to `null`.
+- An `alert` stands at the strip's end in `--warning-text`, as long as the room after the verbs allows (half the strip at most), cut with an ellipsis and whole in its tooltip (`cutTooltip`). It sits in a polite live region (`role="status"`) that is always in the strip, so a screen reader speaks each new alert without interrupting. The host owns it and raises each alert as a new `LegendAlert` object, the same words included. When the next key goes down (a modifier alone is none), the strip calls `onAlertDismiss` with the alert then showing; the host clears it only while it still shows that one, `setAlert((now) => (now === dismissed ? null : now))`. An alert that same key raises is a new object, so it stays whichever of the strip's and the host's key listeners runs first and whichever mounted first.
 - The strip lists every layer at once, so each verb shows its whole chord. A legend that shows one layer at a time sets `data-layer` and `data-fn` on `.keylegend` itself so its caps take the accent with the held layer; `KeyLegendStrip` leaves them at rest (`none`, `false`).
 
 ## Overflow
