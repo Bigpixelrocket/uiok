@@ -48,7 +48,7 @@ import { tooltip } from '@bigpixelrocket/uiok/tooltip';
 | `tone`     | `'danger'?`    |         | What it opens is failing (a log file whose writes fail): `--danger-text` words and glyph, and `tip` (the reason) is its accessible description too                                                                                              |
 | `verb`     | `ControlVerb?` |         | What the keys run it for (`data-verb`). In a listing row it is then one of the row's controls: out of the Tab order unless the row is `tabbable`, reached by the cursor row's keys (`verbControl`), and a press runs it without opening the row |
 
-It is a `button`, never an `a`: it never navigates the page itself. It takes the focus with the shared ring and runs on Return or Space. A link a listing row holds, such as a service's port, takes a `verb` so the row's keys run it (⌘O, say) and Tab moves past it, as a row's `QuietAction` and `RowIconAction` do ([Pane](pane.md)); without a `verb` it keeps its Tab stop.
+It is a `button`, never an `a`: it never navigates the page itself. It takes the focus with the shared ring and runs on Return or Space. A link a listing row holds, such as a service's port, takes a `verb` so the row's keys run it (⌘O, say) and Tab moves past it, as a row's `QuietAction` and `RowIconAction` do ([Pane](pane.md)); without a `verb` it keeps its Tab stop. On a selected row's active fill it takes the selection's words (`--on-selected`, `--on-selected-dim` disabled), danger or not.
 
 ## Behaviour
 

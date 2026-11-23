@@ -2398,6 +2398,32 @@ button.crumb-label.crumb-siblings > svg {
   color: var(--on-selected);
 }
 
+/* A link in words (TextLink) on an active selection takes the selection's
+   words, a dimmed one the selection's quiet words: in its own accent or
+   danger tone it would vanish on the accent fill. The list weighs as much as
+   its danger and disabled rules (two classes), so it wins over each. */
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  :is(.text-link, .text-link.danger) {
+  color: var(--on-selected);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .text-link:disabled {
+  color: var(--on-selected-dim);
+}
+
 /* A lit or red action under the pointer or the focus keeps the selection's
    words too: their own rules weigh more than the one above, and their tones
    are not floored on the accent. */

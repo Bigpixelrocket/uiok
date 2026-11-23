@@ -143,5 +143,53 @@ describe('TextLink', () => {
       expect(link.hasAttribute('tabindex')).toBe(false);
       expect(link.dataset.verb).toBe('open-port');
     });
+
+    it('takes the selection’s words on an active selection, its own tone elsewhere', () => {
+      applyStylesheets(readStylesheet('src/styles.css'));
+      render(
+        <div className="listing-root">
+          <RowCursorContext value={cursorOn('none')}>
+            <Listing columns={[{ label: 'Port' }]} grid="20px 1fr auto auto auto" title="Services">
+              <Row name="web" rowKey="web" selected>
+                <Cell>
+                  <TextLink onClick={() => undefined}>5173</TextLink>
+                </Cell>
+                <Cell>
+                  <TextLink onClick={() => undefined} tone="danger">
+                    Log
+                  </TextLink>
+                </Cell>
+                <Cell>
+                  <TextLink disabled onClick={() => undefined}>
+                    Docs
+                  </TextLink>
+                </Cell>
+              </Row>
+              <Row name="api" rowKey="api">
+                <Cell>
+                  <TextLink onClick={() => undefined}>8080</TextLink>
+                </Cell>
+              </Row>
+            </Listing>
+          </RowCursorContext>
+        </div>
+      );
+      const colour = (name: string): string | undefined =>
+        declaredValues(screen.getByRole('button', { name }), 'color').at(-1);
+
+      expect(colour('5173')).toBe('var(--on-selected)');
+      expect(colour('Log')).toBe('var(--on-selected)');
+      expect(colour('Docs')).toBe('var(--on-selected-dim)');
+      expect(colour('8080')).toBe('var(--accent-text)');
+
+      // A selection in a window behind keeps its quiet fill, so the link its tone.
+      document.documentElement.setAttribute('data-window-inactive', '');
+      try {
+        expect(colour('5173')).toBe('var(--accent-text)');
+        expect(colour('Log')).toBe('var(--danger-text)');
+      } finally {
+        document.documentElement.removeAttribute('data-window-inactive');
+      }
+    });
   });
 });
