@@ -518,6 +518,31 @@ describe('a row', () => {
     );
   });
 
+  it('shows a cell’s words whole in a tooltip only while its column cuts them, a host’s tip at every width', () => {
+    render(
+      <RowCursorContext value={cursorOn('a', [])}>
+        <Listing
+          columns={[{ label: 'Note' }, { label: 'Size' }]}
+          grid="20px 1fr 1fr 1fr"
+          title="Deps"
+        >
+          <Row name="php" rowKey="a">
+            <Cell>not part of this Start</Cell>
+            <Cell>{42}</Cell>
+            <Cell tip="not part of this Start, nor the next">not part…</Cell>
+          </Row>
+        </Listing>
+      </RowCursorContext>
+    );
+    const [words, number, tipped] = screen.getAllByRole('cell').slice(1);
+
+    expect(words?.dataset.tooltip).toBe('not part of this Start');
+    expect(words?.hasAttribute('data-tooltip-cut')).toBe(true);
+    expect(number?.dataset.tooltip).toBe('42');
+    expect(tipped?.dataset.tooltip).toBe('not part of this Start, nor the next');
+    expect(tipped?.hasAttribute('data-tooltip-cut')).toBe(false);
+  });
+
   describe('a marked-up name’s words in the tip’s tooltip', () => {
     const tipOf = (name: ReactNode) => {
       render(

@@ -19,7 +19,7 @@ import type { PaneTabsLabels } from '../labels/paneTabs.js';
 import { useLabels } from '../labels/UiokProvider.js';
 import { StateMark } from '../listing/Listing.js';
 import { movedPickableCursor, pickableCursor } from '../menu/MenuQuery.logic.js';
-import { describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
+import { cutTooltip, describedTooltip, tooltip } from '../tooltip/Tooltip.logic.js';
 import { foldOrder, foldsNeeded, tabLabelFloor } from './PaneTabs.logic.js';
 import { useTabDrag } from './useTabDrag.js';
 
@@ -107,18 +107,23 @@ const closes = (tab: PaneTabItem): boolean => tab.pinned !== true && tab.closabl
 /** A tab's label: the context giving way to its floor before the name gives a character. */
 function TabLabel({ tab }: { readonly tab: PaneTabItem }): ReactElement {
   const floor = tabLabelFloor(tab);
+  // A tab with no tip of its own shows its whole words while a narrow strip
+  // cuts its context or its name; a tip already names it whole.
+  const cut = tab.tip === undefined || tab.tip === '' ? cutTooltip(spokenTab(tab)) : {};
 
   return (
     <span className="pane-tab-label">
       {tab.context === undefined ? null : (
         <>
-          <span className="pane-tab-context" style={{ minWidth: `${floor.context}ch` }}>
+          <span className="pane-tab-context" style={{ minWidth: `${floor.context}ch` }} {...cut}>
             {tab.context}
           </span>
           <span className="pane-tab-context pane-tab-slash">/</span>
         </>
       )}
-      <span className="pane-tab-name">{tab.name}</span>
+      <span className="pane-tab-name" {...cut}>
+        {tab.name}
+      </span>
     </span>
   );
 }

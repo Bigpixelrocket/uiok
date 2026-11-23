@@ -1,6 +1,7 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
 import { PaneTabs, type PaneTabItem, type PaneTabsProps } from './PaneTabs.js';
 
@@ -53,6 +54,28 @@ afterEach(() => {
 });
 
 describe('PaneTabs', () => {
+  it('shows a cut tab’s whole words in a tooltip while the strip cuts them, unless its tip names it', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const { container } = strip();
+    const label = (id: string) =>
+      container.querySelector(`[data-pane-tab="${id}"] .pane-tab-label`) as HTMLElement;
+    const context = label('archive').querySelector('.pane-tab-context') as HTMLElement;
+    const name = label('archive').querySelector('.pane-tab-name') as HTMLElement;
+
+    for (const part of [context, name]) {
+      expect(part.dataset.tooltip).toBe('shop_archive/orders');
+      expect(part.hasAttribute('data-tooltip-cut')).toBe(true);
+      // Each is the box that cuts its words.
+      expect(declaredValues(part, 'overflow').at(-1)).toBe('hidden');
+      expect(declaredValues(part, 'text-overflow').at(-1)).toBe('ellipsis');
+    }
+    expect(label('payments').querySelector('.pane-tab-name')?.getAttribute('data-tooltip')).toBe(
+      'payment_attempts'
+    );
+    // A tip already names the tab whole, at every width.
+    expect(label('customers').querySelector('[data-tooltip]')).toBeNull();
+  });
+
   it('draws a named tablist of tabs that take no focus, the front one selected', () => {
     strip();
 
