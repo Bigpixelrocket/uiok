@@ -26,3 +26,5 @@ export {
 export type { ScatterAxis, ScatterAxisKind } from './Scatter.logic.js';
 export { ScatterChart, type ScatterChartProps, type ScatterPoint } from './ScatterChart.js';
 export { seriesColour } from './seriesColour.js';
+export { Sparkline, type SparklineProps } from './Sparkline.js';
+export { sparklinePoints } from './Sparkline.logic.js';

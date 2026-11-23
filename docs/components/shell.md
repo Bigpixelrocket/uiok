@@ -1,6 +1,107 @@
-# Settings, themes, and updates
+# Shell (`@bigpixelrocket/uiok/shell`)
 
-The surfaces an app's window draws around its own pages, which every app of the family draws the same way: the Settings dialog (its frame, the sidebar of pages, a page's subsections, a settings file's problems), the theme picker, the Updates page's cards and notes, the update pill's failed state, the release channel tag, the About window's layout, the sign-in prompts, and the block a part of the window shows when it fails to load. They ship in `@bigpixelrocket/uiok/styles.css` (`src/shell/shell.css`). None is a component: the app writes the markup, the words, and the behaviour, and puts these classes on it. The app's header, brand wordmark, icon, window drag regions, and startup screens stay the app's.
+The surfaces an app's window draws around its own pages, which every app of the family draws the same way: the title bar (the lockup and its brand mark, the release channel's marker, the update pill), the Settings dialog (its frame, the sidebar of pages, a page's subsections, a settings file's problems) and its shared pages (Appearance with the theme picker, Language, Updates with its cards and notes, Files), the About window, the sign-in prompts, and the block a part of the window shows when it fails to load. The components below draw them; their look is `src/shell/shell.css` in `@bigpixelrocket/uiok/styles.css`, and the class tables after them say what each class does, for a host that writes the markup itself. The app keeps its words (through props and `UiokLabels`), its behaviour (what a verb asks of its host), its icon, and its brand mark's glyph.
+
+## Components
+
+| Component             | What it draws                                                                                                                                                                                    |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `TitleBar`            | The window's title bar where the native one is hidden (`.shell-topbar`): its children at the leading end, clear of macOS's window buttons with `trafficLights`; a drag region but for the marker |
+| `Lockup`              | A product's wordmark (`lead` light, `strong` heavy) after an optional `mark`; `as="span"` inside another heading; sized by `--lockup-size`                                                       |
+| `BrandMark`           | The family's mark: a plate in the accent, the app's glyph on it (`children`, SVG shapes on a 24-unit grid), and a check badge                                                                    |
+| `ChannelMarker`       | A build's channel after the lockup: a dot in `--channel`, the name, the build number or branch (`detail`), a dot for uncommitted changes (`modified`), the whole line as a tooltip (`title`)     |
+| `UpdatePill`          | The title bar's update control while a build is offered: `state` `offered` (tonal), `ready` (primary), `download-failed` (neutral, warning outline)                                              |
+| `AboutWindow`         | The About window's panel: `icon` (a URL), `lockup`, the `channelTag` coloured by `channel`, and the `version`                                                                                    |
+| `SettingsDialog`      | The Settings dialog over `groups` of `SettingsPage`s, opened on `pageRequest`'s page; `notice` stands over the page column; `onPageShown` hears each page                                        |
+| `SettingsSubsection`  | One subsection of a page (`id`, `title`), which the sidebar scrolls to and follows                                                                                                               |
+| `SettingsSaveFailure` | A change a settings file could not take, as `SettingsDialog`'s `notice`, with a verb that turns to the page that lists it                                                                        |
+| `AppearanceSettings`  | The Appearance page's Theme subsection: System, Light, or Dark, then each appearance's themes, the band in use marked                                                                            |
+| `ThemeChoices`        | One appearance's themes as a radio group of miniatures (`ThemePreview`); `themesOf(appearance)` lists the catalog's                                                                              |
+| `LanguageChoice`      | A Language page: one pop-up menu of `options`, each in its own language                                                                                                                          |
+| `UpdatesPage`         | An Updates page's body: `checks` (an `UpdateChecks` cadence) over `card` (an `UpdateCard`), busy until the card is known                                                                         |
+| `UpdateCard`          | The updater's status: `tone`, `glyph`, `title`, `sub`, `when`, one `verb`, a `run` (`RunHeader`), a `note`, a `failure`, and the offered build's `notes` (`UpdateNotes`)                         |
+| `SettingsFiles`       | A Files page: the settings folder with a verb that shows it, then each file with Open and its problems; a refused request shows under its row                                                    |
+| `SignInDialog`        | A password or passphrase asked in the dialog frame: `facts` (where and who), the field (`secretLabel`), and why it asks again (`rejection`)                                                      |
+| `HostKeyDialog`       | A host key not seen before: the host as the one item, then its type and whole fingerprint                                                                                                        |
+
+```tsx
+import { BrandMark, ChannelMarker, Lockup, TitleBar, UpdatePill } from '@bigpixelrocket/uiok/shell';
+
+<TitleBar trafficLights={platform === 'darwin'}>
+  <Lockup
+    className="shell-lockup"
+    lead="Acme"
+    strong="OK"
+    mark={
+      <BrandMark>
+        <path
+          className="brand-mark-line"
+          d="M5 7l5-2.5L15 7l-5 2.5z M5 10.5l5 2.5 5-2.5 M5 14l5 2.5 5-2.5"
+        />
+      </BrandMark>
+    }
+  />
+  {channel ? (
+    <ChannelMarker label="Local" detail="feat/services" title="Local build · feat/services" />
+  ) : null}
+</TitleBar>;
+```
+
+A brand mark's glyph takes three classes: `brand-mark-glyph` fills a shape in the brand's white, `brand-mark-line` strokes it in that white (a line drawing), and `brand-mark-cut` strokes in the plate's colour over a white fill, so it reads as cut out of it.
+
+```tsx
+import {
+  AppearanceSettings,
+  SettingsDialog,
+  SettingsSubsection,
+  UpdatesPage
+} from '@bigpixelrocket/uiok/shell';
+
+<SettingsDialog
+  groups={[
+    {
+      id: 'app',
+      title: 'App',
+      pages: [
+        {
+          id: 'appearance',
+          title: 'Appearance',
+          Icon: Palette,
+          subsections: [{ id: 'theme', title: 'Theme' }],
+          body: (
+            <AppearanceSettings
+              mode={mode}
+              onModeChange={saveMode}
+              themes={themes}
+              onThemeChange={saveTheme}
+            />
+          )
+        },
+        {
+          id: 'updates',
+          title: 'Updates',
+          Icon: ArrowDownToLine,
+          subsections: [],
+          fills: true,
+          body: <UpdatesPage checks={checks} card={card} />
+        }
+      ]
+    }
+  ]}
+  pageRequest={request}
+  onClose={close}
+/>;
+```
+
+Each request to show Settings on a page is a `SettingsPageRequest` (`{ pageId, seq }`), the number growing with every request so a repeat for the page already chosen still turns to it. A page whose body takes the column's height (its notes scroll in a box of their own) sets `fills`. A page's `trailing` stands after its sidebar title (an offered build's `settings-sidebar-chip`).
+
+A page with keys of its own (a shortcut editor's find and recording) hands them to the dialog while it shows with `useSettingsPageKeys({ legend, onLeave, done })`: its legend replaces Done, `onLeave` runs on Escape and the leave slot instead of closing, and `done` puts Done back as the primary while Return has nothing of the page's to do. It gives them back as it unmounts. `settingsLegend(keys, onDone, done)` is the legend the dialog draws, and `SettingsPageKeysContext` is where a page renders on its own without a dialog. A page marks the control it brings into view as it opens with `SETTINGS_REVEAL_ATTRIBUTE` (`ThemeChoices` does for the theme in use), and a sticky head over its subsections with `SETTINGS_PAGE_HEAD_ATTRIBUTE`. `spiedSubsection` and `subsectionScrollTop` are the pure rules of which subsection the sidebar marks and where a sidebar click scrolls.
+
+`useSystemDark()` follows the system's appearance; `appearanceInUse(mode, systemDark)` says which appearance the window wears; `steppedIndex(key, index, count)` is the arrow keys' step in a radio group.
+
+### Labels read
+
+`settings`: `title`, `sidebar`, and `done` (`SettingsDialog`), `appearance` (`AppearanceSettings`). `dialog`: `cancel` (`SignInDialog`'s leave verb). See [labels](../labels.md).
 
 ## Settings dialog
 
@@ -41,23 +142,25 @@ uiok's `ModalDialog`, frosted, with `className="settings-dialog"`: a fixed frame
 </ModalDialog>
 ```
 
-| Class                          | What it is                                                                                                                                                                                                                                                                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `settings-dialog`              | On the `ModalDialog`: the fixed frame                                                                                                                                                                                                                                                                                                      |
-| `settings-dialog-body`         | The sidebar's 196px column beside the page column, edge to edge                                                                                                                                                                                                                                                                            |
-| `settings-sidebar`             | The sidebar on `--scrim-strong`; add `scroll-fade`                                                                                                                                                                                                                                                                                         |
-| `settings-sidebar-group`       | A set of pages; 12px from the set before it                                                                                                                                                                                                                                                                                                |
-| `settings-sidebar-header`      | With `overline`: the set's name                                                                                                                                                                                                                                                                                                            |
-| `settings-sidebar-page`        | A page's row (a `button`): its glyph and title, 26px (`--bar-height`), wrapping on the compact line with its glyph and chip on the first line (a `cutTooltip` on its `span` is harmless: it never opens). `aria-current="page"` puts it on the current item's tint and ring, with its glyph full. Hover is the quiet control's shared look |
-| `settings-sidebar-chip`        | A page's trailing label as a warning chip (an offered build); on the current page it keeps the outline alone                                                                                                                                                                                                                               |
-| `settings-sidebar-subsections` | The current page's subsections on a rail (a hairline) under its row                                                                                                                                                                                                                                                                        |
-| `settings-sidebar-subsection`  | A subsection's row (a `button`), 22px, dim; `aria-current="location"` marks the one in view: bold in `--text`, with its segment of the rail lit in `--accent`. No fill: the page's row keeps the one current-item tint                                                                                                                     |
-| `settings-column`              | The page column, ruled off from the sidebar                                                                                                                                                                                                                                                                                                |
-| `settings-page`                | The page that scrolls in it; add `scroll-fade`. `fills` makes its body take the column's height (a part of it scrolls in its own box)                                                                                                                                                                                                      |
-| `settings-page-title`          | The page's title                                                                                                                                                                                                                                                                                                                           |
-| `settings-subsection`          | A group of rows under its `overline` (or `settings-subsection-title`), a hairline between groups                                                                                                                                                                                                                                           |
-| `settings-label-detail`        | A row label's quieter second line                                                                                                                                                                                                                                                                                                          |
-| `settings-save-failure`        | On a danger `notice` over the page column: a change a file could not take                                                                                                                                                                                                                                                                  |
+| Class                                      | What it is                                                                                                                                                                                                                                                                                                                                 |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `settings-dialog`                          | On the `ModalDialog`: the fixed frame                                                                                                                                                                                                                                                                                                      |
+| `settings-dialog-body`                     | The sidebar's 196px column beside the page column, edge to edge                                                                                                                                                                                                                                                                            |
+| `settings-sidebar`                         | The sidebar on `--scrim-strong`; add `scroll-fade`                                                                                                                                                                                                                                                                                         |
+| `settings-sidebar-group`                   | A set of pages; 12px from the set before it                                                                                                                                                                                                                                                                                                |
+| `settings-sidebar-header`                  | With `overline`: the set's name                                                                                                                                                                                                                                                                                                            |
+| `settings-sidebar-page`                    | A page's row (a `button`): its glyph and title, 26px (`--bar-height`), wrapping on the compact line with its glyph and chip on the first line (a `cutTooltip` on its `span` is harmless: it never opens). `aria-current="page"` puts it on the current item's tint and ring, with its glyph full. Hover is the quiet control's shared look |
+| `settings-sidebar-chip`                    | A page's trailing label as a warning chip (an offered build); on the current page it keeps the outline alone                                                                                                                                                                                                                               |
+| `settings-sidebar-subsections`             | The current page's subsections on a rail (a hairline) under its row                                                                                                                                                                                                                                                                        |
+| `settings-sidebar-subsection`              | A subsection's row (a `button`), 22px, dim; `aria-current="location"` marks the one in view: bold in `--text`, with its segment of the rail lit in `--accent`. No fill: the page's row keeps the one current-item tint                                                                                                                     |
+| `settings-column`                          | The page column, ruled off from the sidebar                                                                                                                                                                                                                                                                                                |
+| `settings-page`                            | The page that scrolls in it; add `scroll-fade`. `fills` makes its body take the column's height (a part of it scrolls in its own box)                                                                                                                                                                                                      |
+| `settings-page-title`                      | The page's title                                                                                                                                                                                                                                                                                                                           |
+| `settings-subsection`                      | A group of rows under its `overline` (or `settings-subsection-title`), a hairline between groups                                                                                                                                                                                                                                           |
+| `settings-label-detail`                    | A row label's quieter second line                                                                                                                                                                                                                                                                                                          |
+| `settings-restore`                         | Restore default value: dim beside a setting off its default                                                                                                                                                                                                                                                                                |
+| `settings-count`, `settings-count-or-word` | On a `field`: a count a few digits wide (9ch), or one whose empty field reads as a word such as "No limit" (20ch)                                                                                                                                                                                                                          |
+| `settings-save-failure`                    | On a danger `notice` over the page column: a change a file could not take                                                                                                                                                                                                                                                                  |
 
 A page's rows are `field-grid` ([Field](field.md)) at the small size, every page on the one label column: `settings-page` sets `--field-label-width: 136px`, so the controls start at the same place on every page. A lone form outside Settings sizes its column to its longest label instead.
 
@@ -155,11 +258,19 @@ The `error` tone colours the card's title, so it is for a card whose title is th
 
 ## Channel tag
 
-`channel-tag` on a `span` beside a lockup, on a build that is not the release: the channel's name in small capitals on a pill tinted with the channel's hue. An app that colours its channels sets `--channel` (the hue) and `--channel-text` (its words, 4.5:1 on the pill) for the tag's scope; without them it wears `--accent` and `--accent-text`.
+`channel-tag` on a `span` beside a lockup, on a build that is not the release: the channel's name in small capitals on a pill tinted with the channel's hue. An element with `data-channel="latest"` or `data-channel="local"` (the app's root, the About window) sets `--channel` (the hue) and `--channel-text` (its words, 4.5:1 on the pill) for its scope from the theme's channel tokens ([Themes](../themes.md)); without one the tag wears `--accent` and `--accent-text`.
+
+## Title bar
+
+`shell-topbar` (`TitleBar`) holds `shell-brand`, which lays out the lockup (`shell-lockup`, 15px) and the channel marker (`shell-channel`: `shell-channel-dot`, `shell-channel-name`, `shell-channel-detail`, which gives way to an ellipsis up to 224px, and `shell-channel-modified`). With `data-traffic-lights` the brand starts at `--traffic-light-inset`. The marker's words are `--channel-name` and `--channel-detail`, each 4.5:1 on the header; its dot is `--channel`, ringed with `--group-dot-ring` where a channel's hue sits near 2:1. `shell-trailing` holds the update pill after the main pane's tabs, out of the drag region.
+
+## Lockup and brand mark
+
+`lockup` (`Lockup`): the mark 0.4em from the wordmark (`lockup-wordmark`, its `b` heavy), sized by `--lockup-size` (40px unless set). `brand-mark` (`BrandMark`, 1.4em square): `brand-mark-plate` in the accent, the glyph, `brand-mark-badge` in the success hue ringed in `--surface-header`, and `brand-mark-check`. Under a dark appearance the plate and the badge deepen toward `--brand-plate` (`--brand-plate-dark`, `--brand-badge-dark`), so the white keeps its contrast on a light accent.
 
 ## About window
 
-`about-window` on the window's one panel: the app's icon, `about-lockup` (the icon-sized mark and the wordmark side by side, 6px apart), and `about-version`, the version in the code face at the caption size, dim, the one line a reader may select. A fixed frame the window's height that never scrolls, its content centred in it with a 12px inset. The app sizes its icon and wordmark and sets its window's drag regions.
+`about-window` (`AboutWindow`) on the window's one panel: the app's icon (`about-icon`, 128px), `about-lockup` (the lockup, `about-lockup-text` at 21px, beside the channel tag), and `about-version`, the version in the code face at the caption size, dim, the one line a reader may select. A fixed frame the window's height that never scrolls, its content centred in it with a 12px inset; the panel drags the window under a hidden title bar, all but the version line.
 
 ## Sign-in prompts
 

@@ -17,6 +17,7 @@ import { DEFAULT_PAGER_LABELS, type PagerLabels } from './pager.js';
 import { DEFAULT_PALETTE_LABELS, type PaletteLabels } from './palette.js';
 import { DEFAULT_PANE_TABS_LABELS, type PaneTabsLabels } from './paneTabs.js';
 import { DEFAULT_SELECT_ALL_LABELS, type SelectAllLabels } from './selectAll.js';
+import { DEFAULT_SETTINGS_LABELS, type SettingsLabels } from './settings.js';
 import { DEFAULT_TERMINAL_LABELS, type TerminalLabels } from './terminal.js';
 
 /**
@@ -49,6 +50,8 @@ export interface UiokLabels {
   readonly terminal: TerminalLabels;
   /** A pane's tab strip: New Tab, close and picked names, and the folded tabs' count and menu (`PaneTabs`). */
   readonly paneTabs: PaneTabsLabels;
+  /** The Settings dialog's title, sidebar, and Done, and the Appearance page's words (`SettingsDialog`, `AppearanceSettings`). */
+  readonly settings: SettingsLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
@@ -63,5 +66,6 @@ export const DEFAULT_LABELS: UiokLabels = {
   palette: DEFAULT_PALETTE_LABELS,
   selectAll: DEFAULT_SELECT_ALL_LABELS,
   terminal: DEFAULT_TERMINAL_LABELS,
-  paneTabs: DEFAULT_PANE_TABS_LABELS
+  paneTabs: DEFAULT_PANE_TABS_LABELS,
+  settings: DEFAULT_SETTINGS_LABELS
 };

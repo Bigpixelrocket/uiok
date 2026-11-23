@@ -1389,3 +1389,34 @@ a {
 .demo-facts-tight {
   width: min(240px, 100%);
 }
+
+/* The frame page's small window: a fixed height, so the window's grid has
+   rows to fill, on the window ground with a hairline round it. */
+.frame-demo {
+  height: 420px;
+  overflow: hidden;
+  border: var(--line) solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  background: var(--ground);
+}
+
+/* The splitter's list over the pane under it, in a box of its own height. */
+.frame-split-demo {
+  display: flex;
+  height: 260px;
+}
+
+.frame-split-demo > .pane {
+  flex: 1;
+}
+
+/* A log well at a reading height. */
+.log-demo {
+  display: flex;
+  flex-direction: column;
+  height: 220px;
+}
+
+.log-demo > .log-well {
+  flex: 1;
+}

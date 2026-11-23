@@ -161,7 +161,23 @@
       "--text-dim-on-surface": "#4d506a",
       "--accent-pressed": "#1b5bdb",
       "--danger-pressed": "#c30e35",
-      "--warning-pressed": "#965f14"
+      "--warning-pressed": "#965f14",
+      "--brand-white": "#ffffff",
+      "--brand-plate": "#11111b",
+      "--brand-plate-dark": "color-mix(in srgb, var(--accent) 70%, var(--brand-plate))",
+      "--brand-badge-dark": "color-mix(in srgb, var(--success) 70%, var(--brand-plate))",
+      "--channel-name": "var(--row-meta-text)",
+      "--channel-detail": "var(--channel-name)",
+      "--channel-latest": "#8839ef",
+      "--channel-latest-text": "#6d2ebf",
+      "--channel-local": "#fe640b",
+      "--channel-local-text": "#983c07",
+      "--log-source-1": "#307820",
+      "--log-source-2": "#9a4e86",
+      "--log-source-3": "#1c5fe4",
+      "--log-source-4": "#b24608",
+      "--log-source-5": "#127379",
+      "--log-source-6": "#8738ed"
     }
   },
   "catppuccin-mocha": {
@@ -325,7 +341,23 @@
       "--text-dim-on-surface": "#abb2cd",
       "--accent-pressed": "#9abffb",
       "--danger-pressed": "#f59bb4",
-      "--warning-pressed": "#fcf0d5"
+      "--warning-pressed": "#fcf0d5",
+      "--brand-white": "#ffffff",
+      "--brand-plate": "#11111b",
+      "--brand-plate-dark": "color-mix(in srgb, var(--accent) 70%, var(--brand-plate))",
+      "--brand-badge-dark": "color-mix(in srgb, var(--success) 70%, var(--brand-plate))",
+      "--channel-name": "var(--row-meta-text)",
+      "--channel-detail": "#7f849c",
+      "--channel-latest": "#cba6f7",
+      "--channel-latest-text": "#cba6f7",
+      "--channel-local": "#fab387",
+      "--channel-local-text": "#fab387",
+      "--log-source-1": "#a6e3a1",
+      "--log-source-2": "#f5c2e7",
+      "--log-source-3": "#89b4fa",
+      "--log-source-4": "#fab387",
+      "--log-source-5": "#94e2d5",
+      "--log-source-6": "#cba6f7"
     }
   }
 }

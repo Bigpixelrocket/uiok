@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-23
+
+### Added
+
+- The shell's components (`@bigpixelrocket/uiok/shell`, now an area with a module): `TitleBar`, `Lockup`, `BrandMark` (the family's plate, the app's glyph, and the check badge), `ChannelMarker`, `UpdatePill`, `AboutWindow`, `SettingsDialog` with `SettingsSubsection`, `SettingsSaveFailure`, page keys (`useSettingsPageKeys`, `settingsLegend`, `SettingsPageKeysContext`), and the scroll rules `spiedSubsection` and `subsectionScrollTop`, and the shared pages `AppearanceSettings` over `ThemeChoices` and `ThemePreview`, `LanguageChoice`, `UpdatesPage` with `UpdateChecks`, `UpdateCard`, and `UpdateNotes`, and `SettingsFiles`; the sign-in prompts `SignInDialog` and `HostKeyDialog`; `useSystemDark`, `appearanceInUse`, `steppedIndex`, `themesOf`.
+- The window frame (`@bigpixelrocket/uiok/frame`, a new area): `WindowFrame` (the title band, sidebar, main pane, tray, dock, and key legend in one grid), `SidebarResizer` and `draggedWidth`, `TreeToggle` and the sidebar tree's `tree-*` classes, `FilterChips` and the pane quick row (`pane-quick-*`), `StatusNotice`, `usePaneSplit`, `PaneSplitter`, and `cutRowDepth`; the app root's classes (`app-shell`, `shell-content`, `space-panel`, `space-root`, `space-nav-empty`, `page-slot`), the dock's (`window-dock`, `dock-*`), and a page's (`pane-page`, `pane-toolbar*`, `pane-page-filter`, `pane-page-note`, `pane-empty-action`, `pane-section-head`, `pane-foot-bar`, `split-detail*`).
+- `LogWell` (`@bigpixelrocket/uiok/log`, a new area): a log in a well with each source's prefix in its own colour, a line's tone, and following the newest line; `logSourceIndexes`, `logSourceColour`, `logSourceWidth`.
+- `Sparkline` and `sparklinePoints` (`@bigpixelrocket/uiok/charts`).
+- `ProgressDialog` and `TypedNameDialog` (`@bigpixelrocket/uiok/dialog`).
+- Theme tokens: the release channels (`--channel-latest`, `--channel-local`, their `-text`, `--channel-name`, `--channel-detail`, and `[data-channel]` blocks that set `--channel` and `--channel-text`), the brand mark (`--brand-white`, `--brand-plate`, `--brand-plate-dark`, `--brand-badge-dark`), and a log's sources (`--log-source-1` to `--log-source-6`).
+- Scale tokens: `--font-weight-light`, `--font-weight-heavy`, `--shell-header-height`, `--traffic-light-inset`, `--sidebar-width`, `--quick-menu-height`.
+- The `settings` label group (`SettingsLabels`, `AppearanceLabels`, `AppearanceMode`, `DEFAULT_SETTINGS_LABELS`) and the `dialog` labels `ok`, `close`, `stop`, `tryAgain`, `runInBackground`, `typeName`.
+- `shell.css`: the title bar (`shell-topbar`, `shell-brand`, `shell-lockup`, `shell-channel*`, `shell-trailing`), the lockup and brand mark, the About window's drag regions and icon, `settings-restore`, `settings-count`, `settings-count-or-word`.
+
+### Changed
+
+- Breaking: uiok now defines `--channel`, `--channel-text`, `--channel-name`, `--channel-detail`, `--channel-latest`, `--channel-latest-text`, `--channel-local`, `--channel-local-text`, `--brand-white`, and `--brand-plate`, so `themeStylesheet` refuses an app token of those names. An app that wrote them as its own tokens drops them; the values are the same in every theme.
+
 ## [0.2.3] - 2026-11-22
 
 ### Added
@@ -200,7 +218,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.3...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.1...v0.2.2
 [0.2.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.0...v0.2.1

@@ -181,6 +181,26 @@ const EXCEPTIONS: readonly Exception[] = [
     value: /^min\(620px, 100%\)$/,
     reason:
       "The Settings dialog's fixed frame height, a layout size, not a control; fixed so switching pages never moves the frame."
+  },
+  {
+    file: 'src/shell/shell.css',
+    property: 'gap',
+    value: /^0\.4em$/,
+    reason:
+      "A lockup's mark stands apart from its wordmark by a share of the wordmark's size, which the host sets."
+  },
+  {
+    file: 'src/shell/shell.css',
+    property: 'height',
+    value: /^128px$/,
+    reason: "An About window's app icon, a picture's size, not a control's."
+  },
+  {
+    file: 'src/frame/frame.css',
+    property: 'max-height',
+    value: /^max\(38%, calc\(7 \* var\(--row-height-dense\)\)\)$/,
+    reason:
+      'The pane under a list grows to a share of the page, never under seven dense rows: a layout share over a row token.'
   }
 ];
 

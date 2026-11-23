@@ -201,6 +201,8 @@ describe('delivered tokens', () => {
     /^--chart-\d$/,
     /^--terminal-/,
     /^--syntax-/,
+    // logSourceColour names a log's source colours.
+    /^--log-source-\d$/,
     // Palette-drawn roles and app-read tokens, documented in docs/themes.md
     // and docs/tokens.md.
     /^--primary-hue$/,

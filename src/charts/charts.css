@@ -455,3 +455,20 @@
 .pie-hatch-stripe {
   fill: var(--surface);
 }
+
+/* A sparkline (Sparkline): the line alone, in its series colour, its
+   stroke kept at one width however the box scales. */
+.sparkline {
+  display: inline-block;
+  flex: none;
+  overflow: visible;
+  vertical-align: middle;
+}
+
+.sparkline-line {
+  fill: none;
+  stroke-width: 1.5;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+}
