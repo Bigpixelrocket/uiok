@@ -316,6 +316,34 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
+  it('lets neighbouring actions meet edge to edge, only the last pulled into the cell’s edge', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="row">
+      <span class="row-meta pane-action-cell">
+        <button class="pane-act" id="worded" type="button"><span class="pane-act-word">Show in Finder</span></button>
+        <button class="pane-act wordless" id="glyph" type="button"><span class="pane-act-word">Copy Path</span></button>
+        <button class="pane-act" id="last" type="button"><span class="pane-act-word">Clear</span></button>
+      </span>
+      <span class="row-meta pane-action-cell">
+        <button class="pane-act wordless" id="last-glyph" type="button"><span class="pane-act-word">Copy</span></button>
+      </span>
+    </div></section>`;
+    const last = (id: string, property: string): string | undefined =>
+      declaredValues(document.querySelector(`#${id}`) as Element, property).at(-1);
+
+    // No negative margin before a neighbour, so no box runs under the next one's.
+    expect(last('worded', 'margin-right')).toBe('0px');
+    expect(last('glyph', 'margin-right')).toBe('0px');
+    // The words keep their distance from the next control: the room after them goes.
+    expect(last('worded', 'padding-right')).toBe('0px');
+    expect(last('glyph', 'width')).toBe('var(--control-height-xs)');
+    // The last action still reaches the cell's edge.
+    expect(last('last', 'margin-right')).toBe('calc(-1 * var(--space-3))');
+    expect(last('last', 'padding-right')).not.toBe('0px');
+    expect(last('last-glyph', 'margin-right')).toBe('calc(-1 * var(--pane-glyph-reach))');
+    document.body.innerHTML = '';
+  });
+
   it('draws a dim add row as unavailable in Latte and Mocha, at rest, on the cursor, and under the pointer', () => {
     applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
     const listingRow = (classes: string) =>

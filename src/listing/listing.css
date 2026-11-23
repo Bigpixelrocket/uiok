@@ -628,6 +628,22 @@ button.crumb-label.crumb-siblings > svg {
   margin-right: calc(-1 * var(--pane-glyph-reach));
 }
 
+/* An action with a control after it ends where its own box does: the pulls
+   above, which take the room after the last action's words or glyph into
+   the cell's edge, are for the last one alone, so no neighbour's hit area
+   runs under another's (a strip's Show in Finder, Copy Path, and Clear
+   meet edge to edge). A worded action gives up the room after its words
+   instead, so its words stand exactly as far from the next control as the
+   pull drew them; a glyph alone keeps its square, as far from the next
+   glyph as two icon controls stand. */
+:where(.listing-root) .row-meta .pane-act:not(:last-child) {
+  margin-right: 0;
+}
+
+:where(.listing-root) .row-meta .pane-act:not(.wordless, :last-child) {
+  padding-right: 0;
+}
+
 /* A compact icon control (RowIconAction): a row's hover icon, or Reveal and
    Copy at a status line's end. */
 .pane-icon-act {
