@@ -29,7 +29,7 @@ const treePane = `
 /**
  * The rules inside the sheet's `@media (forced-colors: none)` blocks, as
  * plain rules: jsdom applies no media rule, so a test of standard colours
- * adds them after the sheet.
+ * adds them itself (before the sheet, so they win by weight, not order).
  */
 const standardColours = (sheet: string): string => {
   const parsed = new CSSStyleSheet();
