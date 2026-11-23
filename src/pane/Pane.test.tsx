@@ -209,15 +209,18 @@ describe("the keyboard's menu key, told from a pointer's click", () => {
     mount(onRow, onPane);
     const home = screen.getByLabelText('Files', { selector: '.pane-list' });
 
-    // Another key is no menu key.
+    // Another key is no menu key, and nor is Shift-F10 with another modifier.
     fireEvent.keyDown(home, { key: 'a' });
     secondaryClick(home);
     expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([1, 0]);
+    fireEvent.keyDown(home, { key: 'F10', shiftKey: true, ctrlKey: true });
+    secondaryClick(home);
+    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([2, 0]);
     fireEvent.keyDown(home, { key: 'F10', shiftKey: true });
     secondaryClick(home);
-    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([1, 1]);
+    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([2, 1]);
     // The menu key spent, the next secondary click is the pane's again.
     secondaryClick(home);
-    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([2, 1]);
+    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([3, 1]);
   });
 });

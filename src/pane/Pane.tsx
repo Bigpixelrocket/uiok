@@ -181,7 +181,13 @@ export function PaneList({
         region.onContextMenu?.(event);
       }}
       onKeyDownCapture={(event) => {
-        menuKey.current = event.key === 'ContextMenu' || (event.key === 'F10' && event.shiftKey);
+        menuKey.current =
+          event.key === 'ContextMenu' ||
+          (event.key === 'F10' &&
+            event.shiftKey &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            !event.metaKey);
         region.onKeyDownCapture?.(event);
       }}
       onPointerDownCapture={() => {
