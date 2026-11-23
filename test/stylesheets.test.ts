@@ -89,6 +89,28 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
     document.body.innerHTML = '';
   });
 
+  it('keeps the main pane’s tabs beside the title bar while the sidebar is hidden, either header shape', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    document.body.innerHTML = `<div class="window-frame" data-sidebar="hidden">
+      <div class="window-frame-main"><div class="pane-header"><span class="pane-tabs-rest"></span></div></div>
+      <div class="window-frame-main"><section class="pane"><div class="pane-header"><span class="pane-tabs-rest"></span></div></section></div>
+    </div>`;
+    const padding = 'calc(var(--window-band-width) + var(--space-3))';
+
+    for (const header of document.querySelectorAll('.pane-header')) {
+      expect(declaredValues(header, 'padding-left').at(-1)).toBe(padding);
+    }
+    document.body.innerHTML = '';
+  });
+
+  it('writes no relative selector inside :is() or :where(), which browsers drop with the whole rule', () => {
+    for (const path of componentSheets) {
+      const css = readFileSync(join(SRC, path), 'utf8');
+
+      expect(css.match(/:(?:is|where)\(\s*[>+~]/g) ?? [], path).toEqual([]);
+    }
+  });
+
   it('centres a failed or empty pane in a block with its words, actions, and error', () => {
     applyStylesheets(readStylesheet('src/styles.css'));
     document.body.innerHTML = `<div class="space-load-failure"><svg></svg>

@@ -48,6 +48,36 @@ describe('ConfirmDialog', () => {
     expect(onConfirm).not.toHaveBeenCalled();
   });
 
+  it('offers a second way on, on its own chord, between leaving and confirming, at the width asked', () => {
+    const onKeep = vi.fn();
+    const onConfirm = vi.fn();
+
+    render(
+      <ConfirmDialog
+        alternative={{
+          label: 'Close Window and Keep Running',
+          chord: { key: 'Enter', alt: true },
+          onRun: onKeep
+        }}
+        confirmLabel="Quit"
+        icon={TriangleAlert}
+        onCancel={() => undefined}
+        onConfirm={onConfirm}
+        size="md"
+        title="Quit?"
+        tone="warning"
+      />
+    );
+    const dialog = screen.getByRole('dialog');
+
+    expect(dialog.classList.contains('dialog-size-md')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: /Close Window and Keep Running/ }));
+    expect(onKeep).toHaveBeenCalledTimes(1);
+    fireEvent.keyDown(dialog, { key: 'Enter', altKey: true });
+    expect(onKeep).toHaveBeenCalledTimes(2);
+    expect(onConfirm).not.toHaveBeenCalled();
+  });
+
   it('wears the danger tone by default and the accent for a primary grant', () => {
     expect(renderDialog().dialog.dataset.tone).toBe('danger');
     cleanup();

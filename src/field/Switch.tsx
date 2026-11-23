@@ -1,4 +1,7 @@
-import type { ReactElement } from 'react';
+import type { MouseEvent, ReactElement } from 'react';
+
+/** A press on the switch or its words toggles it alone, never also opening the row it stands in. */
+const keepToSelf = (event: MouseEvent): void => event.stopPropagation();
 
 import { useInRow, type ControlVerb } from '../pane/PaneActions.js';
 
@@ -23,7 +26,8 @@ export interface SwitchProps {
  * `role="switch"`; a setting is a check, not a switch. With its label drawn
  * it stands in a `field-choice` label, the whole label its target. In a
  * listing row it leaves the Tab order, as a row's other controls do, since
- * the cursor row's keys run it.
+ * the cursor row's keys run it, and a press toggles it without opening the
+ * row.
  */
 export function Switch({
   checked,
@@ -42,6 +46,7 @@ export function Switch({
       data-verb={verb}
       disabled={disabled}
       onChange={(event) => onChange(event.currentTarget.checked)}
+      onClick={keepToSelf}
       role="switch"
       tabIndex={inRow ? -1 : undefined}
       type="checkbox"
@@ -51,7 +56,7 @@ export function Switch({
   if (labelHidden) return control;
 
   return (
-    <label className="field-choice">
+    <label className="field-choice" onClick={keepToSelf}>
       {control}
       {label}
     </label>

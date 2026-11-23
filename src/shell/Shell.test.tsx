@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { AboutWindow } from './AboutWindow.js';
 import { LanguageChoice } from './LanguageChoice.js';
+import { LoadFailure } from './LoadFailure.js';
 import { BrandMark, Lockup } from './Lockup.js';
 import { ChannelMarker, TitleBar } from './TitleBar.js';
 import { UpdatePill } from './UpdatePill.js';
@@ -147,5 +148,23 @@ describe('LanguageChoice', () => {
     expect(screen.getByRole('option', { name: 'Deutsch' }).getAttribute('lang')).toBe('de-DE');
     fireEvent.change(select, { target: { value: 'de-DE' } });
     expect(onChange).toHaveBeenCalledWith('de-DE');
+  });
+});
+
+describe('LoadFailure', () => {
+  it('announces what could not load, why, and its way on', () => {
+    render(
+      <LoadFailure
+        action={<button type="button">Try Again</button>}
+        reason="EACCES: permission denied"
+        title="Could not load projects"
+      />
+    );
+    const block = screen.getByRole('alert');
+
+    expect(block.querySelector('strong')?.textContent).toBe('Could not load projects');
+    expect(block.querySelector('p')?.textContent).toBe('EACCES: permission denied');
+    expect(block.querySelector('svg')?.getAttribute('aria-hidden')).toBe('true');
+    expect(screen.getByRole('button', { name: 'Try Again' })).toBeTruthy();
   });
 });

@@ -6,7 +6,8 @@
  * stepped in by level with a state and a switch, a note, the edge that
  * resizes it, and a Hide/Show panel toggle; a main pane whose page holds a
  * list over the pane under it with the splitter between them, and a status
- * notice in its status line; the key legend across the foot.
+ * notice in its status line; a console docked under it at the height it
+ * keeps, its log scrolling; the key legend across the foot.
  */
 
 import {
@@ -24,6 +25,9 @@ import { useState } from 'react';
 import { Button } from '@bigpixelrocket/uiok/button';
 import { Switch } from '@bigpixelrocket/uiok/field';
 import {
+  Dock,
+  DockLog,
+  DockLogEntry,
   FilterChips,
   PageNote,
   PanePage,
@@ -63,6 +67,7 @@ export function FrameDemo() {
   const [on, setOn] = useState<readonly string[]>([]);
   const [running, setRunning] = useState<readonly string[]>(['PostgreSQL 18', 'Redis']);
   const split = usePaneSplit('frame-demo', null);
+  const [dockHeight, setDockHeight] = useState(96);
   const verbs: readonly LegendVerb[] = [
     { label: 'Open', chord: { key: 'Enter' }, run: () => undefined },
     { label: 'Start', chord: { key: 'Enter', meta: true }, run: () => undefined },
@@ -94,6 +99,24 @@ export function FrameDemo() {
             />
             <ChannelMarker detail="feat/frame" label="Local" title="Local build from feat/frame" />
           </TitleBar>
+        }
+        dock={
+          <Dock
+            bar="Console"
+            height={dockHeight}
+            label="Console"
+            onResize={setDockHeight}
+            onResizeEnd={setDockHeight}
+            open
+            pageMin={120}
+            resizeLabel="Resize the console"
+          >
+            <DockLog label="Activity">
+              {Array.from({ length: 40 }, (_, index) => (
+                <DockLogEntry key={index}>{`Started worker ${index + 1}`}</DockLogEntry>
+              ))}
+            </DockLog>
+          </Dock>
         }
         legend={<KeyLegendStrip pairLabel={(pair) => pair} verbs={verbs} />}
         main={

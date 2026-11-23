@@ -14,11 +14,21 @@ import { usePaneKeys } from './usePaneKeys.js';
  * (the home) holding a row whose control is out of the Tab order and a
  * `tabbable` row whose select and button are in it, and its log after.
  */
-function Panes({ sidebarStops }: { readonly sidebarStops: boolean }): ReactElement {
+function Panes({
+  sidebarStops,
+  sidebar = true,
+  held = false
+}: {
+  readonly sidebarStops: boolean;
+  /** The sidebar shows; false hides it, as a window does. */
+  readonly sidebar?: boolean;
+  /** A page held mounted out of sight comes before the front page. */
+  readonly held?: boolean;
+}): ReactElement {
   const panes = usePaneKeys<PaneKeyAction, object>({
     shown: true,
     loaded: true,
-    initialPane: 'sidebar',
+    initialPane: sidebar ? 'sidebar' : 'main',
     page: 'page',
     sidebarKeys: ['one'],
     openKey: null,
@@ -33,18 +43,31 @@ function Panes({ sidebarStops }: { readonly sidebarStops: boolean }): ReactEleme
 
   return (
     <div ref={panes.rootRef}>
-      <aside className="pane">
-        <button type="button">Refresh</button>
-        <div aria-label="Tree" data-pane-home="sidebar" tabIndex={-1}>
-          <div data-row-key="one">
-            <button type="button">Next page</button>
+      {sidebar ? (
+        <aside className="pane">
+          <button type="button">Refresh</button>
+          <div aria-label="Tree" data-pane-home="sidebar" tabIndex={-1}>
+            <div data-row-key="one">
+              <button type="button">Next page</button>
+            </div>
+            <input aria-label="Filter" />
           </div>
-          <input aria-label="Filter" />
-        </div>
-        <button type="button">Collapse all</button>
-      </aside>
+          <button type="button">Collapse all</button>
+        </aside>
+      ) : null}
       <div className="pane" ref={panes.mainRef} tabIndex={-1}>
         <button type="button">Edit</button>
+        {held ? (
+          <div hidden>
+            <div aria-label="Held page" data-pane-home="page" tabIndex={-1}>
+              <div data-row-key="held">
+                <button data-verb="enter" type="button">
+                  Held
+                </button>
+              </div>
+            </div>
+          </div>
+        ) : null}
         <div aria-label="Page" data-pane-home="page" tabIndex={-1}>
           <div data-row-key="first">
             <button tabIndex={-1} type="button">
@@ -85,6 +108,28 @@ const focus = (name: string): void => {
 };
 
 describe('usePaneKeys Tab', () => {
+  it('stays in the page when the window hides the sidebar', () => {
+    render(<Panes sidebar={false} sidebarStops={false} />);
+
+    expect(focused()).toBe('Page');
+    expect(tab()).toBe('Collation');
+    expect(tab()).toBe('Manual');
+    expect(tab()).toBe('Log');
+    expect(tab()).toBe('Page');
+    expect(tab(true)).toBe('Edit');
+    expect(tab(true)).toBe('Page');
+  });
+
+  it('never reaches the home, rows, or verbs of a page held out of sight', () => {
+    render(<Panes held sidebarStops={false} />);
+    const main = screen.getByLabelText('Page').closest('.pane');
+
+    expect(tab()).toBe('Page');
+    expect(paneRow(main, 'held')).toBeNull();
+    expect(paneRow(main, 'first')).not.toBeNull();
+    expect(verbControl(main, 'enter')).toBeNull();
+  });
+
   it('goes from the sidebar to the page either way, and through the page back to it, by default', () => {
     render(<Panes sidebarStops={false} />);
 

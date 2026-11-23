@@ -23,6 +23,7 @@ The surfaces an app's window draws around its own pages, which every app of the 
 | `SettingsFiles`       | A Files page: the settings folder with a verb that shows it, then each file with Open and its problems; a refused request shows under its row                                                    |
 | `SignInDialog`        | A password or passphrase asked in the dialog frame: `facts` (where and who), the field (`secretLabel`), and why it asks again (`rejection`)                                                      |
 | `HostKeyDialog`       | A host key not seen before: the host as the one item, then its type and whole fingerprint                                                                                                        |
+| `LoadFailure`         | The block a window shows in place of content that failed to load: glyph, `title`, `reason`, and `action`                                                                                         |
 
 ```tsx
 import { BrandMark, ChannelMarker, Lockup, TitleBar, UpdatePill } from '@bigpixelrocket/uiok/shell';
@@ -165,7 +166,7 @@ A page's rows are `field-grid` ([Field](field.md)) at the small size, every page
 
 ### A new problem in a settings file
 
-A new mistake in a settings file needs the user's attention but is not the outcome of the control they just used, so the host raises an alert, never a line under its header: uiok's `ConfirmDialog` with `tone="warning"`, `TriangleAlert`, and `className="settings-alert dialog-size-md"`. The title says what it is ("Settings File Problem"), the message what happens meanwhile, and each problem the host carries is a fact row (`{ label: place, value: message, more }`, the place being the file and line), the last one ending in "+N more". Close is the leave verb on Escape; Show Problems opens Settings on the page that lists them all. It opens once per set of problems.
+A new mistake in a settings file needs the user's attention but is not the outcome of the control they just used, so the host raises an alert, never a line under its header: uiok's `ConfirmDialog` with `tone="warning"`, `TriangleAlert`, and `size="md"`. The title says what it is ("Settings File Problem"), the message what happens meanwhile, and each problem the host carries is a fact row (`{ label: place, value: message, more }`, the place being the file and line), the last one ending in "+N more". Close is the leave verb on Escape; Show Problems opens Settings on the page that lists them all. It opens once per set of problems.
 
 ### A settings file's problems
 
@@ -280,11 +281,10 @@ A `ModalDialog` that asks for what a connection needs to sign in.
 
 ## Exit confirmation
 
-The confirmation shown before an app quits or restarts with work running is uiok's `ConfirmDialog` with `className="exit-confirmation"`, in the anatomy every confirmation has ([Dialogs](dialog.md#one-anatomy-for-every-case)): a title of at most five words with no count ("Quit?"), the lead that says what stops and how many, then what is running as `groups`, each kind's short label and count above the same framed list of items.
+The confirmation shown before an app quits or restarts with work running is uiok's `ConfirmDialog`, in the anatomy every confirmation has ([Dialogs](dialog.md#one-anatomy-for-every-case)): a title of at most five words with no count ("Quit?"), the lead that says what stops and how many, then what is running as `groups`, each kind's short label and count above the same framed list of items.
 
 ```tsx
 <ConfirmDialog
-  className="exit-confirmation"
   title="Quit?"
   message="Quitting stops 3 processes and pauses 1 transfer. Logs are kept, and the transfer resumes at the next launch."
   groups={[
@@ -295,20 +295,21 @@ The confirmation shown before an app quits or restarts with work running is uiok
 />
 ```
 
+An app that can keep its work running without a window offers that as the confirmation's `alternative` (Close Window and Keep Running, on its own chord such as ⌥⏎), between Cancel and the confirm verb.
+
 ## Load failure
 
-`space-load-failure` on the block shown in place of content that failed to load: the failure's glyph first (`CircleAlert` at `ICON_XL` with `absoluteStrokeWidth`, drawn in `--danger`), a `strong` headline, a dim `p` with the reason (at most 420px wide), and any action, centred in the space it takes.
+`LoadFailure` (`title`, `reason`, `action`, `icon`) is the block a window shows in place of content that failed to load, outside any pane: the failure's glyph (`CircleAlert` unless given, at `ICON_XL`, in `--danger`), the headline, a dim reason at most 420px wide, and its way on, centred in the space it takes and announced as an alert.
 
 ```tsx
-<div className="space-load-failure" role="alert">
-  <CircleAlert size={ICON_XL} absoluteStrokeWidth aria-hidden />
-  <strong>Could not load projects</strong>
-  <p>EACCES: permission denied</p>
-  <Button onClick={retry}>Try Again</Button>
-</div>
+<LoadFailure
+  title="Could not load projects"
+  reason="EACCES: permission denied"
+  action={<Button onClick={retry}>Try Again</Button>}
+/>
 ```
 
-It is the window's counterpart of a listing pane's `.pane-empty` block ([Listing](listing.md)), which adds a row of actions and the system's error line; a pane inside a listing uses that one.
+It is the window's counterpart of `EmptyState` with `failure` ([Listing](listing.md)), which a pane inside a listing uses.
 
 ## Keyboard
 

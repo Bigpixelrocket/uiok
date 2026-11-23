@@ -2,11 +2,12 @@ import { act, fireEvent, render, renderHook, screen } from '@testing-library/rea
 import { CircleAlert, Server } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { Switch } from '../field/Switch.js';
 import { RowCursorContext, type RowCursor } from '../listing/Listing.js';
 import { AppRoot, PageSlot, SpacePanel } from './AppRoot.js';
-import { Dock, DockLog, DockLogEntry } from './Dock.js';
+import { Dock, dockHeight, DockLog, DockLogEntry } from './Dock.js';
 import { PageNote, SectionHead, ShowSidebarButton, Toolbar, ToolbarGap } from './PageParts.js';
-import { SplitDetail, usePaneSplit } from './PaneSplit.js';
+import { heldSplitHeight, SplitDetail, usePaneSplit } from './PaneSplit.js';
 import { TreeFilterInput, TreeList, TreeRow, TreeTool } from './Tree.js';
 import { WindowFrame } from './WindowFrame.js';
 
@@ -95,9 +96,13 @@ describe('TreeRow', () => {
     expect(first?.classList.contains('cursor')).toBe(true);
     expect(first?.getAttribute('aria-level')).toBe('2');
     expect(first?.style.getPropertyValue('--tree-level')).toBe('1');
+    const tree = screen.getByRole('tree');
+    expect(tree.getAttribute('aria-activedescendant')).toBe(first?.id);
     fireEvent.pointerMove(second as HTMLElement);
     expect(second?.classList.contains('cursor')).toBe(true);
     expect(first?.classList.contains('cursor')).toBe(false);
+    expect(tree.getAttribute('aria-activedescendant')).toBe(second?.id);
+    expect(second?.id).not.toBe('');
   });
 
   it('toggles its children from the chevron without opening the row', () => {
@@ -121,6 +126,44 @@ describe('TreeRow', () => {
     expect(onOpen).not.toHaveBeenCalled();
     fireEvent.click(screen.getByText('Services'));
     expect(onOpen).toHaveBeenCalledOnce();
+  });
+});
+
+describe('a switch in a tree row', () => {
+  it('toggles alone, never opening the row', () => {
+    const onOpen = vi.fn();
+    const onChange = vi.fn();
+
+    render(
+      <TreeRow
+        name="PostgreSQL"
+        onOpen={onOpen}
+        rowKey="pg"
+        tool={<Switch checked={false} label="Run PostgreSQL" labelHidden onChange={onChange} />}
+      />
+    );
+    fireEvent.click(screen.getByRole('switch', { name: 'Run PostgreSQL' }));
+
+    expect(onChange).toHaveBeenCalledWith(true);
+    expect(onOpen).not.toHaveBeenCalled();
+  });
+
+  it('toggles alone from its drawn words too', () => {
+    const onOpen = vi.fn();
+    const onChange = vi.fn();
+
+    render(
+      <TreeRow
+        name="Sharing"
+        onOpen={onOpen}
+        rowKey="share"
+        tool={<Switch checked label="Share" onChange={onChange} />}
+      />
+    );
+    fireEvent.click(screen.getByText('Share'));
+
+    expect(onChange).toHaveBeenCalledWith(false);
+    expect(onOpen).not.toHaveBeenCalled();
   });
 });
 
@@ -155,7 +198,7 @@ describe('TreeTool', () => {
 describe('Dock', () => {
   it('takes no room while closed and keeps its body', () => {
     const { container, rerender } = render(
-      <Dock bar="Console" label="Console" open={false}>
+      <Dock bar="Console" height={200} label="Console" open={false}>
         <DockLog empty="Nothing yet." label="Activity" />
       </Dock>
     );
@@ -165,7 +208,7 @@ describe('Dock', () => {
     expect(container.querySelector('.dock-log-empty')?.textContent).toBe('Nothing yet.');
 
     rerender(
-      <Dock label="Console" open>
+      <Dock height={200} label="Console" open>
         <DockLog empty="Nothing yet." label="Activity">
           <DockLogEntry actions={<button type="button">Show</button>}>Exported</DockLogEntry>
         </DockLog>
@@ -174,6 +217,43 @@ describe('Dock', () => {
     expect(dock.classList.contains('closed')).toBe(false);
     expect(container.querySelector('.dock-log-empty')).toBeNull();
     expect(container.querySelector('.dock-log-entry .dock-log-actions')?.textContent).toBe('Show');
+    // It keeps the height its host keeps, whatever its log holds, and draws no
+    // edge unless the host hears a drag.
+    expect(dock.style.height).toBe('200px');
+    expect(screen.queryByRole('separator', { hidden: true })).toBeNull();
+  });
+
+  it('draws its edge for a drag, with its height as the separator’s value', () => {
+    render(
+      <Dock
+        height={180}
+        label="Console"
+        onResize={() => undefined}
+        open
+        resizeLabel="Resize the console"
+      >
+        body
+      </Dock>
+    );
+
+    expect(
+      screen.getByRole('separator', { name: 'Resize the console' }).getAttribute('aria-valuenow')
+    ).toBe('180');
+  });
+});
+
+describe('dockHeight', () => {
+  const bounds = { min: 64, pageMin: 160 };
+
+  it('keeps the host’s height while the main pane keeps its least', () => {
+    expect(dockHeight(200, 600, bounds)).toBe(200);
+    expect(dockHeight(200.4, 0, bounds)).toBe(200);
+  });
+
+  it('gives way in a short window so the main pane keeps its least, never under its own least', () => {
+    expect(dockHeight(440, 500, bounds)).toBe(340);
+    expect(dockHeight(440, 200, bounds)).toBe(64);
+    expect(dockHeight(20, 600, bounds)).toBe(64);
   });
 });
 
@@ -197,6 +277,19 @@ describe('SplitDetail', () => {
     );
     expect(pane.classList.contains('folded')).toBe(true);
     expect(pane.textContent).toBe('head');
+  });
+});
+
+describe('heldSplitHeight', () => {
+  const bounds = { floor: 48, least: 40 };
+
+  it('keeps the dragged height while the upper list keeps its floor', () => {
+    expect(heldSplitHeight(200, 400, bounds)).toBe(200);
+  });
+
+  it('gives way in a shorter window, never under the lower pane’s least', () => {
+    expect(heldSplitHeight(340, 200, bounds)).toBe(152);
+    expect(heldSplitHeight(340, 60, bounds)).toBe(40);
   });
 });
 

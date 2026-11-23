@@ -224,7 +224,8 @@
   margin-top: calc(-1 * var(--pane-tab-height));
 }
 
-.window-frame-main :is(> .pane-header, > .pane > .pane-header) > .pane-tabs-rest {
+.window-frame-main > .pane-header > .pane-tabs-rest,
+.window-frame-main > .pane > .pane-header > .pane-tabs-rest {
   -webkit-app-region: drag;
 }
 
@@ -239,7 +240,11 @@
 
 :is(.window-frame[data-sidebar='hidden'], .window-frame:has(> [data-sidebar='hidden']))
   .window-frame-main
-  :is(> .pane-header, > .pane > .pane-header) {
+  > .pane-header,
+:is(.window-frame[data-sidebar='hidden'], .window-frame:has(> [data-sidebar='hidden']))
+  .window-frame-main
+  > .pane
+  > .pane-header {
   padding-left: calc(var(--window-band-width) + var(--space-3));
 }
 

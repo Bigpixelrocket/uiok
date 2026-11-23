@@ -37,4 +37,10 @@ export {
   type LegendPrimary,
   type LegendSecondary
 } from './DialogLegend.logic.js';
-export { containTab, ModalDialog, type DialogTone, type ModalDialogProps } from './ModalDialog.js';
+export {
+  containTab,
+  ModalDialog,
+  type DialogSize,
+  type DialogTone,
+  type ModalDialogProps
+} from './ModalDialog.js';

@@ -40,6 +40,52 @@ export const cutRowDepth = (scroller: HTMLElement): number => {
   return 0;
 };
 
+/**
+ * The least an upper list keeps under a dragged split: its own min-height,
+ * and never under two rows, so a split held from a taller window never
+ * leaves the list with nothing in a shorter one.
+ */
+const upperFloor = (top: HTMLElement): number => {
+  const style = getComputedStyle(top);
+  const row = Number.parseFloat(style.getPropertyValue('--row-height')) || 24;
+
+  return Math.max(Number.parseFloat(style.minHeight) || 0, 2 * row);
+};
+
+/**
+ * The lower pane's height under a dragged split: the height dragged, less
+ * what the upper list must keep of the two regions' room (`floor`), and
+ * never under the lower pane's own least (`least`), in whole pixels.
+ */
+export const heldSplitHeight = (
+  held: number,
+  room: number,
+  bounds: { readonly floor: number; readonly least: number }
+): number => Math.round(Math.max(bounds.least, Math.min(held, room - bounds.floor)));
+
+/**
+ * The room the upper list and the lower pane share: from the list's top to
+ * the end of their container's content box, less whatever follows the
+ * lower pane, measured from the container so a lower pane held taller than
+ * the room (and overflowing it) is not counted as room.
+ */
+const splitRoom = (top: HTMLElement, pane: HTMLElement): number => {
+  const parent = top.parentElement;
+
+  if (parent === null)
+    return top.getBoundingClientRect().height + pane.getBoundingClientRect().height;
+
+  const box = parent.getBoundingClientRect();
+  const end = box.top + parent.clientTop + parent.clientHeight;
+  let after = 0;
+
+  for (let next = pane.nextElementSibling; next !== null; next = next.nextElementSibling) {
+    after += next.getBoundingClientRect().height;
+  }
+
+  return end - top.getBoundingClientRect().top - after;
+};
+
 /** One splitter between a page's upper list and its lower pane (`usePaneSplit`). */
 export interface PaneSplit {
   /** The upper list's scroller, which gives way as the lower pane grows. */
@@ -92,16 +138,32 @@ export function usePaneSplit(
     top.style.maxHeight = height === null ? '' : 'none';
     if (inner !== null) inner.style.maxHeight = '';
 
+    const floor = upperFloor(top);
+
+    // A height dragged in a taller window gives way in a shorter one, so the
+    // upper list keeps its floor; the drag itself is kept for when the room
+    // comes back.
+    if (height !== null) {
+      const room = splitRoom(top, pane);
+      const least = Number.parseFloat(getComputedStyle(pane).minHeight) || 0;
+      const fitted = heldSplitHeight(height, room, { floor, least });
+
+      if (fitted !== height) pane.style.flex = `0 0 ${fitted}px`;
+    }
+
     const cut = cutRowDepth(top);
 
     if (cut > 0) {
-      const floor = Number.parseFloat(getComputedStyle(top).minHeight) || 0;
       const paneHeight = pane.getBoundingClientRect().height;
       const room = top.getBoundingClientRect().height - floor;
 
-      // The cut slice goes to the lower pane; an upper list already at its
-      // floor keeps its slice rather than overflow the page.
-      if (cut <= room) pane.style.flexBasis = `${paneHeight + cut}px`;
+      // The cut slice goes to the lower pane, past the cap its stylesheet
+      // gives it at rest; an upper list already at its floor keeps its
+      // slice rather than overflow the page.
+      if (cut <= room) {
+        pane.style.flexBasis = `${paneHeight + cut}px`;
+        pane.style.maxHeight = `${paneHeight + cut}px`;
+      }
     }
     if (inner !== null) {
       const innerCut = cutRowDepth(inner);
@@ -115,7 +177,9 @@ export function usePaneSplit(
   useEffect(() => {
     const frame = upper.current?.parentElement;
 
-    if (frame === null || frame === undefined) return undefined;
+    if (frame === null || frame === undefined || typeof ResizeObserver === 'undefined') {
+      return undefined;
+    }
 
     const observer = new ResizeObserver(() => settle());
 
@@ -137,10 +201,7 @@ export function usePaneSplit(
     const startY = event.clientY;
     const startHeight = pane.getBoundingClientRect().height;
     const least = Number.parseFloat(getComputedStyle(pane).minHeight) || 0;
-    const most =
-      startHeight +
-      top.getBoundingClientRect().height -
-      (Number.parseFloat(getComputedStyle(top).minHeight) || 0);
+    const most = startHeight + top.getBoundingClientRect().height - upperFloor(top);
     let latest = startHeight;
     const end = (): void => {
       listeners.abort();

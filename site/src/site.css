@@ -1393,7 +1393,7 @@ a {
 /* The frame page's small window: a fixed height, so the window's grid has
    rows to fill, on the window ground with a hairline round it. */
 .frame-demo {
-  height: 420px;
+  height: 520px;
   overflow: hidden;
   border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-lg);

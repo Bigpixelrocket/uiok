@@ -1,6 +1,68 @@
-import { Children, type ReactElement, type ReactNode, type Ref } from 'react';
+import {
+  Children,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type PointerEvent,
+  type ReactElement,
+  type ReactNode,
+  type Ref
+} from 'react';
 
 import type { RegionHandlers } from '../pane/Pane.js';
+
+/**
+ * The height a dock takes: the height its host keeps, between `min` and
+ * the room under the band less what the main pane keeps (`pageMin`), in
+ * whole pixels; `min` alone wins when the room is smaller still, and the
+ * kept height stands alone before the room is laid out.
+ */
+export function dockHeight(
+  kept: number,
+  room: number,
+  bounds: { readonly min: number; readonly pageMin: number }
+): number {
+  if (room <= 0) return Math.round(Math.max(bounds.min, kept));
+
+  return Math.round(Math.max(bounds.min, Math.min(kept, room - bounds.pageMin)));
+}
+
+/** An element's height with its bottom margin, or 0 for none. */
+const outerHeight = (element: Element | null): number =>
+  element === null
+    ? 0
+    : element.getBoundingClientRect().height +
+      (Number.parseFloat(getComputedStyle(element).marginBottom) || 0);
+
+/**
+ * The room the main pane and the dock share: from the main pane's top to
+ * the end of the frame's content, less the tray, the legend, and the gaps
+ * under the main pane and the dock. Measured from the frame, so a dock held
+ * taller than a shrunken window (and squashing the main pane) is not
+ * counted as room.
+ */
+const sharedRoom = (dock: HTMLElement): number => {
+  const slot = dock.closest('.window-frame-dock');
+  const frame = dock.closest('.window-frame');
+  const main = slot?.parentElement?.querySelector<HTMLElement>(':scope > .window-frame-main');
+
+  if (slot === null || frame === null || main === null || main === undefined) return 0;
+
+  const box = frame.getBoundingClientRect();
+  const end =
+    box.top +
+    frame.clientTop +
+    frame.clientHeight -
+    (Number.parseFloat(getComputedStyle(frame).paddingBottom) || 0);
+  const tray = slot.parentElement?.querySelector(':scope > .window-frame-tray') ?? null;
+  const legend = frame.querySelector(':scope > .window-frame-legend');
+  const gaps =
+    (Number.parseFloat(getComputedStyle(main).marginBottom) || 0) +
+    (Number.parseFloat(getComputedStyle(dock).marginBottom) || 0);
+
+  return end - main.getBoundingClientRect().top - outerHeight(tray) - outerHeight(legend) - gaps;
+};
 
 /** Props for {@link Dock}. */
 export interface DockProps extends RegionHandlers {
@@ -8,10 +70,25 @@ export interface DockProps extends RegionHandlers {
   readonly open: boolean;
   /** Its accessible name ("Console"). */
   readonly label: string;
+  /**
+   * The height in pixels the host keeps for it. It never grows with what
+   * it shows (its body scrolls), and it gives way to keep `pageMin` for
+   * the main pane over it in a short window.
+   */
+  readonly height: number;
+  /** The least the main pane over it keeps, in pixels; 160 unless given. */
+  readonly pageMin?: number;
   /** The pane holds the keyboard: its frame wears the accent. */
   readonly active?: boolean;
-  /** The divide over its top edge that sets its height (a `PaneSplitter`). */
-  readonly resizer?: ReactNode;
+  /**
+   * Hears each height a drag of its top edge reaches; none draws no edge.
+   * The edge's accessible name is `resizeLabel`.
+   */
+  readonly onResize?: (height: number) => void;
+  /** Hears the height a drag ends on, to keep. */
+  readonly onResizeEnd?: (height: number) => void;
+  /** The edge's accessible name ("Resize the console"). */
+  readonly resizeLabel?: string;
   /** Its toolbar, over its body: a title, its facts, its verbs. */
   readonly bar?: ReactNode;
   readonly ref?: Ref<HTMLElement>;
@@ -19,27 +96,111 @@ export interface DockProps extends RegionHandlers {
   readonly children: ReactNode;
 }
 
+/** The least a dock is: its bar and a line of its body. */
+const DOCK_MIN = 64;
+
 /**
- * A pane in the dock under the main pane (`WindowFrame`'s `dock`): the
- * divide over its top edge, its bar, then its body, which scrolls.
+ * A pane in the dock under the main pane (`WindowFrame`'s `dock`): its
+ * bar, then its body, which scrolls, at the height its host keeps. With
+ * `onResize` its top edge, in the gap over it, drags its height, the
+ * main pane keeping `pageMin`; a window too short for both gives the dock
+ * the less room, never the main pane.
  */
 export function Dock({
   open,
   label,
+  height,
+  pageMin = 160,
   active = false,
-  resizer = null,
+  onResize,
+  onResizeEnd,
+  resizeLabel,
   bar = null,
   ref,
   children,
   ...handlers
 }: DockProps): ReactElement {
+  const self = useRef<HTMLElement | null>(null);
+  const [room, setRoom] = useState(0);
+  const bounds = { min: DOCK_MIN, pageMin };
+  const shown = dockHeight(height, room, bounds);
+
+  const attach = useCallback(
+    (element: HTMLElement | null) => {
+      self.current = element;
+      if (typeof ref === 'function') ref(element);
+      else if (ref !== null && ref !== undefined) ref.current = element;
+    },
+    [ref]
+  );
+
+  useLayoutEffect(() => {
+    const element = self.current;
+    const frame = element?.closest('.window-frame');
+
+    if (!open || element === null || frame === null || frame === undefined) return undefined;
+
+    const measure = (): void => setRoom(sharedRoom(element));
+
+    measure();
+    if (typeof ResizeObserver === 'undefined') return undefined;
+
+    const observer = new ResizeObserver(measure);
+
+    observer.observe(frame);
+    return () => observer.disconnect();
+  }, [open]);
+
+  const start = (event: PointerEvent<HTMLDivElement>): void => {
+    if (event.button !== 0 || onResize === undefined || self.current === null) return;
+    event.preventDefault();
+
+    const edge = event.currentTarget;
+    const startY = event.clientY;
+    const startRoom = sharedRoom(self.current);
+    let last = shown;
+
+    edge.setPointerCapture?.(event.pointerId);
+
+    const move = (next: globalThis.PointerEvent): void => {
+      last = dockHeight(shown - (next.clientY - startY), startRoom, bounds);
+      onResize(last);
+    };
+    const end = (): void => {
+      edge.removeEventListener('pointermove', move);
+      edge.removeEventListener('pointerup', end);
+      edge.removeEventListener('pointercancel', end);
+      onResizeEnd?.(last);
+    };
+
+    edge.addEventListener('pointermove', move);
+    edge.addEventListener('pointerup', end);
+    edge.addEventListener('pointercancel', end);
+  };
+
   const classes = ['pane', 'window-dock', active ? 'active' : '', open ? '' : 'closed']
     .filter(Boolean)
     .join(' ');
 
   return (
-    <section aria-label={label} className={classes} ref={ref} {...handlers}>
-      {resizer}
+    <section
+      aria-label={label}
+      className={classes}
+      ref={attach}
+      style={{ height: shown }}
+      {...handlers}
+    >
+      {onResize === undefined ? null : (
+        <div
+          aria-label={resizeLabel}
+          aria-orientation="horizontal"
+          aria-valuemin={DOCK_MIN}
+          aria-valuenow={shown}
+          className="pane-splitter"
+          onPointerDown={start}
+          role="separator"
+        />
+      )}
       {bar === null ? null : <div className="dock-bar">{bar}</div>}
       <div className="dock-body">{children}</div>
     </section>

@@ -21,6 +21,7 @@ export {
 } from './AppRoot.js';
 export {
   Dock,
+  dockHeight,
   DockInput,
   DockLog,
   DockLogEntry,
@@ -50,6 +51,7 @@ export {
 } from './PageParts.js';
 export {
   cutRowDepth,
+  heldSplitHeight,
   PaneSplitter,
   SplitDetail,
   usePaneSplit,

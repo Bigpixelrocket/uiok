@@ -59,7 +59,8 @@ function RenameDialog({ name, onRename, onCancel }) {
 | `title`          | `ReactNode`                         |            | What the dialog does, in at most five words; one line, cut with an ellipsis, a string's text a tooltip while cut |
 | `labelId`        | `string`                            |            | The heading's id, wired to `aria-labelledby`; unique per dialog (`useId`)                                        |
 | `describedBy`    | `string`                            |            | The id of the body element that says what the dialog is about (`aria-describedby`)                               |
-| `className`      | `string`                            |            | Extra class on the box, for its width and its body's layout                                                      |
+| `className`      | `string`                            |            | Extra class on the box, for its body's layout                                                                    |
+| `size`           | `'md' \| 'lg' \| 'xl'`              |            | Its width step (`DialogSize`, below); none keeps 360px                                                           |
 | `icon`           | `LucideIcon`                        |            | The verb's icon at the start of the title strip                                                                  |
 | `tone`           | `'accent' \| 'danger' \| 'warning'` | `'accent'` | The strip's rule and icon colour; `danger` also lights the primary red                                           |
 | `frosted`        | `boolean`                           | `false`    | Frost the window behind; only for a self-contained overlay (a shortcuts list, settings)                          |
@@ -98,7 +99,7 @@ A dialog's own `container` prop overrides the layer, for one mounted elsewhere (
 
 ### Size
 
-The box hugs its form: pick the narrowest step that holds the body's widest row (labels and fields at their natural width, plus the 12px insets), by adding its class through `className`. Every step shrinks with a narrow window, since the box never passes the backdrop's inset area, so no `min(…, 100vw - …)` is needed.
+The box hugs its form: pick the narrowest step that holds the body's widest row (labels and fields at their natural width, plus the 12px insets), by its `size` (`DialogSize`: `md`, `lg`, `xl`; the `.dialog-size-*` class it adds). Every step shrinks with a narrow window, since the box never passes the backdrop's inset area, so no `min(…, 100vw - …)` is needed.
 
 | Step            | Class             | Width | For                                                                             |
 | --------------- | ----------------- | ----- | ------------------------------------------------------------------------------- |
@@ -207,6 +208,8 @@ A held key runs its slot once. A key the browser-key guard cancelled still reach
 | `paths`           | `readonly string[]`                                                   |                | Deprecated: drawn as `items`, the last part the name and its folder the detail                                                                                |
 | `children`        | `ReactNode`                                                           |                | A choice drawn under the message; the caller holds its state                                                                                                  |
 | `className`       | `string`                                                              |                | Extra class on the box                                                                                                                                        |
+| `size`            | `DialogSize`                                                          |                | Its width step, as `ModalDialog`'s                                                                                                                            |
+| `alternative`     | `LegendSecondary`                                                     |                | A second way on between leaving and confirming, on its own chord (Close Window and Keep Running beside Quit)                                                  |
 | `forGood`         | `boolean`                                                             | `false`        | A delete that cannot be undone                                                                                                                                |
 | `confirmDisabled` | `boolean`                                                             | `false`        | Holds the primary off: its slot is disabled and its key runs nothing (a typed-name confirmation, until the name matches)                                      |
 | `onConfirm`       | `() => void`                                                          |                | The primary                                                                                                                                                   |

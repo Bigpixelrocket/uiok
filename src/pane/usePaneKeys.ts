@@ -20,6 +20,7 @@ import {
   paneRow,
   paneRows,
   showRow,
+  shownHome,
   type TabStop
 } from './PaneKeys.js';
 import { movedIndex, sameVerbs, type PaneMove } from './PaneKeys.logic.js';
@@ -160,7 +161,7 @@ const sidebarRow = (
 
 /** The sidebar pane: the frame around its home, which holds its other controls (Refresh) too. */
 const sidebarPane = (root: Element): Element | null =>
-  root.querySelector('[data-pane-home="sidebar"]')?.closest('.pane') ?? null;
+  shownHome(root, true)?.closest('.pane') ?? null;
 
 /**
  * The keyboard of a view with a sidebar beside a page: each pane has a
@@ -343,8 +344,8 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
 
     const home =
       pane === 'sidebar'
-        ? rootRef.current?.querySelector<HTMLElement>('[data-pane-home="sidebar"]')
-        : (mainRef.current?.querySelector<HTMLElement>('[data-pane-home]') ?? mainRef.current);
+        ? shownHome(rootRef.current, true)
+        : (shownHome(mainRef.current) ?? mainRef.current);
 
     home?.focus({ preventScroll: true });
   };
@@ -380,7 +381,7 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
 
       if (key === undefined) return;
       sidebarStore.set(key);
-      showRow(paneRow(root?.querySelector('[data-pane-home="sidebar"]') ?? null, key));
+      showRow(paneRow(shownHome(root ?? null, true), key));
 
       return;
     }
@@ -423,7 +424,7 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
     if (action === null) return;
 
     const sidebar = sidebarPane(root);
-    const home = main.querySelector<HTMLElement>('[data-pane-home]') ?? main;
+    const home = shownHome(main) ?? main;
     const inSidebar = node !== null && sidebar?.contains(node) === true;
     const inMain = node !== null && main.contains(node);
     const pane: Pane = inSidebar ? 'sidebar' : inMain ? 'main' : activePane;
@@ -443,7 +444,7 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
         node.closest('button, input, select, textarea, summary, a, [tabindex]') === home);
 
     if (action.kind === 'switch-pane') {
-      const sidebarHome = root.querySelector<HTMLElement>('[data-pane-home="sidebar"]');
+      const sidebarHome = shownHome(root, true);
       const walked =
         current.sidebarStops === true && sidebar !== null && sidebarHome !== null
           ? { pane: sidebar, home: sidebarHome }
@@ -466,7 +467,10 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
       event.preventDefault();
       event.stopPropagation();
 
-      if (to === 'sidebar' || to === 'page') focusPane(to === 'sidebar' ? 'sidebar' : 'main');
+      // With no sidebar shown (the window hid it), the walk that would go
+      // there comes back to the page's home.
+      if (to === 'sidebar' || to === 'page')
+        focusPane(to === 'sidebar' && sidebar !== null ? 'sidebar' : 'main');
       else to.focus();
 
       return;
@@ -488,10 +492,7 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
     if (pane !== activePane) setActivePane(pane);
 
     if (inRow && isMove) {
-      (pane === 'sidebar'
-        ? root.querySelector<HTMLElement>('[data-pane-home="sidebar"]')
-        : home
-      )?.focus({
+      (pane === 'sidebar' ? shownHome(root, true) : home)?.focus({
         preventScroll: true
       });
     }

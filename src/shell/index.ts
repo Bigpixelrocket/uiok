@@ -6,12 +6,14 @@
  * its shared pages (`AppearanceSettings` over `ThemeChoices`,
  * `LanguageChoice`, `UpdatesPage` with `UpdateChecks` and `UpdateCard`,
  * `SettingsFiles`), and the sign-in prompts (`SignInDialog`,
- * `HostKeyDialog`). Their look is `shell.css` in
+ * `HostKeyDialog`), and the `LoadFailure` a window shows in place of
+ * content that failed to load. Their look is `shell.css` in
  * `@bigpixelrocket/uiok/styles.css`.
  */
 
 export { AboutWindow, type AboutWindowProps } from './AboutWindow.js';
 export { LanguageChoice, type LanguageChoiceProps, type LanguageOption } from './LanguageChoice.js';
+export { LoadFailure, type LoadFailureProps } from './LoadFailure.js';
 export {
   BrandMark,
   Lockup,

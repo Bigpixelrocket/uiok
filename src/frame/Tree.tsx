@@ -1,6 +1,8 @@
 import type { LucideIcon } from 'lucide-react';
 import {
+  createContext,
   useContext,
+  useId,
   useLayoutEffect,
   useSyncExternalStore,
   type ChangeEvent,
@@ -17,6 +19,12 @@ import type { RegionHandlers } from '../pane/Pane.js';
 import { InListingRowContext, InRowContext } from '../pane/PaneActions.js';
 import { cutTooltip } from '../tooltip/Tooltip.logic.js';
 import { TreeToggle } from './TreeToggle.js';
+
+/** The id prefix of the tree a row is in, which names each row for the tree's active descendant. */
+const TreeIdContext = createContext<string | null>(null);
+
+/** A row's element id in its tree: the tree's prefix and the row's key, made safe for an id. */
+const rowId = (tree: string, rowKey: string): string => `${tree}-${encodeURIComponent(rowKey)}`;
 
 const levelStyle = (level: number): CSSProperties | undefined =>
   level > 0 ? ({ '--tree-level': level } as CSSProperties) : undefined;
@@ -73,11 +81,18 @@ export interface TreeListProps extends RegionHandlers {
  * The tree's rows in the sidebar's scrolling list: the sidebar's home
  * (`data-pane-home="sidebar"`), which `usePaneKeys` hands the focus and
  * finds the sidebar pane by, focusable by script and out of the Tab order.
- * Each row steps in by its level.
+ * Each row steps in by its level. While the list holds the focus, its
+ * active descendant is the cursor row, so a screen reader follows the
+ * cursor the keys move.
  */
 export function TreeList({ label, ref, children, ...handlers }: TreeListProps): ReactElement {
+  const tree = useId();
+  const cursor = useContext(RowCursorContext);
+  const current = useSyncExternalStore(cursor.subscribe, cursor.current);
+
   return (
     <div
+      aria-activedescendant={current === null ? undefined : rowId(tree, current)}
       aria-label={label}
       className="pane-list tree"
       data-pane-home="sidebar"
@@ -86,7 +101,7 @@ export function TreeList({ label, ref, children, ...handlers }: TreeListProps): 
       tabIndex={-1}
       {...handlers}
     >
-      {children}
+      <TreeIdContext.Provider value={tree}>{children}</TreeIdContext.Provider>
     </div>
   );
 }
@@ -156,6 +171,7 @@ export function TreeRow({
   focusable = false
 }: TreeRowProps): ReactElement {
   const cursor = useContext(RowCursorContext);
+  const tree = useContext(TreeIdContext);
   const current = useSyncExternalStore(cursor.subscribe, () => cursor.current() === rowKey);
 
   useLayoutEffect(() => {
@@ -184,6 +200,7 @@ export function TreeRow({
           aria-selected={marked}
           className={classes}
           data-row-key={rowKey}
+          id={tree === null ? undefined : rowId(tree, rowKey)}
           onClick={onOpen}
           onFocus={() => cursor.point(rowKey)}
           onPointerMove={() => {

@@ -3,7 +3,7 @@ import { useId, type ReactElement, type ReactNode } from 'react';
 
 import type { Chord } from '../keyboard/Keyboard.logic.js';
 import { useLabels } from '../labels/UiokProvider.js';
-import type { DialogLegendModel } from './DialogLegend.logic.js';
+import type { DialogLegendModel, LegendSecondary } from './DialogLegend.logic.js';
 import {
   DialogFacts,
   DialogItems,
@@ -13,7 +13,7 @@ import {
   type DialogItemGroup,
   type DialogStatementsProps
 } from './DialogLists.js';
-import { ModalDialog } from './ModalDialog.js';
+import { ModalDialog, type DialogSize } from './ModalDialog.js';
 
 /** The Delete Now chord (Finder's chord for a delete that skips the Trash), which confirms a delete that cannot be undone. */
 const DELETE_IMMEDIATELY: Chord = { key: 'Backspace', meta: true, alt: true };
@@ -108,6 +108,14 @@ export interface ConfirmDialogProps {
   readonly children?: ReactNode;
   /** Extra class on the dialog box, for a body that needs its own width or layout. */
   readonly className?: string;
+  /** Its width step (`ModalDialog`'s `size`); none keeps the confirmation's width. */
+  readonly size?: DialogSize;
+  /**
+   * A second way on between leaving and confirming, on its own chord
+   * (Close Window and Keep Running beside Quit): drawn in the legend after
+   * the leave verb.
+   */
+  readonly alternative?: LegendSecondary;
   /**
    * True for a delete that cannot be undone (a volume with no Trash, a
    * server, a database): the confirm verb stays at the right edge, lit, but
@@ -160,6 +168,8 @@ export function ConfirmDialog({
   paths,
   children,
   className,
+  size,
+  alternative,
   forGood = false,
   confirmDisabled = false,
   onConfirm,
@@ -183,6 +193,7 @@ export function ConfirmDialog({
     described.length > 0 ? described.join(' ') : facts.length > 0 ? factsId : undefined;
   const legend: DialogLegendModel = {
     leave: { label: cancelLabel ?? labels.cancel },
+    ...(alternative === undefined ? {} : { secondary: [alternative] as const }),
     primary: forGood
       ? {
           label: confirmLabel,
@@ -203,6 +214,7 @@ export function ConfirmDialog({
       labelId={labelId}
       legend={legend}
       onCancel={onCancel}
+      size={size}
       title={title}
       tone={tone === 'primary' ? 'accent' : tone}
     >
