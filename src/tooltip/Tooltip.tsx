@@ -57,6 +57,16 @@ const besideOf = (anchor: Element, rtl: boolean): TooltipBeside | null => {
   return (side === 'end') !== rtl ? 'right' : 'left';
 };
 
+/** The attributes a tooltip is read from, which an open one watches. */
+const TOOLTIP_ATTRIBUTES = [
+  'data-tooltip',
+  'data-tooltip-cut',
+  'data-tooltip-shortcut',
+  'data-tooltip-chord',
+  'data-tooltip-value',
+  'data-tooltip-side'
+];
+
 const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
   const label = anchor.getAttribute('data-tooltip');
 
@@ -179,6 +189,23 @@ export function TooltipLayer(): ReactElement | null {
       window.removeEventListener('blur', leave);
     };
   }, []);
+
+  // An open tooltip follows its control's words: a host that renames the
+  // control, or a name read again (a row's name in markup), changes its
+  // attributes, and the tooltip reads them again, or closes when they go.
+  useEffect(() => {
+    if (!shown) {
+      return undefined;
+    }
+
+    const { anchor, pointerX } = shown;
+    const observer = new MutationObserver(() => {
+      setShown(anchor.isConnected ? read(anchor, pointerX) : null);
+    });
+
+    observer.observe(anchor, { attributeFilter: TOOLTIP_ATTRIBUTES });
+    return () => observer.disconnect();
+  }, [shown]);
 
   // Placed from the drawn box, before the first paint, so the tooltip never shows out of place.
   useLayoutEffect(() => {

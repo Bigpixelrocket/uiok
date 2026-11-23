@@ -33,6 +33,7 @@ import { TooltipLayer, cutTooltip, describedTooltip, tooltip } from '@bigpixelro
 ## Behaviour
 
 - Opens after the pointer rests 500ms on a `[data-tooltip]` element or its descendant. Never opens while a mouse button is held.
+- While open, it follows its element's tooltip attributes: changed words show at once (a row's name read again, a renamed control), and the tooltip closes when they go.
 - Closes when the pointer leaves, on any mousedown, keydown, or wheel, on window resize or blur, and on entering or leaving full screen. After a press or key it stays shut until the pointer leaves the control and returns.
 - The pointer alone opens it; keyboard users get the control's accessible name and, with `describedTooltip`, its description.
 

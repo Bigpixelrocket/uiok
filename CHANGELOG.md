@@ -25,6 +25,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - A `Row` name in markup gives its `nameTip` tooltip its words as assistive technology reads them, read again whenever they change: words under `aria-hidden="true"` or `hidden` are left out, so a cut `NameCut` name shows once, whole, and a component inside the name that renames it on its own updates the tooltip.
 - `PaneMessage` hangs its words beside a glyph only when one leads them (`icon`, or an svg that is the first thing in its words), not beside an icon inside the sentence, which now keeps its own size while a tone keeps its glyph.
 - A tooltip's label and shortcut are a word apart in its accessible name ("New Tab ⌘T", not "New Tab⌘T").
+- An open tooltip follows its element's tooltip attributes, so a `Row` name renamed under it shows its new words at once, and the tooltip closes when its words go.
 - `RowProps.nameDescription`'s docs: it describes the row when it or its controls take the focus (`focusable`, `tabbable`).
 - `PaneTabs`' folded tabs' count is named by what it shows and opens ("6 more tabs"), not "Folded here", which stays its menu's heading.
 - A cut tab name or context in `PaneTabs`, and a `Cell` whose text its column cuts, shows its whole words as a tooltip while cut, as a row's name does. A tab's `tip` and a cell's `tip` still name them whole at every width.
