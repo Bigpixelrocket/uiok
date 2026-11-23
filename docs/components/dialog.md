@@ -203,6 +203,7 @@ A held key runs its slot once. A key the browser-key guard cancelled still reach
 | `itemIcon`        | `LucideIcon`                                                          |                | The kind's glyph on every item row that names no other                                                                                                        |
 | `itemCount`       | `number`                                                              | `items.length` | The total, when `items` holds only the first few                                                                                                              |
 | `groups`          | `readonly DialogItemGroup[]`                                          | `[]`           | Labelled lists for several kinds of things (a quit's processes and terminals)                                                                                 |
+| `container`       | `Element`                                                             |                | Where the dialog mounts; left out, the enclosing `DialogLayer` (`ModalDialog`'s `container`)                                                                  |
 | `statements`      | `{ label: string; lines: readonly string[]; count?: string \| null }` |                | Every statement the action runs (a batch of SQL), under its own label, after the items (`DialogStatements`); never sliced. `count` as on `DialogStatements`   |
 | `facts`           | `readonly DialogFact[]`                                               | `[]`           | Facts about the action, never the things it acts on (`DialogFacts`), under the items                                                                          |
 | `paths`           | `readonly string[]`                                                   |                | Deprecated: drawn as `items`, the last part the name and its folder the detail                                                                                |
@@ -329,12 +330,13 @@ The progress dialog of long work: a `ModalDialog` at the medium size whose body 
 | `onClose`      | `() => void`     |         | OK once settled, Cancel on a run that could not start                       |
 | `onTryAgain`   | `() => void`     |         | Starts again a run that could not start                                     |
 | `children`     | `ReactNode`      |         | Under the header: the run's lists, notes, or console                        |
+| `container`    | `Element`        |         | Where the dialog mounts; left out, the enclosing `DialogLayer`              |
 
 While it runs, Escape is Stop (dimmed while stopping) and Return is Run in Background; once settled, OK alone answers Return and Escape; a run that could not start (`onTryAgain` with a failed run) offers Cancel and Try Again. A press outside the box never stops the run.
 
 ## `TypedNameDialog` (`TypedNameDialogProps`)
 
-A `ConfirmDialog` in the for-good anatomy (below) for work a slip would cost most: its verb stays off until the field under the lists holds `name` exactly, letter case included. It takes `ConfirmDialog`'s `title`, `message`, `confirmLabel`, `icon`, `items`, `itemIcon`, `itemCount`, `statements`, `facts`, `onConfirm`, and `onCancel`, plus `name` (what to type) and `nameLabel` (the field's label); `children` go before the field (a choice the confirmation carries). The note under the field is `dialog.typeName`.
+A `ConfirmDialog` in the for-good anatomy (below) for work a slip would cost most: its verb stays off until the field under the lists holds `name` exactly, letter case included. It takes `ConfirmDialog`'s `title`, `message`, `confirmLabel`, `icon`, `items`, `itemIcon`, `itemCount`, `groups`, `statements`, `facts`, `container`, `onConfirm`, and `onCancel`, plus `name` (what to type) and `nameLabel` (the field's label); `children` go before the field (a choice the confirmation carries). The note under the field is `dialog.typeName`.
 
 ### Deletes that cannot be undone
 

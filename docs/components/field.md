@@ -1,56 +1,82 @@
 # Form controls (`@bigpixelrocket/uiok/field`)
 
-One look for everything a user types in or toggles: text fields, textareas, selects, number fields, checkboxes, radios, and switches, with their labels, help, and problems. The look is a set of classes on the native elements, so a form keeps its own markup, keyboard behaviour, and screen reader semantics; the stylesheet ships in `@bigpixelrocket/uiok/styles.css`. `Check` is a checkbox whose state can be mixed, `Switch` turns a running thing on or off, and `labelHelp` puts a control's help in its label's tooltip.
+One look for everything a user types in or toggles: text fields, textareas, selects, number fields, checkboxes, radios, switches, sliders, and meters, with their labels, help, and problems. Every part is a component with props (`TextField`, `Select`, `FieldRow`, …), so an app draws a whole form without a class name or a raw element; the classes they draw are listed below for reference and for markup outside React. The stylesheet ships in `@bigpixelrocket/uiok/styles.css`.
 
 ## Example
 
 ```tsx
-import { Check, labelHelp } from '@bigpixelrocket/uiok/field';
+import {
+  Check,
+  FieldGrid,
+  FieldGroup,
+  FieldRow,
+  Radio,
+  Select,
+  Switch,
+  TextField
+} from '@bigpixelrocket/uiok/field';
 
-const hostHelp = labelHelp('A name or an address this computer can reach.');
-
-<div className="field-grid">
-  <label className="field-label" htmlFor="host" {...hostHelp.label}>
-    Host
-  </label>
-  <div className="field-value">
-    <input
-      aria-describedby="host-problem"
-      aria-invalid={problem !== ''}
-      className="field field-sm"
-      id="host"
-      {...hostHelp.control}
+<FieldGrid>
+  <FieldRow help="A name or an address this computer can reach." label="Host" problem={problem}>
+    <TextField onChange={setHost} size="sm" value={host} />
+  </FieldRow>
+  <FieldRow label="Port">
+    <TextField onChange={setPort} size="sm" type="number" value={port} width="short" />
+  </FieldRow>
+  <FieldRow label="Encoding" note="Used when a file names none.">
+    <Select
+      onChange={setEncoding}
+      options={[
+        { value: 'utf-8', label: 'UTF-8' },
+        { value: 'latin-1', label: 'Latin-1' }
+      ]}
+      size="sm"
+      value={encoding}
     />
-    {problem === '' ? null : (
-      <p className="field-problem" id="host-problem">
-        {problem}
-      </p>
-    )}
-  </div>
-</div>;
+  </FieldRow>
+  <FieldRow group label="Show">
+    <Check
+      checked={hidden}
+      label="Hidden files"
+      onChange={(event) => setHidden(event.target.checked)}
+    />
+    <Check checked={some ? 'mixed' : all} label="Check all" onChange={toggleAll} />
+  </FieldRow>
+</FieldGrid>;
 
-<select className="field field-sm">…</select>;
+<FieldGroup legend="Theme">
+  <Radio checked={mode === 'light'} label="Light" name="mode" onChange={setMode} value="light" />
+  <Radio checked={mode === 'dark'} label="Dark" name="mode" onChange={setMode} value="dark" />
+</FieldGroup>;
 
-<label className="field-choice">
-  <input className="check" type="checkbox" />
-  Show hidden files
-</label>;
-
-<label className="field-choice">
-  <Check checked={some ? 'mixed' : all} onChange={toggleAll} />
-  Check all
-</label>;
-
-<label className="field-choice">
-  <input className="check" type="checkbox" />
-  Start at login
-</label>;
-
-<label className="field-choice">
-  <input className="switch" role="switch" type="checkbox" />
-  Sharing
-</label>;
+<Switch checked={sharing} label="Sharing" onChange={setSharing} />;
 ```
+
+`FieldRow` wires the one control inside it: the control takes the label's id (the row's `id` when given, over any the control sets), the problem, note, and help as its `aria-describedby`, and `aria-invalid` while a problem stands, with no ids written by the app. `Range` and `Meter` in a row take its label, so their own `label` is then optional. A row whose value is several choices takes `group`: its label then names the group (`role="group"`) instead of one control.
+
+## Components
+
+| Component        | Props beyond the element's own                                                                                                                                                       | Draws                                                           |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| `TextField`      | `value`, `onChange(value, event)`, `size` (`md` 28px, `sm` 24px, `xs` 20px), `width` (`full`, `short`, `count`, `countOrWord`), `invalid`, `tone` (`warning`, `accent`), `nullValue` | `input.field`; a number field draws the stepper cap             |
+| `TextArea`       | `value`, `onChange(value, event)`, `size`, `invalid`, `tone`                                                                                                                         | `textarea.field`                                                |
+| `Select`         | `value`, `options` (`{ value, label, disabled? }`, or `{ group, options }` runs), `onChange(value, event)`, `size`, `invalid`, `tone`                                                | `select.field` with its options                                 |
+| `FieldBox`       | `glyph` (a lucide icon), and `TextField`'s `value`, `onChange`, `size`, `invalid`                                                                                                    | `.field-box` round the glyph and a bare input: a filter         |
+| `FieldEditor`    | `children` (the editor), `invalid`, `changed`, `readOnly`                                                                                                                            | `.field-editor` round a code editor the app brings              |
+| `Check`          | `checked` (`true`, `false`, `'mixed'`), `label` (draws the `field-choice` label round it), `tone` (`danger`, `warning`)                                                              | `input.check`                                                   |
+| `Radio`          | `name`, `value`, `checked`, `onChange(value)`, `label`, `tone`, `invalid`, `disabled`                                                                                                | `input.check[type=radio]` in a `field-choice` label             |
+| `Switch`         | below                                                                                                                                                                                | `input.switch`                                                  |
+| `Range`          | `value`, `onChange(value)`, `min`, `max`, `step`, `label` (its accessible name), `valueText`, `disabled`                                                                             | `input.range` with `--range-fill` set from the value            |
+| `Meter`          | `value`, `min`, `max`, `low`, `high`, `optimum`, `label`                                                                                                                             | a themed `meter`                                                |
+| `FieldGrid`      | `children`, `labelWidth` (sets `--field-label-width`)                                                                                                                                | `.field-grid`                                                   |
+| `FieldRow`       | `label`, `labelDetail` (a quieter second line), `help`, `children`, `note`, `problem`, `group`, `id`                                                                                 | `.field-label`, `.field-value`, `.field-note`, `.field-problem` |
+| `FieldOption`    | `children`                                                                                                                                                                           | `.field-option`: one line of a row's value                      |
+| `FieldGroup`     | `legend`, `legendHidden`, `children`, `columns`, `note`, `problem`                                                                                                                   | `fieldset.field-group` (`.field-columns`)                       |
+| `FieldNote`      | `children`, `id`                                                                                                                                                                     | `p.field-note`                                                  |
+| `FieldProblem`   | `children`, `id`                                                                                                                                                                     | `p.field-problem`                                               |
+| `RestoreDefault` | `children` (its words), `onClick`                                                                                                                                                    | the dim link-like button beside a setting off its default       |
+
+A field the app does not let the user change (`onChange` left out) is read-only. `useFieldWiring` gives a control of the app's own the same wiring a `FieldRow` gives the controls above.
 
 ## Classes
 
@@ -121,19 +147,21 @@ Every control reads tokens only, in every theme. The demo shows each control in 
 
 ## Meter
 
-The base sheet themes `<meter>` (a password's strength, a quota) with no class: a 4px pill trough on `--control-track` inside the `--control-border` hairline, as the slider's, filled in the tone of its value. The element's own `low`, `high`, and `optimum` choose the tone: `--success` in the optimum range, `--warning` one range away from it, `--danger` at the least good. A meter without them reads every value as optimum, so always set all three, with `optimum` in the range that is good. Name it with a label or `aria-label`; the value is not written beside it unless the host writes it.
+`Meter` draws a `<meter>` (a password's strength, a quota), which the base sheet themes with no class: a 4px pill trough on `--control-track` inside the `--control-border` hairline, as the slider's, filled in the tone of its value. The element's own `low`, `high`, and `optimum` choose the tone: `--success` in the optimum range, `--warning` one range away from it, `--danger` at the least good. A meter without them reads every value as optimum, so always set all three, with `optimum` in the range that is good. Name it with a label or `aria-label`; the value is not written beside it unless the host writes it.
 
 ```tsx
-<meter aria-label="Strength" high={0.75} low={0.4} max={1} optimum={1} value={0.6} />
+<Meter high={0.75} label="Strength" low={0.4} optimum={1} value={0.6} />
 ```
 
 ## `Check` (`CheckProps`)
 
 A native checkbox in the `check` look whose `checked` may be `'mixed'`. The mixed state is the DOM's `indeterminate` property, which no attribute sets, so `Check` sets it after each render and adds `aria-checked="mixed"`. Every other prop is the input's.
 
-| Prop      | Type                 | Meaning                      |
-| --------- | -------------------- | ---------------------------- |
-| `checked` | `boolean \| 'mixed'` | On, off, or some but not all |
+| Prop      | Type                    | Meaning                                                                   |
+| --------- | ----------------------- | ------------------------------------------------------------------------- |
+| `checked` | `boolean \| 'mixed'`    | On, off, or some but not all                                              |
+| `label`   | `ReactNode`             | Its words, in a `field-choice` label round it; without, give `aria-label` |
+| `tone`    | `'danger' \| 'warning'` | A choice whose effect is destructive or needs care                        |
 
 ## `Switch` (`SwitchProps`)
 

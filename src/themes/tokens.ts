@@ -1266,6 +1266,8 @@ export const FIXED_TOKENS: Readonly<Record<string, string>> = {
   '--brand-plate': BRAND_PLATE,
   '--brand-plate-dark': 'color-mix(in srgb, var(--accent) 70%, var(--brand-plate))',
   '--brand-badge-dark': 'color-mix(in srgb, var(--success) 70%, var(--brand-plate))',
+  // A video is letterboxed on black in every theme, as a media player shows it.
+  '--letterbox': BLACK,
   // Surfaces: the three grounds by role. The body paints the ground once, a
   // panel paints --surface, and what sits inside a panel paints no ground of
   // its own. Surfaces that float over other content add --frost (the base
@@ -1619,7 +1621,8 @@ const BASE_TOKEN_NAMES = [
   '--tree-level',
   '--tree-indent',
   '--log-source',
-  '--log-source-width'
+  '--log-source-width',
+  '--text-gutter-width'
 ] as const;
 
 /** Every token name uiok defines: the fixed tokens, those a theme sets, and the stylesheet's own. */

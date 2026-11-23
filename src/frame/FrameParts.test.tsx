@@ -1,4 +1,5 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { createRoot } from 'react-dom/client';
 import { useState, type ReactNode } from 'react';
 import { CircleAlert, Server } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -176,6 +177,119 @@ describe('TreeRow', () => {
     expect(first?.classList.contains('cursor')).toBe(false);
     expect(tree.getAttribute('aria-activedescendant')).toBe(second?.id);
     expect(second?.id).not.toBe('');
+  });
+
+  it('lets a tool row with a key join the cursor as a row does', () => {
+    const cursor = cursorAt('a');
+
+    render(
+      <RowCursorContext value={cursor}>
+        <TreeList label="Services">
+          <TreeRow name="PostgreSQL" rowKey="a" />
+          <TreeTool rowKey="more" text="Show 20 more" />
+          <TreeTool cursor text="Loose note" />
+        </TreeList>
+      </RowCursorContext>
+    );
+    const tool = screen.getByText('Show 20 more').closest('.tree-tool') as HTMLElement;
+
+    expect(tool.dataset.rowKey).toBe('more');
+    expect(tool.classList.contains('cursor')).toBe(false);
+    fireEvent.pointerMove(tool);
+    expect(tool.classList.contains('cursor')).toBe(true);
+    expect(screen.getByRole('tree').getAttribute('aria-activedescendant')).toBe(tool.id);
+    expect(tool.getAttribute('role')).toBe('treeitem');
+    expect(tool.getAttribute('aria-level')).toBe('1');
+    expect(screen.getByText('Loose note').closest('.tree-tool')?.classList.contains('cursor')).toBe(
+      true
+    );
+  });
+
+  it('names its cursor row inside a shadow root, which the document cannot see into', () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const mount = document.createElement('div');
+    shadow.append(mount);
+    const root = createRoot(mount);
+    const cursor = cursorAt('a');
+
+    act(() =>
+      root.render(
+        <RowCursorContext value={cursor}>
+          <TreeList label="Services">
+            <TreeRow name="PostgreSQL" rowKey="a" />
+            <TreeRow name="Redis" rowKey="b" />
+          </TreeList>
+        </RowCursorContext>
+      )
+    );
+    const list = shadow.querySelector('[role="tree"]');
+    const [first, second] = Array.from(shadow.querySelectorAll('[role="treeitem"]'));
+
+    expect(list?.getAttribute('aria-activedescendant')).toBe(first?.id);
+    act(() => cursor.point('b'));
+    expect(list?.getAttribute('aria-activedescendant')).toBe(second?.id);
+    act(() => root.unmount());
+    host.remove();
+  });
+
+  it("names its cursor row in another window's document", () => {
+    const frame = document.createElement('iframe');
+    document.body.append(frame);
+    const frameDocument = frame.contentDocument as Document;
+    const mount = frameDocument.createElement('div');
+    frameDocument.body.append(mount);
+    const root = createRoot(mount);
+
+    act(() =>
+      root.render(
+        <RowCursorContext value={cursorAt('a')}>
+          <TreeList label="Services">
+            <TreeRow name="PostgreSQL" rowKey="a" />
+          </TreeList>
+        </RowCursorContext>
+      )
+    );
+
+    expect(frameDocument instanceof Document).toBe(false);
+    expect(mount.querySelector('[role="tree"]')?.getAttribute('aria-activedescendant')).toBe(
+      mount.querySelector('[role="treeitem"]')?.id
+    );
+    act(() => root.unmount());
+    frame.remove();
+  });
+
+  it('keeps a keyed danger row an item of the tree, its words the alert', () => {
+    render(
+      <RowCursorContext value={cursorAt(null)}>
+        <TreeList label="Services">
+          <TreeTool kind="danger" rowKey="failed" text="Could not list the services." />
+        </TreeList>
+      </RowCursorContext>
+    );
+
+    expect(screen.getByRole('treeitem').contains(screen.getByRole('alert'))).toBe(true);
+    expect(screen.getByRole('alert').textContent).toBe('Could not list the services.');
+  });
+
+  it('mounts with a cursor row in an element not yet attached to a document', () => {
+    const mount = document.createElement('div');
+    const root = createRoot(mount);
+
+    expect(() =>
+      act(() =>
+        root.render(
+          <RowCursorContext value={cursorAt('a')}>
+            <TreeList label="Services">
+              <TreeRow name="PostgreSQL" rowKey="a" />
+            </TreeList>
+          </RowCursorContext>
+        )
+      )
+    ).not.toThrow();
+    expect(mount.querySelector('[role="tree"]')?.hasAttribute('aria-activedescendant')).toBe(false);
+    act(() => root.unmount());
   });
 
   it('names no active descendant once a filter takes the cursor row away', () => {
@@ -432,8 +546,8 @@ describe('Dock', () => {
     );
 
     expect(
-      screen.getByRole('separator', { name: 'Resize the console' }).getAttribute('aria-valuenow')
-    ).toBe('180');
+      screen.getByRole('separator', { name: 'Resize the console' }).hasAttribute('aria-valuenow')
+    ).toBe(false);
   });
 });
 

@@ -80,6 +80,12 @@ export interface ConfirmDialogProps {
    */
   readonly groups?: readonly DialogItemGroup[];
   /**
+   * The element the dialog mounts into, for a dialog that must paint above
+   * something it is drawn inside; the enclosing `DialogLayer` otherwise
+   * (`ModalDialog`'s `container`).
+   */
+  readonly container?: Element;
+  /**
    * The statements the action runs (a batch of SQL), every one of them,
    * under its own short label: `{ label: 'SQL', lines }`. Drawn whole,
    * after the items and groups, in a framed block that scrolls on its own
@@ -173,7 +179,8 @@ export function ConfirmDialog({
   forGood = false,
   confirmDisabled = false,
   onConfirm,
-  onCancel
+  onCancel,
+  container
 }: ConfirmDialogProps): ReactElement {
   const labels = useLabels().dialog;
   const labelId = useId();
@@ -206,6 +213,7 @@ export function ConfirmDialog({
 
   return (
     <ModalDialog
+      container={container}
       className={['confirm-dialog', hasItems || hasStatements ? 'confirm-items' : null, className]
         .filter(Boolean)
         .join(' ')}

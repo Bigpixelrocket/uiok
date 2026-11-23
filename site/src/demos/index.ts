@@ -36,6 +36,7 @@ import { TabsDemo } from './tabs';
 import { TerminalDemo } from './terminal';
 import { TextDemo } from './text';
 import { TooltipDemo } from './tooltip';
+import { ViewerDemo } from './viewer';
 
 /** Demos by area. */
 export const DEMOS: Readonly<Record<string, ComponentType>> = {
@@ -68,5 +69,6 @@ export const DEMOS: Readonly<Record<string, ComponentType>> = {
   tabs: TabsDemo,
   terminal: TerminalDemo,
   text: TextDemo,
-  tooltip: TooltipDemo
+  tooltip: TooltipDemo,
+  viewer: ViewerDemo
 };

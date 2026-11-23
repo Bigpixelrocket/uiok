@@ -21,6 +21,8 @@ export interface TypedNameDialogProps {
   readonly items?: readonly DialogItem[];
   readonly itemIcon?: LucideIcon;
   readonly itemCount?: number;
+  /** Labelled lists, each its label and count above a framed list (`ConfirmDialog`'s `groups`). */
+  readonly groups?: ConfirmDialogProps['groups'];
   readonly statements?: ConfirmDialogProps['statements'];
   /** Facts about the action (where it runs). */
   readonly facts?: readonly DialogFact[];
@@ -28,6 +30,12 @@ export interface TypedNameDialogProps {
   readonly children?: ReactNode;
   readonly onConfirm: () => void;
   readonly onCancel: () => void;
+  /**
+   * The element the dialog mounts into, for a dialog that must paint above
+   * something it is drawn inside; the enclosing `DialogLayer` otherwise
+   * (`ModalDialog`'s `container`).
+   */
+  readonly container?: Element;
 }
 
 /**

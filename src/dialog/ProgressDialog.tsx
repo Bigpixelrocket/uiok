@@ -25,6 +25,12 @@ export interface ProgressDialogProps {
   readonly onTryAgain?: () => void;
   /** What the body holds under the header: the run's lists, notes, or console. */
   readonly children?: ReactNode;
+  /**
+   * The element the dialog mounts into, for a dialog that must paint above
+   * something it is drawn inside; the enclosing `DialogLayer` otherwise
+   * (`ModalDialog`'s `container`).
+   */
+  readonly container?: Element;
 }
 
 /**
@@ -46,7 +52,8 @@ export function ProgressDialog({
   onBackground,
   onClose,
   onTryAgain,
-  children
+  children,
+  container
 }: ProgressDialogProps): ReactElement {
   const labels = useLabels().dialog;
   const labelId = useId();
@@ -69,6 +76,7 @@ export function ProgressDialog({
   return (
     <ModalDialog
       className="dialog-size-md"
+      container={container}
       icon={icon}
       labelId={labelId}
       legend={legend}

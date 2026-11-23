@@ -82,9 +82,6 @@ export function SidebarResizer({
     <div
       aria-label={label}
       aria-orientation="vertical"
-      aria-valuemax={max}
-      aria-valuemin={min}
-      aria-valuenow={width}
       className="window-frame-resizer"
       onPointerDown={start}
       role="separator"

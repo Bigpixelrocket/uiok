@@ -17,6 +17,12 @@ export {
   type SettingsLabels
 } from './settings.js';
 export { DEFAULT_TERMINAL_LABELS, type TerminalLabels } from './terminal.js';
+export {
+  DEFAULT_VIEWER_LABELS,
+  type ViewerContentLabels,
+  type ViewerLabels,
+  type ViewerModeLabels
+} from './viewer.js';
 export { DEFAULT_LABELS, type UiokLabels } from './UiokLabels.js';
 export {
   mergeLabels,

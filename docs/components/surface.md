@@ -1,6 +1,6 @@
 # Notices, cards, swatches, tags, selection, and shared recipes (`@bigpixelrocket/uiok/surface`)
 
-Looks a page puts on its own markup, shipped in `@bigpixelrocket/uiok/styles.css`, and two small components, `GroupSwatch` and `Tag`. The notice and the card are classes, not components: the words are the page's.
+Surfaces a page draws round its own content, each a component: `Notice`, `Card`, `GroupSwatch`, and `Tag`, with their looks in `@bigpixelrocket/uiok/styles.css`, and the shared recipes below.
 
 ## GroupSwatch
 
@@ -55,14 +55,28 @@ Which tone an environment takes is the app's call; a common choice is Production
 A message about something on the page, drawn as a desktop application's status text, never a web page's alert: a plain line on the surface it sits on, a small status glyph in the tone's colour, then the words in `--text`, and an optional small button after the words. It has no tinted fill, no frame, and no side bar.
 
 ```tsx
-<div className="notice notice-danger" role="alert">
-  <CircleAlert size={ICON_MD} />
-  <p className="notice-text">The settings file could not be saved.</p>
-  <div className="notice-actions">
-    <Button size="small">Try Again</Button>
-  </div>
-</div>
+import { Notice } from '@bigpixelrocket/uiok/surface';
+
+<Notice actions={<Button size="small">Try Again</Button>} role="alert" tone="danger">
+  The settings file could not be saved.
+</Notice>;
+
+<Notice band cutText={message} tone="warning">
+  {message}
+</Notice>;
 ```
+
+| Prop       | Type                                           | Meaning                                                                                                                     |
+| ---------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `children` | `ReactNode`                                    | The words; `<code>` inside for a server's or system's own words                                                             |
+| `tone`     | `'note' \| 'success' \| 'warning' \| 'danger'` | The glyph's tone; `note` by default                                                                                         |
+| `glyph`    | `ReactNode`                                    | Replaces the tone's glyph (Info, CircleCheck, TriangleAlert, CircleAlert): a `Spinner` while work runs; `null` for none     |
+| `actions`  | `ReactNode`                                    | Small buttons after the words                                                                                               |
+| `band`     | `boolean`                                      | The window's status line under a header (`notice-card`): one line cut with an ellipsis, `cutText` as its tooltip while cut  |
+| `cutText`  | `string`                                       | The words as plain text, for a band's tooltip                                                                               |
+| `role`     | `'status' \| 'alert' \| null`                  | `status` by default; `alert` for a failure the user should act on; `null` for a notice that is part of the page as it loads |
+
+It draws these classes:
 
 | Class                                               | Meaning                                                                                                                                                                                                               |
 | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -97,7 +111,15 @@ Each tone has one glyph, drawn first in a notice, a problem line, or a status ca
 
 ## Card
 
-`card`: a lifted panel (`--card-bg`, a `--border-strong` frame like every framed surface, `--radius-md`, 12px inset) grouping one subject's lines, such as the Updates page's check cadence and its status ([Settings, themes, and updates](shell.md)). Its first child starts at the inset and its last ends there, whatever margins a heading or a paragraph brings; the space between children stays the content's own. Parts inside a card are parted by a hairline (`--border`). A card groups content; it is never a message's box: a notice stays a plain line ([Notice](#notice)).
+```tsx
+import { Card } from '@bigpixelrocket/uiok/surface';
+
+<Card label="Updates">
+  <SectionHead>Updates</SectionHead>…
+</Card>;
+```
+
+`Card` takes its `children` and an optional `label`, which names it as a `region` landmark; leave `label` out for a card that is one part of a page among many alike. It draws `card`: a lifted panel (`--card-bg`, a `--border-strong` frame like every framed surface, `--radius-md`, 12px inset) grouping one subject's lines, such as the Updates page's check cadence and its status ([Settings, themes, and updates](shell.md)). Its first child starts at the inset and its last ends there, whatever margins a heading or a paragraph brings; the space between children stays the content's own. Parts inside a card are parted by a hairline (`--border`). A card groups content; it is never a message's box: a notice stays a plain line ([Notice](#notice)).
 
 ## Selection
 

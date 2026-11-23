@@ -15,6 +15,7 @@
   --brand-plate: #11111b;
   --brand-plate-dark: color-mix(in srgb, var(--accent) 70%, var(--brand-plate));
   --brand-badge-dark: color-mix(in srgb, var(--success) 70%, var(--brand-plate));
+  --letterbox: #000000;
   --ground: var(--bg);
   --surface: var(--bg-panel);
   --surface-header: var(--bg-header);

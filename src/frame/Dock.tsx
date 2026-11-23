@@ -199,8 +199,6 @@ export function Dock({
         <div
           aria-label={resizeLabel}
           aria-orientation="horizontal"
-          aria-valuemin={DOCK_MIN}
-          aria-valuenow={shown}
           className="pane-splitter"
           onPointerDown={start}
           role="separator"

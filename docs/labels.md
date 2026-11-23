@@ -33,20 +33,21 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 
 ## Groups and defaults
 
-| Group       | Interface         | Default                     | Read by                                                                                 |
-| ----------- | ----------------- | --------------------------- | --------------------------------------------------------------------------------------- |
-| `keys`      | `KeyLabels`       | `DEFAULT_KEY_LABELS`        | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName` |
-| `charts`    | `ChartLabels`     | `DEFAULT_CHART_LABELS`      | `LineChart`, `ScatterChart`, `ResultChart`, and, given it, `tokenColour`, `svgPng`      |
-| `dateTime`  | `DateTimeLabels`  | `DEFAULT_DATE_TIME_LABELS`  | `DateTimePicker`                                                                        |
-| `dialog`    | `DialogLabels`    | `DEFAULT_DIALOG_LABELS`     | `ConfirmDialog`, `DialogItems`, and, given it, `filterLeaveLabel`                       |
-| `legend`    | `LegendLabels`    | `DEFAULT_LEGEND_LABELS`     | `KeyLegendStrip`, and, given it, `moreLabel`                                            |
-| `listing`   | `ListingLabels`   | `DEFAULT_LISTING_LABELS`    | `Strip` and `Listing`, for a column label that sorts                                    |
-| `pager`     | `PagerLabels`     | `DEFAULT_PAGER_LABELS`      | `Pager`                                                                                 |
-| `palette`   | `PaletteLabels`   | `DEFAULT_PALETTE_LABELS`    | `PaletteQuery`: the level chip and a refused keystroke                                  |
-| `paneTabs`  | `PaneTabsLabels`  | `DEFAULT_PANE_TABS_LABELS`  | `PaneTabs`: New Tab, close and picked names, the folded tabs' count and menu            |
-| `selectAll` | `SelectAllLabels` | `DEFAULT_SELECT_ALL_LABELS` | `SelectAllBar`                                                                          |
-| `settings`  | `SettingsLabels`  | `DEFAULT_SETTINGS_LABELS`   | `SettingsDialog`: its title, sidebar, and Done; `AppearanceSettings`                    |
-| `terminal`  | `TerminalLabels`  | `DEFAULT_TERMINAL_LABELS`   | `Terminal` (`@bigpixelrocket/uiok/terminal`): its menu, its failure line, its input     |
+| Group       | Interface         | Default                     | Read by                                                                                                                          |
+| ----------- | ----------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `keys`      | `KeyLabels`       | `DEFAULT_KEY_LABELS`        | `KeyChord`, `FilterEscape`, and, given it, `chordSpoken`, `chordGlyphs`, `modifierName`                                          |
+| `charts`    | `ChartLabels`     | `DEFAULT_CHART_LABELS`      | `LineChart`, `ScatterChart`, `ResultChart`, and, given it, `tokenColour`, `svgPng`                                               |
+| `dateTime`  | `DateTimeLabels`  | `DEFAULT_DATE_TIME_LABELS`  | `DateTimePicker`                                                                                                                 |
+| `dialog`    | `DialogLabels`    | `DEFAULT_DIALOG_LABELS`     | `ConfirmDialog`, `DialogItems`, and, given it, `filterLeaveLabel`                                                                |
+| `legend`    | `LegendLabels`    | `DEFAULT_LEGEND_LABELS`     | `KeyLegendStrip`, and, given it, `moreLabel`                                                                                     |
+| `listing`   | `ListingLabels`   | `DEFAULT_LISTING_LABELS`    | `Strip` and `Listing`, for a column label that sorts                                                                             |
+| `pager`     | `PagerLabels`     | `DEFAULT_PAGER_LABELS`      | `Pager`                                                                                                                          |
+| `palette`   | `PaletteLabels`   | `DEFAULT_PALETTE_LABELS`    | `PaletteQuery`: the level chip and a refused keystroke                                                                           |
+| `paneTabs`  | `PaneTabsLabels`  | `DEFAULT_PANE_TABS_LABELS`  | `PaneTabs`: New Tab, close and picked names, the folded tabs' count and menu                                                     |
+| `selectAll` | `SelectAllLabels` | `DEFAULT_SELECT_ALL_LABELS` | `SelectAllBar`                                                                                                                   |
+| `settings`  | `SettingsLabels`  | `DEFAULT_SETTINGS_LABELS`   | `SettingsDialog`: its title, sidebar, and Done; `AppearanceSettings`                                                             |
+| `terminal`  | `TerminalLabels`  | `DEFAULT_TERMINAL_LABELS`   | `Terminal` (`@bigpixelrocket/uiok/terminal`): its menu, its failure line, its input                                              |
+| `viewer`    | `ViewerLabels`    | `DEFAULT_VIEWER_LABELS`     | `ViewerWindow` (`@bigpixelrocket/uiok/viewer`): modes, facts, notices, each view's words, and its number, size, and date formats |
 
 ### `keys`
 
@@ -196,6 +197,29 @@ A folded pair's label ("Up/Down") is not a label here: the app owns its pair voc
 | `scrollback`  | `string` | Scrollback (the scrollbar's accessible name)                                     |
 
 A terminal's own name is its `ariaLabel` prop, and the chords its menu shows are its `menuChords` prop (`docs/components/terminal.md`).
+
+### `viewer`
+
+| Field                                             | Type                              | English default                                                                                                                                                                                                                         |
+| ------------------------------------------------- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`                                           | `string`                          | Viewer (the header while there is no file name)                                                                                                                                                                                         |
+| `unreachable`                                     | `string`                          | The viewer could not reach its file.                                                                                                                                                                                                    |
+| `noAnswer`                                        | `string`                          | The app did not answer. (a reader call that rejected)                                                                                                                                                                                   |
+| `modesLabel`                                      | `string`                          | View as                                                                                                                                                                                                                                 |
+| `modes`                                           | `ViewerModeLabels`                | `text` Text, `source` Source, `hex` Hex, `image` Image, `player` Player, `document` Document                                                                                                                                            |
+| `reload`                                          | `string`                          | Reload                                                                                                                                                                                                                                  |
+| `content`                                         | `ViewerContentLabels`             | `text` Text, `binary` Binary, `svg` SVG image, `pdf` PDF document, `image(format)` "PNG image" or Image, `audio(format)`, `video(format)`                                                                                               |
+| `inArchive(archive)`, `modified(date)`            | functions                         | "in backup.zip", "Modified 2026-10-05 09:30"                                                                                                                                                                                            |
+| `exactSize(count)`, `readOnlyCopy(path, archive)` | functions                         | "1,234 bytes", "A read-only copy of src/a.txt in backup.zip"                                                                                                                                                                            |
+| `change`                                          | `{ modified, replaced, removed }` | The file changed on disk. / was replaced on disk. / was moved or deleted. …                                                                                                                                                             |
+| `empty`, `copying`, `copyFailed`                  | `string`                          | The file is empty. / Copying the selection… / Could not copy the selection.                                                                                                                                                             |
+| `text`                                            | record                            | `rows(name)`, `line(line)`, `counting(byte)`, `wrap`, `utf8Bom`, `tooLarge(language, size)`, `longLines(language, size)`, `unavailable(language)`, `copyTooLarge(size)`, `copyReloaded`                                                 |
+| `hex`                                             | record                            | `rows(name)`, `top(offset)`, `selection(start, end, count)`, `copyHex`, `copyText`, `copyTooLarge(size)`, `copyReloaded`, `jump`, `jumpLabel`, `jumpPlaceholder`, `jumpInvalid`, `jumpEmpty`, `jumpPastEnd(offset, last)`               |
+| `image`                                           | record                            | `loading`, `pixelSize(width, height)`, `scale(percent)`, `noIntrinsicSize`, `fit`, `fitTooltip`, `actualSize`, `fallbackDecode`, `fallbackSvg`                                                                                          |
+| `media`                                           | record                            | `play`, `pause`, `seek`, `seekValue(elapsed, total)`, `mute`, `unmute`, `volume`, `enterFullScreen`, `exitFullScreen`, `fallbackFormat(media)`, `fallbackDecode(media)`, `fallbackPlay(media)`, `noPicture`, `pixelSize(width, height)` |
+| `number(value)`, `size(bytes)`, `dateTime(ms)`    | functions                         | "1,234", "1.4 MB" (1024 steps), "2026-10-05 09:30" in local time                                                                                                                                                                        |
+
+The formats are labels so an app writes numbers, sizes, and dates the way its language does; the file's name and contents are never labels.
 
 ## Mapping an app's i18n
 

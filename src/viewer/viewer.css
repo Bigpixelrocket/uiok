@@ -1,0 +1,645 @@
+/* The viewer: a header at the shell's header height, an optional notice
+   when the file changed at its source, and the view filling the rest of its
+   container (a window's root, or a pane). */
+.viewer-window {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  font-family: var(--font-ui);
+  font-size: var(--font-size-body);
+  color: var(--text);
+}
+
+/* The header is the title bar, at the shell's header height: it drags the
+   window everywhere but the mode switcher. Beside macOS's traffic lights
+   (data-traffic-lights) the file's name starts clear of them. It is a size
+   container, so the facts can leave a narrow window whole. */
+.viewer-header {
+  display: flex;
+  flex: 0 0 var(--shell-header-height);
+  align-items: center;
+  gap: var(--space-8);
+  box-sizing: border-box;
+  height: var(--shell-header-height);
+  padding: 0 var(--space-5) 0 var(--space-8);
+  border-bottom: var(--line) solid var(--border);
+  background: var(--surface-header);
+  container-type: inline-size;
+  -webkit-app-region: drag;
+}
+
+.viewer-window[data-traffic-lights] .viewer-header {
+  padding-inline-start: calc(var(--traffic-light-inset) + var(--space-8));
+}
+
+.viewer-identity {
+  display: flex;
+  flex: 1;
+  align-items: baseline;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/* The name is the title: it keeps its whole width while the facts give
+   way, and only a name longer than the row is cut, in its middle
+   (NameCut), so its extension stays in view. */
+.viewer-name {
+  display: flex;
+  flex: none;
+  min-width: 0;
+  max-width: 100%;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-body);
+  font-weight: var(--font-weight-strong);
+}
+
+/* The facts give way first, at their end, and leave a narrow window
+   altogether rather than shrink to a bare "in …". */
+.viewer-facts {
+  flex: 0 1000 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  color: var(--text-dim);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@container (max-width: 560px) {
+  .viewer-facts {
+    display: none;
+  }
+}
+
+/* The mode switcher is uiok's segmented choice, out of the drag region. */
+.viewer-modes {
+  display: flex;
+  flex: none;
+  -webkit-app-region: no-drag;
+}
+
+/* The file on disk no longer matches what the window shows, or the view
+   fell back: a notice band under the header. */
+.viewer-notice {
+  flex: none;
+  align-items: center;
+  margin: var(--space-3) var(--space-5) var(--space-3) var(--space-8);
+}
+
+.viewer-body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* Without a file's name the title is the window's kind, in the interface
+   font: it names no file. */
+.viewer-name-generic {
+  font-family: var(--font-ui);
+}
+
+/* A file that could not open: the danger glyph over the sentence, centred
+   in the window as every failed load is; the sentence wraps, never cut. */
+.viewer-failure {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  padding: var(--space-12);
+  text-align: center;
+}
+
+.viewer-failure-glyph {
+  width: var(--space-10);
+  height: var(--space-10);
+  color: var(--danger);
+}
+
+.viewer-failure p {
+  max-width: 44ch;
+  margin: 0;
+  color: var(--text);
+  user-select: text;
+}
+
+/* The text and hex views' body (the rows and the scaled scrollbar beside
+   them) is the frame of their focus ring, drawn over both on a layer of its
+   own, so neither the rows' sticky line numbers nor their edge fade can cut
+   it, and it sits even in the window. The focus the window sets itself as it
+   opens draws none (data-quiet-focus, QuietFocus.ts); focus the user moves
+   there by keyboard does. */
+.viewer-rows-frame {
+  position: relative;
+}
+
+.viewer-rows-frame:has(> :focus-visible:not([data-quiet-focus]))::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-raised);
+  border: var(--focus-ring-width) solid var(--accent);
+  pointer-events: none;
+}
+
+/* Every view's foot is one bar (the text, hex, and image views'): the title
+   bar's height, so a small button keeps clear of the hairline above and the
+   window's edge below, and one inset at both ends. */
+.viewer-status {
+  display: flex;
+  flex: 0 0 var(--bar-height-lg);
+  align-items: center;
+  gap: var(--space-4);
+  box-sizing: border-box;
+  height: var(--bar-height-lg);
+  padding: 0 var(--space-4);
+  border-top: var(--line) solid var(--border);
+  background: var(--surface-header);
+  color: var(--text-dim);
+  font-size: var(--font-size-small);
+  white-space: nowrap;
+}
+
+/* The text and hex views' scrollbar: its thumb maps to a byte of the file,
+   not to a page height, so it is the app's own, drawn as the platform's
+   overlay bar is: a thin rounded thumb on the rows' own ground, with no
+   track or divider of its own, hidden at rest and shown while the view
+   scrolls or the pointer is on the bar (the terminal's recipe). */
+.scaled-scrollbar {
+  position: relative;
+  flex: none;
+  width: 12px;
+  background: var(--ground);
+}
+
+.scaled-scrollbar-thumb {
+  position: absolute;
+  top: 0;
+  right: 3px;
+  left: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--scrollbar-thumb);
+  opacity: 0;
+}
+
+.scaled-scrollbar:is([data-scrolling], :hover, :active) .scaled-scrollbar-thumb {
+  opacity: 1;
+}
+
+/* The positioned thumb would otherwise defeat the UA's [hidden] rule. */
+.scaled-scrollbar-thumb[hidden] {
+  display: none;
+}
+
+.scaled-scrollbar:hover .scaled-scrollbar-thumb,
+.scaled-scrollbar:active .scaled-scrollbar-thumb {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* The text view: the rows beside a scaled scrollbar, over a status bar.
+   Rows are a fixed 18px tall (ROW_PX in TextView.tsx) unless they wrap. */
+.text-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.text-view-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Only the rows in view are in the page, so the box scrolls vertically
+   only within a wrapped top row, and only from code; it scrolls sideways
+   when lines do not wrap. It positions its rows, so a row's offsetTop is its
+   place in the box. */
+.text-rows {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-prose);
+  cursor: text;
+}
+
+/* The rows take the keyboard's focus, but draw no ring of their own: the
+   sticky line numbers and the edge fade would cut a ring on the scroller.
+   Their frame draws it (.viewer-rows-frame in ViewerWindow.css). Lines
+   wider than the window scroll sideways on the platform's overlay bar. */
+.text-rows:focus-visible {
+  outline: none;
+}
+
+.text-row {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  min-height: 18px;
+}
+
+.text-gutter {
+  position: sticky;
+  left: 0;
+  flex: none;
+  box-sizing: content-box;
+  width: var(--text-gutter-width);
+  padding: 0 var(--space-6) 0 var(--space-4);
+  background: var(--ground);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  user-select: none;
+}
+
+.text-content {
+  padding-right: var(--space-8);
+  white-space: pre;
+  tab-size: 8;
+}
+
+.text-rows-wrap .text-row {
+  width: auto;
+}
+
+.text-rows-wrap .text-content {
+  flex: 1;
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.text-selected {
+  background: var(--text-selection-bg);
+}
+
+/* In a window that is not in front, the drawn selection greys as the
+   library greys ::selection there (data-window-inactive on the root). */
+:root[data-window-inactive] .text-selected {
+  background: var(--fill);
+}
+
+.text-empty {
+  margin: 0;
+  padding: var(--space-12);
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-body);
+  text-align: center;
+}
+
+.viewer-status.text-status {
+  gap: var(--space-8);
+}
+
+.text-position {
+  font-variant-numeric: tabular-nums;
+}
+
+.text-message {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  text-overflow: ellipsis;
+}
+
+/* The language, and why text shows plain when it does: it gives way first
+   in a narrow window, with the whole of it in the tooltip. */
+.text-syntax {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.text-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--text);
+}
+
+.text-wrap input {
+  margin: 0;
+}
+
+/* The hex view: the rows beside a scaled scrollbar, over a status bar.
+   Rows are a fixed 18px tall (ROW_PX in HexView.tsx) and never wrap. */
+.hex-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.hex-view-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Only the rows in view are in the page; the box scrolls sideways when the
+   window is narrower than a row, its edge fading while more lies past it
+   (.scroll-fade-x). */
+.hex-rows {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  background: var(--ground);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-small);
+  font-variant-numeric: tabular-nums;
+  line-height: var(--line-height-prose);
+  cursor: text;
+}
+
+/* The rows take the keyboard's focus, but draw no ring of their own: the
+   sticky line numbers and the edge fade would cut a ring on the scroller.
+   Their frame draws it (.viewer-rows-frame in ViewerWindow.css). Lines
+   wider than the window scroll sideways on the platform's overlay bar. */
+.hex-rows:focus-visible {
+  outline: none;
+}
+
+.hex-row {
+  min-width: max-content;
+  height: 18px;
+  padding: 0 var(--space-8) 0 var(--space-4);
+  white-space: pre;
+}
+
+/* The whole line in one box, so its width over its character count is the
+   width of one character for hit testing. */
+.hex-line {
+  display: inline-block;
+}
+
+.hex-offset {
+  color: var(--text-dim);
+  user-select: none;
+}
+
+.hex-text {
+  color: var(--text-dim);
+}
+
+/* The selected bytes in both columns, on the marked tint, stronger in the
+   column they were selected in, whose form Copy takes: the marked cursor's
+   tint over the opaque ground, never over the first tint, so both keep the
+   text at its floor. */
+.hex-selected {
+  background: var(--marked-bg);
+  color: var(--text);
+}
+
+.hex-selected-primary {
+  background: linear-gradient(var(--marked-cursor-bg), var(--marked-cursor-bg)) var(--ground);
+}
+
+.hex-empty {
+  margin: 0;
+  padding: var(--space-12);
+  color: var(--text-dim);
+  font-family: var(--font-ui);
+  font-size: var(--font-size-body);
+  text-align: center;
+  white-space: normal;
+}
+
+/* The position gives way to the buttons in a narrow window. */
+.hex-position {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+}
+
+/* A message (a refused copy or jump, a failed read) gets a row of its own
+   over the status bar and wraps, so the narrowest window still shows all of
+   it. Empty, the row takes no room but stays a live region. */
+.hex-message {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border-top: var(--line) solid var(--border);
+  background: var(--surface-header);
+  color: var(--text);
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-compact);
+}
+
+.hex-message:empty {
+  padding: 0;
+  border-top: 0;
+}
+
+/* The offset field is uiok's small field; only its width is the bar's. */
+.hex-jump {
+  width: 180px;
+}
+
+/* The image view: the image on the window's ground, over a status bar with
+   its pixel dimensions, the zoom, and the Fit and Actual Size buttons. */
+.image-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* The image is placed by its size and a translation (ImageZoom.logic.ts),
+   never by the flow, so the canvas clips and never scrolls. */
+.image-canvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--ground);
+  touch-action: none;
+}
+
+/* A zoomed image pans by a drag or a scroll under the arrow, as Preview
+   keeps it; no hand cursor. */
+
+/* The checkerboard is the image's own background, so it shows only through
+   transparent pixels and keeps 8px squares at every zoom. Its two tones are
+   the flavor's panel and outline, so it follows the theme. */
+.image-canvas img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  max-width: none;
+  background-color: var(--surface);
+  background-image: conic-gradient(
+    var(--border) 25%,
+    transparent 0 50%,
+    var(--border) 0 75%,
+    transparent 0
+  );
+  background-size: 16px 16px;
+  user-select: none;
+}
+
+.image-facts {
+  display: flex;
+  flex: 1;
+  gap: var(--space-8);
+  min-width: 0;
+  overflow: hidden;
+  font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+}
+
+/* The media player's control bar: play, the elapsed time, the seek bar, the
+   duration, any facts the view adds, mute, volume, and a video's Full
+   Screen, on the same ground and at the same height as the other views'
+   status bars, so the window's foot never moves as the mode changes. The
+   sliders are uiok's .range, filled up to the value. */
+.media-controls {
+  display: flex;
+  flex: 0 0 var(--bar-height-lg);
+  align-items: center;
+  gap: var(--space-5);
+  box-sizing: border-box;
+  height: var(--bar-height-lg);
+  padding: 0 var(--space-4);
+  border-top: var(--line) solid var(--border);
+  background: var(--surface-header);
+  color: var(--text-dim);
+  font-size: var(--font-size-small);
+  white-space: nowrap;
+}
+
+.media-time {
+  flex: none;
+  min-width: 4ch;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.media-seek {
+  flex: 1;
+  min-width: 80px;
+}
+
+/* The volume slider gives up width first when the bar runs out of room. */
+.media-volume {
+  flex: 0 1 80px;
+  width: 80px;
+  min-width: 48px;
+}
+
+.media-facts {
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Near the viewer's minimum width, a video's bar (hour-long times, its
+   pixel size, and Full Screen) still fits on one row with tighter gaps. */
+@media (max-width: 560px) {
+  .media-controls {
+    gap: var(--space-3);
+  }
+}
+
+/* The audio view: a quiet mark on the window's ground over the player's
+   control bar. The <audio> element has no controls attribute, so it draws
+   nothing. */
+.audio-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.audio-stage {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  background: var(--ground);
+  color: var(--text-faint);
+}
+
+/* The video view: the picture letterboxed on black, as QuickTime Player
+   shows it, over the player's control bar. The <video> element has no
+   controls attribute, so it draws only the picture. */
+.video-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--ground);
+}
+
+.video-stage {
+  position: relative;
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  background: var(--letterbox);
+}
+
+/* Fitted to the stage on both axes, never cropped or stretched. */
+.video-stage video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* No picture: the audio view's quiet mark on the window's ground, and why. */
+.video-stage[data-picture='none'] {
+  background: var(--ground);
+}
+
+.video-no-picture {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.video-no-picture p {
+  margin: 0;
+  color: var(--text-dim);
+}
+
+.video-stage[data-picture='none'] video {
+  display: none;
+}
+
+/* The PDF view: Chromium's PDF viewer fills the window below the header and
+   draws its own toolbar, sidebar, and page ground. */
+.pdf-view {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.pdf-view-document {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+}

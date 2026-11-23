@@ -39,6 +39,9 @@
 @import './shell/shell.css';
 @import './frame/frame.css';
 @import './log/log.css';
+/* The file viewer (@bigpixelrocket/uiok/viewer): its header, text, hex,
+   image, and media views. */
+@import './viewer/viewer.css';
 
 /* ---- What the browser would otherwise draw in its own colours ---- */
 

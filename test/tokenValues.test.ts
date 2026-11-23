@@ -90,6 +90,20 @@ interface Exception {
 
 const EXCEPTIONS: readonly Exception[] = [
   {
+    file: 'src/viewer/viewer.css',
+    property: 'min-height',
+    value: /^18px$/,
+    reason:
+      "A text row's height is the text view's ROW_PX, which its scrolling counts rows by: geometry the script and the sheet share."
+  },
+  {
+    file: 'src/viewer/viewer.css',
+    property: 'height',
+    value: /^18px$/,
+    reason:
+      "A hex row's height is the hex view's ROW_PX, which its scrolling counts rows by: geometry the script and the sheet share."
+  },
+  {
     file: 'src/keychord/keychord.css',
     property: 'font',
     value: /\/\s*12px /,

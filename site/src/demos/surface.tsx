@@ -1,5 +1,5 @@
 /**
- * Notices in each tone, in the flow and as a window's status line; a card
+ * Notices in each tone (`Notice`), in the flow and as a window's status line; a card (`Card`)
  * with the overline heading, holding a value a user may select; a list that fades where it scrolls on, two framed scrollers
  * whose frames stay solid while their contents fade, and a row that fades
  * at its inline ends; then a host's own buttons joining the quiet control
@@ -16,13 +16,12 @@
 
 import type { CSSProperties, ReactNode } from 'react';
 
-import { CircleAlert, CircleCheck, Info, Pin, TriangleAlert } from 'lucide-react';
+import { Pin } from 'lucide-react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
 import { ICON_MD, ICON_SM, Spinner } from '@bigpixelrocket/uiok/icon';
-import { GroupSwatch, Tag, type TagTone } from '@bigpixelrocket/uiok/surface';
+import { Card, GroupSwatch, Notice, Tag, type TagTone } from '@bigpixelrocket/uiok/surface';
 import type { GroupHue } from '@bigpixelrocket/uiok/themes';
-import { cutTooltip } from '@bigpixelrocket/uiok/tooltip';
 
 import { DemoState, DemoStates } from '../DemoStates';
 
@@ -92,54 +91,35 @@ export function SurfaceDemo() {
   return (
     <div className="demo-stack">
       <h3 className="demo-subhead">Notices</h3>
-      <div className="notice notice-danger" role="alert">
-        <CircleAlert size={ICON_MD} />
-        <p className="notice-text">The settings file could not be saved.</p>
-        <div className="notice-actions">
-          <Button size="small">Try Again</Button>
-        </div>
-      </div>
-      <div className="notice notice-warning" role="status">
-        <TriangleAlert size={ICON_MD} />
-        <p className="notice-text">
-          The server did not answer in 30 seconds; the list may be out of date.
-        </p>
-      </div>
-      <div className="notice notice-success" role="status">
-        <CircleCheck size={ICON_MD} />
-        <p className="notice-text">Exported 1,240 rows.</p>
-      </div>
-      <div className="notice" role="status">
-        <Info size={ICON_MD} />
-        <p className="notice-text">Changes apply to new windows.</p>
-      </div>
-      <div className="notice" role="status">
-        <span aria-hidden className="notice-glyph">
-          <Spinner size={ICON_MD} />
-        </span>
-        <p className="notice-text">
-          Checking the settings file… (<code>notice-glyph</code>: a glyph that is not an svg)
-        </p>
-      </div>
-      <div className="notice notice-card notice-warning" role="status">
-        <TriangleAlert size={ICON_MD} />
-        <p className="notice-text" {...cutTooltip('settings.json has a mistake on line 12.')}>
-          settings.json has a mistake on line 12.
-        </p>
-        <div className="notice-actions">
-          <Button size="small">Show</Button>
-        </div>
-      </div>
+      <Notice actions={<Button size="small">Try Again</Button>} role="alert" tone="danger">
+        The settings file could not be saved.
+      </Notice>
+      <Notice tone="warning">
+        The server did not answer in 30 seconds; the list may be out of date.
+      </Notice>
+      <Notice tone="success">Exported 1,240 rows.</Notice>
+      <Notice>Changes apply to new windows.</Notice>
+      <Notice glyph={<Spinner size={ICON_MD} />}>
+        Checking the settings file… (<code>glyph</code>: a glyph of its own, here a spinner)
+      </Notice>
+      <Notice
+        actions={<Button size="small">Show</Button>}
+        band
+        cutText="settings.json has a mistake on line 12."
+        tone="warning"
+      >
+        settings.json has a mistake on line 12.
+      </Notice>
 
       <h3 className="demo-subhead">Card and overline</h3>
       {/* A card groups one subject's lines under an overline. The label is
           chrome; the version is a value a user may select and copy. */}
-      <div className="card">
+      <Card label="Updates">
         <h4 className="overline">Updates</h4>
         <p>
           Version <span className="selectable">2.4.1 (412)</span> is ready to install.
         </p>
-      </div>
+      </Card>
 
       <h3 className="demo-subhead">Scroll fade</h3>
       <ul className="demo-scroll short scroll-fade">
@@ -220,12 +200,9 @@ export function SurfaceDemo() {
       <h3 className="demo-subhead">
         A notice quoting the server, and a heading that keeps its case
       </h3>
-      <div className="notice notice-danger" role="alert">
-        <CircleAlert size={ICON_MD} />
-        <p className="notice-text">
-          The export stopped: <code>ERROR 1205: Lock wait timeout exceeded</code>
-        </p>
-      </div>
+      <Notice role="alert" tone="danger">
+        The export stopped: <code>ERROR 1205: Lock wait timeout exceeded</code>
+      </Notice>
       <h4 className="overline keep-case">public.orders</h4>
     </div>
   );

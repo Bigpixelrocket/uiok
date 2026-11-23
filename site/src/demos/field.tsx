@@ -11,6 +11,9 @@
  * in running text, controls with no class); then a working form on one label
  * column. Then the newer looks: a NULL placeholder, a field's frame round
  * an editor in each state, a list box's chosen rows, and choices in columns.
+ * Last, the same form drawn from components alone (`FieldGrid`, `FieldRow`,
+ * `TextField`, `Select`, `Radio`, `Range`, `Meter`, `FieldBox`, …), which
+ * wire their labels, notes, and problems on their own.
  *
  * A cell that shows a pointer or focus state carries `data-force` (with
  * `data-force-sel` naming the control inside it): the screenshot harness
@@ -24,7 +27,22 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 import { Search, WrapText } from 'lucide-react';
 
 import { Button, IconButton } from '@bigpixelrocket/uiok/button';
-import { Check, labelHelp } from '@bigpixelrocket/uiok/field';
+import {
+  Check,
+  FieldBox,
+  FieldGrid,
+  FieldGroup,
+  FieldOption,
+  FieldRow,
+  labelHelp,
+  Meter,
+  Radio,
+  Range,
+  RestoreDefault,
+  Select,
+  TextArea,
+  TextField
+} from '@bigpixelrocket/uiok/field';
 import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
 
 import { DemoState, DemoStates } from '../DemoStates';
@@ -747,6 +765,112 @@ export function FieldDemo() {
           </label>
         ))}
       </fieldset>
+      <h3 className="demo-subhead">A form from components alone</h3>
+      <ComponentForm />
     </div>
+  );
+}
+
+/** A connection form drawn from the field components alone, with no class name or raw element. */
+function ComponentForm() {
+  const [host, setHost] = useState('db.example.test');
+  const [port, setPort] = useState('33060');
+  const [encoding, setEncoding] = useState('utf-8');
+  const [mode, setMode] = useState('light');
+  const [hidden, setHidden] = useState(false);
+  const [limit, setLimit] = useState('500');
+  const [volume, setVolume] = useState(40);
+  const [filter, setFilter] = useState('');
+  const [notes, setNotes] = useState('Primary replica.');
+  const portProblem =
+    /^\d{1,5}$/.test(port) && Number(port) < 65536 ? null : 'A port is 0 to 65535.';
+
+  return (
+    <FieldGrid>
+      <FieldRow help="A name or an address this computer can reach." label="Host">
+        <TextField onChange={setHost} size="sm" spellCheck={false} value={host} />
+      </FieldRow>
+      <FieldRow label="Port" problem={portProblem}>
+        <TextField onChange={setPort} size="sm" value={port} width="short" />
+      </FieldRow>
+      <FieldRow label="Encoding" note="Used when a file names none.">
+        <Select
+          onChange={setEncoding}
+          options={[
+            { value: 'utf-8', label: 'UTF-8' },
+            { group: 'Legacy', options: [{ value: 'latin-1', label: 'Latin-1' }] }
+          ]}
+          size="sm"
+          value={encoding}
+        />
+      </FieldRow>
+      <FieldRow group label="Appearance" labelDetail="In use now">
+        <FieldOption>
+          <Radio
+            checked={mode === 'light'}
+            label="Light"
+            name="demo-mode"
+            onChange={setMode}
+            value="light"
+          />
+          <Radio
+            checked={mode === 'dark'}
+            label="Dark"
+            name="demo-mode"
+            onChange={setMode}
+            value="dark"
+          />
+        </FieldOption>
+      </FieldRow>
+      <FieldRow label="Row limit">
+        <FieldOption>
+          <TextField
+            onChange={setLimit}
+            size="sm"
+            tone={limit === '500' ? undefined : 'accent'}
+            value={limit}
+            width="count"
+          />
+          {limit === '500' ? null : (
+            <RestoreDefault onClick={() => setLimit('500')}>Restore Default</RestoreDefault>
+          )}
+        </FieldOption>
+      </FieldRow>
+      <FieldRow group label="Show">
+        <Check
+          checked={hidden}
+          label="Hidden files"
+          onChange={(event) => setHidden(event.target.checked)}
+        />
+      </FieldRow>
+      <FieldRow label="Volume">
+        <Range label="Volume" onChange={setVolume} value={volume} />
+      </FieldRow>
+      <FieldRow label="Strength">
+        <Meter high={0.75} label="Strength" low={0.4} optimum={1} value={0.6} />
+      </FieldRow>
+      <FieldRow label="Filter">
+        <FieldBox
+          glyph={Search}
+          onChange={setFilter}
+          placeholder="Filter tables"
+          size="sm"
+          value={filter}
+        />
+      </FieldRow>
+      <FieldRow label="Notes">
+        <TextArea onChange={setNotes} rows={3} size="sm" value={notes} />
+      </FieldRow>
+      <FieldGroup columns={3} legend="Privileges">
+        {['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP'].map((privilege) => (
+          <Check
+            checked={privilege === 'SELECT'}
+            key={privilege}
+            label={privilege}
+            onChange={() => undefined}
+          />
+        ))}
+      </FieldGroup>
+    </FieldGrid>
   );
 }
