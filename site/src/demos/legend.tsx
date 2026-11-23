@@ -9,7 +9,12 @@
 
 import { useState, type CSSProperties } from 'react';
 
-import { KeyLegendStrip, type LegendPair, type LegendVerb } from '@bigpixelrocket/uiok/legend';
+import {
+  KeyLegendStrip,
+  type LegendAlert,
+  type LegendPair,
+  type LegendVerb
+} from '@bigpixelrocket/uiok/legend';
 
 const PAIR_LABELS: Readonly<Record<string, string>> = {
   upDown: 'Up/Down',
@@ -23,7 +28,7 @@ const pairLabel = (pair: LegendPair): string => PAIR_LABELS[pair] ?? pair;
 /** The key legend page's demo. */
 export function LegendDemo() {
   const [ran, setRan] = useState('nothing yet');
-  const [alert, setAlert] = useState<string | null>(null);
+  const [alert, setAlert] = useState<LegendAlert | null>(null);
   const verb = (label: string, chord: LegendVerb['chord'], pair?: LegendPair): LegendVerb => ({
     label,
     chord,
@@ -55,11 +60,14 @@ export function LegendDemo() {
       <div className="legend-frame">
         <KeyLegendStrip
           alert={alert}
-          onAlertDismiss={() => setAlert(null)}
+          onAlertDismiss={(dismissed) => setAlert((now) => (now === dismissed ? null : now))}
           pairLabel={pairLabel}
           verbs={verbs.map((each) =>
             each.label === 'Delete'
-              ? { ...each, run: () => setAlert('Nothing to delete: the folder is read-only') }
+              ? {
+                  ...each,
+                  run: () => setAlert({ text: 'Nothing to delete: the folder is read-only' })
+                }
               : each
           )}
         />

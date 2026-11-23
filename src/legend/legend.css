@@ -125,7 +125,7 @@
 .keylegend-alert-text {
   min-width: 0;
   overflow: hidden;
-  margin-left: var(--space-6);
+  margin-inline-start: var(--space-6);
   color: var(--warning-text);
   font-size: var(--font-size-small);
   text-overflow: ellipsis;
