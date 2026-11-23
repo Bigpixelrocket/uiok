@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [0.6.1] - 2026-11-23
+## [0.7.0] - 2026-11-23
 
 ### Added
 
@@ -15,6 +15,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - A `FactList` or `FactColumns` set straight in a pane's body (a `PaneList`, `PanePage`, `PageSlot`, or `SideBySide` part) keeps the rows' inset from the pane's edge (`--pane-row-inset`) and `--space-4` above and below, instead of sitting flush with it.
 - `Row`'s `nameTip` and `nameDescription`: the host's words about a row's name. `nameTip` (a narrow pane's dropped columns, say) is the name's tooltip at every width, under the whole name (a name in markup by its drawn words), in place of the tooltip a cut name shows alone. `nameDescription` (the row's kind) and the tip's words, in that order, describe the name's cell, the row when it takes the focus (`focusable`, `tabbable`), and a radio row's radio. Neither repeats the name.
 - The pane docs demo walks Tab listing first (`usePaneKeys`' `tabOrder: 'listing'`) beside the browser's own order, Escape giving the focus back to that choice, and the frame demo opens a tree row's menu, from a secondary click or, through its Focus the tree button, the keys.
+
+### Changed
+
+- Breaking: a `PaletteOption`'s accessible name is now every word it draws, in the order drawn (its name, its `context`, then its trail, a `KeyChord` by its words, and `current`'s value), read from its content, so it holds the text on screen (WCAG 2.5.3, axe `label-content-name-mismatch`). Its `aria-description` is now only the caller's `description`, for what the row does not draw (why it is disabled). 0.6.0 advised voicing a chord or the context through `description`: a caller that did so drops that text from `description`, or the row reads it twice. `label` now stands in for the drawn name's words alone (pass it for a `MarkedText` name), the context and trail still read after it; an empty `label` is none.
 
 ### Fixed
 
@@ -25,7 +29,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `KeyChord` draws its chord as a `<kbd role="img">`, so its name in words ("Shift Command N") is allowed and read, in a control round it too, where an `aria-label` on a bare `<kbd>` was not (axe `aria-prohibited-attr`). `KeyChords` keeps its "or" apart from the chords in a name read from the content, and `Menu` and the terminal's menu keep an item's label, its current mark's words, and its chord's apart in its name ("Copy Path Option Command C").
 - A `TreeTool`'s words (a note, a heading, a failed read) that a narrow sidebar cuts with an ellipsis show whole in a tooltip while cut, as a cut tree row's name does.
 - A `PageNote` or `PaneMessage` too long for one line wraps its words in their own column beside the glyph (a hanging indent), not under the glyph; `PageNote` draws its words in the same `.pane-message-text` box. A glyph of the host's own leading a `PaneMessage`'s words is drawn at `--icon-md`, and the words after it hang in their own column too.
-- A `PaletteOption`'s accessible name is every word it draws, in the order drawn (its name, context, and trail, a `KeyChord` by its words, `current`'s value after it), so it holds the visible text (WCAG 2.5.3, axe `label-content-name-mismatch`). `label` stands in for the drawn name's words only, the context and trail still read after it. Its description now reads only the caller's `description`, for what the row does not draw; a caller that wrote a description to word its context or a chord drops it, or the row reads those twice.
 - A `Toolbar` set straight in a pane's body (a `PaneList`, `PanePage`, `PageSlot`, or `SideBySide` part) keeps the rows' inset (`--pane-row-inset`) from the pane's edges instead of touching them.
 - A `.terminal-box` that nothing gives a height falls back to the new fixed token `--terminal-box-default-height` (200px, `TERMINAL_BOX_HEIGHT`) instead of collapsing.
 - A mouse's second button pressed while another is held, after a Shift-F10 the browser left alone, opens the pane's menu again, not the cursor row's: `PaneList` forgets the menu key on a `mousedown` as well as a `pointerdown`.
@@ -337,8 +340,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.1...HEAD
-[0.6.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...v0.6.1
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.3.0...v0.4.0
