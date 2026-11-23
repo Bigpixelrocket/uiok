@@ -74,7 +74,8 @@ describe('SidebarResizer', () => {
     );
 
     const edge = screen.getByRole('separator', { name: 'Resize the sidebar' });
-    expect(edge.getAttribute('aria-valuenow')).toBe('240');
+    // It takes no focus, so it carries no value a screen reader would offer to change.
+    expect(edge.hasAttribute('aria-valuenow')).toBe(false);
     expect(edge.classList.contains('window-frame-resizer')).toBe(true);
   });
 });

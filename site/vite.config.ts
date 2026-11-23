@@ -34,6 +34,10 @@ export default defineConfig({
       { find: /^@bigpixelrocket\/uiok$/, replacement: `${source}index.ts` }
     ]
   },
+  // The viewer's highlighting worker loads each grammar as a chunk of its
+  // own; Vite's default worker format (iife) cannot split, and would put
+  // every grammar in one worker.
+  worker: { format: 'es' },
   // The site reads ../src and ../docs.
   server: { fs: { allow: [repo] } },
   build: {

@@ -74,6 +74,7 @@ import { QuietAction } from '@bigpixelrocket/uiok/pane';
 - `PathCell` (`PathCellProps`): a path whose folders give way before its name. It is a cell itself: put it in the row as it is, never inside a `Cell`, whose gutter it would add a second time. `nameClassName` marks the name by its kind (a colour or a weight, never the accent, which in a row reads as a link); `pathParts(path).base` is the name it draws.
 - `WellColumn` (`WellColumnProps`): a strip over a terminal-coloured well, full height. The child draws the well, usually `<pre className="pane-well">`. `label` makes it a region.
 - `CurrentDot` (`CurrentDotProps`): a neutral dot one character after a label, named and titled by `label`.
+- `PaneMessage` (`PaneMessageProps`): one line about a listing where its rows stand, for what `Listing`'s `empty` and `PageNote` do not cover: `children` (a sentence, `code` inside for a name or value), `tone` (`PaneMessageTone`: `danger` a refusal led by the danger glyph, `warning` led by the warning glyph, `empty` a list with no rows; a plain hint unless given), and `live` (a `status` live region, for a line that comes and goes with what the user does). It draws `.pane-message` inside a listing root.
 
 ## Column widths
 

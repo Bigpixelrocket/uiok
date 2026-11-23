@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-23
+
+### Added
+
+- The file viewer (`@bigpixelrocket/uiok/viewer`, a new area beside the root, like the terminal): `ViewerWindow` shows one file as text with syntax highlighting and line numbers, hex, image, audio, video, or PDF, reading a bounded range at a time through a `ViewerReader` the app supplies (`inspect`, `readRange`, `reload`, `lineNumber`), with a mode switch, change notices and Reload, fallbacks to hex or source, copy, Go to Offset, zoom, and a media player. `isViewerCloseKey`, `openSyntaxWorker`, `VIEWER_MAX_READ_BYTES`, and the reader's data types. Highlighting runs Shiki on its JavaScript regex engine in a worker the viewer starts itself; each grammar loads only when a file needs it.
+- The `viewer` label group (`ViewerLabels`, `ViewerModeLabels`, `ViewerContentLabels`, `DEFAULT_VIEWER_LABELS`), its number, size, and date formats included.
+- Form components (`@bigpixelrocket/uiok/field`), so an app draws a form with no class name or raw element: `TextField`, `TextArea`, `Select` (`SelectOption`, `SelectOptionGroup`), `FieldBox`, `FieldEditor`, `Radio`, `Range`, `Meter`, `RestoreDefault`; the layout `FieldGrid`, `FieldRow` (wires its control's id, note, problem, invalid state, and help on its own; `useFieldWiring` for a control of the app's), `FieldOption`, `FieldGroup`, `FieldNote`, `FieldProblem`. `Check` takes a `label` and a `tone`.
+- `Notice` and `Card` (`@bigpixelrocket/uiok/surface`), and `PaneMessage` (`@bigpixelrocket/uiok/listing`): the `.notice`, `.card`, and `.pane-message` looks as components.
+- `TreeTool` takes a `rowKey`, which joins it to the pane's row cursor as a `TreeRow` is.
+- `ProgressDialog`, `ConfirmDialog`, and `TypedNameDialog` take a `container`; `TypedNameDialog` takes `groups`.
+- Theme token `--letterbox` (a video's letterbox, black in every theme).
+
+### Changed
+
+- Breaking: uiok now defines `--letterbox`, so `themeStylesheet` refuses an app token of that name. An app that wrote it as its own token drops it; the value is the same.
+- `SidebarResizer` and `Dock`'s edge no longer set `aria-valuenow`, `aria-valuemin`, or `aria-valuemax`: they take no focus, so a screen reader could not change the value it offered.
+
+### Fixed
+
+- `TreeList` mounted inside a shadow root keeps its `aria-activedescendant`: it finds the cursor row in its own root, not the document.
+
 ## [0.3.0] - 2026-11-23
 
 ### Added
@@ -224,7 +245,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.3...v0.3.0
 [0.2.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.2...v0.2.3
 [0.2.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.1...v0.2.2

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, renderHook, screen } from '@testing-library/react';
+import { createRoot } from 'react-dom/client';
 import { useState, type ReactNode } from 'react';
 import { CircleAlert, Server } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -176,6 +177,59 @@ describe('TreeRow', () => {
     expect(first?.classList.contains('cursor')).toBe(false);
     expect(tree.getAttribute('aria-activedescendant')).toBe(second?.id);
     expect(second?.id).not.toBe('');
+  });
+
+  it('lets a tool row with a key join the cursor as a row does', () => {
+    const cursor = cursorAt('a');
+
+    render(
+      <RowCursorContext value={cursor}>
+        <TreeList label="Services">
+          <TreeRow name="PostgreSQL" rowKey="a" />
+          <TreeTool rowKey="more" text="Show 20 more" />
+          <TreeTool cursor text="Loose note" />
+        </TreeList>
+      </RowCursorContext>
+    );
+    const tool = screen.getByText('Show 20 more').closest('.tree-tool') as HTMLElement;
+
+    expect(tool.dataset.rowKey).toBe('more');
+    expect(tool.classList.contains('cursor')).toBe(false);
+    fireEvent.pointerMove(tool);
+    expect(tool.classList.contains('cursor')).toBe(true);
+    expect(screen.getByRole('tree').getAttribute('aria-activedescendant')).toBe(tool.id);
+    expect(screen.getByText('Loose note').closest('.tree-tool')?.classList.contains('cursor')).toBe(
+      true
+    );
+  });
+
+  it('names its cursor row inside a shadow root, which the document cannot see into', () => {
+    const host = document.createElement('div');
+    document.body.append(host);
+    const shadow = host.attachShadow({ mode: 'open' });
+    const mount = document.createElement('div');
+    shadow.append(mount);
+    const root = createRoot(mount);
+    const cursor = cursorAt('a');
+
+    act(() =>
+      root.render(
+        <RowCursorContext value={cursor}>
+          <TreeList label="Services">
+            <TreeRow name="PostgreSQL" rowKey="a" />
+            <TreeRow name="Redis" rowKey="b" />
+          </TreeList>
+        </RowCursorContext>
+      )
+    );
+    const list = shadow.querySelector('[role="tree"]');
+    const [first, second] = Array.from(shadow.querySelectorAll('[role="treeitem"]'));
+
+    expect(list?.getAttribute('aria-activedescendant')).toBe(first?.id);
+    act(() => cursor.point('b'));
+    expect(list?.getAttribute('aria-activedescendant')).toBe(second?.id);
+    act(() => root.unmount());
+    host.remove();
   });
 
   it('names no active descendant once a filter takes the cursor row away', () => {
@@ -432,8 +486,8 @@ describe('Dock', () => {
     );
 
     expect(
-      screen.getByRole('separator', { name: 'Resize the console' }).getAttribute('aria-valuenow')
-    ).toBe('180');
+      screen.getByRole('separator', { name: 'Resize the console' }).hasAttribute('aria-valuenow')
+    ).toBe(false);
   });
 });
 

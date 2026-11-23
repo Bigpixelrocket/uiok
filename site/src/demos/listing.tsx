@@ -37,6 +37,7 @@ import {
   EmptyState,
   iconLinksColumn,
   Listing,
+  PaneMessage,
   PathCell,
   Row,
   RowCursorContext,
@@ -365,7 +366,7 @@ export function ListingDemo() {
               </Row>
             ))}
           </Listing>
-          <p className="pane-message">Updates come from the runtime's own release feed.</p>
+          <PaneMessage>Updates come from the runtime's own release feed.</PaneMessage>
           <Listing
             columns={[
               { label: 'Size' },
@@ -386,7 +387,7 @@ export function ListingDemo() {
             grid={STRIP_GRID}
             title="History"
           />
-          <p className="pane-message danger">The history file could not be read.</p>
+          <PaneMessage tone="danger">The history file could not be read.</PaneMessage>
         </div>
       </div>
 
@@ -515,9 +516,9 @@ export function ListingDemo() {
             ))}
           </Listing>
           <Strip heading title="Notes" />
-          <p className="pane-message">
+          <PaneMessage>
             Values are read when a service starts; restart it to pick up a change.
-          </p>
+          </PaneMessage>
         </div>
       </div>
 
@@ -557,7 +558,7 @@ export function ListingDemo() {
               <Cell>now()</Cell>
             </Row>
           </Listing>
-          <p className="pane-message warning">The table is large; adding a column rewrites it.</p>
+          <PaneMessage tone="warning">The table is large; adding a column rewrites it.</PaneMessage>
         </div>
       </div>
 

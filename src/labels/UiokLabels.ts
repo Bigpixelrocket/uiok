@@ -19,6 +19,7 @@ import { DEFAULT_PANE_TABS_LABELS, type PaneTabsLabels } from './paneTabs.js';
 import { DEFAULT_SELECT_ALL_LABELS, type SelectAllLabels } from './selectAll.js';
 import { DEFAULT_SETTINGS_LABELS, type SettingsLabels } from './settings.js';
 import { DEFAULT_TERMINAL_LABELS, type TerminalLabels } from './terminal.js';
+import { DEFAULT_VIEWER_LABELS, type ViewerLabels } from './viewer.js';
 
 /**
  * Every chrome string UIOK's components share across instances, grouped by
@@ -52,6 +53,8 @@ export interface UiokLabels {
   readonly paneTabs: PaneTabsLabels;
   /** The Settings dialog's title, sidebar, and Done, and the Appearance page's words (`SettingsDialog`, `AppearanceSettings`). */
   readonly settings: SettingsLabels;
+  /** The file viewer's modes, facts, notices, and each view's words and formats (`@bigpixelrocket/uiok/viewer`). */
+  readonly viewer: ViewerLabels;
 }
 
 /** The English labels every component falls back to without a `UiokProvider`. */
@@ -67,5 +70,6 @@ export const DEFAULT_LABELS: UiokLabels = {
   selectAll: DEFAULT_SELECT_ALL_LABELS,
   terminal: DEFAULT_TERMINAL_LABELS,
   paneTabs: DEFAULT_PANE_TABS_LABELS,
-  settings: DEFAULT_SETTINGS_LABELS
+  settings: DEFAULT_SETTINGS_LABELS,
+  viewer: DEFAULT_VIEWER_LABELS
 };

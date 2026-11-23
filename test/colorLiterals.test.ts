@@ -50,12 +50,16 @@ const SOURCES: Readonly<Record<string, string>> = Object.fromEntries(
  * concrete colours before it draws, so the terminal keeps one Catppuccin
  * Mocha theme and the engine's own defaults for a page whose stylesheet
  * sets no `--terminal-*` tokens; every themed colour still comes from them.
+ * The viewer's highlighter reads the colours Shiki's Catppuccin Mocha theme
+ * gives each token and names their palette roles, painted through
+ * `--syntax-*`: lookup keys, never painted.
  */
 const THEME_SOURCES = new Set([
   'src/themes/catalog.ts',
   'src/themes/color.ts',
   'src/themes/tokens.ts',
-  'src/terminal/ghostty/fallbackColors.ts'
+  'src/terminal/ghostty/fallbackColors.ts',
+  'src/viewer/SyntaxHighlighter.ts'
 ]);
 
 /**

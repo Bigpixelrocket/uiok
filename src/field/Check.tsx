@@ -1,4 +1,10 @@
-import { useEffect, useRef, type InputHTMLAttributes } from 'react';
+import {
+  useEffect,
+  useRef,
+  type InputHTMLAttributes,
+  type ReactElement,
+  type ReactNode
+} from 'react';
 
 /** Props of `Check`: a native checkbox's, with `checked` able to say "some". */
 export interface CheckProps extends Omit<
@@ -7,6 +13,13 @@ export interface CheckProps extends Omit<
 > {
   /** On, off, or `'mixed'` for some but not all of what it stands for. */
   checked: boolean | 'mixed';
+  /**
+   * Its words, beside it in a `field-choice` label, the whole label its
+   * target; without them the box stands alone and needs an `aria-label`.
+   */
+  label?: ReactNode;
+  /** A choice whose effect is destructive (`danger`) or needs care (`warning`). */
+  tone?: 'danger' | 'warning';
 }
 
 /**
@@ -17,7 +30,14 @@ export interface CheckProps extends Omit<
  * `checked` stays `'mixed'`); everything else is the native input.
  * A plain `<input type="checkbox" class="check">` needs no component.
  */
-export function Check({ checked, className, onChange, ...props }: CheckProps) {
+export function Check({
+  checked,
+  className,
+  onChange,
+  label,
+  tone,
+  ...props
+}: CheckProps): ReactElement {
   const ref = useRef<HTMLInputElement>(null);
   const mixed = checked === 'mixed';
 
@@ -25,7 +45,7 @@ export function Check({ checked, className, onChange, ...props }: CheckProps) {
     if (ref.current) ref.current.indeterminate = mixed;
   });
 
-  return (
+  const box = (
     <input
       {...props}
       aria-checked={mixed ? 'mixed' : undefined}
@@ -36,8 +56,18 @@ export function Check({ checked, className, onChange, ...props }: CheckProps) {
         // A render the owner asks for sets the new state after this.
         event.currentTarget.indeterminate = mixed;
       }}
+      data-tone={tone}
       ref={ref}
       type="checkbox"
     />
+  );
+
+  return label === undefined ? (
+    box
+  ) : (
+    <label className="field-choice">
+      {box}
+      {label}
+    </label>
   );
 }

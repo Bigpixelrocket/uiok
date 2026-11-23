@@ -2,7 +2,11 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
+import { PaneMessage } from '../listing/PaneMessage.js';
+import { Spinner } from '../icon/Spinner.js';
+import { Card } from './Card.js';
 import { GroupSwatch } from './GroupSwatch.js';
+import { Notice } from './Notice.js';
 import { Tag } from './Tag.js';
 
 describe('GroupSwatch', () => {
@@ -99,5 +103,64 @@ describe('notice and overline additions', () => {
     const overline = document.querySelector('.overline') as Element;
     expect(declaredValues(overline, 'text-transform').at(-1)).toBe('none');
     document.body.innerHTML = '';
+  });
+});
+
+describe('Notice', () => {
+  it('leads with its tone’s glyph and puts its actions after the words', () => {
+    const { container } = render(
+      <Notice actions={<button type="button">Retry</button>} role="alert" tone="danger">
+        Could not save.
+      </Notice>
+    );
+    const notice = screen.getByRole('alert');
+
+    expect(notice.className).toBe('notice notice-danger');
+    expect(notice.firstElementChild?.tagName.toLowerCase()).toBe('svg');
+    expect(notice.firstElementChild?.classList.contains('lucide-circle-alert')).toBe(true);
+    expect(container.querySelector('.notice-text')?.textContent).toBe('Could not save.');
+    expect(container.querySelector('.notice-actions')?.textContent).toBe('Retry');
+  });
+
+  it('is a plain note by default, takes a glyph of its own or none, and cuts a band', () => {
+    const { container, rerender } = render(<Notice>Applies to new windows.</Notice>);
+
+    expect(screen.getByRole('status').className).toBe('notice');
+    rerender(<Notice glyph={<Spinner />}>Checking…</Notice>);
+    expect(container.querySelector('.notice-glyph')).not.toBeNull();
+    rerender(
+      <Notice band cutText="settings.json has a mistake." glyph={null} role={null} tone="warning">
+        settings.json has a mistake.
+      </Notice>
+    );
+    const band = container.firstElementChild as HTMLElement;
+    expect(band.className).toBe('notice notice-warning notice-card');
+    expect(band.hasAttribute('role')).toBe(false);
+    expect(band.querySelector('svg')).toBeNull();
+    expect((band.querySelector('.notice-text') as HTMLElement).dataset.tooltipCut).toBe('');
+  });
+});
+
+describe('Card', () => {
+  it('is a plain card, or a named region given a label', () => {
+    const { container, rerender } = render(<Card>One subject</Card>);
+
+    expect(container.firstElementChild?.className).toBe('card');
+    rerender(<Card label="Updates">One subject</Card>);
+    expect(screen.getByRole('region', { name: 'Updates' }).className).toBe('card');
+  });
+});
+
+describe('PaneMessage', () => {
+  it('says a line about a listing in its tone, live when asked', () => {
+    const { container, rerender } = render(<PaneMessage>A hint.</PaneMessage>);
+
+    expect(container.firstElementChild?.className).toBe('pane-message');
+    rerender(
+      <PaneMessage live tone="danger">
+        Refused.
+      </PaneMessage>
+    );
+    expect(screen.getByRole('status').className).toBe('pane-message danger');
   });
 });

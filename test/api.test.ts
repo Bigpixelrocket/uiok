@@ -18,10 +18,12 @@ const CONFIG = fileURLToPath(new URL('../tsconfig.build.json', import.meta.url))
 /**
  * The areas the root barrel leaves out on purpose, each importable only as
  * `@bigpixelrocket/uiok/<area>`: the terminal, so an app that shows none
- * never loads its WebAssembly.
+ * never loads its WebAssembly, and the viewer, so one that shows none never
+ * bundles its highlighting worker.
  */
 const ENTRIES_BESIDE_ROOT = {
-  terminal: fileURLToPath(new URL('../src/terminal/index.ts', import.meta.url))
+  terminal: fileURLToPath(new URL('../src/terminal/index.ts', import.meta.url)),
+  viewer: fileURLToPath(new URL('../src/viewer/index.ts', import.meta.url))
 } as const;
 
 /** The names an entry module exports, each with whether its declaration has a docblock. */
@@ -77,6 +79,23 @@ describe('the terminal entry, beside the root', () => {
   it('exports the terminal, which the root barrel leaves out', () => {
     expect(names).toContain('Terminal');
     expect(publicExports().map(({ name }) => name)).not.toContain('Terminal');
+  });
+
+  it('documents every export with a docblock', () => {
+    expect(
+      exports.filter(({ documented }) => !documented).map(({ name }) => name),
+      'Add a /** docblock */ to each export listed'
+    ).toEqual([]);
+  });
+});
+
+describe('the viewer entry, beside the root', () => {
+  const exports = publicExports(ENTRIES_BESIDE_ROOT.viewer);
+  const names = exports.map(({ name }) => name);
+
+  it('exports the viewer, which the root barrel leaves out', () => {
+    expect(names).toContain('ViewerWindow');
+    expect(publicExports().map(({ name }) => name)).not.toContain('ViewerWindow');
   });
 
   it('documents every export with a docblock', () => {

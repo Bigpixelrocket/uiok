@@ -2,8 +2,9 @@
  * Listings: the column strip, rows and cells in the listing look (scoped by
  * `.listing-root`), the row cursor they share with the keys, column widths,
  * and the state, path, and terminal-well cells; `CurrentDot` marks the
- * current one in a list, and `EmptyState` fills a pane with nothing in it
- * yet or one that could not load.
+ * current one in a list, `EmptyState` fills a pane with nothing in it
+ * yet or one that could not load, and `PaneMessage` is one line about a
+ * listing (a hint, a refusal, a warning).
  */
 
 export { type SortDirection } from '../labels/listing.js';
@@ -35,4 +36,5 @@ export {
   type StripProps,
   type WellColumnProps
 } from './Listing.js';
+export { PaneMessage, type PaneMessageProps, type PaneMessageTone } from './PaneMessage.js';
 export { pathParts, type PathParts } from './PathParts.logic.js';

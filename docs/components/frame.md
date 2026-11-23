@@ -115,7 +115,7 @@ Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`
 
 `TreeToggle` (`open`, `onToggle`, `label`) is the chevron `TreeRow` draws for `toggle`, right while closed and down while open: a press toggles the row's children, never opens the row, leaves the focus where it was, and stays out of the Tab order.
 
-`TreeTool` (`kind`, `level`, `icon`, `text`, `cursor`, `children`) is a row that is not a node, at its level's indent in the small size: `tool` (a filter field, a pager, an Add action), `note` (starts past the chevron's slot), `heading` (heads a group further down, over a hairline), or `danger` (a failed read, announced as an alert, its reason wrapping and its action under it). `TreeFilterInput` (`value`, `onChange`, `label`, `placeholder`, `onKeyDown`, `ref`) is a bare field that fills its `TreeTool` row, the row underlined in the accent while it holds the keyboard. `SidebarEmpty` is a sidebar's one quiet line when it has nothing to list.
+`TreeTool` (`kind`, `level`, `icon`, `text`, `rowKey`, `cursor`, `children`) is a row that is not a node, at its level's indent in the small size: `tool` (a filter field, a pager, an Add action), `note` (starts past the chevron's slot), `heading` (heads a group further down, over a hairline), or `danger` (a failed read, announced as an alert, its reason wrapping and its action under it). With a `rowKey` it joins the pane's cursor as a `TreeRow` does (the cursor's keys reach it, the pointer moves the cursor to it, and the tree names it as its active descendant); without one it stands outside the cursor, which `cursor` draws. `TreeFilterInput` (`value`, `onChange`, `label`, `placeholder`, `onKeyDown`, `ref`) is a bare field that fills its `TreeTool` row, the row underlined in the accent while it holds the keyboard. `SidebarEmpty` is a sidebar's one quiet line when it has nothing to list.
 
 ## Quick row
 
@@ -158,7 +158,7 @@ Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`
 
 ## Keyboard
 
-The frame adds no keys. The sidebar's edge is a pointer control (`role="separator"` with its width as its value); a tree row's chevron and its tools stay out of the Tab order; `FilterChips` are buttons in the Tab order that leave the focus where it was when pressed. `SpacePanel`, `TreeList`, and a `PaneList` with `home` take the focus by script only.
+The frame adds no keys. The sidebar's edge and a dock's top edge are pointer controls (`role="separator"`); they take no focus, so they carry no value a screen reader would offer to change; a tree row's chevron and its tools stay out of the Tab order; `FilterChips` are buttons in the Tab order that leave the focus where it was when pressed. `SpacePanel`, `TreeList`, and a `PaneList` with `home` take the focus by script only.
 
 ## Labels read
 

@@ -113,9 +113,11 @@ export function TreeList({ label, ref, children, ...handlers }: TreeListProps): 
 
     const key = cursor.current();
     const id = key === null ? null : rowId(tree, key);
-    // One lookup by id (the tree's prefix makes it unique in the document),
-    // never a scan of the rows.
-    const row = id === null ? null : element.ownerDocument.getElementById(id);
+    // One lookup by id in the tree's own root (the document, or the shadow
+    // root it is mounted in, where the document cannot see), never a scan
+    // of the rows; the tree's prefix makes the id unique there.
+    const root = element.getRootNode() as Document | ShadowRoot;
+    const row = id === null ? null : root.getElementById(id);
     const drawnRow = row !== null && element.contains(row);
 
     if (drawnRow && id !== null) element.setAttribute('aria-activedescendant', id);
@@ -319,7 +321,14 @@ export interface TreeToolProps {
   readonly icon?: LucideIcon;
   /** Its words. */
   readonly text?: ReactNode;
-  /** The pane's cursor stands on it. */
+  /**
+   * Its key among the tree's rows, which joins it to the pane's cursor
+   * (`RowCursorContext`) as a `TreeRow` is: the cursor's keys reach it and
+   * the pointer moves the cursor to it. Without one it stands outside the
+   * cursor, which `cursor` then draws.
+   */
+  readonly rowKey?: string;
+  /** The pane's cursor stands on it, for a tool row without a `rowKey`. */
   readonly cursor?: boolean;
   /** Its control after the words: a `TreeFilterInput`, a pager, an action. */
   readonly children?: ReactNode;
@@ -335,15 +344,34 @@ export function TreeTool({
   level = 0,
   icon: Icon,
   text,
-  cursor = false,
+  rowKey,
+  cursor: cursorOn = false,
   children
 }: TreeToolProps): ReactElement {
+  const cursor = useContext(RowCursorContext);
+  const tree = useContext(TreeIdContext);
+  const current = useSyncExternalStore(
+    cursor.subscribe,
+    () => rowKey !== undefined && cursor.current() === rowKey
+  );
+
+  useLayoutEffect(() => {
+    if (rowKey === undefined) return;
+    cursor.rowsChanged?.();
+    tree?.rowsChanged();
+
+    return () => {
+      cursor.rowsChanged?.();
+      tree?.rowsChanged();
+    };
+  }, [cursor, rowKey, tree]);
+
   const classes = [
     'tree-tool',
     kind === 'note' ? 'tree-note' : '',
     kind === 'heading' ? 'tree-heading' : '',
     kind === 'danger' ? 'danger' : '',
-    cursor ? 'cursor' : ''
+    current || (rowKey === undefined && cursorOn) ? 'cursor' : ''
   ]
     .filter(Boolean)
     .join(' ');
@@ -351,6 +379,15 @@ export function TreeTool({
   return (
     <div
       className={classes}
+      data-row-key={rowKey}
+      id={rowKey === undefined || tree === null ? undefined : rowId(tree.id, rowKey)}
+      onPointerMove={
+        rowKey === undefined
+          ? undefined
+          : () => {
+              if (!current) cursor.point(rowKey);
+            }
+      }
       role={kind === 'danger' ? 'alert' : undefined}
       style={levelStyle(level)}
     >
