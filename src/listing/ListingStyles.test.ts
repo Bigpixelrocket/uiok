@@ -316,6 +316,22 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
+  it('stands a state with no word on its line’s middle, one with a word at its top', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root"><div class="row">
+      <span class="row-meta"><span class="pane-state pane-tone-ready" id="alone"><span class="pane-state-dot"></span><span class="pane-state-word"></span></span></span>
+      <span class="row-meta"><span class="pane-state pane-tone-ready" id="worded"><span class="pane-state-dot"></span><span class="pane-state-word">running</span></span></span>
+    </div></section>`;
+
+    expect(
+      declaredValues(document.querySelector('#alone') as Element, 'vertical-align').at(-1)
+    ).toBe('middle');
+    expect(
+      declaredValues(document.querySelector('#worded') as Element, 'vertical-align').at(-1)
+    ).toBe('top');
+    document.body.innerHTML = '';
+  });
+
   it('lets neighbouring actions meet edge to edge, only the last pulled into the cell’s edge', () => {
     applyStylesheets(styles);
     document.body.innerHTML = `<section class="listing-root"><div class="row">

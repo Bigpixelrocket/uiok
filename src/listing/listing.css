@@ -1997,6 +1997,14 @@ button.crumb-label.crumb-siblings > svg {
   display: none;
 }
 
+/* The mark alone is only as tall as the mark, so on a line of text (a row's
+   cell) it stands on the text's middle, where a word beside it would hold
+   it, not at the top of the line, where the state's top alignment would
+   leave it. A flex line places it by its own rules. */
+:where(.listing-root) .pane-state:has(> .pane-state-word:empty) {
+  vertical-align: middle;
+}
+
 /* A quiet ring draws in the edge tone a state row sets for its marks
    (`--check-edge`, the checkbox's: 3:1 on the cursor, marked, and hover
    fills), and in the idle mark's tone on a row at rest. */
