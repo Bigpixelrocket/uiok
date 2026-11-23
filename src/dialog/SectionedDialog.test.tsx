@@ -206,6 +206,59 @@ describe('SectionedDialog', () => {
     expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Waits for' }));
   });
 
+  it("goes to a row's section on Return, never running the dialog's primary verb", () => {
+    const save = vi.fn();
+
+    render(
+      <SectionedDialog
+        labelId="edit"
+        legend={{ leave: { label: 'Cancel' }, primary: { label: 'Save', onRun: save } }}
+        onCancel={vi.fn()}
+        sections={SECTIONS}
+        title="Edit Command"
+      />
+    );
+    layOut(column());
+    const row = screen.getByRole('button', { name: 'Depends on' });
+
+    row.focus();
+    fireEvent.keyDown(row, { key: 'Enter' });
+
+    expect(save).not.toHaveBeenCalled();
+    expect(row.getAttribute('aria-current')).toBe('location');
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Waits for' }));
+  });
+
+  it("passes over a control out of the Tab order, a row's, to the first Tab stops on", () => {
+    render(
+      <SectionedDialog
+        labelId="edit"
+        onCancel={vi.fn()}
+        sections={[
+          SECTIONS[0]!,
+          {
+            id: 'depends',
+            title: 'Depends on',
+            children: (
+              <>
+                <button tabIndex={-1} type="button">
+                  Remove
+                </button>
+                <button type="button">Add Dependency</button>
+              </>
+            )
+          }
+        ]}
+        title="Edit Command"
+      />
+    );
+    layOut(column());
+
+    fireEvent.click(screen.getByRole('button', { name: 'Depends on' }), { detail: 0 });
+
+    expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Add Dependency' }));
+  });
+
   it('keeps its notice outside the scrolling column', () => {
     render(
       <SectionedDialog

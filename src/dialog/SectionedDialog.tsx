@@ -21,17 +21,24 @@ import { ModalDialog, type ModalDialogProps } from './ModalDialog.js';
 const SECTION_ATTRIBUTE = 'data-dialog-section';
 
 /** What can take the focus inside a section: its first control, for a section chosen from the keyboard. */
-const FOCUSABLE =
-  'input:not([type="hidden"]), select, textarea, button, [href], [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE = 'input:not([type="hidden"]), select, textarea, button, [href], [tabindex]';
 
 /**
- * Moves the focus to the first control of `section` that takes it: one not
- * disabled (by itself or a disabled fieldset) or hidden, and, should the
- * browser still refuse one, the next.
+ * Moves the focus to the first control of `section` that Tab would stop on
+ * and that takes it: one in the Tab order (a row's control out of it, at
+ * `tabIndex` -1, is the cursor row's keys' to run), not disabled (by itself
+ * or a disabled fieldset), not hidden, and, should the browser still refuse
+ * one, the next. So Tab goes on from it as the dialog's Tab cycle expects.
  */
 const focusFirstControl = (section: Element): void => {
   for (const control of section.querySelectorAll<HTMLElement>(FOCUSABLE)) {
-    if (control.matches(':disabled') || control.closest('[hidden], [inert]') !== null) continue;
+    if (
+      control.tabIndex < 0 ||
+      control.matches(':disabled') ||
+      control.closest('[hidden], [inert]') !== null
+    ) {
+      continue;
+    }
 
     control.focus({ preventScroll: true });
 
@@ -186,6 +193,26 @@ export function SectionedDialog({
               className="sectioned-dialog-nav-row"
               key={section.id}
               onClick={(event) => show(section.id, event.detail === 0)}
+              // Return on a row goes to its section, as Space does, instead
+              // of running the dialog's primary verb, which plain Return
+              // runs from anywhere else in the dialog.
+              onKeyDown={(event) => {
+                if (
+                  event.key !== 'Enter' ||
+                  event.nativeEvent.isComposing ||
+                  event.repeat ||
+                  event.altKey ||
+                  event.ctrlKey ||
+                  event.metaKey ||
+                  event.shiftKey
+                ) {
+                  return;
+                }
+
+                event.preventDefault();
+                event.stopPropagation();
+                show(section.id, true);
+              }}
               onMouseDown={keepFocus}
               type="button"
               {...cutTooltip(section.title)}
