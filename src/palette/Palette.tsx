@@ -47,7 +47,8 @@ export interface PaletteProps {
  * labelled as a modal dialog (`aria-modal`, so `MODAL_SELECTOR` and
  * `watchOverlays` see it while it shows). Escape from anywhere in the box
  * closes it, unless an input method's composition takes it; the field
- * answers its own keys first. A press inside never takes the focus from the
+ * answers its own keys first. Return does nothing past the palette: its
+ * default is cancelled, so a focus handed back on close cannot take it. A press inside never takes the focus from the
  * field. The caller draws the query row (`PaletteQuery`), the list, any
  * notes, and the legend inside, and owns filtering and the cursor
  * (`matchQuery`, `menuQueryRefused`, `moveMenuCursor`). The box carries
@@ -84,10 +85,19 @@ export function Palette({
             : `folder-menu palette listing-root ${className}`
         }
         onKeyDown={(event) => {
-          if (event.key === 'Escape' && !event.nativeEvent.isComposing) {
+          if (event.nativeEvent.isComposing) return;
+
+          if (event.key === 'Escape') {
             event.preventDefault();
             onClose();
           }
+
+          // Return is the palette's whether or not the caller cancels it: a
+          // caller that runs a command and closes on it, handing the focus
+          // back to the button that opened the palette, would otherwise
+          // leave the browser to click that button with the same key and
+          // open the palette again.
+          if (event.key === 'Enter') event.preventDefault();
         }}
         onMouseDown={keepFocus}
         role="dialog"

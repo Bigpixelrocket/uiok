@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import {
+  useEffect,
   useId,
   useLayoutEffect,
   useRef,
@@ -141,6 +142,103 @@ const type = (value: string): void => {
   fireEvent.change(field(), { target: { value } });
 };
 
+/**
+ * A page that opens a palette from a button or ⌘K and hands the focus back
+ * to what held it when the palette closes, as a host does. Its field runs
+ * the cursor command on Return and closes the palette without cancelling
+ * the key, as the documented example does.
+ */
+function PaletteHost({ onRun }: { readonly onRun: (id: string) => void }): ReactElement {
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    const onKey = (event: globalThis.KeyboardEvent): void => {
+      if (event.key === 'k' && event.metaKey) {
+        event.preventDefault();
+        setOpen((now) => !now);
+      }
+    };
+
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  return (
+    <>
+      <button onClick={() => setOpen((now) => !now)} type="button">
+        Commands
+      </button>
+      {open && (
+        <ReturningPalette
+          onClose={() => setOpen(false)}
+          onRun={(id) => {
+            setOpen(false);
+            onRun(id);
+          }}
+        />
+      )}
+    </>
+  );
+}
+
+function ReturningPalette({
+  onRun,
+  onClose
+}: {
+  readonly onRun: (id: string) => void;
+  readonly onClose: () => void;
+}): ReactElement {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useLayoutEffect(() => {
+    const before = document.activeElement;
+
+    inputRef.current?.focus();
+    return () => {
+      if (before instanceof HTMLElement && before.isConnected) before.focus();
+    };
+  }, []);
+
+  return (
+    <Palette label="Commands" onClose={onClose}>
+      <PaletteQuery
+        activeId="new-tab"
+        bell={0}
+        count={null}
+        inputRef={inputRef}
+        label="Filter commands"
+        listId="commands"
+        onChange={() => undefined}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') onRun('new-tab');
+        }}
+        placeholder="Type a command"
+        refused={null}
+        value=""
+      />
+      <div id="commands" role="listbox">
+        <div aria-selected id="new-tab" role="option">
+          New Tab
+        </div>
+      </div>
+    </Palette>
+  );
+}
+
+/**
+ * A key as the browser delivers it: the keydown, then, unless a listener
+ * cancelled it, its default action on whatever holds the focus by then. A
+ * Return's on a button is a click; jsdom performs no default action itself.
+ */
+const press = (target: Element, init: KeyboardEventInit): void => {
+  const proceed = fireEvent.keyDown(target, init);
+  const focused = document.activeElement;
+
+  if (proceed && init.key === 'Enter' && focused instanceof HTMLButtonElement) {
+    fireEvent.click(focused);
+  }
+};
+
 describe('Palette', () => {
   it('opens as a modal dialog with the focus in its field', () => {
     render(<CommandPalette onClose={vi.fn()} onRun={vi.fn()} />);
@@ -195,6 +293,33 @@ describe('Palette', () => {
     fireEvent.keyDown(field(), { key: 'Enter' });
 
     expect(onRun).toHaveBeenCalledExactlyOnceWith('settings');
+  });
+
+  it('stays closed after Return runs a command and the host gives the focus back to its opener', () => {
+    const onRun = vi.fn();
+    render(<PaletteHost onRun={onRun} />);
+    const opener = screen.getByRole('button', { name: 'Commands' });
+
+    opener.focus();
+    press(opener, { key: 'k', metaKey: true });
+    expect(document.activeElement).toBe(field());
+
+    press(field(), { key: 'Enter' });
+
+    expect(onRun).toHaveBeenCalledExactlyOnceWith('new-tab');
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(document.activeElement).toBe(opener);
+  });
+
+  it('leaves an input method’s Return to the input method', () => {
+    render(
+      <Palette label="Commands" onClose={vi.fn()}>
+        <input aria-label="Filter commands" role="combobox" />
+      </Palette>
+    );
+
+    expect(fireEvent.keyDown(field(), { key: 'Enter', isComposing: true })).toBe(true);
+    expect(fireEvent.keyDown(field(), { key: 'Enter' })).toBe(false);
   });
 
   it('closes on Escape, but not on an input method’s Escape', () => {
