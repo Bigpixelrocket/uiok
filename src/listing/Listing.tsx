@@ -528,6 +528,24 @@ export interface RowProps {
    * on the cursor row (`.pane-add`).
    */
   readonly add?: boolean;
+  /**
+   * Picked in a selection (`.selected`, `aria-selected`): the solid accent
+   * fill while its pane holds the keys, the neutral fill otherwise.
+   */
+  readonly selected?: boolean;
+  /** Ticked in a checkbox column (`.marked`): the marked tint and its leading bar. */
+  readonly marked?: boolean;
+  /**
+   * A change waiting to be applied: `changed` washes the row in the
+   * warning tone with its leading bar, `removed` strikes its name and
+   * cells out on the danger wash (`.row-changed`, `.row-removed`).
+   */
+  readonly change?: 'changed' | 'removed' | null;
+  /**
+   * The row stands out from its peers (the slowest path of a plan, the
+   * busiest item): its name in the strong weight (`.row-emphasis`).
+   */
+  readonly emphasis?: boolean;
   /** Opens the row's item on a click anywhere but its controls. */
   readonly onOpen?: () => void;
   /**
@@ -567,6 +585,10 @@ export function Row({
   className,
   dim = false,
   add = false,
+  selected = false,
+  marked = false,
+  change = null,
+  emphasis = false,
   onOpen,
   level = 0,
   tabbable = false,
@@ -588,11 +610,16 @@ export function Row({
       <InRowContext.Provider value={!tabbable}>
         <div
           aria-current={current ? 'true' : undefined}
+          aria-selected={selected || undefined}
           className={[
             'row',
             current ? 'cursor' : '',
             dim ? 'row-dim' : '',
             add ? 'pane-add' : '',
+            selected ? 'selected' : '',
+            marked ? 'marked' : '',
+            change === null ? '' : `row-${change}`,
+            emphasis ? 'row-emphasis' : '',
             className ?? ''
           ]
             .filter(Boolean)
@@ -645,6 +672,15 @@ export interface CellProps {
    * own words, as every cell.
    */
   readonly tone?: CellTone;
+  /**
+   * What the cell holds when it is not a value: `action`, the row's verbs
+   * at its end (`QuietAction`, `RowIconAction`; `.pane-action-cell`), or
+   * `hover`, secondary icon controls in view on every row in their quiet
+   * tone (`.pane-hover-cell`).
+   */
+  readonly kind?: 'action' | 'hover';
+  /** The value is missing (SQL NULL): its words in the row-meta tone's italic (`.value-null`). */
+  readonly missing?: boolean;
   readonly className?: string;
   /** The cell's whole text, for one cut short, as its tooltip and description; none when null. */
   readonly tip?: string | null;
@@ -655,11 +691,25 @@ export interface CellProps {
  * A cell of a row after its name, in the listing's metadata look
  * (`.row-meta`), in the row-meta tone or the `tone` given.
  */
-export function Cell({ align, tone, className, tip, children }: CellProps): ReactElement {
+export function Cell({
+  align,
+  tone,
+  kind,
+  missing = false,
+  className,
+  tip,
+  children
+}: CellProps): ReactElement {
   return (
     <span
       data-tone={tone}
-      className={['row-meta', align === 'right' ? 'align-right' : '', className ?? '']
+      className={[
+        'row-meta',
+        align === 'right' ? 'align-right' : '',
+        kind === undefined ? '' : `pane-${kind}-cell`,
+        missing ? 'value-null' : '',
+        className ?? ''
+      ]
         .filter(Boolean)
         .join(' ')}
       role="cell"

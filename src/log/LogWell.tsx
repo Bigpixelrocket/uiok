@@ -6,6 +6,7 @@ import {
   type ReactNode
 } from 'react';
 
+import { ansiSegments } from './Ansi.logic.js';
 import { logSourceColour, logSourceIndexes, logSourceWidth } from './LogWell.logic.js';
 
 /** One line of a log. */
@@ -31,6 +32,40 @@ export interface LogWellProps {
   readonly follow?: boolean;
   /** The words shown while the log has no line. */
   readonly empty?: string;
+  /**
+   * Reads the SGR escape sequences in each line whose text is a string
+   * (`ansiSegments`): its colours, backgrounds, bold, dim, italic, and
+   * underline, drawn in the theme's text tones; every other escape
+   * sequence is dropped. Off, a string is drawn as written.
+   */
+  readonly ansi?: boolean;
+}
+
+/** A line's text as styled runs, each colour painted by log.css from its data attributes. */
+function AnsiText({ text }: { readonly text: string }): ReactNode {
+  return ansiSegments(text).map((run, index) =>
+    run.fg === undefined &&
+    run.bg === undefined &&
+    run.bold === undefined &&
+    run.dim === undefined &&
+    run.italic === undefined &&
+    run.underline === undefined ? (
+      run.text
+    ) : (
+      <span
+        className="log-ansi"
+        data-bg={run.bg}
+        data-bold={run.bold || undefined}
+        data-dim={run.dim || undefined}
+        data-fg={run.fg}
+        data-italic={run.italic || undefined}
+        data-underline={run.underline || undefined}
+        key={index}
+      >
+        {run.text}
+      </span>
+    )
+  );
 }
 
 /** How near the foot, in pixels, still counts as reading the newest line. */
@@ -43,14 +78,17 @@ const FOOT_SLACK = 8;
  * host marks takes its tone. The words can be selected and copied. With
  * `follow`, a new line scrolls into view while the reader is at the foot.
  * It is a `log` region, so a screen reader hears new lines without being
- * moved; it takes the focus so the keys scroll it.
+ * moved; it takes the focus so the keys scroll it. With `ansi`, a line's
+ * SGR colours and weights are drawn in the theme's text tones, its other
+ * escape sequences dropped.
  */
 export function LogWell({
   lines,
   label,
   sources = [],
   follow = true,
-  empty
+  empty,
+  ansi = false
 }: LogWellProps): ReactElement {
   const well = useRef<HTMLDivElement>(null);
   const atFoot = useRef(true);
@@ -106,7 +144,9 @@ export function LogWell({
                 |
               </span>
             ) : null}
-            <span className="log-text">{line.text}</span>
+            <span className="log-text">
+              {ansi && typeof line.text === 'string' ? <AnsiText text={line.text} /> : line.text}
+            </span>
           </div>
         );
       })}

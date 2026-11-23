@@ -1638,7 +1638,10 @@ const BASE_TOKEN_NAMES = [
   '--terminal-box-height',
   '--product-mark-colour',
   '--product-mark-fill',
-  '--product-mark-stroke'
+  '--product-mark-stroke',
+  '--timeline-start',
+  '--timeline-end',
+  '--timeline-at'
 ] as const;
 
 /** Every token name uiok defines: the fixed tokens, those a theme sets, and the stylesheet's own. */

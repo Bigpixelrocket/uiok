@@ -20,13 +20,18 @@ import { LogWell } from '@bigpixelrocket/uiok/log';
 
 ## `LogWell` (`LogWellProps`)
 
-| Prop      | Type                 | Default | Purpose                                                                                       |
-| --------- | -------------------- | ------- | --------------------------------------------------------------------------------------------- |
-| `lines`   | `readonly LogLine[]` |         | `{ key, source?, text, tone? }`: what wrote it, its words, and a tone the host marks          |
-| `label`   | `string`             |         | The log's accessible name                                                                     |
-| `sources` | `readonly string[]`  | `[]`    | The sources in the order their colours go, so each keeps its colour; any other takes the next |
-| `follow`  | `boolean`            | `true`  | Keeps the newest line in view while the reader is at the foot; a reader scrolled up stays put |
-| `empty`   | `string`             |         | The words shown while the log has no line                                                     |
+| Prop      | Type                 | Default | Purpose                                                                                                |
+| --------- | -------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| `lines`   | `readonly LogLine[]` |         | `{ key, source?, text, tone? }`: what wrote it, its words, and a tone the host marks                   |
+| `label`   | `string`             |         | The log's accessible name                                                                              |
+| `sources` | `readonly string[]`  | `[]`    | The sources in the order their colours go, so each keeps its colour; any other takes the next          |
+| `follow`  | `boolean`            | `true`  | Keeps the newest line in view while the reader is at the foot; a reader scrolled up stays put          |
+| `empty`   | `string`             |         | The words shown while the log has no line                                                              |
+| `ansi`    | `boolean`            | `false` | Reads the SGR escape sequences in each string line: colours, backgrounds, bold, dim, italic, underline |
+
+### ANSI colour (`ansi`)
+
+With `ansi`, a line whose text is a string is read by `ansiSegments(text)` into runs (`AnsiSegment`: `text`, `fg`, `bg` as `AnsiColour` names, `bold`, `dim`, `italic`, `underline`). The eight colours and their bright forms map to the theme's text tones, never the terminal's palette, which is tuned for the terminal's own ground: red `--danger-text`, green `--success-text`, yellow `--warning-text`, blue `--accent-text`, magenta and cyan the `--log-source-2` and `--log-source-5` hues, black `--text-dim`, white `--text`. A background draws a filled run, a badge, in the tone's solid fill and its on-colour (`--danger` with `--on-danger`, blue, magenta, and cyan on `--accent`). Inverse swaps them; 256-colour and true-colour codes are skipped whole; every other escape sequence (cursor moves, titles) is dropped. The text is never read as markup. Runs are `.log-ansi` spans with `data-fg`, `data-bg`, `data-bold`, `data-dim`, `data-italic`, and `data-underline`. Without `ansi`, a string is drawn as written.
 
 A line's `tone` is `danger` (a failure, in `--danger-text`), `warning` (`--warning-text`), or `dim` (one of the log's own notes, `--text-dim`). With no source on any line the words stand alone, with no prefix column.
 

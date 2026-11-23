@@ -28,6 +28,7 @@ import {
   WellColumn,
   type RowCursor
 } from './Listing.js';
+import { TimelineCell, TimelineScale } from './Timeline.js';
 
 const styles = readStylesheet('src/styles.css');
 
@@ -704,5 +705,80 @@ describe('the listing’s redesign additions', () => {
       'var(--danger)'
     );
     document.body.innerHTML = '';
+  });
+});
+
+describe('row states and cell kinds as props', () => {
+  it('draws selected, marked, changed, removed, and emphasised rows, and action, hover, and missing cells', () => {
+    const { container } = render(
+      <>
+        <Row name="a" rowKey="a" selected>
+          <Cell kind="action">Open</Cell>
+          <Cell kind="hover">x</Cell>
+          <Cell missing>NULL</Cell>
+        </Row>
+        <Row marked name="b" rowKey="b" />
+        <Row change="changed" name="c" rowKey="c" />
+        <Row change="removed" emphasis name="d" rowKey="d" />
+      </>
+    );
+    const [a, b, c, d] = container.querySelectorAll('.row');
+
+    expect(a?.className).toBe('row selected');
+    expect(a?.getAttribute('aria-selected')).toBe('true');
+    expect([...(a?.querySelectorAll('.row-meta') ?? [])].map((cell) => cell.className)).toEqual([
+      'row-meta pane-action-cell',
+      'row-meta pane-hover-cell',
+      'row-meta value-null'
+    ]);
+    expect(b?.className).toBe('row marked');
+    expect(c?.className).toBe('row row-changed');
+    expect(d?.className).toBe('row row-removed row-emphasis');
+  });
+});
+
+describe('TimelineCell', () => {
+  it('places its bar and wait on the shared scale, named by its label', () => {
+    render(
+      <>
+        <TimelineCell
+          emphasis
+          end={2.7}
+          label="began at 1.9 s, took 0.8 s"
+          max={3}
+          start={1.9}
+          waited
+        />
+        <TimelineScale
+          max={3}
+          ticks={[
+            { at: 0, label: '0 s' },
+            { at: 1.5, label: '1.5 s' }
+          ]}
+        />
+      </>
+    );
+    const cell = screen.getByRole('cell', { name: 'began at 1.9 s, took 0.8 s' });
+
+    expect(cell.className).toBe('row-meta timeline-cell');
+    expect(cell.dataset.emphasis).toBe('true');
+    expect(cell.style.getPropertyValue('--timeline-start')).toMatch(/^63\.33/);
+    expect(cell.style.getPropertyValue('--timeline-end')).toBe('90%');
+    expect(cell.querySelector('.timeline-wait')).not.toBe(null);
+    expect(cell.dataset.tooltip).toBe('began at 1.9 s, took 0.8 s');
+    const ticks = [...document.querySelectorAll('.timeline-tick')] as HTMLElement[];
+    expect(ticks.map((tick) => tick.style.getPropertyValue('--timeline-at'))).toEqual([
+      '0%',
+      '50%'
+    ]);
+  });
+
+  it('clamps a span to its scale and never ends before it starts', () => {
+    render(<TimelineCell end={1} label="late" max={4} start={5} />);
+    const cell = screen.getByRole('cell', { name: 'late' });
+
+    expect(cell.style.getPropertyValue('--timeline-start')).toBe('100%');
+    expect(cell.style.getPropertyValue('--timeline-end')).toBe('100%');
+    expect(cell.querySelector('.timeline-wait')).toBe(null);
   });
 });

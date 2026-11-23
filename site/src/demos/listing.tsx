@@ -45,6 +45,8 @@ import {
   RowCursorContext,
   StateMark,
   Strip,
+  TimelineCell,
+  TimelineScale,
   WellColumn,
   type SortDirection,
   type StateTone
@@ -78,6 +80,69 @@ const PROJECTS = ['site', 'api', 'infrastructure-and-deployment-scripts'];
 
 /** Icon, name, version, and the strip link's column. */
 const STRIP_GRID = `var(--icon-column) minmax(0, 1fr) ${column(10)} ${column(12)}`;
+
+/** A start's steps: the slowest path (db, migrate, web) and two that waited less. */
+const TIMING: readonly {
+  readonly key: string;
+  readonly name: string;
+  readonly level: number;
+  readonly start: number;
+  readonly took: number;
+  readonly slowest: boolean;
+  readonly tone: StateTone;
+  readonly word: string;
+}[] = [
+  {
+    key: 'web',
+    name: 'web',
+    level: 0,
+    start: 1.9,
+    took: 0.8,
+    slowest: true,
+    tone: 'ready',
+    word: 'ready'
+  },
+  {
+    key: 'db',
+    name: 'db',
+    level: 1,
+    start: 0,
+    took: 1.2,
+    slowest: true,
+    tone: 'ready',
+    word: 'ready'
+  },
+  {
+    key: 'migrate',
+    name: 'migrate',
+    level: 1,
+    start: 1.2,
+    took: 0.7,
+    slowest: true,
+    tone: 'muted',
+    word: 'once'
+  },
+  {
+    key: 'queue',
+    name: 'queue',
+    level: 0,
+    start: 1.9,
+    took: 0.3,
+    slowest: false,
+    tone: 'ready',
+    word: 'running'
+  },
+  {
+    key: 'scheduler',
+    name: 'scheduler',
+    level: 0,
+    start: 1.2,
+    took: 0.3,
+    slowest: false,
+    tone: 'ready',
+    word: 'running'
+  }
+];
 
 const RUNTIMES = [
   { key: 'node', name: 'Node.js', version: '24.11.0' },
@@ -538,19 +603,19 @@ export function ListingDemo() {
               <Cell>
                 <StateMark tip="Seen by the server at start" tone="info" word="note" />
               </Cell>
-              <Cell className="value-null">NULL</Cell>
+              <Cell missing>NULL</Cell>
             </Row>
-            <Row className="row-changed" level={1} name="status" rowKey="t1">
+            <Row change="changed" level={1} name="status" rowKey="t1">
               <Cell>
                 <StateMark tone="warning" word="changed" />
               </Cell>
               <Cell>'new'</Cell>
             </Row>
-            <Row className="row-removed" level={1} name="legacy_id" rowKey="t2">
+            <Row change="removed" level={1} name="legacy_id" rowKey="t2">
               <Cell>
                 <StateMark tone="danger" word="removed" />
               </Cell>
-              <Cell className="value-null">NULL</Cell>
+              <Cell missing>NULL</Cell>
             </Row>
             <Row className="drop-target" level={1} name="created_at" rowKey="t3">
               <Cell>
@@ -560,6 +625,54 @@ export function ListingDemo() {
             </Row>
           </Listing>
           <PaneMessage tone="warning">The table is large; adding a column rewrites it.</PaneMessage>
+        </div>
+      </div>
+
+      <h3 className="demo-subhead">Startup timing on a shared scale</h3>
+      <div className="pane demo-pane">
+        <div className="pane-list">
+          <Listing
+            columns={[
+              { label: 'State' },
+              {
+                label: 'Timeline',
+                control: (
+                  <TimelineScale
+                    max={3.5}
+                    ticks={[0, 1, 2, 3].map((at) => ({ at, label: `${at} s` }))}
+                  />
+                )
+              },
+              { label: 'Start', align: 'right' }
+            ]}
+            grid={`var(--icon-column) minmax(0, 1fr) ${column(10)} minmax(24ch, 2fr) ${column(14)}`}
+            title="Command"
+          >
+            {TIMING.map((step) => (
+              <Row
+                emphasis={step.slowest}
+                key={step.key}
+                level={step.level}
+                name={step.name}
+                rowKey={step.key}
+              >
+                <Cell>
+                  <StateMark tone={step.tone} word={step.word} />
+                </Cell>
+                <TimelineCell
+                  emphasis={step.slowest}
+                  end={step.start + step.took}
+                  label={`began at ${step.start} s, took ${step.took} s`}
+                  max={3.5}
+                  start={step.start}
+                  waited={step.start > 0}
+                />
+                <Cell align="right">
+                  @{step.start.toFixed(1)} s +{step.took.toFixed(1)} s
+                </Cell>
+              </Row>
+            ))}
+          </Listing>
         </div>
       </div>
 

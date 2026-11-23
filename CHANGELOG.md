@@ -20,6 +20,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `PageTab`'s `count`, drawn after the tab's name and read in its accessible name.
 - `TextLink`'s `disabled` and `label` (an accessible name of its own).
 - `SettingsPage`'s `chip` takes a `SettingsChip` (`text`, `icon`, `tip`) as well as a string, and the `settings` label `pageWithChip`, which names a sidebar row and its chip apart ("Updates, Update to 1.4.4").
+- `TimelineCell` and `TimelineScale` (`@bigpixelrocket/uiok/listing`): a row's span on a shared scale (a wait, then a bar, in the solid accent on the path that matters) and the ticks over its column; `Row`'s `emphasis` puts a row's name in the strong weight.
+- `Row`'s `selected`, `marked`, and `change` (`changed`, `removed`), and `Cell`'s `kind` (`action`, `hover`) and `missing`, so a row's states and a cell's kinds need no class name.
+- `LogWell`'s `ansi`, which draws each line's SGR colours, backgrounds, and weights in the theme's text tones and drops every other escape sequence, over `ansiSegments`, `ANSI_COLOURS`, `AnsiColour`, and `AnsiSegment` (`@bigpixelrocket/uiok/log`).
 
 ### Changed
 

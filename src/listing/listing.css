@@ -2517,3 +2517,69 @@ button.crumb-label.crumb-siblings > svg {
 :where(:root[data-window-inactive] .listing-root) .pane.active::before {
   border-color: var(--border-strong);
 }
+
+/* A row that stands out from its peers (Row's `emphasis`): its name in the
+   strong weight. */
+:where(.listing-root) .row.row-emphasis > .row-name {
+  font-weight: var(--font-weight-strong);
+}
+
+/* A row's span on a shared scale (TimelineCell): inside the cell's content
+   box (after the column gap), a hairline for the wait from the scale's
+   start to --timeline-start, then a bar to --timeline-end, the solid
+   accent on the path that matters and the accent's line otherwise. Every
+   row's cell fills the same column, so their bars share one scale. */
+:where(.listing-root) .row-meta.timeline-cell {
+  display: flex;
+  align-self: stretch;
+  align-items: center;
+}
+
+.timeline-track {
+  position: relative;
+  flex: 1;
+  align-self: stretch;
+}
+
+.timeline-wait,
+.timeline-bar {
+  position: absolute;
+  top: 50%;
+}
+
+.timeline-wait {
+  inset-inline-start: 0;
+  inline-size: var(--timeline-start);
+  height: var(--line);
+  background: var(--border-strong);
+}
+
+.timeline-bar {
+  inset-inline-start: var(--timeline-start);
+  inline-size: max(var(--line-strong), calc(var(--timeline-end) - var(--timeline-start)));
+  height: var(--space-4);
+  margin-top: calc(-1 * var(--space-2));
+  border-radius: var(--radius-xs);
+  background: var(--accent-line);
+}
+
+.timeline-cell[data-emphasis] .timeline-bar {
+  background: var(--accent);
+}
+
+/* The ticks over the column (TimelineScale), each tick's words starting at
+   its place on the same scale, in the strip's quiet tone. */
+.timeline-scale {
+  position: relative;
+  flex: 1;
+  align-self: stretch;
+  color: var(--text-dim);
+}
+
+.timeline-tick {
+  position: absolute;
+  top: 50%;
+  inset-inline-start: var(--timeline-at);
+  transform: translateY(-50%);
+  white-space: nowrap;
+}

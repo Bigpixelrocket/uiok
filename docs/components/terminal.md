@@ -78,6 +78,8 @@ const console = useRef<TerminalHandle>(null);
 <TerminalBox ariaLabel="Console" fill onInput={send} ref={shell} />;
 ```
 
+For a terminal well under a strip (a combined log's terminal in a page's lower half), put a filling box in a `WellColumn`, which lays its child out as a flex column: `<WellColumn label="Output" strip={…}><TerminalBox ariaLabel="Output" fill /></WellColumn>`.
+
 It draws `.terminal-box` (`.fill`), with `--terminal-box-height` set from `height`, padding the terminal by the 8px every host adds, so its text starts 12px in.
 
 ## Scrollback

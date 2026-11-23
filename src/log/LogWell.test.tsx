@@ -48,4 +48,23 @@ describe('LogWell', () => {
     rerender(<LogWell empty="No output yet." label="Output" lines={[]} />);
     expect(screen.getByText('No output yet.')).toBeTruthy();
   });
+
+  it("draws a line's SGR colours with ansi, and leaves the escapes as written without it", () => {
+    const text = '\u001b[44;97m INFO \u001b[0m Server \u001b[32mready\u001b[0m';
+    const { container, rerender } = render(
+      <LogWell ansi label="Combined log" lines={[{ key: 1, source: 'web', text }]} />
+    );
+    const words = container.querySelector('.log-text') as HTMLElement;
+    const runs = [...words.querySelectorAll('.log-ansi')] as HTMLElement[];
+
+    expect(words.textContent).toBe(' INFO  Server ready');
+    expect(runs.map((run) => [run.textContent, run.dataset.fg, run.dataset.bg])).toEqual([
+      [' INFO ', 'white', 'blue'],
+      ['ready', 'green', undefined]
+    ]);
+
+    rerender(<LogWell label="Combined log" lines={[{ key: 1, source: 'web', text }]} />);
+    expect(container.querySelector('.log-ansi')).toBe(null);
+    expect(container.querySelector('.log-text')?.textContent).toBe(text);
+  });
 });

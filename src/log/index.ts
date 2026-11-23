@@ -5,6 +5,7 @@
  * `log.css` in `@bigpixelrocket/uiok/styles.css`.
  */
 
+export { ANSI_COLOURS, ansiSegments, type AnsiColour, type AnsiSegment } from './Ansi.logic.js';
 export { LogWell, type LogLine, type LogWellProps } from './LogWell.js';
 export {
   LOG_SOURCE_COLOURS,
