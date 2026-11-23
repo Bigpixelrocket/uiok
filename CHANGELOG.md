@@ -6,6 +6,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-11-23
+
+### Added
+
+- `SectionedDialog`, `SectionedDialogProps`, and `DialogSection` (`@bigpixelrocket/uiok/dialog`): a form too long for one view, in a fixed frame with a sidebar of its sections beside a column that scrolls, each section headed by its name; the sidebar marks the section in view as the column scrolls, a row scrolls the column to its section, and a row run from the keyboard moves the focus to the section's first control. The `dialog` label `sections` names the sidebar.
+- `FactList`, `Fact`, `FactColumns`, and `FactValueTone` (`@bigpixelrocket/uiok/surface`): a headed list of facts set straight on a page, the names in a column of their own and each value beside its name, a long value wrapping whole as a block, a printed one keeping its lines; lists side by side in as many columns as fit.
+- `Code` (`@bigpixelrocket/uiok/text`): a command, a path, or a name inside a sentence, in the code face on a faint track, wrapping anywhere.
+- `ShortcutIndex`, `ShortcutGroup`, and `ShortcutRow` (`@bigpixelrocket/uiok/keychord`): every key a window answers, in groups of verbs whose chords stand in one column across the groups, with a changed chord's accent caps, a verb with no chord, and a dimmed verb.
+- `Row`'s `radio` (`RowRadio`): a row that is one choice of several, led by a radio named by the row's name, its cursor key reached through a `verb`.
+- `PaneBox`'s `bell`: the visual bell, which shoves the cursor row sideways for one beat each time its count rises, or flashes the selection fill under reduced motion.
+- `TextLink`'s `tone` (`danger`): a link to something failing (a log file whose writes fail) in the danger tone, its `tip` (the reason) its accessible description too.
+- `KeyChords` (`@bigpixelrocket/uiok/keychord`): several chords for one verb, parted by the new `keys` label `or`, drawn and read between them, so two chords never run together; `ShortcutRow` draws its chords with it.
+- `usePaneKeys`'s `tabOrder` and `nextTabStop`'s `order` (`TabOrder`): `listing` walks each pane's listing first, then its other controls, then the other pane's listing, over the pure rule `listingFirstStop` (`WalkPane`).
+- `Row`'s `onContextMenu(event, rowKey)`: a secondary click for the row's menu. The row moves the pane's cursor to itself before calling it, and cancels the browser's own menu. From the keyboard, the Menu key or Shift-F10 on a pane's home (`PaneList` with `home`) runs the cursor row's, its event placed under the row.
+- `RegionHandlers`' `onContextMenu`, so every part that takes the region handlers (`PaneBox`, `PaneList`, `SpacePanel`, `WindowFrame`'s `group`, `Dock`, `TreePane`, `TreeList`) takes a secondary click for its own menu. The innermost menu wins: a row's, then its pane's, then the region's around it, each running only for a click nothing inside cancelled, so one click never opens two menus. A secondary click in a text field is never claimed, so the field keeps the browser's own Cut, Copy, and Paste menu.
+- `Menu`'s submenus (`MenuSubmenuEntry`, `{ kind: 'submenu', id, label, entries }`), one level deep (`MenuLeafEntry`): an item that opens a second menu beside it, on its inline-end side or the other with no room there (`placeMenu`'s `{ beside, rtl }`, `MenuFrom`). → (← right to left), Return, or Space opens it with the keys on its first item, ← goes back to its item, Escape closes it alone and Tab the whole menu; resting on or pressing its item opens it for the pointer, which may cross other items on its way in. Both menus read in the direction of what opened them (`Menu`'s new `dir`, else its anchor's or its place's). The item is a `menuitem` with `aria-haspopup="menu"` and `aria-expanded`, the submenu a `menu` labelled by it.
+- `PaletteOption`'s `checked`: a row picked with others (the scripts a project includes), an `option` with `aria-checked` and the menu's check mark in its icon column while ticked. A press, or Return on the cursor row, toggles it through `onPick`; Space stays in the query.
+- `SideBySide` (`@bigpixelrocket/uiok/frame`): two of a page's listings or sections side by side while the room the pair itself is given is `from` pixels wide or more, stacked in less, each a group named by its label. It measures its own width (`data-layout`), so a narrowed pane stacks them in a wide window, and holds no cursor: the page's one cursor walks the first part's rows, then the second's.
+- `FilterChips` keeps to one line: chips that do not fit scroll sideways under the inline edge fade (`.scroll-fade-x`) with no scrollbar drawn, a mouse's vertical wheel scrolls the row sideways while it can move that way (left to the page otherwise; a trackpad's sideways swipe stays the browser's), and a chip the keys reach scrolls into view. Nothing scrolls smoothly.
+- `BUDGETED_TERMINALS_PER_PAGE` (`@bigpixelrocket/uiok/terminal`): how many terminals one page's shared engine memory is budgeted for (17), so an app can test how many it opens against it; past it, terminals that fill their histories to the ceiling can exhaust the shared memory.
+
+### Changed
+
+- `menuKeyAction(event, rtl)` maps → and ← (`open`, `back`), and its `close` says whether it closes one level (Escape, `all: false`) or the whole menu (Tab, `all: true`). A `Menu` now holds → and ← too, which no longer reach its owner while it is open.
+- `KeyLabels` takes `or` ("or" in English). An app that builds a whole `keys` group of its own, not an override through `UiokProvider`, adds it.
+- `DialogLabels` takes `sections` ("Sections" in English), the name of a `SectionedDialog`'s sidebar. An app that builds a whole `dialog` group of its own adds it.
+- `PaneMessage` draws its words in one `.pane-message-text`, so inline code flows with them.
+- `PaneMessage` and `PageNote` drawn outside every listing scope carry the scope themselves (a `.listing-root` around them), as `Listing` does, so a note after a listing keeps its look anywhere.
+
+### Fixed
+
+- Tab from a pane's listing (`usePaneKeys`) no longer stops on a control the stylesheet hides, which refused the focus and held Tab in place, nor on a hidden input: the walk goes on past such a stop in the same direction, and ends on the pane's home if none takes the focus.
+- `isTextEditingTarget` resolves inherited editability as the browser does (`isContentEditable`, else the nearest `contenteditable` that is not `inherit`), so editable content inside an editable parent counts as a text field and keeps its native menu and keys.
+
 ## [0.5.0] - 2026-11-23
 
 ### Added
@@ -271,7 +305,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.2.3...v0.3.0

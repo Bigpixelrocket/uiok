@@ -423,6 +423,108 @@
   font-weight: var(--font-weight-strong);
 }
 
+/* ---- Sectioned dialog (SectionedDialog) ----
+
+   A form too long for one view: a sidebar of its sections beside a column
+   that scrolls, both reaching the frame's edges from the title strip's rule
+   down to the legend's hairline. A fixed frame, so the dialog keeps its
+   size as fields come and go, that fits the smallest window. */
+.dialog.sectioned-dialog {
+  width: min(860px, 100%);
+  height: min(640px, 100%);
+}
+
+.sectioned-dialog-body {
+  display: grid;
+  grid-template-columns: minmax(140px, 170px) minmax(0, 1fr);
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: calc(-1 * var(--space-6));
+}
+
+/* The sidebar, a shade over the dialog's surface; the hairline beside it
+   is the column's, since its own edge fade would mask one of its own. */
+.sectioned-dialog-nav {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  overflow-y: auto;
+  padding: var(--space-4);
+  background: var(--scrim-strong);
+}
+
+/* A section's row: the Settings sidebar's row, its hover and press the
+   base sheet's quiet recipes. */
+.sectioned-dialog-nav-row {
+  display: block;
+  width: 100%;
+  min-height: var(--bar-height);
+  margin: 0;
+  padding: calc((var(--bar-height) - var(--line-height-compact)) / 2) var(--space-4);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-md);
+  background: none;
+  color: var(--text-dim);
+  cursor: default;
+  font: var(--font-weight-regular) var(--font-size-small) / var(--line-height-compact)
+    var(--font-ui);
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sectioned-dialog-nav-row:focus-visible {
+  outline-offset: var(--focus-offset-inset);
+}
+
+/* The section in view: the current item's tint and ring, its words full. */
+.sectioned-dialog-nav-row[aria-current='location'] {
+  background: var(--current-bg);
+  box-shadow: inset 0 0 0 var(--line) var(--current-ring);
+  color: var(--text);
+}
+
+/* The column: a failed save's notice, which never scrolls, over the
+   sections, which do, fading at an edge while more lies past it. */
+.sectioned-dialog-column {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  border-inline-start: var(--line) solid var(--border);
+}
+
+.sectioned-dialog-column > .notice {
+  flex: none;
+  padding: var(--space-4) var(--space-8) 0;
+}
+
+.sectioned-dialog-sections {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-6) var(--space-8) var(--space-8);
+}
+
+/* Each section a group under its overline, a hairline between them. */
+.dialog-section {
+  padding: var(--space-8) 0;
+}
+
+.dialog-section:first-child {
+  padding-top: 0;
+}
+
+.dialog-section + .dialog-section {
+  border-top: var(--line) solid var(--border);
+}
+
+.dialog-section > .dialog-section-title {
+  margin: 0 0 var(--space-6);
+}
+
 /* ---- Fact list (DialogFacts) ----
 
    A desktop property list: one line per row, the labels in a leading

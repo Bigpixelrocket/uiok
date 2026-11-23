@@ -5,7 +5,7 @@ import { CircleAlert, Server } from 'lucide-react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { Switch } from '../field/Switch.js';
-import { RowCursorContext, type RowCursor } from '../listing/Listing.js';
+import { Listing, Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
 import { AppRoot, PageSlot, SpacePanel } from './AppRoot.js';
 import { Dock, dockHeight, DockLog, DockLogEntry } from './Dock.js';
 import { PageNote, SectionHead, ShowSidebarButton, Toolbar, ToolbarGap } from './PageParts.js';
@@ -76,6 +76,49 @@ describe('WindowFrame', () => {
     expect(frame.querySelector(':scope > .window-frame-band')).not.toBeNull();
     fireEvent.drop(group);
     expect(onDrop).toHaveBeenCalledOnce();
+  });
+});
+
+describe("the frame's secondary clicks", () => {
+  it('opens the innermost menu of a row, its pane, the group, and the frame root, one a click', () => {
+    const opened: string[] = [];
+    const menu = (name: string) => () => opened.push(name);
+    const { container } = render(
+      <AppRoot>
+        <SpacePanel onContextMenu={menu('root')}>
+          <WindowFrame
+            brand="b"
+            group={{ onContextMenu: menu('group') }}
+            main={
+              <PaneBox label="Files" onContextMenu={menu('pane')}>
+                <Listing columns={[]} grid="20px 1fr" title="Files">
+                  <Row name="a" onContextMenu={menu('row')} rowKey="a" />
+                  <Row name="b" rowKey="b" />
+                </Listing>
+              </PaneBox>
+            }
+            sidebar={<aside>tree</aside>}
+            sidebarWidth={240}
+          />
+        </SpacePanel>
+      </AppRoot>
+    );
+    const click = (target: Element): boolean => {
+      const event = new MouseEvent('contextmenu', { bubbles: true, cancelable: true });
+      act(() => target.dispatchEvent(event));
+      return event.defaultPrevented;
+    };
+    const [a, b] = screen.getAllByRole('row').slice(1) as [HTMLElement, HTMLElement];
+
+    expect(click(a)).toBe(true);
+    expect(opened).toEqual(['row']);
+    click(b);
+    expect(opened).toEqual(['row', 'pane']);
+    click(screen.getByText('tree'));
+    expect(opened).toEqual(['row', 'pane', 'group']);
+    // The band is outside the group: the frame's root takes it.
+    click(container.querySelector('.window-frame-band') as HTMLElement);
+    expect(opened).toEqual(['row', 'pane', 'group', 'root']);
   });
 });
 

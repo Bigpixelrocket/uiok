@@ -5,8 +5,11 @@
  * field (the chip, ←, or Backspace in an empty field steps back), and notes
  * can stand under the list. After its label a row says a sentence, a path
  * (giving way at its start), or a command line (in the code face). A tag can
- * stand at the field's end and a key legend under everything. The shell uses
- * it to find a page; the palette page uses it as its demo.
+ * stand at the field's end and a key legend under everything. A level can
+ * list checkable commands, picked together: Return or a click ticks one and
+ * leaves the palette open, and a plain command in the level runs with the
+ * ticked ones. The shell uses it to find a page; the palette page uses it
+ * as its demo.
  */
 
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
@@ -49,7 +52,13 @@ export interface Command {
   readonly level?: readonly Command[];
   /** Notes under the list while the palette stands in this command's level. */
   readonly notes?: readonly PaletteNote[];
-  readonly run?: () => void;
+  /**
+   * A command picked with others (a script to include), ticked to start
+   * with when true: Return or a click ticks it and the palette stays open.
+   */
+  readonly checked?: boolean;
+  /** Runs the command, given the ids of the commands ticked in its level. */
+  readonly run?: (ticked: ReadonlySet<string>) => void;
 }
 
 /** A line under a palette's list: a plain note, or a failure in the danger tone. */
@@ -108,6 +117,15 @@ export function CommandPalette({
   const listId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const rows = rowsFor(commands, query);
+  // The checkable commands ticked, every level's, starting from their own `checked`.
+  const [ticked, setTicked] = useState<ReadonlySet<string>>(
+    () =>
+      new Set(
+        [...firstLevel, ...firstLevel.flatMap((command) => command.level ?? [])]
+          .filter((command) => command.checked === true)
+          .map((command) => command.id)
+      )
+  );
 
   // The palette takes the focus while open and hands it back to whatever held it before, so
   // Escape or a press outside does not drop it on the page's body. A command that opens another
@@ -139,8 +157,16 @@ export function CommandPalette({
       enter(command);
       return;
     }
+    if (command.checked !== undefined) {
+      setTicked((now) => {
+        const next = new Set(now);
+        if (!next.delete(command.id)) next.add(command.id);
+        return next;
+      });
+      return;
+    }
     onClose();
-    command.run?.();
+    command.run?.(new Set(commands.filter((each) => ticked.has(each.id)).map((each) => each.id)));
   };
 
   return (
@@ -220,6 +246,7 @@ export function CommandPalette({
                   ? 'command'
                   : 'sentence'
             }
+            checked={row.command.checked === undefined ? undefined : ticked.has(row.command.id)}
             current={row.command.current ?? null}
             cursor={index === cursor}
             id={`${listId}-${index}`}

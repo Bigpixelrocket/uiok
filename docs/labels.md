@@ -59,6 +59,7 @@ Components read labels with `useLabels()`. Code outside React that needs the sam
 | `keyGlyphs`      | `Partial<Record<string, string>>` | `Enter` ↩, `Backspace` ⌫, `Delete` ⌦, `Escape` ⎋, arrows, `PageUp` ⇞, and so on                                                       |
 | `spaceCap`       | `string`                          | `space`                                                                                                                               |
 | `escapeCap`      | `string`                          | `esc`                                                                                                                                 |
+| `or`             | `string`                          | `or`, between two chords that run one verb (`KeyChords`)                                                                              |
 
 A key missing from `names` is spoken as its capital ("N"); one missing from `keyGlyphs` is written as its capital.
 
@@ -112,8 +113,9 @@ Counts arrive as numbers, so the app formats them for its locale and picks the p
 | `tryAgain`        | `string`                    | `Try Again`                 |
 | `runInBackground` | `string`                    | `Run in Background`         |
 | `typeName`        | `string`                    | `Type the name to confirm.` |
+| `sections`        | `string`                    | `Sections`                  |
 
-`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's item list (one without a group label), given how many it holds. `moreItems` is that list's last row when it stops short, given how many items it leaves out (`DialogItems`). `itemCount` is the count a screen reader hears after the lead and before the names. `ok`, `stop`, `tryAgain`, and `runInBackground` are `ProgressDialog`'s verbs, `close` the leave verb of an alert that asks nothing, and `typeName` the note under `TypedNameDialog`'s field.
+`cancel` is a confirmation's leave verb unless the caller names another; `filterLeaveLabel` picks `clear` while a filter holds text. `affectedItems` names a confirmation's item list (one without a group label), given how many it holds. `moreItems` is that list's last row when it stops short, given how many items it leaves out (`DialogItems`). `itemCount` is the count a screen reader hears after the lead and before the names. `ok`, `stop`, `tryAgain`, and `runInBackground` are `ProgressDialog`'s verbs, `close` the leave verb of an alert that asks nothing, `typeName` the note under `TypedNameDialog`'s field, and `sections` the accessible name of `SectionedDialog`'s sidebar.
 
 ### `legend`
 

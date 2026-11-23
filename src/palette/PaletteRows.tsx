@@ -59,6 +59,13 @@ export interface PaletteOptionProps {
    * name: a `CurrentDot` after the trail.
    */
   readonly current?: string | null;
+  /**
+   * The row is one of several that can be picked together (the scripts a
+   * project includes): true draws the check mark in the icon column, in
+   * place of `mark`, and false leaves it empty (`aria-checked`). A press
+   * calls `onPick`, which toggles it; absent, the row is a plain option.
+   */
+  readonly checked?: boolean;
   /** The keyboard's cursor stands on it: the cursor fill and bar. */
   readonly cursor?: boolean;
   /**
@@ -88,7 +95,9 @@ export interface PaletteOptionProps {
  * whole in its tooltip), and a trailing column (a version, a count, a
  * chord) with the current item's dot. The cursor row wears the cursor fill
  * and bar, its quiet words in the tone made for that fill; a disabled row
- * is dimmed and never takes the cursor or a pick. The palette keeps the
+ * is dimmed and never takes the cursor or a pick. A `checked` row, one of
+ * several picked together, wears the check mark while it is ticked, as a
+ * menu's setting does. The palette keeps the
  * focus in its field, so a press here never takes it. Its name is `label`
  * or its words; the context, a trail in words, and what `current` means
  * are read after it as its description, unless `description` says it.
@@ -102,6 +111,7 @@ export function PaletteOption({
   contextKind = 'sentence',
   trail,
   current = null,
+  checked,
   cursor = false,
   disabled = false,
   description,
@@ -123,6 +133,7 @@ export function PaletteOption({
 
   return (
     <div
+      aria-checked={checked}
       aria-description={described === '' ? undefined : described}
       aria-disabled={disabled || undefined}
       aria-label={label ?? (typeof name === 'string' ? name : undefined)}
@@ -142,7 +153,7 @@ export function PaletteOption({
       role="option"
     >
       <span aria-hidden className="row-icon">
-        {mark}
+        {checked === undefined ? mark : null}
       </span>
       <span className="palette-text">
         <span className="row-name" id={nameId}>

@@ -126,12 +126,13 @@
    problem (.field-problem), a listing's refusal (.pane-message.danger),
    and a palette's failure note (.palette-failure) lead with the danger
    tone's CircleAlert, drawn as a mask in --danger, so they read as the same status line a notice is, words in --text. A host
-   that draws its own glyph first (an svg) gets no second one. */
+   that draws its own glyph first (an svg, inside a PaneMessage's words
+   too) gets no second one. */
 :is(
     .field-problem,
     :where(.listing-root) .pane-message.danger,
     :where(.palette-notes) .palette-failure
-  ):not(:has(> svg:first-child))::before {
+  ):not(:has(> svg:first-child, > .pane-message-text > svg:first-child))::before {
   content: '';
   flex: none;
   width: var(--icon-md);
@@ -330,4 +331,76 @@
   justify-self: end;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
+}
+
+/* ---- Fact list (FactList, Fact, FactColumns) ----
+
+   A headed list of facts set straight on a page: the overline, then one
+   name and value a line, the names in a column of their own (as wide as
+   the longest, up to two fifths of the list) in the dim interface face,
+   the values beside them in the code face in --text. A long value wraps
+   whole as a block beside its name, so its next lines start under its
+   first and never under the name; a printed value (`.printed`) keeps its
+   line breaks and spaces. The words are content, so they can be swept and
+   copied. */
+.fact-list {
+  min-width: 0;
+}
+
+.fact-list > .fact-list-title {
+  margin: 0 0 var(--space-4);
+}
+
+.fact-list-items {
+  display: grid;
+  grid-template-columns: fit-content(40%) minmax(0, 1fr);
+  column-gap: var(--space-8);
+  row-gap: var(--space-2);
+  margin: 0;
+  font: var(--font-size-small) / var(--line-height-compact) var(--font-ui);
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.fact-list-item {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: baseline;
+}
+
+.fact-list-name {
+  min-width: 0;
+  color: var(--text-dim);
+  overflow-wrap: break-word;
+}
+
+.fact-list-value {
+  min-width: 0;
+  margin: 0;
+  color: var(--text);
+  font-family: var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.fact-list-value.printed {
+  white-space: pre-wrap;
+}
+
+.fact-list-item[data-tone='danger'] > .fact-list-value {
+  color: var(--danger-text);
+}
+
+.fact-list-item[data-tone='warning'] > .fact-list-value {
+  color: var(--warning-text);
+}
+
+/* Lists side by side, as many columns of one width as fit (at least
+   26 characters of the interface face each), the lists of a row starting
+   on one line, a row's tallest setting where the next row starts. */
+.fact-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(26em, 100%), 1fr));
+  gap: var(--space-8) var(--space-12);
+  align-items: start;
 }

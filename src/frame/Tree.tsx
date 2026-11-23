@@ -18,7 +18,7 @@ import {
 
 import { ICON_MD } from '../icon/sizes.js';
 import { RowCursorContext } from '../listing/Listing.js';
-import type { RegionHandlers } from '../pane/Pane.js';
+import { regionHandlers, type RegionHandlers } from '../pane/Pane.js';
 import { InListingRowContext, InRowContext } from '../pane/PaneActions.js';
 import { cutTooltip } from '../tooltip/Tooltip.logic.js';
 import { useSharedRef } from './sharedRef.js';
@@ -74,7 +74,7 @@ export function TreePane({
       className={active ? 'pane tree-pane active' : 'pane tree-pane'}
       ref={ref}
       style={width === undefined ? undefined : { width }}
-      {...handlers}
+      {...regionHandlers(handlers)}
     >
       {children}
     </aside>
@@ -163,7 +163,7 @@ export function TreeList({ label, ref, children, ...handlers }: TreeListProps): 
       ref={attach}
       role="tree"
       tabIndex={-1}
-      {...handlers}
+      {...regionHandlers(handlers)}
     >
       <TreeIdContext.Provider value={scope}>{children}</TreeIdContext.Provider>
     </div>

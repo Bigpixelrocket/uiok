@@ -1,6 +1,7 @@
 /**
  * Menus: `Menu`, a menu of verbs or places opened at a point or dropped
- * from an element, with `placeMenu` and `menuKeyAction` under it; and for
+ * from an element, its items able to open one level of submenus, with
+ * `placeMenu` and `menuKeyAction` under it; and for
  * filtered menus: the fuzzy matcher (`matchQuery`), the rules every filtered
  * menu and palette shares (a refused keystroke, the cursor's moves, the trail
  * of levels opened in place), the visual bell's beat, and the menu look in
@@ -27,14 +28,17 @@ export {
   type MenuEntry,
   type MenuHeadingEntry,
   type MenuItemEntry,
+  type MenuLeafEntry,
   type MenuProps,
-  type MenuSeparatorEntry
+  type MenuSeparatorEntry,
+  type MenuSubmenuEntry
 } from './Menu.js';
 export {
   MENU_MARGIN,
   menuKeyAction,
   placeMenu,
   type MenuBox,
+  type MenuFrom,
   type MenuKeyAction,
   type MenuPoint,
   type MenuSize

@@ -1,12 +1,21 @@
 /**
  * Chords drawn as key caps, each named in words, one chord bare, and one cap
  * in each tone a host can set, and the parts of a chord: its modifiers alone,
- * and a chord with a modifier left out of the drawing.
+ * and a chord with a modifier left out of the drawing. Last, a shortcut
+ * index whose chord column lines up across its groups, with a changed
+ * chord, a verb with none, and one dimmed.
  */
 
 import { useLabels } from '@bigpixelrocket/uiok';
 import { chordSpoken, type Chord } from '@bigpixelrocket/uiok/keyboard';
-import { KeyChord, type KeyChordTone } from '@bigpixelrocket/uiok/keychord';
+import {
+  KeyChord,
+  ShortcutGroup,
+  ShortcutIndex,
+  KeyChords,
+  ShortcutRow,
+  type KeyChordTone
+} from '@bigpixelrocket/uiok/keychord';
 
 import { DemoState, DemoStates } from '../DemoStates';
 
@@ -88,6 +97,41 @@ export function KeyChordDemo() {
           </span>
         </DemoState>
       </DemoStates>
+      <h3 className="demo-subhead">Several chords for one verb</h3>
+      <p className="keycap">
+        <KeyChords
+          chords={[
+            { key: 'n', meta: true, shift: true },
+            { key: 'n', meta: true }
+          ]}
+        />
+      </p>
+      <h3 className="demo-subhead">Shortcut index</h3>
+      <ShortcutIndex label="Keyboard shortcuts">
+        <ShortcutGroup title="Services">
+          <ShortcutRow chords={[{ key: 'Enter', meta: true }]} verb="Start or Stop" />
+          <ShortcutRow chords={[{ key: 'Enter', meta: true, alt: true }]} verb="Restart" />
+          <ShortcutRow
+            changed
+            chords={[
+              { key: 'Backspace', meta: true, alt: true },
+              { key: 'Delete', meta: true }
+            ]}
+            verb="Delete the database under the cursor"
+          />
+        </ShortcutGroup>
+        <ShortcutGroup title="Window">
+          <ShortcutRow chords={[{ key: 'k', meta: true }]} verb="Commands" />
+          <ShortcutRow
+            chords={[]}
+            detail="Shows the console under the page"
+            none="No shortcut"
+            verb="Console"
+          />
+          <ShortcutRow chords={[{ key: 'Tab' }]} verb="Switch Pane" />
+          <ShortcutRow chords={[{ key: '.' }]} dim verb="Reveal in Finder" />
+        </ShortcutGroup>
+      </ShortcutIndex>
     </div>
   );
 }

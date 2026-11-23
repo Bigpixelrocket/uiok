@@ -2,11 +2,13 @@ import { ChevronDown, ChevronUp, Plus } from 'lucide-react';
 import {
   createContext,
   useContext,
+  useId,
   useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type MouseEvent,
   type ReactElement,
   type ReactNode,
   type RefObject
@@ -15,10 +17,12 @@ import {
 import { ICON_MD, ICON_SM, Spinner } from '../icon/index.js';
 import type { SortDirection } from '../labels/listing.js';
 import { useLabels } from '../labels/UiokProvider.js';
+import { unclaimedContextMenu } from '../pane/Pane.js';
 import {
   InListingRowContext,
   InRowContext,
   RowLinkLookContext,
+  type ControlVerb,
   type LinkLook
 } from '../pane/PaneActions.js';
 import { cutTooltip, describedTooltip } from '../tooltip/Tooltip.logic.js';
@@ -506,12 +510,37 @@ export const RowCursorContext = createContext<RowCursor>({
   point: () => undefined
 });
 
+/**
+ * The radio a row leads with in place of its mark (`Row`'s `radio`): the
+ * row is one choice of several, the one picked checked.
+ */
+export interface RowRadio {
+  /** Whether this row is the one picked. */
+  readonly checked: boolean;
+  /** Picks this row; a press on the radio, or the key the app maps to its `verb`. */
+  readonly onPick: () => void;
+  /** The radio group's name, the same on every row of the choice and unique in the window. */
+  readonly group: string;
+  /** Holds the choice where it is (a change under way). */
+  readonly disabled?: boolean;
+  /** What the cursor row's keys run it for (`data-verb`), so a key the app maps picks the cursor row. */
+  readonly verb?: ControlVerb;
+}
+
+/** A press on a row's radio picks it and never opens the row. */
+const keepRadioToSelf = (event: MouseEvent): void => event.stopPropagation();
+
 /** Props for {@link Row}. */
 export interface RowProps {
   /** Names the row to the cursor (`data-row-key`); unique in its pane. */
   readonly rowKey: string;
   /** The icon before the name, decorative. */
   readonly mark?: ReactNode;
+  /**
+   * Leads the row with a radio in the mark's place: the row is one choice
+   * of several (the database a server uses), named by the row's name.
+   */
+  readonly radio?: RowRadio;
   readonly name: ReactNode;
   /** The name cell's own class, beside `row-name`. */
   readonly nameClass?: string;
@@ -549,6 +578,15 @@ export interface RowProps {
   /** Opens the row's item on a click anywhere but its controls. */
   readonly onOpen?: () => void;
   /**
+   * A secondary click (the right button, a Control-click, the menu key) on
+   * the row, with the row's key, for the row's menu: open it at
+   * `event.clientX` and `event.clientY`. The row moves the pane's cursor to
+   * itself first, as a file manager does, so the menu acts on the cursor row,
+   * and cancels the browser's own menu; a cancelled event is one the
+   * `PaneBox` around it leaves alone, so one click never opens both menus.
+   */
+  readonly onContextMenu?: (event: MouseEvent<HTMLElement>, rowKey: string) => void;
+  /**
    * How deep the row stands in a tree or a plan: its name is indented by one
    * icon column a level (`--row-level`); 0, or none, is no indent. The
    * expansion and its keys stay the host's.
@@ -569,7 +607,9 @@ export interface RowProps {
  * it to the pane's cursor (`RowCursorContext`), which it wears as the
  * listing's cursor row (`.cursor`, `aria-current`); the pointer moving over
  * it or the focus entering it moves the cursor there. A row with `onOpen`
- * opens its item on a click anywhere but its controls. Controls that say
+ * opens its item on a click anywhere but its controls; one with
+ * `onContextMenu` takes the cursor on a secondary click, then hands the
+ * click and its key to the app for the row's menu. Controls that say
  * what the keys run mark it with `data-verb` (`QuietAction`,
  * `RowIconAction`), and the app reads them off the cursor row
  * (`verbControl`); such controls leave the Tab order, unless `tabbable`
@@ -580,6 +620,7 @@ export interface RowProps {
 export function Row({
   rowKey,
   mark,
+  radio,
   name,
   nameClass,
   className,
@@ -590,6 +631,7 @@ export function Row({
   change = null,
   emphasis = false,
   onOpen,
+  onContextMenu,
   level = 0,
   tabbable = false,
   focusable = false,
@@ -598,6 +640,7 @@ export function Row({
 }: RowProps): ReactElement {
   const cursor = useContext(RowCursorContext);
   const current = useSyncExternalStore(cursor.subscribe, () => cursor.current() === rowKey);
+  const nameId = useId();
 
   useLayoutEffect(() => {
     cursor.rowsChanged?.();
@@ -625,7 +668,16 @@ export function Row({
             .filter(Boolean)
             .join(' ')}
           data-row-key={rowKey}
+          data-row-menu={onContextMenu === undefined ? undefined : ''}
           onClick={onOpen}
+          onContextMenu={unclaimedContextMenu(
+            onContextMenu &&
+              ((event) => {
+                // The menu acts on the row it opened over, so that row is the cursor first.
+                if (!current) cursor.point(rowKey);
+                onContextMenu(event, rowKey);
+              })
+          )}
           onFocus={() => cursor.point(rowKey)}
           // Movement, not entry: a row scrolled under a still pointer as the
           // keys move the cursor must not take the cursor back.
@@ -636,18 +688,54 @@ export function Row({
           style={level > 0 ? ({ '--row-level': level } as CSSProperties) : undefined}
           tabIndex={focusable ? (current || entry ? 0 : -1) : undefined}
         >
-          <span aria-hidden className="row-icon">
-            {mark === undefined && add ? <Plus size={ICON_MD} /> : mark}
-          </span>
-          <span
-            className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
-            role="cell"
-            // A name in words carries itself whole as its tooltip while a
-            // narrow name column cuts it with an ellipsis.
-            {...(typeof name === 'string' ? cutTooltip(name) : {})}
-          >
-            {name}
-          </span>
+          {radio === undefined ? (
+            <>
+              <span aria-hidden className="row-icon">
+                {mark === undefined && add ? <Plus size={ICON_MD} /> : mark}
+              </span>
+              <span
+                className={nameClass === undefined ? 'row-name' : `row-name ${nameClass}`}
+                role="cell"
+                // A name in words carries itself whole as its tooltip while a
+                // narrow name column cuts it with an ellipsis.
+                {...(typeof name === 'string' ? cutTooltip(name) : {})}
+              >
+                {name}
+              </span>
+            </>
+          ) : (
+            // The radio stands in the icon column inside the name's cell, so
+            // the row keeps one cell a column, as its strip's name label
+            // spans both, and the radio is named by the name beside it.
+            <span
+              className={
+                nameClass === undefined ? 'row-name row-pick' : `row-name row-pick ${nameClass}`
+              }
+              role="cell"
+            >
+              <input
+                aria-labelledby={nameId}
+                checked={radio.checked}
+                className="check row-radio"
+                data-verb={radio.verb}
+                disabled={radio.disabled}
+                name={radio.group}
+                onChange={() => {
+                  if (!radio.disabled) radio.onPick();
+                }}
+                onClick={keepRadioToSelf}
+                tabIndex={tabbable ? undefined : -1}
+                type="radio"
+              />
+              <span
+                className="row-pick-name"
+                id={nameId}
+                {...(typeof name === 'string' ? cutTooltip(name) : {})}
+              >
+                {name}
+              </span>
+            </span>
+          )}
           {children}
         </div>
       </InRowContext.Provider>

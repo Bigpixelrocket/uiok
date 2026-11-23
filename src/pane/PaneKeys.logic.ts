@@ -183,3 +183,57 @@ export const NO_MAIN_VERBS: MainVerbs = {
 export const sameVerbs = <Verbs extends object>(a: Verbs, b: Verbs): boolean =>
   (Object.keys(a) as (keyof Verbs)[]).every((field) => a[field] === b[field]) &&
   Object.keys(b).length === Object.keys(a).length;
+
+/**
+ * The order Tab walks a two-pane window in: `document`, every stop where
+ * the document puts it, each pane's listing among them; `listing`, each
+ * pane's listing first, then its other stops in document order, as a file
+ * manager walks its panes (`listingFirstStop`).
+ */
+export type TabOrder = 'document' | 'listing';
+
+/** One pane as a listing-first walk sees it: its listing (its home) and its other stops in document order. */
+export interface WalkPane<Stop> {
+  readonly home: Stop;
+  /** The pane's Tab stops in document order, its home left out. */
+  readonly stops: readonly Stop[];
+}
+
+/**
+ * Where Tab (Shift-Tab with `back`) goes from `from` in a listing-first
+ * walk: from the page's listing through the page's other stops in document
+ * order, then to the sidebar's listing and through its stops, then back to
+ * the page's listing. Shift-Tab steps back through a pane's stops to its
+ * listing, and from a listing switches panes to the other one's listing.
+ * Without a sidebar (none shown), the page's listing and stops make one
+ * cycle that wraps at either end. A `from` neither pane holds (the window
+ * itself, a row's control) goes on as from the page's listing. Pure over
+ * whatever stands for a stop, so the rule is tested without a DOM.
+ */
+export function listingFirstStop<Stop>(
+  page: WalkPane<Stop>,
+  sidebar: WalkPane<Stop> | null,
+  from: Stop | null,
+  back: boolean
+): Stop {
+  if (sidebar !== null && from !== null) {
+    const at = from === sidebar.home ? -1 : sidebar.stops.indexOf(from);
+
+    if (from === sidebar.home || at >= 0) {
+      if (!back) return sidebar.stops[at + 1] ?? page.home;
+      if (at === -1) return page.home;
+
+      return at === 0 ? sidebar.home : (sidebar.stops[at - 1] ?? sidebar.home);
+    }
+  }
+
+  const at = from === null ? -1 : page.stops.indexOf(from);
+
+  if (back) {
+    if (at === -1) return sidebar?.home ?? page.stops.at(-1) ?? page.home;
+
+    return at === 0 ? page.home : (page.stops[at - 1] ?? page.home);
+  }
+
+  return page.stops[at + 1] ?? sidebar?.home ?? page.home;
+}

@@ -33,6 +33,12 @@ export interface TextLinkProps {
   readonly tip?: string;
   /** The chord that opens it, as text, written after the tooltip's words. */
   readonly shortcut?: string;
+  /**
+   * `danger`: what it opens is failing (a log file whose writes fail), so
+   * its words and glyph take the danger tone, and its `tip` (the reason)
+   * is its accessible description too, so a screen reader says why.
+   */
+  readonly tone?: 'danger';
 }
 
 /**
@@ -42,7 +48,8 @@ export interface TextLinkProps {
  * takes the keyboard's focus with the shared ring. It is a button because
  * the host decides how to open what it names (an external browser, a tab),
  * so it never navigates the page itself. A `disabled` link dims and
- * refuses the press; `label` names it when its words are short. Styled by `.text-link` in
+ * refuses the press; `label` names it when its words are short; `tone`
+ * `danger` sets it in the danger tone with its reason described. Styled by `.text-link` in
  * `@bigpixelrocket/uiok/styles.css`.
  */
 export function TextLink({
@@ -53,12 +60,14 @@ export function TextLink({
   tip,
   shortcut,
   label,
-  disabled = false
+  disabled = false,
+  tone
 }: TextLinkProps): ReactElement {
   return (
     <button
+      aria-description={tone === 'danger' ? tip : undefined}
       aria-label={label}
-      className={code ? 'text-link code' : 'text-link'}
+      className={['text-link', code ? 'code' : '', tone ?? ''].filter(Boolean).join(' ')}
       disabled={disabled}
       onClick={onClick}
       type="button"

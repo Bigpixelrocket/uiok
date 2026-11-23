@@ -531,15 +531,32 @@
 
 /* A row of quiet buttons under a pane's path bar (FilterChips: the tree's
    Running and Updates filters): each a word with its glyph and count, and
-   `aria-pressed="true"` while its filter is on. */
+   `aria-pressed="true"` while its filter is on. It is one line: chips that
+   do not fit scroll sideways, with no scrollbar drawn, under the base
+   sheet's inline edge fade (.scroll-fade-x, on the element), which leaves
+   the rule under the row solid. The block padding is the room a chip's
+   focus ring needs inside the scroller. Nothing scrolls smoothly (a wheel
+   and a chip reached by the keys move it at once), so reduced motion has
+   nothing to stop. */
 .pane-quick-row {
   display: flex;
   gap: var(--space-2);
   padding: var(--space-2) var(--pane-row-inset);
   border-bottom: var(--line) solid var(--border);
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: auto;
+  /* A chip the keys bring into view stops clear of the edge fade and with
+     room for its focus ring. */
+  scroll-padding-inline: calc(
+    var(--scroll-fade-size, var(--space-6)) + var(--focus-ring-width) + var(--focus-offset)
+  );
+  scrollbar-width: none;
 }
 
 .pane-quick-button {
+  flex: none;
+  white-space: nowrap;
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
@@ -779,6 +796,36 @@
    overline too, whose own margin it replaces). */
 :is(.pane-section-head, .pane-section-head.overline) {
   margin: var(--space-4) var(--pane-row-inset) var(--space-2);
+}
+
+/* Two of a page's listings or sections (SideBySide): one over the other
+   until the pair's own room reaches its threshold, then in two equal
+   columns; the component measures the room and says which in
+   data-layout. A hairline parts them, under the first stacked and after
+   it side by side, where the first stretches to the taller one's height so
+   the line runs the pair's whole height. */
+.side-by-side {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.side-by-side[data-layout='side-by-side'] {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.side-by-side-part {
+  min-width: 0;
+}
+
+.side-by-side-part:first-child {
+  border-block-end: var(--line) solid var(--border);
+}
+
+.side-by-side[data-layout='side-by-side'] > .side-by-side-part:first-child {
+  align-self: stretch;
+  border-block-end: none;
+  border-inline-end: var(--line) solid var(--border);
 }
 
 /* A bar at a pane's foot, under its list: a select-all bar, a form's

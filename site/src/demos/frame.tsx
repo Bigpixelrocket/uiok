@@ -2,12 +2,17 @@
  * A small window in the frame, drawn from components alone (no class, no
  * style, no element of the demo's own inside the window): the title bar
  * with a lockup, its brand mark, and a local build's channel marker; a
- * sidebar tree with its quick row of filters, a band, a group, rows
+ * sidebar tree with its quick row of filters (one line that scrolls
+ * sideways under an edge fade when the sidebar is too narrow for them all,
+ * a mouse wheel over it scrolling it sideways), a band, a group, rows
  * stepped in by level with a state and a switch, a note, the edge that
  * resizes it, and a Hide/Show panel toggle; a main pane whose page holds a
  * list over the pane under it with the splitter between them, and a status
  * notice in its status line; a console docked under it at the height it
- * keeps, its log scrolling; the key legend across the foot.
+ * keeps, its log scrolling; the key legend across the foot. Under the
+ * window, `SideBySide` in a pane the slider narrows: Settings and
+ * Extensions side by side from 520px of the pane's own width, stacked in
+ * less, the page's one cursor walking the first listing, then the second.
  */
 
 import {
@@ -20,10 +25,10 @@ import {
   Server,
   Settings2
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { Switch } from '@bigpixelrocket/uiok/field';
+import { Range, Switch } from '@bigpixelrocket/uiok/field';
 import {
   Dock,
   DockLog,
@@ -34,6 +39,7 @@ import {
   PaneSplitter,
   SectionHead,
   ShowSidebarButton,
+  SideBySide,
   SidebarResizer,
   SplitDetail,
   StatusNotice,
@@ -46,9 +52,18 @@ import {
 } from '@bigpixelrocket/uiok/frame';
 import { ICON_MD } from '@bigpixelrocket/uiok/icon';
 import { KeyLegendStrip, type LegendVerb } from '@bigpixelrocket/uiok/legend';
-import { Cell, Listing, Row, StateMark, column } from '@bigpixelrocket/uiok/listing';
+import {
+  Cell,
+  Listing,
+  Row,
+  RowCursorContext,
+  StateMark,
+  column
+} from '@bigpixelrocket/uiok/listing';
 import { PaneBox, PaneList, PanePathBar, PaneStatus } from '@bigpixelrocket/uiok/pane';
 import { BrandMark, ChannelMarker, Lockup, TitleBar } from '@bigpixelrocket/uiok/shell';
+
+import { useDemoCursor } from './cursor';
 
 const SERVICES = [
   { name: 'PostgreSQL 18', state: 'running', tone: 'ready', port: '5432' },
@@ -60,7 +75,85 @@ const SERVICES = [
 const LINES = ['18.1', '17.7', '16.11', '15.15', '14.20', '13.23', '12.22', '11.22'];
 
 /** The frame page's demo. */
+/** The two listings `SideBySide` lays out, each row with its value. */
+const SETTINGS: readonly (readonly [string, string])[] = [
+  ['Memory limit', '256M'],
+  ['Upload size', '64M'],
+  ['Time limit', '30 s']
+];
+const EXTENSIONS: readonly (readonly [string, string])[] = [
+  ['intl', 'on'],
+  ['redis', 'on'],
+  ['xdebug', 'off']
+];
+
+/**
+ * A pane the slider narrows, holding two listings in `SideBySide`: side by
+ * side from 520px of the pane's own width, stacked in less. The page's one
+ * cursor walks the first listing's rows, then the second's.
+ */
+function SideBySideDemo() {
+  const [width, setWidth] = useState(640);
+  const keys = [...SETTINGS, ...EXTENSIONS].map(([name]) => name);
+  const { cursor, onKeyDown } = useDemoCursor(keys);
+  const listing = (title: string, rows: readonly (readonly [string, string])[]) => (
+    <Listing columns={[{ label: 'Value', align: 'right' }]} grid="20px 1fr auto" title={title}>
+      {rows.map(([name, value]) => (
+        <Row key={name} name={name} rowKey={name}>
+          <Cell align="right">{value}</Cell>
+        </Row>
+      ))}
+    </Listing>
+  );
+  return (
+    <div className="demo-stack">
+      <Range
+        label="Pane width"
+        max={800}
+        min={320}
+        onChange={setWidth}
+        step={10}
+        value={width}
+        valueText={`${width}px`}
+      />
+      <div
+        className="listing-root"
+        style={{ width: `${width}px`, maxWidth: '100%' } as CSSProperties}
+      >
+        <PaneBox label="Configuration">
+          <PaneList
+            home
+            label="Configuration: arrows move the cursor through both listings"
+            onKeyDown={onKeyDown}
+          >
+            <RowCursorContext value={cursor}>
+              <SideBySide
+                first={listing('Settings', SETTINGS)}
+                firstLabel="Settings"
+                from={520}
+                second={listing('Extensions', EXTENSIONS)}
+                secondLabel="Extensions"
+              />
+            </RowCursorContext>
+          </PaneList>
+        </PaneBox>
+      </div>
+    </div>
+  );
+}
+
+/** The frame page's demo: the window, then two listings side by side. */
 export function FrameDemo() {
+  return (
+    <div className="demo-stack">
+      <FrameWindowDemo />
+      <SideBySideDemo />
+    </div>
+  );
+}
+
+/** A small window in the frame, drawn from components alone. */
+function FrameWindowDemo() {
   const [width, setWidth] = useState(260);
   const [shown, setShown] = useState(true);
   const [open, setOpen] = useState(true);
@@ -184,7 +277,9 @@ export function FrameDemo() {
               <FilterChips
                 chips={[
                   { id: 'running', label: 'Running', icon: Play, count: running.length },
-                  { id: 'updates', label: 'Updates', icon: ArrowUp, count: 1 }
+                  { id: 'updates', label: 'Updates', icon: ArrowUp, count: 1 },
+                  { id: 'errors', label: 'Errors', icon: CircleAlert, count: 1 },
+                  { id: 'databases', label: 'Databases', icon: Database, count: 2 }
                 ]}
                 label="Filters"
                 on={on}

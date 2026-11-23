@@ -2,6 +2,8 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import { CircleAlert, Info, Play } from 'lucide-react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
+
 import { FilterChips } from './FilterChips.js';
 import { draggedWidth, SidebarResizer } from './SidebarResizer.js';
 import { StatusNotice } from './StatusNotice.js';
@@ -136,5 +138,107 @@ describe('StatusNotice', () => {
     expect(container.querySelector('.status-notice')?.classList.contains('danger')).toBe(true);
     rerender(<StatusNotice icon={Info} text="Started" />);
     expect(screen.getByRole('status').textContent).toBe('Started');
+  });
+});
+
+describe("FilterChips' one line", () => {
+  const CHIPS = [
+    { id: 'running', label: 'Running', count: 3 },
+    { id: 'updates', label: 'Updates', count: 2 },
+    { id: 'stopped', label: 'Stopped', count: 9 }
+  ] as const;
+  const mount = () =>
+    render(<FilterChips chips={CHIPS} label="Filters" on={[]} onToggle={() => undefined} />);
+
+  /** Gives the row a laid-out width holding more than it shows, scrolled to `left`. */
+  const overflow = (row: HTMLElement, left: number): void => {
+    Object.defineProperty(row, 'clientWidth', { configurable: true, value: 200 });
+    Object.defineProperty(row, 'scrollWidth', { configurable: true, value: 500 });
+    row.scrollLeft = left;
+  };
+
+  const turn = (
+    row: HTMLElement,
+    deltaY: number,
+    deltaX = 0,
+    keys: { shiftKey?: boolean; ctrlKey?: boolean; metaKey?: boolean } = {}
+  ): WheelEvent => {
+    const event = new WheelEvent('wheel', {
+      bubbles: true,
+      cancelable: true,
+      deltaX,
+      deltaY,
+      ...keys
+    });
+    row.dispatchEvent(event);
+    return event;
+  };
+
+  it("turns a mouse's vertical wheel sideways while the row can move that way, and leaves the rest to the page", () => {
+    mount();
+    const row = screen.getByRole('toolbar', { name: 'Filters' });
+
+    overflow(row, 0);
+    expect(turn(row, 40).defaultPrevented).toBe(true);
+    expect(row.scrollLeft).toBe(40);
+    // A sideways gesture is the browser's own, and so is a wheel past the end.
+    expect(turn(row, 10, 30).defaultPrevented).toBe(false);
+    // Shift's sideways wheel and Control's or Command's zoom are the browser's.
+    for (const keys of [{ shiftKey: true }, { ctrlKey: true }, { metaKey: true }]) {
+      expect(turn(row, 40, 0, keys).defaultPrevented).toBe(false);
+    }
+    expect(row.scrollLeft).toBe(40);
+    overflow(row, 300);
+    expect(turn(row, 40).defaultPrevented).toBe(false);
+    expect(row.scrollLeft).toBe(300);
+    // A row that fits leaves the wheel alone.
+    Object.defineProperty(row, 'scrollWidth', { configurable: true, value: 200 });
+    expect(turn(row, 40).defaultPrevented).toBe(false);
+  });
+
+  it('brings a chip the keys reach whole into view, at once', () => {
+    const shown: unknown[] = [];
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: function (this: HTMLElement, options: unknown) {
+        shown.push([this.textContent, options]);
+      }
+    });
+    try {
+      mount();
+      screen.getByRole('button', { name: 'Stopped 9' }).focus();
+      expect(shown).toEqual([['Stopped 9', { block: 'nearest', inline: 'nearest' }]]);
+    } finally {
+      delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+
+  it('fades the edge with more past it in a right-to-left row too', () => {
+    // The inline fade starts where the scroll timeline does: the right edge
+    // of a right-to-left box.
+    const sheet = readStylesheet('src/styles.css');
+
+    expect(sheet).toMatch(/\.scroll-fade-x \{\s*--scroll-fade-inline-to: to right;\s*\}/);
+    expect(sheet).toMatch(/\.scroll-fade-x:dir\(rtl\) \{\s*--scroll-fade-inline-to: to left;\s*\}/);
+    expect(sheet).toMatch(/linear-gradient\(\s*var\(--scroll-fade-inline-to\),/);
+  });
+
+  it('keeps to one line that scrolls sideways under the edge fade, with no scrollbar and no smooth scroll', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    mount();
+    const row = screen.getByRole('toolbar', { name: 'Filters' });
+    const chip = screen.getByRole('button', { name: 'Running 3' });
+
+    expect(row.classList.contains('scroll-fade-x')).toBe(true);
+    expect(declaredValues(row, 'overflow-x').at(-1)).toBe('auto');
+    expect(declaredValues(row, 'scrollbar-width').at(-1)).toBe('none');
+    expect(declaredValues(row, 'scroll-behavior').at(-1)).toBe('auto');
+    // A chip brought into view stops clear of the fade and its focus ring.
+    expect(declaredValues(row, 'scroll-padding-inline').at(-1)).toMatch(
+      /^calc\(\s*var\(--scroll-fade-size, var\(--space-6\)\) \+ var\(--focus-ring-width\) \+ var\(--focus-offset\)\s*\)$/
+    );
+    // jsdom spells flex: none out in full.
+    expect(declaredValues(chip, 'flex').at(-1)).toBe('0 0 auto');
+    expect(declaredValues(chip, 'white-space').at(-1)).toBe('nowrap');
   });
 });

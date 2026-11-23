@@ -21,9 +21,10 @@ import {
   paneRows,
   showRow,
   shownHome,
+  tabStops,
   type TabStop
 } from './PaneKeys.js';
-import { movedIndex, sameVerbs, type PaneMove } from './PaneKeys.logic.js';
+import { movedIndex, sameVerbs, type PaneMove, type TabOrder } from './PaneKeys.logic.js';
 
 /** The two panes of a two-pane view: the sidebar and the page beside it. */
 export type Pane = 'sidebar' | 'main';
@@ -69,6 +70,13 @@ export interface PaneKeysOptions<Action extends { readonly kind: string }, Verbs
    * runs. Without it, Tab from the sidebar goes to the page's home.
    */
   readonly sidebarStops?: boolean;
+  /**
+   * The order Tab walks the panes in (`TabOrder`): `document` (the
+   * default), every stop where the document puts it; `listing`, each
+   * pane's listing first, then its other controls, so Tab from the window
+   * lands in the page's listing however many controls stand above it.
+   */
+  readonly tabOrder?: TabOrder;
   /**
    * The view reads each pane's cursor row in render (`mainKey`,
    * `sidebarKey`), so a cursor move draws the view again: the default.
@@ -453,22 +461,53 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
       // sidebar control (Refresh) switches panes as the listing does, and a
       // row's control out of the Tab order goes on from the page's home.
       const stop = node !== null && isTabStop(node) ? node : null;
+      const listingFirst = current.tabOrder === 'listing';
+      // In a listing-first walk, a key aimed at neither pane (the view
+      // itself) goes on as from the page's listing, whichever pane was
+      // active (`listingFirstStop`).
       const from: TabStop =
-        pane === 'sidebar'
-          ? walked !== null && stop !== null && !inRow
-            ? stop
-            : 'sidebar'
-          : onHome || (inRow && stop === null)
-            ? 'page'
-            : (node as HTMLElement);
+        listingFirst && !inSidebar && !inMain
+          ? 'page'
+          : pane === 'sidebar'
+            ? walked !== null && stop !== null && !inRow
+              ? stop
+              : 'sidebar'
+            : onHome || (inRow && stop === null)
+              ? 'page'
+              : (node as HTMLElement);
       const back = 'back' in action && action.back === true;
-      const to = nextTabStop(main, home, from, back, walked, sidebar === null);
+      const after = (stop: TabStop): TabStop =>
+        nextTabStop(
+          main,
+          home,
+          stop,
+          back,
+          walked,
+          sidebar === null,
+          listingFirst ? 'listing' : 'document'
+        );
 
       event.preventDefault();
       event.stopPropagation();
 
-      if (to === 'sidebar' || to === 'page') focusPane(to === 'sidebar' ? 'sidebar' : 'main');
-      else to.focus();
+      // A stop the stylesheet hides (display: none) refuses the focus, so
+      // the walk goes on past it the same way, once round the stops at
+      // most, and ends on the pane's home when none takes it.
+      let to = after(from);
+
+      for (let left = tabStops(root).length; ; left -= 1) {
+        if (to === 'sidebar' || to === 'page') {
+          focusPane(to === 'sidebar' ? 'sidebar' : 'main');
+          break;
+        }
+        to.focus();
+        if (document.activeElement === to) break;
+        if (left <= 0) {
+          focusPane(pane);
+          break;
+        }
+        to = after(to);
+      }
 
       return;
     }

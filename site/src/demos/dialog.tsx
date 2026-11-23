@@ -7,8 +7,10 @@
  * cut on its one line, and a command editor whose legend holds a destructive
  * secondary verb and wraps to two rows. Then one dialog on each width step:
  * a connection form on the label column (medium), a frosted shortcuts sheet
- * whose body scrolls (large), a wide table (extra large), and a dialog
- * pinned at its top whose body grows downward (`pinTop`).
+ * whose body scrolls (large, a `ShortcutIndex` whose chords line up across
+ * its groups), a wide table (extra large), and a dialog pinned at its top
+ * whose body grows downward (`pinTop`). Last, a long command editor in a
+ * `SectionedDialog`, its sidebar following the scroll.
  */
 
 import {
@@ -18,6 +20,7 @@ import {
   KeyRound,
   Keyboard,
   LogOut,
+  Pencil,
   Power,
   Server,
   SquareTerminal,
@@ -29,13 +32,14 @@ import { Button } from '@bigpixelrocket/uiok/button';
 import {
   ConfirmDialog,
   ModalDialog,
+  SectionedDialog,
   type DialogItem,
   type DialogItemGroup
 } from '@bigpixelrocket/uiok/dialog';
-import { labelHelp } from '@bigpixelrocket/uiok/field';
+import { Check, FieldGrid, FieldRow, labelHelp, TextField } from '@bigpixelrocket/uiok/field';
 import { DataGrid, type DataGridColumn } from '@bigpixelrocket/uiok/grid';
 import { type Chord } from '@bigpixelrocket/uiok/keyboard';
-import { KeyChord } from '@bigpixelrocket/uiok/keychord';
+import { ShortcutGroup, ShortcutIndex, ShortcutRow } from '@bigpixelrocket/uiok/keychord';
 
 import { orderAt, type Order } from './data';
 
@@ -54,6 +58,7 @@ type Open =
   | 'shortcuts'
   | 'orders'
   | 'hosts'
+  | 'sectioned'
   | null;
 
 /**
@@ -317,6 +322,12 @@ const SHORTCUTS: readonly { readonly chord: Chord; readonly does: string }[] = [
  */
 function ShortcutsDialog({ onDone }: { readonly onDone: () => void }) {
   const labelId = useId();
+  const groups: readonly { readonly title: string; readonly rows: typeof SHORTCUTS }[] = [
+    { title: 'Window', rows: SHORTCUTS.slice(0, 5) },
+    { title: 'Items', rows: SHORTCUTS.slice(5, 7) },
+    { title: 'Moving', rows: SHORTCUTS.slice(7, 13) },
+    { title: 'Services', rows: SHORTCUTS.slice(13) }
+  ];
   return (
     <ModalDialog
       className="dialog-size-lg"
@@ -328,16 +339,118 @@ function ShortcutsDialog({ onDone }: { readonly onDone: () => void }) {
       title="Keyboard Shortcuts"
     >
       <div className="dialog-body scroll-fade">
-        <ul className="chord-list keycap">
-          {SHORTCUTS.map(({ chord, does }) => (
-            <li key={does}>
-              <KeyChord chord={chord} />
-              <span>{does}</span>
-            </li>
+        <ShortcutIndex label="Keyboard shortcuts">
+          {groups.map((group) => (
+            <ShortcutGroup key={group.title} title={group.title}>
+              {group.rows.map(({ chord, does }) => (
+                <ShortcutRow chords={[chord]} key={does} verb={does} />
+              ))}
+            </ShortcutGroup>
           ))}
-        </ul>
+        </ShortcutIndex>
       </div>
     </ModalDialog>
+  );
+}
+
+/**
+ * A command's settings, too long for one view, in a sectioned dialog: the
+ * sidebar scrolls the column to a section and marks the one in view as the
+ * column scrolls.
+ */
+function SectionedCommandDialog({
+  onSave,
+  onCancel
+}: {
+  readonly onSave: () => void;
+  readonly onCancel: () => void;
+}) {
+  const [name, setName] = useState('web');
+  const [command, setCommand] = useState('php artisan serve --port=8000');
+  const [folder, setFolder] = useState('.');
+  const [withProject, setWithProject] = useState(true);
+  const field = (label: string, value: string, set: (value: string) => void, note?: string) => (
+    <FieldRow label={label} note={note}>
+      <TextField onChange={set} size="sm" spellCheck={false} value={value} />
+    </FieldRow>
+  );
+  return (
+    <SectionedDialog
+      icon={Pencil}
+      labelId="sectioned-command"
+      legend={{ leave: { label: 'Cancel' }, primary: { label: 'Save and Restart', onRun: onSave } }}
+      onCancel={onCancel}
+      sections={[
+        {
+          id: 'command',
+          title: 'Command',
+          children: (
+            <FieldGrid>
+              {field('Name', name, setName)}
+              {field('Command', command, setCommand)}
+              {field('In', folder, setFolder, 'A folder inside the project.')}
+              <FieldRow label="">
+                <Check
+                  checked={withProject}
+                  label="Start with the project"
+                  onChange={(event) => setWithProject(event.currentTarget.checked)}
+                />
+              </FieldRow>
+            </FieldGrid>
+          )
+        },
+        {
+          id: 'depends',
+          title: 'Depends on',
+          children: (
+            <FieldGrid>
+              {field('Waits for', 'db: healthy', () => undefined)}
+              {field('And for', 'migrate: completed successfully', () => undefined)}
+            </FieldGrid>
+          )
+        },
+        {
+          id: 'health',
+          title: 'Health',
+          children: (
+            <FieldGrid>
+              {field('Ready when', 'GET http://localhost:8000/up answers 2xx', () => undefined)}
+              {field('Every', '5 s', () => undefined)}
+            </FieldGrid>
+          )
+        },
+        {
+          id: 'restart',
+          title: 'Restart rule',
+          children: (
+            <FieldGrid>
+              {field('On exit', 'after a failure, at most 5 restarts', () => undefined)}
+              {field('Success', 'exit code 0', () => undefined)}
+            </FieldGrid>
+          )
+        },
+        {
+          id: 'stopping',
+          title: 'Stopping',
+          children: (
+            <FieldGrid>
+              {field('Signal', 'TERM to its process group', () => undefined)}
+              {field('Then', 'KILL after 5 s', () => undefined)}
+            </FieldGrid>
+          )
+        },
+        {
+          id: 'log',
+          title: 'Log file',
+          children: (
+            <FieldGrid>
+              {field('File', 'storage/logs/web.log', () => undefined, 'Rotates at 10 MB, keeps 3.')}
+            </FieldGrid>
+          )
+        }
+      ]}
+      title="Edit Command"
+    />
   );
 }
 
@@ -520,6 +633,7 @@ export function DialogDemo() {
         <Button onClick={() => setOpen('quit')}>Quit…</Button>
         <Button onClick={() => setOpen('long-title')}>Long Title…</Button>
         <Button onClick={() => setOpen('command')}>Edit Command…</Button>
+        <Button onClick={() => setOpen('sectioned')}>Edit Command, Sectioned…</Button>
       </div>
       <h3 className="demo-subhead">Size steps</h3>
       <div className="demo-row">
@@ -678,6 +792,9 @@ export function DialogDemo() {
         />
       ) : null}
       {open === 'shortcuts' ? <ShortcutsDialog onDone={close('closed shortcuts')} /> : null}
+      {open === 'sectioned' ? (
+        <SectionedCommandDialog onCancel={close('kept editing')} onSave={close('saved')} />
+      ) : null}
       {open === 'orders' ? <OrdersDialog onDone={close('closed the orders')} /> : null}
       {open === 'hosts' ? (
         <AddHostsDialog

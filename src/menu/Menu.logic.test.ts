@@ -37,7 +37,45 @@ describe('placeMenu', () => {
   });
 });
 
+describe('placeMenu beside an item', () => {
+  // An item 160px wide, 20px tall, its menu standing at 300 from the left.
+  const item = { left: 300, top: 200, right: 460, bottom: 220 };
+
+  it("stands at the item's inline-end side, its first item level with it", () => {
+    expect(placeMenu({ beside: item }, SIZE, VIEWPORT)).toEqual({
+      left: 460,
+      top: 200 - MENU_MARGIN
+    });
+    expect(placeMenu({ beside: item, rtl: true }, SIZE, VIEWPORT)).toEqual({
+      left: 100,
+      top: 200 - MENU_MARGIN
+    });
+  });
+
+  it('flips to the other side with no room on its own, and keeps inside the window', () => {
+    const atEnd = { left: 700, top: 760, right: 860, bottom: 780 };
+    expect(placeMenu({ beside: atEnd }, SIZE, VIEWPORT)).toEqual({
+      left: 500,
+      top: 800 - MENU_MARGIN - 120
+    });
+    const atStart = { left: 100, top: 200, right: 260, bottom: 220 };
+    expect(placeMenu({ beside: atStart, rtl: true }, SIZE, VIEWPORT)).toEqual({
+      left: 260,
+      top: 200 - MENU_MARGIN
+    });
+  });
+
+  it('keeps to the roomier side when neither has room', () => {
+    const wide = { left: 150, top: 200, right: 850, bottom: 220 };
+    // 150 before it, 150 after it: its own side wins a tie.
+    expect(placeMenu({ beside: wide }, SIZE, VIEWPORT).left).toBe(1000 - MENU_MARGIN - 200);
+    const leaning = { left: 190, top: 200, right: 850, bottom: 220 };
+    expect(placeMenu({ beside: leaning, rtl: true }, SIZE, VIEWPORT).left).toBe(MENU_MARGIN);
+  });
+});
+
 describe('menuKeyAction', () => {
+  const plain = { metaKey: false, ctrlKey: false, altKey: false, shiftKey: false };
   const key = (name: string, init: Partial<KeyboardEvent> = {}) =>
     menuKeyAction({
       key: name,
@@ -55,10 +93,18 @@ describe('menuKeyAction', () => {
     expect(key('End')).toEqual({ kind: 'edge', to: 'last' });
     expect(key('Enter')).toEqual({ kind: 'run' });
     expect(key(' ')).toEqual({ kind: 'run' });
-    expect(key('Escape')).toEqual({ kind: 'close' });
-    expect(key('Tab')).toEqual({ kind: 'close' });
-    expect(key('Tab', { shiftKey: true })).toEqual({ kind: 'close' });
+    expect(key('Escape')).toEqual({ kind: 'close', all: false });
+    expect(key('Tab')).toEqual({ kind: 'close', all: true });
+    expect(key('Tab', { shiftKey: true })).toEqual({ kind: 'close', all: true });
     expect(key('ArrowDown', { metaKey: true })).toBe(null);
     expect(key('a')).toBe(null);
+  });
+
+  it('opens a submenu with the arrow that points where it stands, and goes back with the other', () => {
+    expect(key('ArrowRight')).toEqual({ kind: 'open' });
+    expect(key('ArrowLeft')).toEqual({ kind: 'back' });
+    expect(menuKeyAction({ ...plain, key: 'ArrowLeft' }, true)).toEqual({ kind: 'open' });
+    expect(menuKeyAction({ ...plain, key: 'ArrowRight' }, true)).toEqual({ kind: 'back' });
+    expect(key('ArrowRight', { shiftKey: true })).toBe(null);
   });
 });

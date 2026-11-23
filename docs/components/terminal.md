@@ -95,7 +95,14 @@ It draws `.terminal-box` (`.fill`), with `--terminal-box-height` set from `heigh
 The history lives in the engine and ends with the terminal; nothing is written anywhere.
 
 - **Lines, counted by the engine.** The engine's line limit counts physical rows and drops history only in whole pages, oldest first. The adapter (`ghostty/core.ts`) sets the chosen lines plus one page, so a terminal keeps at least the chosen lines and at most a page more. A page holds fewer rows the wider the grid (`ghosttyPageRows`: 673 at 80 columns, 271 at 200, from the page layout of the pinned Ghostty revision, checked against the engine by `runtimeAbi.test.ts`), so the adapter sets the limit again on every resize, first making room for a page at both widths so a reflow never drops a line the chosen length keeps.
-- **Shared memory.** Every terminal on a page shares one WebAssembly memory, which wasm32 caps at 4 GiB. Each terminal's history is capped at a seventeenth of 3 GiB (about 180 MiB, `GHOSTTY_BUDGETED_TERMINALS`), so seventeen full histories never exhaust it. A page takes 448 KiB, about 8.5 bytes a cell, so the cap binds only at 50,000 lines on grids wider than about 445 columns. A filled 10,000-line history at 80 columns holds about 7.4 MiB.
+- **Shared memory.** Every terminal on a page shares one WebAssembly memory, which wasm32 caps at 4 GiB. Each terminal's history is capped at a seventeenth of 3 GiB (about 180 MiB), so seventeen full histories never exhaust it. A page takes 448 KiB, about 8.5 bytes a cell, so the cap binds only at 50,000 lines on grids wider than about 445 columns. A filled 10,000-line history at 80 columns holds about 7.4 MiB.
+- **The page's budget.** `BUDGETED_TERMINALS_PER_PAGE` (17: sixteen interactive terminals and one read-only log) is the count the history ceiling is sized for. Up to that many terminals on one page, every history can fill to its ceiling and the shared memory still holds. A page may show more, but the guarantee ends there: should enough of them fill their histories to the ceiling, the shared memory runs out and the engine cannot allocate. An app that opens a terminal per tab tests its own limit against it:
+
+```ts
+import { BUDGETED_TERMINALS_PER_PAGE } from '@bigpixelrocket/uiok/terminal';
+
+expect(MAX_TERMINAL_TABS + 1).toBeLessThanOrEqual(BUDGETED_TERMINALS_PER_PAGE); // the tabs and the log
+```
 
 ## Flow control
 

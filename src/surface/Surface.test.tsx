@@ -155,7 +155,9 @@ describe('PaneMessage', () => {
   it('says a line about a listing in its tone, live when asked', () => {
     const { container, rerender } = render(<PaneMessage>A hint.</PaneMessage>);
 
-    expect(container.firstElementChild?.className).toBe('pane-message');
+    // Outside every listing scope it carries the scope itself.
+    expect(container.firstElementChild?.className).toBe('listing-root');
+    expect(container.querySelector('p')?.className).toBe('pane-message');
     rerender(
       <PaneMessage live tone="danger">
         Refused.

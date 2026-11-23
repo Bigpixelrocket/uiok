@@ -250,6 +250,12 @@
   background: var(--text-on-surface);
 }
 
+/* Right to left, a submenu opens on the left, so the chevron points there.
+   :dir() follows the nearest direction, as the menu's own placement does. */
+.folder-menu-option[aria-haspopup='menu']:dir(rtl)::after {
+  transform: scaleX(-1);
+}
+
 /* A plain separator between groups of rows that need no name: a hairline
    in the border colour with a small space above and below, as a desktop
    menu draws one. */

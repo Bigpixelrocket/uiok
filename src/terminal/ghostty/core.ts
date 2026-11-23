@@ -19,10 +19,18 @@ import {
 import { ENGINE_DEFAULT_BACKGROUND, ENGINE_DEFAULT_FOREGROUND } from './fallbackColors.js';
 
 /**
- * How many terminals one page's shared engine memory is budgeted for: sixteen
- * interactive terminals and one read-only log. Every terminal on a page
- * shares one WebAssembly memory, which wasm32 caps at 4 GiB, so each
- * terminal's history ceiling is a share of it.
+ * How many terminals one page is budgeted for (17: sixteen interactive
+ * terminals and one read-only log), exported as `BUDGETED_TERMINALS_PER_PAGE`.
+ * Every terminal on a page shares one WebAssembly memory, which wasm32 caps
+ * at 4 GiB, so each terminal's history ceiling is this share of 3 GiB: up to
+ * this many terminals, every history may fill to its ceiling and the shared
+ * memory still holds. A page may show more, but past this count the
+ * guarantee is gone: should enough of them fill their histories to the
+ * ceiling (50,000 lines on a grid wider than about 445 columns), the shared
+ * memory runs out and the engine cannot allocate. At ordinary lengths a
+ * history stays far under its ceiling (about 7.4 MiB for 10,000 lines at 80
+ * columns), so an app that opens a terminal per tab can test its own limit
+ * against this count.
  */
 export const GHOSTTY_BUDGETED_TERMINALS = 17;
 

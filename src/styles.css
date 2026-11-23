@@ -284,11 +284,22 @@ meter::-webkit-meter-even-less-good-value {
     animation-timeline: scroll(self block);
   }
 
+  /* The inline fade runs from the inline start, where the scroll timeline
+     starts: the left edge, or the right in a right-to-left box, whose
+     scroll position counts down from its right edge. */
+  .scroll-fade-x {
+    --scroll-fade-inline-to: to right;
+  }
+
+  .scroll-fade-x:dir(rtl) {
+    --scroll-fade-inline-to: to left;
+  }
+
   .scroll-fade-x {
     mask-image:
       linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
       linear-gradient(
-        to right,
+        var(--scroll-fade-inline-to),
         transparent,
         var(--ground) var(--scroll-fade-inline-start),
         var(--ground) calc(100% - var(--scroll-fade-inline-end)),
@@ -320,7 +331,7 @@ meter::-webkit-meter-even-less-good-value {
         transparent
       ),
       linear-gradient(
-        to right,
+        var(--scroll-fade-inline-to),
         transparent,
         var(--ground) var(--scroll-fade-inline-start),
         var(--ground) calc(100% - var(--scroll-fade-inline-end)),
@@ -333,7 +344,7 @@ meter::-webkit-meter-even-less-good-value {
       linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
       linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
       linear-gradient(
-        to right,
+        var(--scroll-fade-inline-to),
         transparent,
         var(--ground) var(--scroll-fade-inline-start),
         var(--ground) calc(100% - var(--scroll-fade-inline-end)),
@@ -472,6 +483,7 @@ meter::-webkit-meter-even-less-good-value {
   .palette-level,
   .settings-sidebar-page,
   .settings-sidebar-subsection,
+  .sectioned-dialog-nav-row,
   .quiet-control,
   .quiet-track-item,
   .toggle-chip
@@ -490,6 +502,7 @@ meter::-webkit-meter-even-less-good-value {
     .pane-strip-link,
     .settings-sidebar-page,
     .settings-sidebar-subsection,
+    .sectioned-dialog-nav-row,
     .quiet-control,
     .toggle-chip
   ):where(button, a[href], [role='button'], [role='tab'], [role='radio']):where(
@@ -551,6 +564,7 @@ meter::-webkit-meter-even-less-good-value {
     .disclosure,
     .settings-sidebar-page,
     .settings-sidebar-subsection,
+    .sectioned-dialog-nav-row,
     .quiet-control,
     .quiet-track-item,
     .toggle-chip

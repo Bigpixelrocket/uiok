@@ -91,10 +91,28 @@ export function isTextEditingTarget(target: EventTarget | null): boolean {
     return true;
   }
 
-  const contentEditable = target.closest('[contenteditable]');
-  const setting = contentEditable?.getAttribute('contenteditable')?.toLowerCase();
+  return isEditableContent(target);
+}
 
-  return setting === '' || setting === 'true' || setting === 'plaintext-only';
+/**
+ * Whether an element's content is editable, as the browser resolves it
+ * (`isContentEditable`), or, where that is missing (jsdom), by walking up
+ * past `inherit` and absent or unknown values to the nearest `true`, `''`,
+ * `plaintext-only`, or `false`.
+ */
+function isEditableContent(element: Element): boolean {
+  if (element instanceof HTMLElement && typeof element.isContentEditable === 'boolean') {
+    return element.isContentEditable;
+  }
+
+  for (let node: Element | null = element; node !== null; node = node.parentElement) {
+    const setting = node.getAttribute('contenteditable')?.toLowerCase();
+
+    if (setting === '' || setting === 'true' || setting === 'plaintext-only') return true;
+    if (setting === 'false') return false;
+  }
+
+  return false;
 }
 
 /**

@@ -1,7 +1,7 @@
 import type { CSSProperties, ReactElement, ReactNode, Ref } from 'react';
 
 import { ListingScopeContext } from '../listing/ListingScope.js';
-import type { RegionHandlers } from '../pane/Pane.js';
+import { regionHandlers, type RegionHandlers } from '../pane/Pane.js';
 
 /** Whether a slot was given something to draw: idiomatic `cond && <Part />` passes false for none. */
 export const drawn = (node: ReactNode): boolean =>
@@ -99,7 +99,7 @@ export function WindowFrame({
         {group === undefined ? (
           parts
         ) : (
-          <div className="window-frame-group" {...group}>
+          <div className="window-frame-group" {...regionHandlers(group)}>
             {parts}
           </div>
         )}

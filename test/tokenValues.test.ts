@@ -197,6 +197,13 @@ const EXCEPTIONS: readonly Exception[] = [
       "The Settings dialog's fixed frame height, a layout size, not a control; fixed so switching pages never moves the frame."
   },
   {
+    file: 'src/dialog/dialog.css',
+    property: 'height',
+    value: /^min\(640px, 100%\)$/,
+    reason:
+      "A sectioned dialog's fixed frame height, a layout size, not a control; fixed so its frame never moves as fields come and go."
+  },
+  {
     file: 'src/shell/shell.css',
     property: 'gap',
     value: /^0\.4em$/,

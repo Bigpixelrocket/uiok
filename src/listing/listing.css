@@ -734,6 +734,7 @@ button.crumb-label.crumb-siblings > svg {
     .disclosure,
     .settings-sidebar-page,
     .settings-sidebar-subsection,
+    .sectioned-dialog-nav-row,
     .quiet-control,
     .quiet-track-item,
     .toggle-chip
@@ -1019,7 +1020,7 @@ button.crumb-label.crumb-siblings > svg {
    and an app's own placement of the label wins. */
 :where(
     .pane-listing:is(.listing-root, .listing-root *):has(> .row):not(
-        :has(> .row > .row-icon:not(:empty))
+        :has(> .row > .row-icon:not(:empty), > .row > .row-pick)
       )
   )
   > .pane-columns
@@ -1712,12 +1713,16 @@ button.crumb-label.crumb-siblings > svg {
 
 /* A warning (.warning): the warning tone's TriangleAlert, drawn as a mask
    in --warning as the danger line's glyph is, then the words in --text. A
-   host that draws its own glyph first (an svg) gets no second one. */
+   host that draws its own glyph first (an svg, inside a PaneMessage's
+   words too) gets no second one. */
 :where(.listing-root) .pane-message.warning {
   color: var(--text);
 }
 
-:where(.listing-root) .pane-message.warning:not(:has(> svg:first-child))::before {
+:where(.listing-root)
+  .pane-message.warning:not(
+    :has(> svg:first-child, > .pane-message-text > svg:first-child)
+  )::before {
   content: '';
   flex: none;
   width: var(--icon-md);
@@ -1727,9 +1732,17 @@ button.crumb-label.crumb-siblings > svg {
     center / contain no-repeat;
 }
 
-:where(.listing-root) .pane-message.warning > svg:first-child {
+:where(.listing-root) .pane-message.warning > svg:first-child,
+:where(.listing-root) .pane-message.warning > .pane-message-text > svg:first-child {
   flex: none;
   color: var(--warning);
+}
+
+/* A refusal's own glyph takes the danger tone, as the drawn one does. */
+:where(.listing-root) .pane-message.danger > svg:first-child,
+:where(.listing-root) .pane-message.danger > .pane-message-text > svg:first-child {
+  flex: none;
+  color: var(--danger);
 }
 
 /* A line that says a listing has no rows (`.empty`, Listing's `empty`)
@@ -1740,6 +1753,20 @@ button.crumb-label.crumb-siblings > svg {
   padding-block: 0;
   font: inherit;
   line-height: var(--line-height-compact);
+}
+
+/* A message's words in one box (PaneMessage), so text and inline code
+   flow as a sentence beside the glyph instead of as separate flex items.
+   A glyph the host leads the words with lands in that box too: it keeps
+   the glyph's place, the message's gap before the words, on the text's
+   middle. */
+:where(.listing-root) .pane-message-text {
+  min-width: 0;
+}
+
+:where(.listing-root) .pane-message-text > svg:first-child {
+  margin-inline-end: var(--space-4);
+  vertical-align: middle;
 }
 
 :where(.listing-root) .pane-message code {
@@ -2531,6 +2558,29 @@ button.crumb-label.crumb-siblings > svg {
   border-color: var(--border-strong);
 }
 
+/* A row that is one choice of several (Row's `radio`): the radio in the
+   icon column and the name after it, both in the name's cell, which spans
+   the two columns as the strip's name label does. The words keep the
+   name's ellipsis; the radio keeps its size. */
+:where(.listing-root) .row > .row-name.row-pick {
+  grid-column: 1 / span 2;
+  display: grid;
+  grid-template-columns: var(--icon-column) minmax(0, 1fr);
+  align-items: center;
+}
+
+:where(.listing-root) .row-pick > .row-radio {
+  justify-self: start;
+  margin: 0;
+}
+
+:where(.listing-root) .row-pick > .row-pick-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* A row that stands out from its peers (Row's `emphasis`): its name in the
    strong weight. */
 :where(.listing-root) .row.row-emphasis > .row-name {
@@ -2622,4 +2672,34 @@ button.crumb-label.crumb-siblings > svg {
   inset-inline-start: var(--timeline-at);
   transform: translateY(-50%);
   white-space: nowrap;
+}
+
+/* ---- The visual bell (PaneBox's bell) ----
+   A key that could not act shoves the pane's cursor row sideways for one
+   beat, the wrong-password shake. The parity classes alternate `bell-0`
+   and `bell-1` on consecutive rings (useBellBeat), on keyframes of two
+   names with the same steps (menu.css), so every refused key shoves again,
+   the repeats of a held one included. Without motion the row flips to the
+   selection fill for the beat instead, its words in the selection's. */
+:where(.listing-root) .pane.bell-0 .row.cursor {
+  animation: row-nudge-a var(--duration-slow) var(--ease-in-out);
+}
+
+:where(.listing-root) .pane.bell-1 .row.cursor {
+  animation: row-nudge-b var(--duration-slow) var(--ease-in-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :where(.listing-root) .pane:is(.bell-0, .bell-1) .row.cursor {
+    animation: none;
+    --row-fill: var(--selected-bg);
+    background: var(--row-fill);
+  }
+
+  :where(.listing-root)
+    .pane:is(.bell-0, .bell-1)
+    .row.cursor
+    :is(.row-icon, .row-name, .row-meta) {
+    color: var(--on-selected);
+  }
 }

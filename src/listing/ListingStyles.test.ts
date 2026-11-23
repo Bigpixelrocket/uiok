@@ -845,9 +845,10 @@ describe('the listing states', () => {
 
   it("starts a no-icon listing's first label past the icon column, below an app's own placement", () => {
     // The rule weighs what the label's default does, so any scoped app rule
-    // that places the label wins, and a section's heading keeps the edge.
+    // that places the label wins, and a section's heading keeps the edge. A
+    // radio listing's radio stands in the icon column, so it counts as one.
     expect(sheet).toMatch(
-      /^:where\(\s*\.pane-listing:is\(\.listing-root, \.listing-root \*\):has\(> \.row\):not\(\s*:has\(> \.row > \.row-icon:not\(:empty\)\)\s*\)\s*\)\n\s*> \.pane-columns\n\s*> \.row-name:where\(:not\(:has\(h3\)\)\) \{\n\s*grid-column: 2;/m
+      /^:where\(\s*\.pane-listing:is\(\.listing-root, \.listing-root \*\):has\(> \.row\):not\(\s*:has\(> \.row > \.row-icon:not\(:empty\), > \.row > \.row-pick\)\s*\)\s*\)\n\s*> \.pane-columns\n\s*> \.row-name:where\(:not\(:has\(h3\)\)\) \{\n\s*grid-column: 2;/m
     );
   });
 

@@ -1556,12 +1556,14 @@ const BASE_TOKEN_NAMES = [
   '--z-tooltip',
   '--frost',
   '--transition-control',
-  // The scroll fade's edge size and its internal per-edge lengths.
+  // The scroll fade's edge size, its internal per-edge lengths, and the
+  // inline fade's direction.
   '--scroll-fade-size',
   '--scroll-fade-start',
   '--scroll-fade-end',
   '--scroll-fade-inline-start',
   '--scroll-fade-inline-end',
+  '--scroll-fade-inline-to',
   // The hooks a component stylesheet declares or reads.
   '--stripe-ink',
   '--stripe-ground',

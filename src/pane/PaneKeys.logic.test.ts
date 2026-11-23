@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  listingFirstStop,
   NO_MAIN_VERBS,
   movedIndex,
   paneKeyAction,
@@ -106,5 +107,33 @@ describe('sameVerbs', () => {
   it('says two readings match field by field', () => {
     expect(sameVerbs(NO_MAIN_VERBS, { ...NO_MAIN_VERBS })).toBe(true);
     expect(sameVerbs(NO_MAIN_VERBS, { ...NO_MAIN_VERBS, toggle: 'Stop' })).toBe(false);
+  });
+});
+
+describe('listingFirstStop', () => {
+  const page = { home: 'page', stops: ['crumb', 'select', 'log'] };
+  const sidebar = { home: 'tree', stops: ['refresh'] };
+
+  it('walks the page from its listing, then the sidebar from its listing, and back', () => {
+    const walk = ['page'];
+    for (let step = 0; step < 6; step += 1) {
+      walk.push(listingFirstStop(page, sidebar, walk.at(-1) ?? null, false));
+    }
+    expect(walk).toEqual(['page', 'crumb', 'select', 'log', 'tree', 'refresh', 'page']);
+  });
+
+  it("steps back to a pane's listing, and from a listing to the other pane's", () => {
+    expect(listingFirstStop(page, sidebar, 'select', true)).toBe('crumb');
+    expect(listingFirstStop(page, sidebar, 'crumb', true)).toBe('page');
+    expect(listingFirstStop(page, sidebar, 'page', true)).toBe('tree');
+    expect(listingFirstStop(page, sidebar, 'refresh', true)).toBe('tree');
+    expect(listingFirstStop(page, sidebar, 'tree', true)).toBe('page');
+  });
+
+  it('wraps the page alone with no sidebar, and goes on from the listing for a stop it does not hold', () => {
+    expect(listingFirstStop(page, null, 'log', false)).toBe('page');
+    expect(listingFirstStop(page, null, 'page', true)).toBe('log');
+    expect(listingFirstStop(page, sidebar, null, false)).toBe('crumb');
+    expect(listingFirstStop(page, sidebar, 'elsewhere', false)).toBe('crumb');
   });
 });

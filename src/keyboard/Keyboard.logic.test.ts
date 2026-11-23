@@ -4,6 +4,7 @@ import {
   isModalOpen,
   isOverlayOpen,
   isNativeKeyboardTarget,
+  isTextEditingTarget,
   shouldSuppressBrowserDocumentKey,
   type CommandKeyStroke
 } from './Keyboard.logic.js';
@@ -209,5 +210,24 @@ describe('isOverlayOpen', () => {
 
     menu.remove();
     expect(isOverlayOpen(root)).toBe(false);
+  });
+});
+
+describe('isTextEditingTarget on editable content', () => {
+  it('follows inherit up to the nearest editable or not, as the browser resolves it', () => {
+    document.body.innerHTML = `
+      <div contenteditable="true">
+        <span contenteditable="inherit"><b id="inherited">text</b></span>
+        <span contenteditable="false"><i id="off">fixed</i></span>
+        <span contenteditable="bogus" id="unknown">text</span>
+      </div>
+      <p contenteditable="inherit" id="outside">plain</p>`;
+    const byId = (id: string) => document.getElementById(id);
+
+    expect(isTextEditingTarget(byId('inherited'))).toBe(true);
+    expect(isTextEditingTarget(byId('unknown'))).toBe(true);
+    expect(isTextEditingTarget(byId('off'))).toBe(false);
+    expect(isTextEditingTarget(byId('outside'))).toBe(false);
+    document.body.innerHTML = '';
   });
 });

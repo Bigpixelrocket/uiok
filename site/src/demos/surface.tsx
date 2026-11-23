@@ -6,7 +6,8 @@
  * and track item recipes, at rest, hovered, and pressed. Last, a group's
  * swatch in each hue, hollow and with no group, and a tag in each tone, in
  * capitals, and with a tip; a notice quoting a server's words in code; and
- * an overline that keeps a name's case.
+ * an overline that keeps a name's case. A fact list's long values wrap
+ * whole beside their names, three lists side by side.
  *
  * A cell that shows a pointer state carries `data-force` (with
  * `data-force-sel` naming the button inside it): the screenshot harness
@@ -22,6 +23,9 @@ import { Button } from '@bigpixelrocket/uiok/button';
 import { ICON_MD, ICON_SM, Spinner } from '@bigpixelrocket/uiok/icon';
 import {
   Card,
+  Fact,
+  FactColumns,
+  FactList,
   FactRow,
   FactTable,
   GroupSwatch,
@@ -123,6 +127,33 @@ export function SurfaceDemo() {
         />
         <FactRow name="fish activation" tone="muted" toneLabel="Not checked" />
       </FactTable>
+      <h3 className="demo-subhead">Fact lists, side by side</h3>
+      <FactColumns>
+        <FactList title="Usage">
+          <Fact name="CPU">0.4%</Fact>
+          <Fact name="Memory">64 MB</Fact>
+          <Fact name="Up">2h 35m · since 11:48</Fact>
+        </FactList>
+        <FactList title="Command">
+          <Fact name="Runs">php artisan serve --port=8000</Fact>
+          <Fact name="In">~/Developer/shop</Fact>
+          <Fact name="Kind">Until stopped</Fact>
+        </FactList>
+        <FactList title="Dependencies">
+          <Fact name="Waits for">db: healthy · running · ready</Fact>
+          <Fact name="Waits for">migrate: completed successfully · once · ok 2 hours ago</Fact>
+        </FactList>
+        <FactList title="Crash">
+          <Fact name="Exit" tone="danger">
+            exited 1 · 4 minutes ago
+          </Fact>
+          <Fact name="Printed" printed>
+            {
+              'Error: listen EADDRINUSE: address already in use :::8080\n    at Server.setupListenHandle'
+            }
+          </Fact>
+        </FactList>
+      </FactColumns>
       <h3 className="demo-subhead">Notices</h3>
       <Notice actions={<Button size="small">Try Again</Button>} role="alert" tone="danger">
         The settings file could not be saved.

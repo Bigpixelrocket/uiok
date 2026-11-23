@@ -1,10 +1,10 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { memo, Profiler, useState, useSyncExternalStore, type ReactElement } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
 import { paneRow, verbControl } from './PaneKeys.js';
-import { paneKeyAction, type PaneKeyAction } from './PaneKeys.logic.js';
+import { paneKeyAction, type PaneKeyAction, type TabOrder } from './PaneKeys.logic.js';
 import { usePaneKeys } from './usePaneKeys.js';
 
 /**
@@ -17,13 +17,25 @@ import { usePaneKeys } from './usePaneKeys.js';
 function Panes({
   sidebarStops,
   sidebar = true,
-  held = false
+  held = false,
+  locked = false,
+  hiddenStops = false,
+  tabOrder
 }: {
   readonly sidebarStops: boolean;
+  /** The order Tab walks the panes in. */
+  readonly tabOrder?: TabOrder;
   /** The sidebar shows; false hides it, as a window does. */
   readonly sidebar?: boolean;
   /** A page held mounted out of sight comes before the front page. */
   readonly held?: boolean;
+  /** A disabled fieldset's control follows Edit, refusing the focus. */
+  readonly locked?: boolean;
+  /**
+   * A hidden input with a tabindex, and a button the stylesheet hides
+   * (display: none, which jsdom does not apply), follow Manual.
+   */
+  readonly hiddenStops?: boolean;
 }): ReactElement {
   const panes = usePaneKeys<PaneKeyAction, object>({
     shown: true,
@@ -38,11 +50,12 @@ function Panes({
     readKey: paneKeyAction,
     cursorKey: (action) => action.kind === 'move' || action.kind === 'enter',
     run: () => undefined,
-    sidebarStops
+    sidebarStops,
+    tabOrder
   });
 
   return (
-    <div ref={panes.rootRef}>
+    <div aria-label="View" ref={panes.rootRef} tabIndex={-1}>
       {sidebar ? (
         <aside className="pane">
           <button type="button">Refresh</button>
@@ -57,6 +70,11 @@ function Panes({
       ) : null}
       <div className="pane" ref={panes.mainRef} tabIndex={-1}>
         <button type="button">Edit</button>
+        {locked ? (
+          <fieldset disabled>
+            <button type="button">Locked</button>
+          </fieldset>
+        ) : null}
         {held ? (
           <div hidden>
             <div aria-label="Held page" data-pane-home="page" tabIndex={-1}>
@@ -77,6 +95,12 @@ function Panes({
           <div data-row-key="second">
             <select aria-label="Collation" />
             <button type="button">Manual</button>
+            {hiddenStops ? (
+              <>
+                <input aria-label="Token" tabIndex={0} type="hidden" />
+                <button type="button">Folded</button>
+              </>
+            ) : null}
           </div>
         </div>
         <button type="button">Log</button>
@@ -106,6 +130,80 @@ const focus = (name: string): void => {
 
   control?.focus();
 };
+
+describe('usePaneKeys Tab, listing first', () => {
+  it("goes from the page's listing through its controls, the ones above it included, then to the sidebar", () => {
+    render(<Panes sidebarStops={false} tabOrder="listing" />);
+
+    expect(focused()).toBe('Tree');
+    const forward = ['Page', 'Edit', 'Collation', 'Manual', 'Log', 'Tree', 'Page'];
+    expect(forward.map(() => tab())).toEqual(forward);
+    // Shift-Tab steps back through the page to its listing, and from a
+    // listing switches panes.
+    focus('Collation');
+    expect(tab(true)).toBe('Edit');
+    expect(tab(true)).toBe('Page');
+    expect(tab(true)).toBe('Tree');
+    expect(tab(true)).toBe('Page');
+  });
+
+  it("walks the sidebar's controls after its listing when the view asks", () => {
+    render(<Panes sidebarStops tabOrder="listing" />);
+
+    const forward = ['Refresh', 'Filter', 'Collapse all', 'Page', 'Edit'];
+    expect(forward.map(() => tab())).toEqual(forward);
+    focus('Filter');
+    expect(tab(true)).toBe('Refresh');
+    expect(tab(true)).toBe('Tree');
+  });
+
+  it('goes on from the page listing when the view itself holds the focus, whichever pane was active', () => {
+    render(<Panes sidebarStops tabOrder="listing" />);
+
+    expect(focused()).toBe('Tree');
+    focus('View');
+    expect(tab()).toBe('Edit');
+    focus('View');
+    expect(tab(true)).toBe('Tree');
+  });
+
+  it('passes over a control a disabled fieldset holds', () => {
+    render(<Panes locked sidebarStops={false} tabOrder="listing" />);
+
+    focus('Page');
+    expect(tab()).toBe('Edit');
+    expect(tab()).toBe('Collation');
+  });
+
+  it('cycles through the page alone when the window hides the sidebar', () => {
+    render(<Panes sidebar={false} sidebarStops={false} tabOrder="listing" />);
+
+    expect(focused()).toBe('Page');
+    expect(tab(true)).toBe('Log');
+    expect(tab()).toBe('Page');
+    expect(tab()).toBe('Edit');
+  });
+});
+
+describe('usePaneKeys Tab past a stop that refuses the focus', () => {
+  /** Makes Folded refuse the focus, as a browser does for an element the stylesheet hides. */
+  const refuseFolded = (): void => {
+    const folded = screen.getByRole('button', { name: 'Folded' });
+    vi.spyOn(folded, 'focus').mockImplementation(() => undefined);
+  };
+
+  it.each(['document', 'listing'] as const)(
+    'goes on past a hidden input and a hidden control, both ways, in %s order',
+    (tabOrder) => {
+      render(<Panes hiddenStops sidebar={false} sidebarStops={false} tabOrder={tabOrder} />);
+      refuseFolded();
+      focus('Manual');
+
+      expect(tab()).toBe('Log');
+      expect(tab(true)).toBe('Manual');
+    }
+  );
+});
 
 describe('usePaneKeys Tab', () => {
   it('stays in the page when the window hides the sidebar', () => {

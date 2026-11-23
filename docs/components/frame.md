@@ -9,7 +9,7 @@ The window every app of the family draws its content in: one grid with a top ban
 - `StatusNotice`: a message about the window in a pane's status line.
 - `Dock`, `DockLog`, `DockLogEntry`, `DockInput`: the dock under the main pane.
 - `usePaneSplit`, `PaneSplitter`, `SplitDetail`: a page's list over the pane under it.
-- `PageSlot`, `PanePage`, `Toolbar`, `ToolbarGrow`, `ToolbarGap`, `PageFilter`, `PageNote`, `EmptyAction`, `SectionHead`, `FootBar`, `ShowSidebarButton`: a page's parts.
+- `PageSlot`, `PanePage`, `Toolbar`, `ToolbarGrow`, `ToolbarGap`, `PageFilter`, `PageNote`, `EmptyAction`, `SectionHead`, `SideBySide`, `FootBar`, `ShowSidebarButton`: a page's parts.
 
 The panes themselves are `PaneBox` and `PaneList` from [Pane](pane.md).
 
@@ -69,7 +69,7 @@ import { TitleBar } from '@bigpixelrocket/uiok/shell';
 
 `AppRoot` (`channel`, `children`) is the window's root: a column the window's height whose content owns the whole window, the top band included. `channel` is the release channel the window wears (`data-channel`), which colours its `ChannelMarker` and channel tags; none on the release. A window with `AppRoot` or an `AboutWindow` sets the interface face, the body's ground and text, and `--dialog-inset-top`, so a dialog keeps clear of the top band.
 
-`SpacePanel` (`ref`, the region handlers, `children`) is the focus boundary the content's keyboard commands work in, inside `AppRoot`: focusable by script, out of the Tab order, with no ring. The region handlers, here and on every part below that takes them, are `onKeyDown`, `onKeyDownCapture`, `onFocus`, `onBlur`, `onMouseDown`, `onPointerDown`, and the drag and drop handlers (`RegionHandlers`).
+`SpacePanel` (`ref`, the region handlers, `children`) is the focus boundary the content's keyboard commands work in, inside `AppRoot`: focusable by script, out of the Tab order, with no ring. The region handlers, here and on every part below that takes them, are `onKeyDown`, `onKeyDownCapture`, `onFocus`, `onBlur`, `onMouseDown`, `onPointerDown`, `onContextMenu`, and the drag and drop handlers (`RegionHandlers`). `onContextMenu` is the region's own menu, and the innermost menu wins: it runs only for a secondary click nothing inside the region cancelled, then cancels the browser's menu itself, so a `Row`'s `onContextMenu` ([Listing](listing.md)) takes a click on its row, the `PaneBox` around it a click no row took, `WindowFrame`'s `group` one no pane took, and `SpacePanel`, around the whole frame and its band, the rest. One click opens one menu. A `Terminal` and an open `Menu` cancel their own clicks, so the parts around them pass those by too.
 
 ## `WindowFrame` (`WindowFrameProps`)
 
@@ -122,6 +122,13 @@ Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`
 
 `FilterChips` draws a quick row of filters under a pane's path bar: quiet buttons with a glyph, a word, and a count, pressed (`aria-pressed="true"`) while a filter is on.
 
+The row is one line however many chips it holds:
+
+- **It scrolls sideways.** Chips that do not fit scroll inside the row, with no scrollbar drawn, under the base sheet's inline edge fade (`.scroll-fade-x`), which fades only an edge that has more past it. The rule under the row stays solid.
+- **A mouse wheel turns it.** A vertical wheel over the row scrolls it sideways while it has chips hidden that way, down and right toward its end (left in a right-to-left page), a line-counting wheel moving a row's height (24px) a line. A trackpad's sideways swipe, a wheel with Shift (the browser's own sideways wheel), Control, or Command (zoom), and any gesture more sideways than vertical stay the browser's own. Once the row stands at the end the wheel points to, or holds nothing hidden, the wheel is left alone and the page under it scrolls as usual. The pure rule is `sidewaysWheel` in `FilterChips.logic.ts`.
+- **The keys bring a chip into view.** A chip Tab reaches scrolls whole into view (`scrollIntoView({ block: 'nearest', inline: 'nearest' })`), stopping clear of the fade and its focus ring (the row's `scroll-padding-inline`). In a right-to-left page the fade sits on the edges the row reads from, as the scroll runs.
+- **Nothing scrolls smoothly.** The wheel and the keys move the row at once (`scroll-behavior: auto` on the row), so `prefers-reduced-motion: reduce` has no motion here to stop.
+
 | Prop       | Type                    | Purpose                                  |
 | ---------- | ----------------------- | ---------------------------------------- |
 | `chips`    | `readonly FilterChip[]` | `{ id, label, icon?, count? }`, in order |
@@ -151,11 +158,30 @@ Like a listing's `Row`, a tree row follows the pane's cursor (`RowCursorContext`
 | `PanePage`          | A page in the main pane: a column that fills it                                                                                                                                           |
 | `Toolbar`           | One line of tools that keep their size, `end` at the far end; `ToolbarGrow` gives way, `ToolbarGap` is a hairline between groups                                                          |
 | `PageFilter`        | A page's filter under its tab strip                                                                                                                                                       |
-| `PageNote`          | A loading or empty line (`icon`, or `busy` for the spinner and a status)                                                                                                                  |
+| `PageNote`          | A loading or empty line, or a note after a listing (`icon`, or `busy` for the spinner and a status); outside every listing scope it carries the scope itself                              |
 | `EmptyAction`       | The one command that answers an empty list, under its `PageNote`                                                                                                                          |
 | `SectionHead`       | A heading over one of a page's listings, as an overline (`level`, 3 unless given)                                                                                                         |
+| `SideBySide`        | Two listings or sections side by side from a width of the pair's own room, stacked in less (below)                                                                                        |
 | `FootBar`           | A bar at a pane's foot under its list (a select-all bar, a form's actions)                                                                                                                |
 | `ShowSidebarButton` | Shows the hidden sidebar again (`label`, `onShow`, `icon`), leading a path bar's tools                                                                                                    |
+
+### Two listings side by side
+
+```tsx
+<SideBySide
+  first={<Listing title="Settings">…</Listing>}
+  firstLabel="Settings"
+  from={640}
+  second={<Listing title="Extensions">…</Listing>}
+  secondLabel="Extensions"
+/>
+```
+
+`SideBySide` (`from`, `first`, `firstLabel`, `second`, `secondLabel`) puts two of a page's listings or sections in two equal columns while the room the pair itself is given is `from` pixels wide or more, and the second under the first in less, with a hairline between them either way. Each part is a `group` named by its label.
+
+- **Its own width, not the window's.** A pane narrowed by its sidebar, a split, or a dock stacks the pair though the window is wide. The component measures its own width with a `ResizeObserver` before the first paint and says the layout in `data-layout` (`side-by-side` or `stacked`), which the stylesheet reads. A container query cannot do it: its condition reads no custom property, so a per-instance `from` could not reach it. A width of 0 (a page held out of sight) keeps the layout it had, and stacked is the layout until the first measure. Once side by side, the pair stacks again only under `from` less 20px, wider than a classic scrollbar: two columns can be taller than one stack, and the scrollbar they bring would otherwise narrow the pair under `from`, stack it, lose the scrollbar, and stand it side by side again, over and over.
+- **One cursor, in reading order.** The pair holds no cursor and answers no key. Under `usePaneKeys` the page keeps its one cursor and its one home: put the pair inside the page's `PaneList home`, never a `home` on each side, since the keys hand the focus to the first home they find. ↑ and ↓ walk the first part's rows, then the second's (`data-row-key` in document order), side by side as stacked, so ↓ on the first part's last row lands on the second's first; every row key is unique across both. Tab walks the first part's controls before the second's.
+- **A cursor on each side.** To give each side a cursor of its own, give each its own `RowCursorContext` and its own focusable list with its own keys; each is then a Tab stop of its own, and the arrows move the cursor of the side holding the focus.
 
 ## Keyboard
 

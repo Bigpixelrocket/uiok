@@ -36,6 +36,8 @@ export interface DialogLabels {
   readonly runInBackground: string;
   /** The note under a typed-name confirmation's field (`TypedNameDialog`): "Type the name to confirm." */
   readonly typeName: string;
+  /** The accessible name of a sectioned dialog's sidebar (`SectionedDialog`): "Sections". */
+  readonly sections: string;
 }
 
 /** English dialog words: the `dialog` group `UiokProvider` starts from. */
@@ -50,5 +52,6 @@ export const DEFAULT_DIALOG_LABELS: DialogLabels = {
   stop: 'Stop',
   tryAgain: 'Try Again',
   runInBackground: 'Run in Background',
-  typeName: 'Type the name to confirm.'
+  typeName: 'Type the name to confirm.',
+  sections: 'Sections'
 };

@@ -18,3 +18,24 @@
   background: var(--match-bg);
   box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--match-mark);
 }
+
+/* ---- Inline code (Code) ----
+
+   A command, a path, or a name inside a sentence: the code face at the
+   size of the words round it, on the control track's faint wash, in the
+   text tone (never the accent, which reads as a link). It wraps anywhere,
+   and each line of a wrapped one keeps its padding and its rounded ends.
+   It is content, so a user can sweep and copy it. */
+.inline-code {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-xs);
+  background: var(--control-track);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: inherit;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  -webkit-user-select: text;
+  user-select: text;
+}
