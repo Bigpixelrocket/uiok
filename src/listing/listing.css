@@ -1768,8 +1768,18 @@ button.crumb-label.crumb-siblings > svg {
 }
 
 :where(.listing-root) .pane-message-text > svg:first-child {
+  width: var(--icon-md);
+  height: var(--icon-md);
   margin-inline-end: var(--space-4);
   vertical-align: middle;
+}
+
+/* The words after a glyph of the host's own hang in their own column, as
+   they do beside the drawn one: the box steps in by the glyph and its gap,
+   and its first line steps back out to start with the glyph. */
+:where(.listing-root) .pane-message-text:has(> svg:first-child) {
+  padding-inline-start: calc(var(--icon-md) + var(--space-4));
+  text-indent: calc(-1 * (var(--icon-md) + var(--space-4)));
 }
 
 :where(.listing-root) .pane-message code {

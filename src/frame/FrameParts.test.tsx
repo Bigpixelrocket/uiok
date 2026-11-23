@@ -6,6 +6,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { Switch } from '../field/Switch.js';
+import { ICON_MD } from '../icon/sizes.js';
 import { Listing, Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
 import { PaneMessage } from '../listing/PaneMessage.js';
 import { AppRoot, PageSlot, SpacePanel } from './AppRoot.js';
@@ -798,6 +799,37 @@ describe('page parts', () => {
       expect(declaredValues(words, 'flex').at(-1)).toBe('1 1 0%');
       expect(declaredValues(words, 'min-width').at(-1)).toBe('0px');
     }
+  });
+
+  it('hangs a long message’s words beside a glyph of the host’s own, as beside the drawn one', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <>
+        <PaneMessage tone="warning">
+          The port is in use by another program on this Mac, so the service waits.
+        </PaneMessage>
+        <PaneMessage tone="danger">
+          <CircleAlert aria-hidden size={ICON_MD} />
+          The data directory is locked by another server, so this one cannot start.
+        </PaneMessage>
+      </>
+    );
+    const drawn = screen.getByText(/The port is in use/);
+    const own = screen.getByText(/The data directory is locked/);
+
+    // The drawn glyph stands before the words' box, which hangs beside it.
+    expect(drawn.querySelector('svg')).toBeNull();
+    expect(declaredValues(drawn, 'flex').at(-1)).toBe('1 1 0%');
+    expect(declaredValues(drawn, 'text-indent')).toEqual([]);
+    // The host's glyph leads the words inside the box, which hangs them past it.
+    expect(own.firstElementChild?.tagName.toLowerCase()).toBe('svg');
+    expect(declaredValues(own, 'padding-inline-start').at(-1)).toBe(
+      'calc(var(--icon-md) + var(--space-4))'
+    );
+    expect(declaredValues(own, 'text-indent').at(-1)).toBe(
+      'calc(-1 * (var(--icon-md) + var(--space-4)))'
+    );
+    expect(declaredValues(own.firstElementChild as Element, 'width').at(-1)).toBe('var(--icon-md)');
   });
 
   it('says a page is loading as a status, its spinner for the glyph', () => {
