@@ -1,6 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, readStylesheet } from '../../test/stylesheets.js';
+
 import {
   PaletteFailure,
   PaletteHeading,
@@ -149,6 +151,60 @@ describe('PaletteOption', () => {
     const option = screen.getByRole('option', { name: 'PostgreSQL' });
 
     expect(option.getAttribute('aria-description')).toBe('The PostgreSQL server, 18.1, Installed');
+  });
+
+  it('ticks a row picked with others, its check mark in the icon column, and toggles on a press', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const onPick = vi.fn();
+    const { rerender } = render(
+      <PaletteList id="scripts" label="Scripts">
+        <PaletteOption checked id="build" mark={<svg />} name="build" onPick={onPick} />
+        <PaletteOption
+          checked={false}
+          id="test"
+          mark={<svg />}
+          name="test"
+          onPick={() => undefined}
+        />
+        <PaletteOption id="lint" name="lint" onPick={() => undefined} />
+      </PaletteList>
+    );
+    const build = screen.getByRole('option', { name: 'build' });
+    const test = screen.getByRole('option', { name: 'test' });
+    // The rules that draw a check mark in a row's icon column, and whether one draws it on `option`.
+    const tickRules = [...document.styleSheets]
+      .flatMap((sheet) => [...sheet.cssRules])
+      .filter(
+        (rule): rule is CSSStyleRule =>
+          rule instanceof CSSStyleRule &&
+          rule.selectorText.endsWith(' > .row-icon::before') &&
+          rule.style.getPropertyValue('mask') !== ''
+      );
+    const tick = (option: HTMLElement) =>
+      tickRules.some((rule) =>
+        option.matches(rule.selectorText.replace(' > .row-icon::before', ''))
+      );
+
+    expect(tickRules.length).toBeGreaterThan(0);
+    expect(build.getAttribute('aria-checked')).toBe('true');
+    expect(test.getAttribute('aria-checked')).toBe('false');
+    expect(screen.getByRole('option', { name: 'lint' }).hasAttribute('aria-checked')).toBe(false);
+    // The library draws the mark from the attribute, and a checkable row's column holds it alone.
+    expect(tick(build)).toBe(true);
+    expect(tick(test)).toBe(false);
+    expect(build.querySelector('.row-icon')?.childElementCount).toBe(0);
+    expect(test.querySelector('.row-icon')?.childElementCount).toBe(0);
+
+    fireEvent.click(build);
+    expect(onPick).toHaveBeenCalledOnce();
+    rerender(
+      <PaletteList id="scripts" label="Scripts">
+        <PaletteOption checked={false} id="build" name="build" onPick={onPick} />
+      </PaletteList>
+    );
+    expect(screen.getByRole('option', { name: 'build' }).getAttribute('aria-checked')).toBe(
+      'false'
+    );
   });
 
   it("keeps its name's id apart from any option's id", () => {

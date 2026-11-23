@@ -126,6 +126,7 @@ The backdrop is `position: fixed` on `--z-dialog`. The box carries the listing s
 - `context` and `contextKind` (`'sentence'` by default, `'path'`, `'command'`): what the row says after its name, one line, cut with an ellipsis and whole in its tooltip; a path gives way at its start.
 - `trail`: the end column, a version or a count in the meta tone, or a `KeyChord`.
 - `current`: draws a `CurrentDot` after the trail, its value what current means ("Installed").
+- `checked`: the row is one of several picked together (the scripts a project includes). `true` draws the check mark in the icon column, the same mark a menu's setting wears, and `false` leaves the column empty; either way the row is an `option` with `aria-checked`, and `mark` is not drawn, so the column holds the tick alone. A press calls `onPick`, which toggles it. Absent, the row is a plain option.
 - `cursor`: the cursor fill and bar.
 - `disabled`: dimmed (`aria-disabled`), passed over by the pointer, its press refused; say why in `description`.
 - `description`: read after the name (`aria-description`). Absent, the row reads its `context`, a `trail` in words (a string or a number), and its `current` value, in that order, since its name alone hides them; give one to say why the row is disabled or to word a trail that is not text (a `KeyChord`), or `''` to read nothing.
@@ -145,6 +146,7 @@ The backdrop is `position: fixed` on `--z-dialog`. The box carries the listing s
 - Escape anywhere in the box calls `onClose`, except during an input method's composition. A field handler that wants Escape to clear a query first calls `preventDefault()` and `stopPropagation()`.
 - A press on the backdrop itself closes; a press inside the box (a row, the chip, a legend slot) is cancelled so the focus stays in the field. A press in the field is left alone, so the caret lands where it is pressed.
 - The level chip takes no focus (`tabIndex={-1}`); its tooltip names ← as the key that steps back, which the caller maps.
+- Checkable rows: Return toggles the cursor row, as a press does, and leaves the palette open, so the caller's `onKeyDown` calls the row's `onPick` for Return whether the row runs or ticks. Space cannot toggle: the field holds the focus and Space types into the query. The palette's own verb over the ticked rows (Add, Install) is a row of its own after them, or a chord such as ⌘Return in its legend, never Return.
 - Tab is not contained: the frame leaves Tab alone, so from the field (the box's only stop) it would move the focus behind the palette. The caller's `onKeyDown` prevents Tab, as in the example, or contains it when it adds more stops.
 
 ## Styling

@@ -4,7 +4,9 @@
  * note and a failure under its list and the branch checked out marked with
  * its current dot; the chip, ←, or Backspace in an empty
  * field steps back. Run Task… lists command lines (`.palette-command`) and
- * Open Recent… paths that give way at their start. A tag at the field's end
+ * Open Recent… paths that give way at their start. Add Project… lists the
+ * scripts to include, checkable together: Return or a click ticks one, and
+ * Add Project runs with the ticked ones. A tag at the field's end
  * says what the commands act on, and a key legend closes the box. The
  * header's Find a page (⌘K) is the same palette over the site's pages, with
  * each page's route in the meta tone.
@@ -13,6 +15,7 @@
 import {
   Copy,
   FilePlus,
+  FolderPlus,
   FolderOpen,
   GitBranch,
   Moon,
@@ -88,6 +91,36 @@ export function PaletteDemo() {
         hint: undefined,
         line
       }))
+    },
+    {
+      id: 'add-project',
+      label: 'Add Project…',
+      hint: 'Pick the scripts it runs',
+      icon: <FolderPlus size={size} />,
+      level: [
+        ...[
+          ['dev', 'vite'],
+          ['build', 'vite build'],
+          ['test', 'vitest run'],
+          ['lint', 'eslint .']
+        ].map(([name, line], index) => ({
+          id: `script-${name}`,
+          label: name ?? '',
+          line,
+          checked: index < 2
+        })),
+        {
+          id: 'add-project-run',
+          label: 'Add Project',
+          hint: 'With the scripts ticked',
+          icon: <FolderPlus size={size} />,
+          run: (ticked: ReadonlySet<string>) =>
+            setRan(
+              `Add Project (${[...ticked].map((id) => id.replace('script-', '')).join(', ') || 'no scripts'})`
+            )
+        }
+      ],
+      notes: [{ text: 'Return ticks a script; Add Project adds the ones ticked.' }]
     },
     {
       id: 'recent',
