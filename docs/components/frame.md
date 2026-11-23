@@ -133,6 +133,12 @@ The row is one line however many chips it holds:
 - **The keys bring a chip into view.** A chip Tab reaches scrolls whole into view (`scrollIntoView({ block: 'nearest', inline: 'nearest' })`), stopping clear of the fade and its focus ring (the row's `scroll-padding-inline`). In a right-to-left page the fade sits on the edges the row reads from, as the scroll runs.
 - **Nothing scrolls smoothly.** The wheel and the keys move the row at once (`scroll-behavior: auto` on the row), so `prefers-reduced-motion: reduce` has no motion here to stop.
 
+With `wrap`, the row is a multi-choice control for a narrow cell instead: chips that do not fit go on to further lines (`pane-quick-row-wrap`), so every chip shows, with no edge fade, no sideways scroll, and no wheel turned sideways. The chips stay buttons in the Tab order, pressed while on, and a press still toggles one and leaves the focus where it was. The one scrolling line is the default.
+
+```tsx
+<FilterChips label="Extensions" chips={extensions} on={picked} onToggle={toggle} wrap />
+```
+
 | Prop       | Type                    | Purpose                                  |
 | ---------- | ----------------------- | ---------------------------------------- |
 | `chips`    | `readonly FilterChip[]` | `{ id, label, icon?, count? }`, in order |

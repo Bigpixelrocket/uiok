@@ -23,6 +23,13 @@ export interface FilterChipsProps<Id extends string> {
   readonly onToggle: (id: Id) => void;
   /** The row's accessible name ("Filters"). */
   readonly label: string;
+  /**
+   * Chips that do not fit wrap onto further lines instead of scrolling
+   * sideways: no edge fade, no scroll, no wheel turned sideways. For a
+   * multi-choice control in a narrow cell; the one scrolling line stays the
+   * default.
+   */
+  readonly wrap?: boolean;
 }
 
 /**
@@ -32,13 +39,17 @@ export interface FilterChipsProps<Id extends string> {
  * leaves the focus where it was. The row is one line: chips that do not
  * fit scroll sideways under an edge fade (`.scroll-fade-x`), a mouse's
  * vertical wheel scrolls it sideways while it can move that way
- * (`sidewaysWheel`), and a chip the keys reach comes whole into view.
+ * (`sidewaysWheel`), and a chip the keys reach comes whole into view. With
+ * `wrap` (`pane-quick-row-wrap`) the chips wrap onto further lines instead,
+ * a multi-choice control for a narrow cell, nothing scrolling; the chips
+ * stay buttons in the Tab order either way.
  */
 export function FilterChips<Id extends string>({
   chips,
   on,
   onToggle,
-  label
+  label,
+  wrap = false
 }: FilterChipsProps<Id>): ReactElement {
   const rowRef = useRef<HTMLDivElement>(null);
 
@@ -47,7 +58,8 @@ export function FilterChips<Id extends string>({
   useEffect(() => {
     const row = rowRef.current;
 
-    if (row === null) return undefined;
+    // A wrapping row has nothing hidden sideways for a wheel to turn to.
+    if (row === null || wrap) return undefined;
 
     const onWheel = (event: WheelEvent): void => {
       // Shift turns a wheel sideways and Control (or Command) zooms on their
@@ -63,19 +75,25 @@ export function FilterChips<Id extends string>({
 
     row.addEventListener('wheel', onWheel, { passive: false });
     return () => row.removeEventListener('wheel', onWheel);
-  }, []);
+  }, [wrap]);
 
   return (
     <div
       aria-label={label}
-      className="pane-quick-row scroll-fade-x"
+      className={wrap ? 'pane-quick-row pane-quick-row-wrap' : 'pane-quick-row scroll-fade-x'}
       // A chip the keys reach comes whole into view, past the edge fade, at
-      // once: nothing here scrolls smoothly, so reduced motion has nothing to stop.
-      onFocus={(event) => {
-        if (event.target !== event.currentTarget) {
-          event.target.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
-        }
-      }}
+      // once: nothing here scrolls smoothly, so reduced motion has nothing to
+      // stop. A wrapping row shows every chip and leaves the focus's own
+      // scrolling to the browser.
+      onFocus={
+        wrap
+          ? undefined
+          : (event) => {
+              if (event.target !== event.currentTarget) {
+                event.target.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+              }
+            }
+      }
       ref={rowRef}
       role="toolbar"
     >

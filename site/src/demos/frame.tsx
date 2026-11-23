@@ -148,12 +148,52 @@ function SideBySideDemo() {
   );
 }
 
-/** The frame page's demo: the window, then two listings side by side. */
+/** The choices the wrapping `FilterChips` offers. */
+const EXTENSION_CHIPS = ['intl', 'redis', 'xdebug', 'imagick', 'pcov', 'swoole', 'mongodb'].map(
+  (id) => ({ id, label: id })
+);
+
+/**
+ * `FilterChips` with `wrap` as a multi-choice control in a cell the slider
+ * narrows: the chips go on to further lines rather than scrolling.
+ */
+function WrappingChipsDemo() {
+  const [width, setWidth] = useState(220);
+  const [on, setOn] = useState<readonly string[]>(['intl', 'redis']);
+
+  return (
+    <div className="demo-stack">
+      <Range
+        label="Cell width"
+        max={480}
+        min={140}
+        onChange={setWidth}
+        step={10}
+        value={width}
+        valueText={`${width}px`}
+      />
+      <div style={{ width: `${width}px`, maxWidth: '100%' } as CSSProperties}>
+        <FilterChips
+          chips={EXTENSION_CHIPS}
+          label="Extensions"
+          on={on}
+          onToggle={(id) =>
+            setOn((now) => (now.includes(id) ? now.filter((each) => each !== id) : [...now, id]))
+          }
+          wrap
+        />
+      </div>
+    </div>
+  );
+}
+
+/** The frame page's demo: the window, two listings side by side, then chips that wrap. */
 export function FrameDemo() {
   return (
     <div className="demo-stack">
       <FrameWindowDemo />
       <SideBySideDemo />
+      <WrappingChipsDemo />
     </div>
   );
 }
