@@ -644,7 +644,8 @@ const UNNAMED_ROLES = new Set(['none', 'presentation', 'generic']);
  * when it has none: the text of the elements `aria-labelledby` names, else
  * `aria-label`, on an element whose role takes a name (an `svg` or an
  * `img`, or one with an explicit role but none, presentation, or generic; a
- * plain `span`'s label is not read); else an `img`'s `alt`.
+ * plain `span`'s label is not read); else an `img`'s `alt`, unless the
+ * image is presentational too.
  */
 function textAlternative(element: Element): string | null {
   const role = element.getAttribute('role');
@@ -667,8 +668,9 @@ function textAlternative(element: Element): string | null {
     const label = element.getAttribute('aria-label')?.trim();
 
     if (label) return label;
+    // A presentational image (role none or presentation) is not read by its alt either.
+    if (tag === 'img') return element.getAttribute('alt');
   }
-  if (tag === 'img') return element.getAttribute('alt');
   return null;
 }
 

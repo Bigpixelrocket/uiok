@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, cleanup, render, screen } from '@testing-library/react';
 import { Profiler, useState, type ReactElement, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -653,6 +653,28 @@ describe('a row', () => {
       expect(tip()).toBe('Production Replica, primary eu-west\nRunning');
       await act(async () => relabel('Staging'));
       expect(tip()).toBe('Staging Replica, primary eu-west\nRunning');
+    });
+
+    it('reads no alt of a presentational image, and a plain image’s alt', () => {
+      for (const role of ['presentation', 'none']) {
+        const tip = tipOf(
+          <>
+            <img alt="Badge" role={role} src="data:," />
+            Replica
+          </>
+        );
+
+        expect(tip()).toBe('Replica\nRunning');
+        cleanup();
+      }
+      const tip = tipOf(
+        <>
+          <img alt="Badge" src="data:," />
+          Replica
+        </>
+      );
+
+      expect(tip()).toBe('Badge Replica\nRunning');
     });
 
     it('reads a cut NameCut name once, whole', () => {
