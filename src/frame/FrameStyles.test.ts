@@ -70,7 +70,8 @@ describe('the tree look', () => {
   });
 
   it('shows a focused filter by the underline alone, with no field ring', () => {
-    applyStylesheets(styles, standardColours(styles));
+    // The block's rules go first, so the ring falls to their weight, not their order.
+    applyStylesheets(standardColours(styles), styles);
     document.body.innerHTML = treePane;
     const input = document.querySelector('.tree-filter-input') as HTMLInputElement;
 

@@ -172,6 +172,19 @@ describe('PaletteOption', () => {
     expect(screen.getByRole('option', { name: 'Open' }).id).toBe('command');
     expect(screen.getByRole('option', { name: 'Close' }).id).toBe('command-name');
   });
+
+  it('takes its label as its name over a marked name', () => {
+    render(
+      <PaletteOption
+        id="open"
+        label="Open the project"
+        name={<MarkedText positions={[0]} text="Open" />}
+        onPick={() => undefined}
+      />
+    );
+
+    expect(screen.getByRole('option', { name: 'Open the project' }).id).toBe('open');
+  });
 });
 
 describe('PaletteNotes', () => {
