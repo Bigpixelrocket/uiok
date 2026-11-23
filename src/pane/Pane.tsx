@@ -163,8 +163,10 @@ export function PaneList({
   const region = regionHandlers(handlers);
   // Whether the keyboard's menu key (the Menu key, Shift-F10) was the last
   // thing pressed: only it makes a menu the keyboard's, until the menu it
-  // asks for, another key, or a press of the pointer. The event alone cannot
-  // tell: Chromium sends the Menu key's as a mouse's pointer event.
+  // asks for, another key, or a press of the pointer or a mouse button. The
+  // event alone cannot tell: Chromium sends the Menu key's as a mouse's
+  // pointer event. A mouse's second button pressed while another is held
+  // brings a mousedown but no pointerdown, so both clear it.
   const menuKey = useRef(false);
 
   return (
@@ -190,6 +192,9 @@ export function PaneList({
             !event.altKey &&
             !event.metaKey);
         region.onKeyDownCapture?.(event);
+      }}
+      onMouseDownCapture={() => {
+        menuKey.current = false;
       }}
       onPointerDownCapture={() => {
         menuKey.current = false;

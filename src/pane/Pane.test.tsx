@@ -225,6 +225,24 @@ describe("the keyboard's menu key, told from a pointer's click", () => {
     expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([0, 1]);
   });
 
+  it("leaves a second button's click to the pane after the menu key, with no pointerdown", () => {
+    // Primary held on the empty space, then Shift-F10 the browser leaves
+    // alone, then the secondary button: Chromium sends a mousedown and a
+    // contextmenu for the second button, but no pointerdown.
+    const onRow = vi.fn();
+    const onPane = vi.fn();
+    mount(onRow, onPane);
+    const home = screen.getByLabelText('Files', { selector: '.pane-list' });
+
+    home.focus();
+    fireEvent.pointerDown(home, { pointerType: 'mouse', button: 0, buttons: 1 });
+    fireEvent.mouseDown(home, { button: 0, buttons: 1 });
+    fireEvent.keyDown(home, { key: 'F10', shiftKey: true });
+    fireEvent.mouseDown(home, { button: 2, buttons: 3 });
+    pointerMenu(home, 'mouse');
+    expect([onPane.mock.calls.length, onRow.mock.calls.length]).toEqual([1, 0]);
+  });
+
   it("takes a menu as the keyboard's only right after the menu key, once", () => {
     const onRow = vi.fn();
     const onPane = vi.fn();
