@@ -221,6 +221,25 @@ meter::-webkit-meter-even-less-good-value {
   backdrop-filter: var(--frost);
 }
 
+/* The inline direction as inherited properties, for what a logical property
+   cannot say: --scroll-fade-inline-to, where the inline fade's gradient runs
+   (below), and --inline-flip, 1 or -1, a scaleX() that turns a glyph to
+   point toward the inline end. Each explicit dir attribute sets them, so the
+   nearest one wins, an LTR box inside an RTL one included; a reader gives
+   the left-to-right value as its fallback for a page with no dir attribute.
+   Not :dir(rtl): a bundler's CSS transform (Lightning CSS, under Vite)
+   rewrites :dir() into a list of :lang() selectors, which a right-to-left
+   box in an English page does not match. */
+[dir='rtl'] {
+  --scroll-fade-inline-to: to left;
+  --inline-flip: -1;
+}
+
+[dir='ltr'] {
+  --scroll-fade-inline-to: to right;
+  --inline-flip: 1;
+}
+
 /* A scrolling box whose content runs past an edge fades over the last
    --scroll-fade-size at that edge, so a clipped row reads as "more", not
    as a cut. On the scrolling element itself: .scroll-fade for the block
@@ -288,18 +307,10 @@ meter::-webkit-meter-even-less-good-value {
      starts: the left edge, or the right in a right-to-left box, whose
      scroll position counts down from its right edge. */
   .scroll-fade-x {
-    --scroll-fade-inline-to: to right;
-  }
-
-  .scroll-fade-x:dir(rtl) {
-    --scroll-fade-inline-to: to left;
-  }
-
-  .scroll-fade-x {
     mask-image:
       linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
       linear-gradient(
-        var(--scroll-fade-inline-to),
+        var(--scroll-fade-inline-to, to right),
         transparent,
         var(--ground) var(--scroll-fade-inline-start),
         var(--ground) calc(100% - var(--scroll-fade-inline-end)),
@@ -331,7 +342,7 @@ meter::-webkit-meter-even-less-good-value {
         transparent
       ),
       linear-gradient(
-        var(--scroll-fade-inline-to),
+        var(--scroll-fade-inline-to, to right),
         transparent,
         var(--ground) var(--scroll-fade-inline-start),
         var(--ground) calc(100% - var(--scroll-fade-inline-end)),
@@ -344,7 +355,7 @@ meter::-webkit-meter-even-less-good-value {
       linear-gradient(var(--ground), var(--ground)), linear-gradient(var(--ground), var(--ground)),
       linear-gradient(to bottom, var(--ground) calc(100% - var(--scroll-fade-end)), transparent),
       linear-gradient(
-        var(--scroll-fade-inline-to),
+        var(--scroll-fade-inline-to, to right),
         transparent,
         var(--ground) var(--scroll-fade-inline-start),
         var(--ground) calc(100% - var(--scroll-fade-inline-end)),

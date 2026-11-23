@@ -215,12 +215,28 @@ describe("FilterChips' one line", () => {
 
   it('fades the edge with more past it in a right-to-left row too', () => {
     // The inline fade starts where the scroll timeline does: the right edge
-    // of a right-to-left box.
+    // of a right-to-left box, read from the nearest dir attribute, so an
+    // English page around it (which a bundler's :lang() rewrite of :dir()
+    // would read instead) changes nothing.
     const sheet = readStylesheet('src/styles.css');
 
-    expect(sheet).toMatch(/\.scroll-fade-x \{\s*--scroll-fade-inline-to: to right;\s*\}/);
-    expect(sheet).toMatch(/\.scroll-fade-x:dir\(rtl\) \{\s*--scroll-fade-inline-to: to left;\s*\}/);
-    expect(sheet).toMatch(/linear-gradient\(\s*var\(--scroll-fade-inline-to\),/);
+    expect(sheet).toMatch(/linear-gradient\(\s*var\(--scroll-fade-inline-to, to right\),/);
+    applyStylesheets(sheet);
+    document.documentElement.lang = 'en';
+    try {
+      render(
+        <div dir="rtl">
+          <FilterChips chips={CHIPS} label="Filters" on={[]} onToggle={() => undefined} />
+        </div>
+      );
+      const row = screen.getByRole('toolbar', { name: 'Filters' });
+
+      expect(getComputedStyle(row).getPropertyValue('--scroll-fade-inline-to').trim()).toBe(
+        'to left'
+      );
+    } finally {
+      document.documentElement.removeAttribute('lang');
+    }
   });
 
   it('keeps to one line that scrolls sideways under the edge fade, with no scrollbar and no smooth scroll', () => {

@@ -1475,8 +1475,8 @@ function rule(selector: string, tokens: Readonly<Record<string, string>>, depth 
  * declares or reads (the activity stripes' colour, a dialog's tone, top
  * inset, and pinned top, a date picker fraction field's digit count, a tab
  * strip's edge fades, a field's label column and chevron, a range's fill, a
- * notice's tone, the scroll fade's edges), which an app token on `:root`
- * would otherwise reach.
+ * notice's tone, the scroll fade's edges, the inline direction's flip),
+ * which an app token on `:root` would otherwise reach.
  */
 const BASE_TOKEN_NAMES = [
   // The scales of src/tokens.css: size, space, corner, line, timing,
@@ -1564,6 +1564,8 @@ const BASE_TOKEN_NAMES = [
   '--scroll-fade-inline-start',
   '--scroll-fade-inline-end',
   '--scroll-fade-inline-to',
+  // The inline direction each dir attribute sets for what a logical property cannot say.
+  '--inline-flip',
   // The hooks a component stylesheet declares or reads.
   '--stripe-ink',
   '--stripe-ground',

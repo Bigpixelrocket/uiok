@@ -229,47 +229,15 @@ describe('KeyLegendStrip', () => {
       }
     });
 
-    it('opens its list above the chip, ending at its right edge', () => {
+    it("opens its list above the chip, ending at the chip's inline end in either direction", () => {
       applyStylesheets(readStylesheet('src/styles.css'));
       const restore = wrapLast(1);
       try {
-        render(<KeyLegendStrip overflow="more" verbs={many()} />);
-
-        fireEvent.click(screen.getByRole('button', { name: '1 more shortcut' }));
-        const menu = screen.getByRole('menu');
-
-        expect(getComputedStyle(menu).top).toBe('auto');
-        expect(getComputedStyle(menu).left).toBe('auto');
-        expect(getComputedStyle(menu).right).toBe('0px');
-      } finally {
-        restore();
-      }
-    });
-
-    it("ends its list at the chip's left edge right to left", () => {
-      applyStylesheets(readStylesheet('src/styles.css'));
-      const restore = wrapLast(1);
-      try {
-        render(
-          <div dir="rtl">
-            <KeyLegendStrip overflow="more" verbs={many()} />
-          </div>
-        );
-
-        fireEvent.click(screen.getByRole('button', { name: '1 more shortcut' }));
-        const menu = screen.getByRole('menu');
-
-        expect(getComputedStyle(menu).left).toBe('0px');
-        expect(getComputedStyle(menu).right).toBe('auto');
-      } finally {
-        restore();
-      }
-    });
-
-    it('keeps the left-to-right place in an LTR footer inside an RTL page', () => {
-      applyStylesheets(readStylesheet('src/styles.css'));
-      const restore = wrapLast(1);
-      try {
+        // jsdom resolves no logical inset to a side, so this reads what the
+        // rules declare: the inline end at 0 follows the box's own
+        // direction (right, or left right to left, an LTR footer inside an
+        // RTL page keeping the right), with no :dir() rule for a bundler to
+        // rewrite into :lang() selectors.
         render(
           <div dir="rtl">
             <div dir="ltr">
@@ -281,8 +249,11 @@ describe('KeyLegendStrip', () => {
         fireEvent.click(screen.getByRole('button', { name: '1 more shortcut' }));
         const menu = screen.getByRole('menu');
 
-        expect(getComputedStyle(menu).left).toBe('auto');
-        expect(getComputedStyle(menu).right).toBe('0px');
+        expect(getComputedStyle(menu).top).toBe('auto');
+        expect(declaredValues(menu, 'inset-inline').at(-1)).toBe('auto 0');
+        expect(
+          readStylesheet('src/legend/legend.css').replace(/\/\*[\s\S]*?\*\//g, '')
+        ).not.toMatch(/:dir\(/);
       } finally {
         restore();
       }
