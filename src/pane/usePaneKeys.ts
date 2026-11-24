@@ -402,7 +402,10 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
       rows.length,
       at,
       to,
-      pageRowsFrom(mainRef.current, rows, at, to === 'page-up')
+      // Only a page move reads the rows' heights.
+      to === 'page-up' || to === 'page-down'
+        ? pageRowsFrom(mainRef.current, rows, at, to === 'page-up')
+        : 1
     );
     const target = next === null ? undefined : rows[next];
     const key = target?.dataset.rowKey;

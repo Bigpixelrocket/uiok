@@ -337,6 +337,35 @@ describe('SideBySide', () => {
       expect(root.dataset.layout).toBe('stacked');
     });
 
+    it('stacks a held pair whose chips grow at the same width, the floor masking the growth', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={<div className="pane-quick-row">chips</div>}
+          firstLabel="Settings"
+          from={600}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const chips = root.querySelector('.pane-quick-row') as HTMLElement;
+      let chipsWide = 100;
+      Object.defineProperty(chips, 'clientWidth', { configurable: true, value: 100 });
+      Object.defineProperty(chips, 'scrollWidth', { configurable: true, get: () => chipsWide });
+      // The parts' boxes are narrow, so the floor (600px) is the need throughout.
+      content(root, 50, 50);
+
+      widen(root, 620);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // The chips grow 10px on their own at the same width (a word that
+      // loads late): the need is the floor as before, but the chips hide.
+      chipsWide = 110;
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
     it('keeps narrow content side by side from the floor', () => {
       observe();
       const { container } = render(pair(400));

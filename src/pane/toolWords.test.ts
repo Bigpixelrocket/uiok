@@ -22,5 +22,16 @@ describe('the word step’s tooltips', () => {
     expect(given!.dataset.tooltip).toBe('Run the task now');
     expect(given!.hasAttribute('data-word-tip')).toBe(false);
     expect(own!.dataset.tooltip).toBe('Stop the server');
+
+    // A tip in the very words the fit gave, written with its description
+    // (`describedTooltip`), stays too.
+    const same = document.createElement('button');
+    same.dataset.word = 'Restart';
+    root.append(same);
+    giveWordTips([same]);
+    same.setAttribute('aria-description', 'Restart');
+    same.dataset.tooltip = 'Restart';
+    clearWordTips(root);
+    expect(same.dataset.tooltip).toBe('Restart');
   });
 });

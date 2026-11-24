@@ -9,12 +9,17 @@
 
 /**
  * Takes back every word tooltip a fit gave under `root`: a tooltip still
- * the word it gave goes; one the host has written since (a new `tip`)
- * stays.
+ * the word it gave goes; one the host has written since stays, a new
+ * text, or a `tip` in the same words, which `describedTooltip` writes with
+ * its description (a fit's tooltip has none).
  */
 export function clearWordTips(root: HTMLElement): void {
   for (const act of root.querySelectorAll<HTMLElement>('[data-word-tip]')) {
-    if (act.dataset.tooltip === act.dataset.wordTip) delete act.dataset.tooltip;
+    const tooltip = act.dataset.tooltip;
+    const given = tooltip === act.dataset.wordTip;
+    const described = tooltip !== undefined && act.getAttribute('aria-description') === tooltip;
+
+    if (given && !described) delete act.dataset.tooltip;
     delete act.dataset.wordTip;
   }
 }

@@ -51,26 +51,26 @@ const hiddenChips = (part: Element): number => {
 };
 
 /**
- * Whether every one-line chip row shows all its chips with the parts in
- * their two halves, hiding less than `slack` pixels: the columns laid out
- * side by side for one read (`data-layout`) and put back before the
- * browser paints. `hiddenChips` only bounds the room from below: a listing
- * whose flexible columns share the extra width gives its chips only part
- * of it, so the halves are checked as they would be drawn. A pair with no
- * such row needs no read.
+ * The most any one-line chip row hides with the parts in their two halves,
+ * in pixels: the columns laid out side by side for one read (`data-layout`)
+ * and put back before the browser paints. `hiddenChips` only bounds the
+ * room from below: a listing whose flexible columns share the extra width
+ * gives its chips only part of it, so the halves are read as they would be
+ * drawn. A pair with no such row needs no read.
  */
-const chipsFitHalves = (element: HTMLElement, slack: number): boolean => {
+const chipsHiddenInHalves = (element: HTMLElement): number => {
   const rows = element.querySelectorAll(SCROLLING_CHIPS);
 
-  if (rows.length === 0) return true;
+  if (rows.length === 0) return 0;
   const layout = element.getAttribute('data-layout');
 
   element.setAttribute('data-layout', 'side-by-side');
-  const fit = [...rows].every((row) => row.scrollWidth - row.clientWidth < slack);
+  let hidden = 0;
 
+  for (const row of rows) hidden = Math.max(hidden, row.scrollWidth - row.clientWidth);
   if (layout === null) element.removeAttribute('data-layout');
   else element.setAttribute('data-layout', layout);
-  return fit;
+  return hidden;
 };
 
 /**
@@ -156,6 +156,10 @@ export function SideBySide({
   // Whether the content is as it was at the last measure, so the need read
   // then still holds; a change to the content makes it uncertain.
   const needKnown = useRef(false);
+  // The width at which every chip row last showed all its chips in the
+  // halves, the content as it is; null once the content changes. Under it
+  // a held pair may hide a scrollbar's width of chips, never at or past it.
+  const chipsFitWidth = useRef<number | null>(null);
   // The measure of the latest render, given whether the content changed.
   const measureNow = useRef<(contentChanged: boolean) => void>(() => undefined);
   // The watch on the content's own changes, whose records a measure in the
@@ -180,7 +184,10 @@ export function SideBySide({
     // in a ref, not in this effect, so an effect that runs again with the
     // same `from` (a page shown again through <Activity>) keeps the hold.
     const measure = (contentChanged: boolean): void => {
-      if (contentChanged) needKnown.current = false;
+      if (contentChanged) {
+        needKnown.current = false;
+        chipsFitWidth.current = null;
+      }
 
       const width = element.clientWidth;
 
@@ -206,11 +213,19 @@ export function SideBySide({
 
         measuredNeed.current = need;
         needKnown.current = true;
-        // Chips are checked in the halves themselves; held, a scrollbar's
-        // width of them may hide, as the hold lets any content give it.
-        next =
-          width >= (hold ? need - SCROLLBAR_HOLD : need) &&
-          chipsFitHalves(element, hold ? SCROLLBAR_HOLD : 1);
+        // Chips are read in the halves themselves. Held, and only narrower
+        // than where they last showed whole with the content unchanged (a
+        // scrollbar), a scrollbar's width of them may hide; chips that grew
+        // at the same width get no such room.
+        if (width >= (hold ? need - SCROLLBAR_HOLD : need)) {
+          const hidden = chipsHiddenInHalves(element);
+          const fitWidth = chipsFitWidth.current;
+
+          if (hidden < 1) chipsFitWidth.current = width;
+          next =
+            hidden < 1 ||
+            (hold && fitWidth !== null && width < fitWidth && hidden < SCROLLBAR_HOLD);
+        }
       }
       shown.current = next;
       setSideBySide(next);
