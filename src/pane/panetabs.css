@@ -56,8 +56,11 @@
    the others stand behind it on the ground, shorter and fainter. A tab takes
    no focus: a press shows it, and the host's verbs are the keyboard's way
    in. It shrinks no narrower than its label's floor (--pane-tab-floor, in
-   characters, which PaneTabs sets) past its insets, its border, and the
-   room it keeps for its close control. */
+   characters, which PaneTabs sets) past its insets, its border, the room it
+   keeps for its close control, and the room of any mark it carries beside
+   its label (`--pane-tab-lead` for a mark ahead of the name,
+   `--pane-tab-live` for a live tab's lit mark), so a mark never takes its
+   room from the label's floor. */
 :where(.listing-root) .pane-tab {
   position: relative;
   flex: 0 1 auto;
@@ -67,10 +70,11 @@
   box-sizing: border-box;
   min-width: calc(
     var(--pane-tab-floor, 0ch) + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) +
-      2 * var(--line)
+      2 * var(--line) + var(--pane-tab-lead, 0px) + var(--pane-tab-live, 0px)
   );
   max-width: calc(
-    32ch + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) + 2 * var(--line)
+    32ch + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) + 2 * var(--line) +
+      var(--pane-tab-lead, 0px) + var(--pane-tab-live, 0px)
   );
   /* Shorter than the tab in front, and clear of the frame's top hairline. */
   height: calc(var(--pane-tab-height) - var(--space-2));
@@ -97,12 +101,14 @@
   min-width: 0;
 }
 
-/* A mark ahead of the name takes its own room on top of the floor. */
+/* A mark ahead of the name, and a live tab's lit mark after it, each take
+   their own room on top of the floor. */
 :where(.listing-root) .pane-tab:has(> .pane-tab-face > .pane-tab-mark) {
-  min-width: calc(
-    var(--pane-tab-floor, 0ch) + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) +
-      2 * var(--line) + var(--icon-md) + var(--space-2)
-  );
+  --pane-tab-lead: calc(var(--icon-md) + var(--space-2));
+}
+
+:where(.listing-root) .pane-tab:has(> .pane-tab-face > .pane-tab-live) {
+  --pane-tab-live: calc(var(--icon-lg) + var(--space-2));
 }
 
 /* A tab with no close control, pin, or mark of its own has nothing to keep room for. */

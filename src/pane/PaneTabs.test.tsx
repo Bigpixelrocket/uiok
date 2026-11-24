@@ -140,6 +140,28 @@ describe('PaneTabs', () => {
     expect(tab('quiet').hasAttribute('aria-description')).toBe(false);
   });
 
+  it('keeps a live tab’s lit mark, and a lead mark, out of its label’s floor', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    strip({
+      tabs: [
+        { id: 'plain', name: 'plain' },
+        { id: 'lit', name: 'lit', live: 'Taking input' },
+        { id: 'both', name: 'both', live: 'Taking input', mark: <span /> }
+      ],
+      front: 'plain'
+    });
+    const room = (name: string, token: string) =>
+      getComputedStyle(box(name)).getPropertyValue(token).trim();
+
+    expect(room('plain', '--pane-tab-live')).toBe('');
+    expect(room('lit', '--pane-tab-live')).toBe('calc(var(--icon-lg) + var(--space-2))');
+    expect(room('both', '--pane-tab-live')).toBe('calc(var(--icon-lg) + var(--space-2))');
+    expect(room('both', '--pane-tab-lead')).toBe('calc(var(--icon-md) + var(--space-2))');
+    // The floor adds both rooms on top of the label's.
+    expect(declaredValues(box('lit'), 'min-width').join()).toContain('var(--pane-tab-live, 0px)');
+    document.body.innerHTML = '';
+  });
+
   it('holds no control inside a tab, its close control beside the tab in the box', () => {
     strip();
     const tabs = screen.getAllByRole('tab');
@@ -541,6 +563,23 @@ describe('PaneTabs folding', () => {
     expect(onSelect).toHaveBeenCalledWith('b');
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(count);
+  });
+
+  it('carries a folded live tab’s lit mark with its words as its tooltip and description', () => {
+    layout(350);
+    strip({
+      front: 'e',
+      tabs: FOLDING.map((item) => (item.id === 'c' ? { ...item, live: 'Taking input' } : item))
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '3 more tabs' }));
+    const menu = screen.getByRole('menu', { name: 'Folded here' });
+    const row = within(menu).getByRole('menuitem', { name: 'c' });
+
+    expect(row.getAttribute('aria-description')).toBe('Taking input');
+    expect((row.querySelector('.pane-tab-live') as HTMLElement).dataset.tooltip).toBe(
+      'Taking input'
+    );
   });
 
   it('scrolls the row the keys move to into view, and describes a row by its tip', () => {

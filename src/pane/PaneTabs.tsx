@@ -378,7 +378,7 @@ function FoldedTabs({ folded, labels, onSelect }: FoldedProps): ReactElement {
                     </span>
                     <span aria-hidden className="pane-tabs-folded-marks">
                       {isLive(tab) ? (
-                        <span className="pane-tab-live">
+                        <span className="pane-tab-live" {...tooltip(tab.live)}>
                           <CircleDot size={ICON_SM} />
                         </span>
                       ) : null}

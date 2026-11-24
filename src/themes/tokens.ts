@@ -1616,6 +1616,8 @@ const BASE_TOKEN_NAMES = [
   '--pane-tab-height',
   '--pane-tab-back',
   '--pane-tab-floor',
+  '--pane-tab-lead',
+  '--pane-tab-live',
   '--update-note-rows',
   '--pager-height',
   '--menu-font-size',

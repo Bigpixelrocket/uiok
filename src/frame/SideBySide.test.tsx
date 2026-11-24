@@ -537,6 +537,46 @@ describe('SideBySide', () => {
       Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
     });
 
+    it('stacks a held pair whose chip row, roomy at the fit, a column beside it squeezes a little', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={<div className="pane-quick-row">chips</div>}
+          firstLabel="Settings"
+          from={600}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const chips = root.querySelector('.pane-quick-row') as HTMLElement;
+      let neighbour = 0;
+      // 100px of chips in a row of half the pair less 202px: 108px at 620.
+      const room = () => root.clientWidth / 2 - 202 - neighbour;
+      Object.defineProperty(chips, 'clientWidth', { configurable: true, get: room });
+      Object.defineProperty(chips, 'scrollWidth', {
+        configurable: true,
+        get: () => Math.max(100, room())
+      });
+      Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+        configurable: true,
+        value: () => ({ width: 100 }) as DOMRect
+      });
+      content(root, 50, 50);
+
+      widen(root, 620);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // In one measure a 16px scrollbar takes 8px from the row's spare room
+      // and a column beside it takes 4px more: the row hides 4px, under half
+      // the narrowing, but the narrowing alone would have hidden nothing.
+      neighbour = 4;
+      widen(root, 604);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+      Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+    });
+
     it('keeps the hold when the host draws the same chips again, and bounds it to a scrollbar', () => {
       observe();
       const pairOf = (label: string) => (
