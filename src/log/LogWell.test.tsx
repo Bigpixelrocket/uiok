@@ -568,6 +568,20 @@ describe('LogWell with many lines', () => {
     expect(selection.toString()).toContain('line 0');
     expect(selection.toString()).toContain('line 399');
 
+    // A second select-all of the well, all of it drawn, then a click
+    // outside not yet heard when lines arrive: the click stays a caret.
+    selection.selectAllChildren(well);
+    changed();
+    selection.collapse(container.querySelector('.before')?.firstChild as Node, 2);
+    rerender(
+      <div>
+        <p className="before">before the log</p>
+        <LogWell follow={false} label="Combined log" lines={linesTo(400)} />
+        <p className="after">after the log</p>
+      </div>
+    );
+    expect(selection.isCollapsed).toBe(true);
+
     // A page-wide selection around the well.
     selection.removeAllRanges();
     changed();

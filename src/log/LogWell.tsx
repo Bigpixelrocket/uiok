@@ -415,7 +415,9 @@ export function LogWell({
     // new width). It is kept, and following it leaves the foot, unless it
     // stays within the slack of the foot the well last stood at.
     const end = Math.max(0, element.scrollHeight - element.clientHeight);
-    const clamped = lastTop.current > end + 0.5 && Math.abs(element.scrollTop - end) < 0.5;
+    // Within a pixel and a half: the box's sizes are whole pixels, a
+    // scroll at a fractional zoom is not.
+    const clamped = lastTop.current > end + 0.5 && Math.abs(element.scrollTop - end) <= 1.5;
     const moved = !clamped && Math.abs(element.scrollTop - lastTop.current) >= 0.5;
 
     if (moved && !(following && lastTop.current - element.scrollTop <= FOOT_SLACK)) {
@@ -436,8 +438,15 @@ export function LogWell({
     const held = anchor.current;
     const index = held === null ? undefined : indexOf.get(held.key);
 
-    // A line the host dropped leaves the scroll where it is.
-    if (held === null || index === undefined) return;
+    // A line the host dropped leaves the scroll where it is, or where a
+    // clamp put it, and the view reads it.
+    if (held === null || index === undefined) {
+      lastTop.current = element.scrollTop;
+      setView((before) =>
+        before.top === element.scrollTop ? before : { ...before, top: element.scrollTop }
+      );
+      return;
+    }
     const top = tops[index] ?? 0;
     const target = top + Math.min(held.within, Math.max(0, (tops[index + 1] ?? top) - top));
 
@@ -544,9 +553,12 @@ export function LogWell({
         end: element.contains(range.endContainer) ? endLine.key : FOOT
       };
 
+      // Only an end whose line is not drawn yet: drawing it changes what
+      // is drawn, so a commit comes, and the pin cannot outlive it.
       pinEnd.current =
         element.contains(range.endContainer) &&
-        elementOf(range.endContainer)?.closest('.log-line') === null
+        elementOf(range.endContainer)?.closest('.log-line') === null &&
+        element.querySelector(`:scope > .log-line[data-index="${last}"]`) === null
           ? {
               key: endLine.key,
               start: [range.startContainer, range.startOffset],
@@ -578,13 +590,21 @@ export function LogWell({
     const element = well.current;
     const index = pin === null ? undefined : indexOf.get(pin.key);
 
-    if (pin === null || element === null || index === undefined) return;
+    if (pin === null || element === null) return;
+    // A line the host dropped takes its pin with it.
+    if (index === undefined) {
+      pinEnd.current = null;
+      return;
+    }
     const row = element.querySelector(`:scope > .log-line[data-index="${index}"]`);
     const selection = element.ownerDocument.getSelection();
 
     if (row === null || selection === null || selection.rangeCount === 0) return;
     pinEnd.current = null;
     const range = selection.getRangeAt(0);
+    const endInRoom =
+      element.contains(range.endContainer) &&
+      elementOf(range.endContainer)?.closest('.log-line') === null;
 
     // A selection made since the end was read (a click elsewhere, not yet
     // heard) is not the one to move: its start is not the one read, unless
@@ -594,7 +614,7 @@ export function LogWell({
       !startNode.isConnected ||
       (range.startContainer === startNode && range.startOffset === startOffset);
 
-    if (range.collapsed || !sameStart) return;
+    if (range.collapsed || !sameStart || !endInRoom) return;
     const start = [range.startContainer, range.startOffset] as const;
     const end = [row, row.childNodes.length] as const;
 
