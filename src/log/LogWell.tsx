@@ -350,6 +350,7 @@ export function LogWell({
     if (latestLines.current.length === 0) {
       heights.current = new Map();
       settledEstimate.current = null;
+      anchor.current = null;
       return;
     }
     const known = heights.current;
@@ -401,19 +402,26 @@ export function LogWell({
       unlaid.current = true;
       return;
     }
+    // A scroll that moved since the last read is the reader's, unless the
+    // browser clamped it to a log grown shorter (lines dropped before it, a
+    // new width). It is kept, and following it leaves the foot, unless it
+    // stays within the slack of the foot the well last stood at.
+    const end = Math.max(0, element.scrollHeight - element.clientHeight);
+    const clamped = lastTop.current > end + 0.5 && Math.abs(element.scrollTop - end) < 0.5;
+    const moved = !clamped && Math.abs(element.scrollTop - lastTop.current) >= 0.5;
+
+    if (moved && !(following && lastTop.current - element.scrollTop <= FOOT_SLACK)) {
+      anchor.current = anchorAt(element.scrollTop);
+      lastTop.current = element.scrollTop;
+      if (following) setAtFoot(false);
+      setView((before) =>
+        before.top === element.scrollTop ? before : { ...before, top: element.scrollTop }
+      );
+      return;
+    }
     if (following) {
       anchor.current = null;
       element.scrollTop = element.scrollHeight;
-      lastTop.current = element.scrollTop;
-      return;
-    }
-    // A scroll that moved since the last read is the reader's, unless the
-    // browser clamped it to a log grown shorter (lines dropped before it).
-    const end = Math.max(0, element.scrollHeight - element.clientHeight);
-    const clamped = lastTop.current > end + 0.5 && Math.abs(element.scrollTop - end) < 0.5;
-
-    if (!clamped && Math.abs(element.scrollTop - lastTop.current) >= 0.5) {
-      anchor.current = anchorAt(element.scrollTop);
       lastTop.current = element.scrollTop;
       return;
     }
@@ -449,15 +457,21 @@ export function LogWell({
         unlaid.current = true;
         return;
       }
-      if (unlaid.current) {
+      // Shown again, the well draws once more though its size is the
+      // same: what it drew while hidden is measured and its scroll kept.
+      const shown = unlaid.current;
+
+      if (shown) {
         unlaid.current = false;
         lastTop.current = element.scrollTop;
       }
-      if (width > 0 && laidWidth.current > 0 && width !== laidWidth.current) {
+      const rewrapped = width > 0 && laidWidth.current > 0 && width !== laidWidth.current;
+
+      if (rewrapped) {
         heights.current = new Map();
         settledEstimate.current = null;
-        setMeasures((count) => count + 1);
       }
+      if (shown || rewrapped) setMeasures((count) => count + 1);
       if (width > 0) laidWidth.current = width;
       setView((before) => {
         const next = { top: element.scrollTop, height: element.clientHeight, width };

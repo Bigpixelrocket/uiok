@@ -364,6 +364,30 @@ describe('LogWell with many lines', () => {
       expect(well.scrollTop).toBe(600 * 36 + 4);
     });
 
+    it('follows lines that arrived while hidden once shown again at the same size', () => {
+      const { container, rerender } = render(<LogWell label="Combined log" lines={linesTo(5)} />);
+      const well = container.querySelector('.log-well') as HTMLElement;
+      let width = 400;
+      let height = VIEW;
+
+      Object.defineProperty(well, 'clientWidth', { configurable: true, get: () => width });
+      Object.defineProperty(well, 'clientHeight', { configurable: true, get: () => height });
+      act(() => resized?.());
+      expect(well.scrollTop).toBe(5 * 18);
+
+      // Hidden at the head's scroll; 500 lines come; shown again as it was.
+      width = 0;
+      height = 0;
+      act(() => resized?.());
+      well.scrollTop = 0;
+      rerender(<LogWell label="Combined log" lines={linesTo(505)} />);
+      width = 400;
+      height = VIEW;
+      act(() => resized?.());
+      expect(well.scrollTop).toBe(well.scrollHeight);
+      expect(drawnLines(container).at(-1)).toBe('line 504');
+    });
+
     it('keeps its heights and its reader through a spell out of layout', () => {
       const { well, resize } = scrolledUp();
 
@@ -373,6 +397,20 @@ describe('LogWell with many lines', () => {
       resize({ width: 400, height: VIEW });
       expect(well.scrollTop).toBe(600 * 36 + 4);
     });
+  });
+
+  it('lets a reader leave the foot by a scroll not heard yet when lines arrive', () => {
+    const { container, rerender } = render(<LogWell label="Combined log" lines={linesTo(1000)} />);
+    const well = container.querySelector('.log-well') as HTMLElement;
+
+    expect(well.scrollTop).toBe(1000 * 18);
+    // The reader scrolls up; a batch renders before the scroll event comes.
+    well.scrollTop = 600 * 18;
+    rerender(<LogWell label="Combined log" lines={linesTo(1010)} />);
+    expect(well.scrollTop).toBe(600 * 18);
+    rerender(<LogWell label="Combined log" lines={linesTo(1020)} />);
+    expect(well.scrollTop).toBe(600 * 18);
+    expect(drawnLines(container)).toContain('line 600');
   });
 
   it('keeps a scroll the well has not heard yet when lines arrive', () => {

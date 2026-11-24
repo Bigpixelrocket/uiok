@@ -145,13 +145,14 @@ With `disabled`, every chip is a disabled button while what the chips set cannot
 <FilterChips label="Modes" chips={modes} on={picked} onToggle={toggle} wrap disabled={busy} />
 ```
 
-| Prop       | Type                    | Purpose                                                                                                                   |
-| ---------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `chips`    | `readonly FilterChip[]` | `{ id, label, icon?, count? }`, in order                                                                                  |
-| `on`       | `readonly Id[]`         | The filters that are on                                                                                                   |
-| `onToggle` | `(id) => void`          | Turns one on or off                                                                                                       |
-| `label`    | `string`                | The row's accessible name ("Filters")                                                                                     |
-| `wrap`     | `boolean`               | Chips wrap onto further lines instead of scrolling sideways (a multi-choice control in a narrow cell); `false` by default |
+| Prop       | Type                    | Purpose                                                                                                                       |
+| ---------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `chips`    | `readonly FilterChip[]` | `{ id, label, icon?, count? }`, in order                                                                                      |
+| `on`       | `readonly Id[]`         | The filters that are on                                                                                                       |
+| `onToggle` | `(id) => void`          | Turns one on or off                                                                                                           |
+| `label`    | `string`                | The row's accessible name ("Filters")                                                                                         |
+| `wrap`     | `boolean`               | Chips wrap onto further lines instead of scrolling sideways (a multi-choice control in a narrow cell); `false` by default     |
+| `disabled` | `boolean`               | Every chip a disabled button, toggling nothing, an on chip still pressed, while the setting cannot change; `false` by default |
 
 `PaneWarning` is a warning line under a pane's path bar, over its rows, read as a status.
 

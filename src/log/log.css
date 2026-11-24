@@ -138,3 +138,9 @@
 .log-ansi[data-underline] {
   text-decoration: underline;
 }
+
+/* The hidden region that speaks new lines (LogWell): never part of a
+   selection, so a copy around the well takes each line once. */
+.log-live {
+  user-select: none;
+}
