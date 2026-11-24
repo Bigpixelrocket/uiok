@@ -218,6 +218,12 @@ describe('LogWell with many lines', () => {
       'Took 42 ms '
     ]);
 
+    // Words in any iterable React draws.
+    rerender(
+      <LogWell label="Combined log" lines={[{ key: 1, text: new Set(['Started', ' service']) }]} />
+    );
+    expect(live.firstElementChild?.textContent).toBe('Started service ');
+
     // A new run with the same keys speaks its new words.
     rerender(
       <LogWell
@@ -249,6 +255,37 @@ describe('LogWell with many lines', () => {
     well.scrollTop = 900 * 18;
     fireEvent.scroll(well);
     // The host drops the first 200 lines and adds none.
+    rerender(
+      <LogWell
+        follow={false}
+        label="Combined log"
+        lines={Array.from({ length: 800 }, (_, index) => lineOf(index + 200))}
+      />
+    );
+    expect(well.scrollTop).toBe(700 * 18);
+    expect(drawnLines(container)).toContain('line 900');
+  });
+
+  it('draws the anchor line when the clamp already put the scroll on it', () => {
+    const { container, rerender } = render(
+      <LogWell follow={false} label="Combined log" lines={linesTo(1000)} />
+    );
+    const well = container.querySelector('.log-well') as HTMLElement;
+    const tall = 100 * 18;
+    let stored = 0;
+
+    // A well 100 lines tall, its scroll clamped by the browser.
+    Object.defineProperty(well, 'clientHeight', { configurable: true, get: () => tall });
+    Object.defineProperty(well, 'scrollTop', {
+      configurable: true,
+      get: () => Math.max(0, Math.min(stored, well.scrollHeight - tall)),
+      set: (value: number) => {
+        stored = value;
+      }
+    });
+    well.scrollTop = 900 * 18;
+    fireEvent.scroll(well);
+    // Dropping 200 lines clamps the scroll to index 700, line 900's place.
     rerender(
       <LogWell
         follow={false}
@@ -501,7 +538,7 @@ describe('LogWell with many lines', () => {
   });
 
   it('draws every line a select-all, a page-wide selection, or a copy covers', () => {
-    const { container } = render(
+    const { container, rerender } = render(
       <div>
         <p className="before">before the log</p>
         <LogWell follow={false} label="Combined log" lines={linesTo(400)} />
@@ -554,6 +591,36 @@ describe('LogWell with many lines', () => {
     expect(selection.toString()).toContain('line 279');
     expect(selection.toString()).not.toContain('line 281');
 
+    // An end read on a boundary between drawn lines, never moved, is not
+    // applied to a selection made after it and not yet heard.
+    selection.removeAllRanges();
+    changed();
+    const row = wordsOf('line 300').parentElement?.parentElement as HTMLElement;
+    selection.setBaseAndExtent(
+      container.querySelector('.before')?.firstChild as Node,
+      0,
+      row.firstChild as Node,
+      0
+    );
+    changed();
+    selection.setBaseAndExtent(
+      container.querySelector('.before')?.firstChild as Node,
+      0,
+      well,
+      [...well.childNodes].indexOf(row) + 1
+    );
+    changed();
+    selection.collapse(container.querySelector('.after')?.firstChild as Node, 1);
+    rerender(
+      <div>
+        <p className="before">before the log</p>
+        <LogWell follow={false} label="Combined log" lines={linesTo(401)} />
+        <p className="after">after the log</p>
+      </div>
+    );
+    expect(selection.isCollapsed).toBe(true);
+    changed();
+
     // A copy draws what the selection covers at once, before its text is taken.
     selection.removeAllRanges();
     changed();
@@ -564,10 +631,10 @@ describe('LogWell with many lines', () => {
       1
     );
     document.dispatchEvent(new Event('copy'));
-    // Line 300 to the last, and the view's overscan above it.
-    expect(drawnLines(container)).toHaveLength(120);
+    // Line 300 to the last (of 401 now), and the view's overscan above it.
+    expect(drawnLines(container)).toHaveLength(121);
     expect(selection.toString()).toContain('line 350');
-    expect(selection.toString()).toContain('line 399');
+    expect(selection.toString()).toContain('line 400');
 
     selection.removeAllRanges();
     changed();

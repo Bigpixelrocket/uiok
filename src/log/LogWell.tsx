@@ -172,6 +172,10 @@ const wordsOf = (node: ReactNode): string => {
   if (typeof node === 'number' || typeof node === 'bigint') return String(node);
   if (Array.isArray(node)) return node.map((child: ReactNode) => wordsOf(child)).join('');
   if (isValidElement<{ readonly children?: ReactNode }>(node)) return wordsOf(node.props.children);
+  // Any other iterable React draws (a Set, a generator's values).
+  if (typeof node === 'object' && node !== null && Symbol.iterator in node) {
+    return Array.from(node as Iterable<ReactNode>, (child) => wordsOf(child)).join('');
+  }
   return '';
 };
 
@@ -284,7 +288,11 @@ export function LogWell({
   // the selection's anchor. Drawing the lines takes that room away and
   // leaves the end before them, so the end moves to the line's end once
   // it is drawn.
-  const pinEnd = useRef<{ readonly key: LogLine['key']; readonly backward: boolean } | null>(null);
+  const pinEnd = useRef<{
+    readonly key: LogLine['key'];
+    readonly backward: boolean;
+    readonly start: readonly [Node, number];
+  } | null>(null);
   // The width the lines were last measured at, and whether the well is
   // out of layout now.
   const laidWidth = useRef(0);
@@ -433,8 +441,9 @@ export function LogWell({
     const top = tops[index] ?? 0;
     const target = top + Math.min(held.within, Math.max(0, (tops[index + 1] ?? top) - top));
 
-    if (Math.abs(element.scrollTop - target) < 0.5) return;
-    element.scrollTop = target;
+    // The browser may have put the scroll there already (a clamp to a log
+    // grown shorter); the view is read again either way.
+    if (Math.abs(element.scrollTop - target) >= 0.5) element.scrollTop = target;
     lastTop.current = element.scrollTop;
     setView((before) =>
       before.top === element.scrollTop ? before : { ...before, top: element.scrollTop }
@@ -540,6 +549,7 @@ export function LogWell({
         elementOf(range.endContainer)?.closest('.log-line') === null
           ? {
               key: endLine.key,
+              start: [range.startContainer, range.startOffset],
               backward:
                 selection?.anchorNode === range.endContainer &&
                 selection.anchorOffset === range.endOffset
@@ -575,6 +585,16 @@ export function LogWell({
     if (row === null || selection === null || selection.rangeCount === 0) return;
     pinEnd.current = null;
     const range = selection.getRangeAt(0);
+
+    // A selection made since the end was read (a click elsewhere, not yet
+    // heard) is not the one to move: its start is not the one read, unless
+    // that start was in room the lines took.
+    const [startNode, startOffset] = pin.start;
+    const sameStart =
+      !startNode.isConnected ||
+      (range.startContainer === startNode && range.startOffset === startOffset);
+
+    if (range.collapsed || !sameStart) return;
     const start = [range.startContainer, range.startOffset] as const;
     const end = [row, row.childNodes.length] as const;
 
