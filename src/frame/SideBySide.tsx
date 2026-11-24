@@ -51,6 +51,29 @@ const hiddenChips = (part: Element): number => {
 };
 
 /**
+ * Whether every one-line chip row shows all its chips with the parts in
+ * their two halves, hiding less than `slack` pixels: the columns laid out
+ * side by side for one read (`data-layout`) and put back before the
+ * browser paints. `hiddenChips` only bounds the room from below: a listing
+ * whose flexible columns share the extra width gives its chips only part
+ * of it, so the halves are checked as they would be drawn. A pair with no
+ * such row needs no read.
+ */
+const chipsFitHalves = (element: HTMLElement, slack: number): boolean => {
+  const rows = element.querySelectorAll(SCROLLING_CHIPS);
+
+  if (rows.length === 0) return true;
+  const layout = element.getAttribute('data-layout');
+
+  element.setAttribute('data-layout', 'side-by-side');
+  const fit = [...rows].every((row) => row.scrollWidth - row.clientWidth < slack);
+
+  if (layout === null) element.removeAttribute('data-layout');
+  else element.setAttribute('data-layout', layout);
+  return fit;
+};
+
+/**
  * The room the two parts need to stand side by side, in pixels: twice the
  * wider part's min-content width, as the columns are equal, a one-line
  * chip row counted at its full content width (`hiddenChips`), so chips
@@ -91,6 +114,9 @@ const contentRoom = (element: HTMLElement): number => {
  * first width measured against it. The room is the pair's own, measured as
  * it resizes (`data-layout`: `side-by-side` or `stacked`), so a pane
  * narrowed by its sidebar or a split stacks them though the window is wide.
+ *
+ * A one-line chip row counts at its whole width, and the halves are then
+ * checked as drawn, so no chip scrolls out of sight in a half.
  *
  * The min-content widths are read in the same `ResizeObserver` callback
  * that reads the room (one forced layout per resize frame, never a read and
@@ -180,7 +206,11 @@ export function SideBySide({
 
         measuredNeed.current = need;
         needKnown.current = true;
-        next = width >= (hold ? need - SCROLLBAR_HOLD : need);
+        // Chips are checked in the halves themselves; held, a scrollbar's
+        // width of them may hide, as the hold lets any content give it.
+        next =
+          width >= (hold ? need - SCROLLBAR_HOLD : need) &&
+          chipsFitHalves(element, hold ? SCROLLBAR_HOLD : 1);
       }
       shown.current = next;
       setSideBySide(next);

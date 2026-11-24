@@ -404,6 +404,26 @@ describe('usePaneKeys main cursor', () => {
     expect(counts.space).toBe(space);
   });
 
+  it('pages by the rows’ laid-out heights, so a row that grew is not skipped unseen', () => {
+    const counts: Counts = { space: 0, rows: [] };
+
+    render(<CursorSpace counts={counts} cursorInRender={false} />);
+    // A 120px page of 40px rows (rows that hold wrapping chips): two fit past the cursor row.
+    const page = screen.getByRole('table', { name: 'Page' });
+    Object.defineProperty(page, 'clientHeight', { configurable: true, value: 120 });
+    const rects = vi
+      .spyOn(Element.prototype, 'getBoundingClientRect')
+      .mockImplementation(function (this: Element) {
+        return { height: this.hasAttribute('data-row-key') ? 40 : 0 } as DOMRect;
+      });
+
+    expect(cursorRows()).toEqual(['r0']);
+    // 24px rows would page four (120 / 24 - 1); these page two.
+    fireEvent.keyDown(document.activeElement ?? window, { key: 'PageDown' });
+    expect(cursorRows()).toEqual(['r2']);
+    rects.mockRestore();
+  });
+
   it('reads what the row the cursor lands on offers where the view leaves it out of render', () => {
     const counts: Counts = { space: 0, rows: [] };
 

@@ -150,7 +150,7 @@ Every press stops propagation, so a row's `onOpen` never fires from its controls
 - **What counts toward the room.** Everything else in the bar (a search field, a pager, a check and its label, a primary button, a separator) is measured at its full size, even an item the host lets shrink, so the tools step before a field gives up its width.
 - **A word kept until last.** A tool whose glyph alone could be misread at a cost (Kill, Drop) takes `keepWord`: it keeps its word while the other tools step, and steps only when the bar still does not fit (`data-tight="all"`).
 - **When it refits.** When the bar or any of its items resizes, when an item comes, goes, or changes its words, and once the document's fonts load.
-- **What the host keeps.** The bar must be as wide as the room it has, not sized to its content (a block, or a flex item that may shrink), so overflow shows in it. The fit sets `data-tool-fit` on the bar, `data-tight` (`''` or `'all'`) while it steps, and `data-word-tip` on each tool it gave a tooltip; the stepping is drawn by the library's stylesheet, inside or outside the listing look.
+- **What the host keeps.** The bar must be as wide as the room it has, not sized to its content (a block, or a flex item that may shrink), so overflow shows in it. The fit sets `data-tool-fit` on the bar, `data-tight` (`''` or `'all'`) while it steps, and `data-word-tip` (the word it gave) on each tool it gave a tooltip, so it takes back only that word, never a tooltip the host wrote since; the stepping is drawn by the library's stylesheet, inside or outside the listing look.
 
 ```tsx
 const fit = useToolbarFit();
@@ -188,7 +188,7 @@ What the options say:
 - `cursorInRender` (default true) returns `mainKey` and `sidebarKey` in render, so a move renders the view. False leaves a move to the two rows it changes; read `rowCursor.current()` and `sidebarCursor.current()` instead.
 - `readVerbs` reads what the cursor row and the path bar offer (`offered`) after each move and each change in `follows`, and again when a row comes or goes (`RowCursor.rowsChanged`). `sameVerbs` keeps an unchanged reading's identity.
 
-DOM helpers: `paneRows`, `paneRow`, `verbControl(root, verb, 'verb' | 'page-verb')` (the enabled control for a verb), `tabStops`, `isTabStop`, `nextTabStop` (its `order` argument takes a `TabOrder`), `pageRows` (rows per page in a 24px listing), `showRow`. Pure: `paneKeyAction`, `movedIndex`, `listingFirstStop`, `MainVerbs`, `NO_MAIN_VERBS`, `sameVerbs`.
+DOM helpers: `paneRows`, `paneRow`, `verbControl(root, verb, 'verb' | 'page-verb')` (the enabled control for a verb), `tabStops`, `isTabStop`, `nextTabStop` (its `order` argument takes a `TabOrder`), `pageRows` (rows per page in a 24px listing), `pageRowsFrom(pane, rows, at, back)` (rows per page from a row, read from the rows' laid-out heights, for a listing whose rows may grow; `usePaneKeys` pages the main pane with it), `showRow`. Pure: `paneKeyAction`, `movedIndex`, `listingFirstStop`, `MainVerbs`, `NO_MAIN_VERBS`, `sameVerbs`.
 
 ## Styling
 

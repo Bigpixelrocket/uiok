@@ -260,9 +260,15 @@ describe('SideBySide', () => {
       const { container, rerender } = render(chipsPair(false));
       const root = container.querySelector('.side-by-side') as HTMLElement;
       const chips = () => root.querySelector('.pane-quick-row') as HTMLElement;
-      /** The chip row lays out 20px wide in the measuring column and hides 200px more. */
+      /**
+       * The chip row lays out 20px wide in the measuring column and hides
+       * 200px more; in the halves it has all its room.
+       */
       const hide = () => {
-        Object.defineProperty(chips(), 'clientWidth', { configurable: true, value: 20 });
+        Object.defineProperty(chips(), 'clientWidth', {
+          configurable: true,
+          get: () => (root.hasAttribute('data-measuring') ? 20 : 220)
+        });
         Object.defineProperty(chips(), 'scrollWidth', { configurable: true, value: 220 });
       };
 
@@ -283,6 +289,52 @@ describe('SideBySide', () => {
       widen(root, 500);
       act(() => observers.at(-1)?.());
       expect(root.dataset.layout).toBe('side-by-side');
+    });
+
+    it('checks one-line chips in the halves themselves, where flexible columns share the room', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={<div className="pane-quick-row">chips</div>}
+          firstLabel="Settings"
+          from={400}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const chips = root.querySelector('.pane-quick-row') as HTMLElement;
+      // The measuring column hides 100px of chips; side by side, a second
+      // flexible column takes half of each extra pixel, so the half still
+      // hides chips until the pair is 700px wide.
+      Object.defineProperty(chips, 'clientWidth', {
+        configurable: true,
+        get: () =>
+          root.hasAttribute('data-measuring')
+            ? 20
+            : root.getAttribute('data-layout') === 'side-by-side'
+              ? Math.min(120, root.clientWidth / 2 - 230)
+              : 120
+      });
+      Object.defineProperty(chips, 'scrollWidth', { configurable: true, value: 120 });
+      content(root, 100, 100);
+
+      // The bound alone ((100 + 100) * 2 = 400px) would stand them side by side.
+      widen(root, 600);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+      widen(root, 700);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // A scrollbar narrows the pair held side by side: chips hiding less
+      // than its width keep the layout, so it cannot flip back and forth.
+      widen(root, 685);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // The read in the halves is put back before the paint.
+      widen(root, 600);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
     });
 
     it('keeps narrow content side by side from the floor', () => {
