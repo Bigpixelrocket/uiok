@@ -366,37 +366,23 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
-  it('rings a chip in a cell inside it, and floors its words on state fills and selections', () => {
-    applyStylesheets(
-      styles.replaceAll(':hover', '.is-hovered').replaceAll(':focus-visible', '.is-focused')
-    );
-    const chips = `<span class="row-meta"><div class="pane-quick-row">
-        <button class="pane-quick-button quiet-track-item" aria-pressed="false">debug <span class="pane-quick-count">2</span></button>
-        <button class="pane-quick-button quiet-track-item" aria-pressed="true">develop</button>
-      </div></span>`;
-    document.body.innerHTML = `<section class="listing-root"><div class="pane active"><div class="pane-list pointer">
-      <div class="row" id="rest">${chips}</div>
-      <div class="row cursor" id="cursor">${chips}</div>
-      <div class="row marked" id="marked">${chips}</div>
-      <div class="row is-hovered" id="hovered">${chips}</div>
-      <div class="row selected" id="selected">${chips}</div>
-    </div></div></section>`;
-    const colour = (selector: string) =>
-      getComputedStyle(document.querySelector(selector) as Element).getPropertyValue('color');
+  it('rings a focused chip in a cell inside it, since the cell clips', () => {
+    applyStylesheets(styles.replaceAll(':focus-visible', '.is-focused'));
+    document.body.innerHTML = `<section class="listing-root"><div class="row">
+      <span class="row-meta"><div class="pane-quick-row">
+        <button class="pane-quick-button is-focused" aria-pressed="false">debug</button>
+      </div></span>
+    </div><div class="pane-quick-row" id="band">
+      <button class="pane-quick-button is-focused" aria-pressed="false">Running</button>
+    </div></section>`;
 
-    expect(colour('#rest [aria-pressed="false"]')).toBe('var(--row-meta-text)');
-    for (const row of ['cursor', 'marked', 'hovered']) {
-      expect(colour(`#${row} [aria-pressed="false"]`)).toBe('var(--text-on-surface)');
-      expect(colour(`#${row} .pane-quick-count`)).toBe('var(--text-on-surface)');
-      // A pressed chip keeps its own words on its wash.
-      expect(colour(`#${row} [aria-pressed="true"]`)).toBe('var(--text)');
-    }
-    for (const chip of ['[aria-pressed="false"]', '[aria-pressed="true"]', '.pane-quick-count']) {
-      expect(colour(`#selected ${chip}`)).toBe('var(--on-selected)');
-    }
-    const focused = document.querySelector('#rest [aria-pressed="false"]') as HTMLElement;
-    focused.classList.add('is-focused');
-    expect(getComputedStyle(focused).outlineOffset).toBe('var(--focus-offset-inset)');
+    expect(
+      getComputedStyle(document.querySelector('.row .pane-quick-button') as Element).outlineOffset
+    ).toBe('var(--focus-offset-inset)');
+    // A pane's quick row keeps its padding, so its chips ring outside.
+    expect(
+      getComputedStyle(document.querySelector('#band .pane-quick-button') as Element).outlineOffset
+    ).not.toBe('var(--focus-offset-inset)');
     document.body.innerHTML = '';
   });
 

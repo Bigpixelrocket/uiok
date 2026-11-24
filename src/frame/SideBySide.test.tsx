@@ -331,10 +331,25 @@ describe('SideBySide', () => {
       widen(root, 685);
       act(() => observers.at(-1)?.());
       expect(root.dataset.layout).toBe('side-by-side');
-      // The read in the halves is put back before the paint.
+      // The read in the halves is put back before the paint, and a stacked
+      // pair keeps its height through it, so a scrolled pane keeps its scroll.
       widen(root, 600);
       act(() => observers.at(-1)?.());
       expect(root.dataset.layout).toBe('stacked');
+      Object.defineProperty(root, 'offsetHeight', { configurable: true, value: 480 });
+      let heldAt = '';
+      const read = Object.getOwnPropertyDescriptor(chips, 'clientWidth')!.get!;
+      Object.defineProperty(chips, 'clientWidth', {
+        configurable: true,
+        get: () => {
+          if (root.getAttribute('data-layout') === 'side-by-side') heldAt = root.style.minHeight;
+          return read();
+        }
+      });
+      widen(root, 620);
+      act(() => observers.at(-1)?.());
+      expect(heldAt).toBe('480px');
+      expect(root.style.minHeight).toBe('');
     });
 
     it('stacks a held pair whose chips grow at the same width, the floor masking the growth', () => {

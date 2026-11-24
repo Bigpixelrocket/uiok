@@ -936,22 +936,6 @@ button.crumb-label.crumb-siblings > svg {
   outline-offset: var(--focus-offset-inset);
 }
 
-/* Chips in a cell on a state fill (the cursor, a mark, the pointer): a
-   chip at rest and every count take the on-surface tone, as the row's
-   other quiet words do, since the quiet tone misses 4.5:1 there; a pressed
-   chip keeps its own wash and words, and one under the pointer its hover.
-   A selection paints them in its own words (below). */
-:where(.listing-root)
-  .row:is(.cursor, .marked):where(:not(.selected))
-  .row-meta
-  :is(.pane-quick-button:where(:not([aria-pressed='true'], :hover, :active)), .pane-quick-count),
-:where(.listing-root .pane-list.pointer)
-  .row:hover:not(.selected)
-  .row-meta
-  :is(.pane-quick-button:where(:not([aria-pressed='true'], :hover, :active)), .pane-quick-count) {
-  color: var(--text-on-surface);
-}
-
 /* The column strip, pinned over the scrolling listing: a band a shade under
    the list, labels in the interface font so they read as labels and the rows
    as data, and a short rule in each gutter. */
@@ -2504,17 +2488,7 @@ button.crumb-label.crumb-siblings > svg {
       .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
     )
   )
-  :is(
-    .row-icon,
-    .row-name,
-    .pane-path-name,
-    .pane-act,
-    .pane-icon-act,
-    .pane-state,
-    .tone-icon,
-    .row-meta .pane-quick-button,
-    .row-meta .pane-quick-count
-  ) {
+  :is(.row-icon, .row-name, .pane-path-name, .pane-act, .pane-icon-act, .pane-state, .tone-icon) {
   color: var(--on-selected);
 }
 

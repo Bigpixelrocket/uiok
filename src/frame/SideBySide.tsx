@@ -56,20 +56,25 @@ const hiddenChips = (part: Element): number => {
  * and put back before the browser paints. `hiddenChips` only bounds the
  * room from below: a listing whose flexible columns share the extra width
  * gives its chips only part of it, so the halves are read as they would be
- * drawn. A pair with no such row needs no read.
+ * drawn. A pair with no such row needs no read. A stacked pair keeps its
+ * height through the read (two columns are shorter than one stack), so a
+ * scrolled pane around it never has its scroll clamped by it.
  */
 const chipsHiddenInHalves = (element: HTMLElement): number => {
   const rows = element.querySelectorAll(SCROLLING_CHIPS);
 
   if (rows.length === 0) return 0;
   const layout = element.getAttribute('data-layout');
+  const height = element.style.minHeight;
 
+  if (layout !== 'side-by-side') element.style.minHeight = `${element.offsetHeight}px`;
   element.setAttribute('data-layout', 'side-by-side');
   let hidden = 0;
 
   for (const row of rows) hidden = Math.max(hidden, row.scrollWidth - row.clientWidth);
   if (layout === null) element.removeAttribute('data-layout');
   else element.setAttribute('data-layout', layout);
+  element.style.minHeight = height;
   return hidden;
 };
 
