@@ -38,7 +38,7 @@ import {
 import { useRef, useState, type CSSProperties } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { Range, Switch } from '@bigpixelrocket/uiok/field';
+import { Range, Select, Switch } from '@bigpixelrocket/uiok/field';
 import {
   Dock,
   DockLog,
@@ -104,15 +104,22 @@ const EXTENSIONS: readonly (readonly [string, string])[] = [
  * side from 520px of the pane's own width, stacked in less. With the
  * toolbars shown, tools that keep their size stack the pair at a wider
  * room than the floor, since each half must hold its part; so does a row
- * of chips on one line, counted at its whole width. The page's one
+ * of chips on one line, counted at its whole width, and a pop-up button
+ * that a half would cut. The page's one
  * cursor walks the first listing's rows, then the second's.
  */
 function SideBySideDemo() {
   const [width, setWidth] = useState(640);
   const [tools, setTools] = useState(false);
   const [chips, setChips] = useState(false);
+  const [popUp, setPopUp] = useState(false);
+  const [zone, setZone] = useState<string>(ZONES[0]);
   const [modes, setModes] = useState<readonly string[]>(['develop']);
-  const keys = [...(chips ? ['Modes'] : []), ...[...SETTINGS, ...EXTENSIONS].map(([name]) => name)];
+  const keys = [
+    ...(chips ? ['Modes'] : []),
+    ...(popUp ? ['Timezone'] : []),
+    ...[...SETTINGS, ...EXTENSIONS].map(([name]) => name)
+  ];
   const { cursor, onKeyDown } = useDemoCursor(keys);
   const listing = (
     title: string,
@@ -147,6 +154,21 @@ function SideBySideDemo() {
             </Cell>
           </Row>
         ) : null}
+        {popUp && title === 'Settings' ? (
+          // A pop-up button as wide as its longest item: the pair stacks
+          // where a half would cut its end.
+          <Row name="Timezone" rowKey="Timezone">
+            <Cell>
+              <Select
+                aria-label="Timezone"
+                onChange={setZone}
+                options={ZONES.map((each) => ({ value: each, label: each }))}
+                size="sm"
+                value={zone}
+              />
+            </Cell>
+          </Row>
+        ) : null}
         {rows.map(([name, value]) => (
           <Row key={name} name={name} rowKey={name}>
             <Cell align="right">{value}</Cell>
@@ -168,6 +190,7 @@ function SideBySideDemo() {
       />
       <Switch checked={tools} label="Toolbars that keep their size" onChange={setTools} />
       <Switch checked={chips} label="A row of chips on one line" onChange={setChips} />
+      <Switch checked={popUp} label="A long pop-up button" onChange={setPopUp} />
       <div
         className="listing-root"
         style={{ width: `${width}px`, maxWidth: '100%' } as CSSProperties}
@@ -203,6 +226,9 @@ function SideBySideDemo() {
     </div>
   );
 }
+
+/** The timezones the side-by-side demo's pop-up button offers, the first its widest. */
+const ZONES = ['America/Argentina/ComodRivadavia', 'Europe/Berlin', 'Asia/Tokyo'] as const;
 
 /** The modes the one-line `FilterChips` in the side-by-side demo offers. */
 const MODE_CHIPS = ['develop', 'debug', 'coverage', 'profile', 'trace'].map((id) => ({

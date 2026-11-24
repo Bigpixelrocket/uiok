@@ -113,7 +113,9 @@
 
 /* A tab with no close control, pin, or mark of its own has nothing to keep room for. */
 :where(.listing-root)
-  .pane-tab:not(:has(> .pane-tab-close, > .pane-tab-face > :is(.pane-tab-pin, .pane-tab-dirty))) {
+  .pane-tab:not(
+    :has(> .pane-tab-close, > .pane-tab-face > :is(.pane-tab-pin, .pane-tab-dirty, .pane-tab-live))
+  ) {
   padding-right: var(--space-4);
 }
 

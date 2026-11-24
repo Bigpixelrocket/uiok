@@ -2590,7 +2590,7 @@ button.crumb-label.crumb-siblings > svg {
     .pane-act,
     .pane-icon-act,
     .pane-state,
-    .pane-state-word[data-tone],
+    .pane-state-word:where([data-tone]),
     .tone-icon
   ) {
   color: var(--on-selected);

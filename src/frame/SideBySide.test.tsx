@@ -479,22 +479,25 @@ describe('SideBySide', () => {
         configurable: true,
         value: () => ({ width: chipsWide }) as DOMRect
       });
-      content(root, 50, 50);
+      try {
+        content(root, 50, 50);
 
-      // At 620px the row has 100px for 97px of chips: they fit, 3px to spare.
-      widen(root, 620);
-      act(() => observers.at(-1)?.());
-      expect(root.dataset.layout).toBe('side-by-side');
-      // A scrollbar: the row has 96px and hides 1px of the same chips. Held.
-      widen(root, 604);
-      act(() => observers.at(-1)?.());
-      expect(root.dataset.layout).toBe('side-by-side');
-      // The chips grow to 100px, into what was spare room at the fit: the row
-      // still reported 100px wide there, but the chips grew, so the pair stacks.
-      chipsWide = 100;
-      act(() => observers.at(-1)?.());
-      expect(root.dataset.layout).toBe('stacked');
-      Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+        // At 620px the row has 100px for 97px of chips: they fit, 3px to spare.
+        widen(root, 620);
+        act(() => observers.at(-1)?.());
+        expect(root.dataset.layout).toBe('side-by-side');
+        // A scrollbar: the row has 96px and hides 1px of the same chips. Held.
+        widen(root, 604);
+        act(() => observers.at(-1)?.());
+        expect(root.dataset.layout).toBe('side-by-side');
+        // The chips grow to 100px, into what was spare room at the fit: the row
+        // still reported 100px wide there, but the chips grew, so the pair stacks.
+        chipsWide = 100;
+        act(() => observers.at(-1)?.());
+        expect(root.dataset.layout).toBe('stacked');
+      } finally {
+        Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+      }
     });
 
     it('stacks a held pair whose chip row a growing column beside it squeezes, its chips unchanged', () => {
@@ -522,19 +525,22 @@ describe('SideBySide', () => {
         configurable: true,
         value: () => ({ width: 100 }) as DOMRect
       });
-      content(root, 50, 50);
+      try {
+        content(root, 50, 50);
 
-      widen(root, 620);
-      act(() => observers.at(-1)?.());
-      widen(root, 604);
-      act(() => observers.at(-1)?.());
-      expect(root.dataset.layout).toBe('side-by-side');
-      // The column beside the chips grows 40px: the same chips now hide 48px,
-      // far past what the scrollbar took from the half.
-      neighbour = 40;
-      act(() => observers.at(-1)?.());
-      expect(root.dataset.layout).toBe('stacked');
-      Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+        widen(root, 620);
+        act(() => observers.at(-1)?.());
+        widen(root, 604);
+        act(() => observers.at(-1)?.());
+        expect(root.dataset.layout).toBe('side-by-side');
+        // The column beside the chips grows 40px: the same chips now hide 48px,
+        // far past what the scrollbar took from the half.
+        neighbour = 40;
+        act(() => observers.at(-1)?.());
+        expect(root.dataset.layout).toBe('stacked');
+      } finally {
+        Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+      }
     });
 
     it('stacks a held pair whose chip row, roomy at the fit, a column beside it squeezes a little', () => {
@@ -562,19 +568,22 @@ describe('SideBySide', () => {
         configurable: true,
         value: () => ({ width: 100 }) as DOMRect
       });
-      content(root, 50, 50);
+      try {
+        content(root, 50, 50);
 
-      widen(root, 620);
-      act(() => observers.at(-1)?.());
-      expect(root.dataset.layout).toBe('side-by-side');
-      // In one measure a 16px scrollbar takes 8px from the row's spare room
-      // and a column beside it takes 4px more: the row hides 4px, under half
-      // the narrowing, but the narrowing alone would have hidden nothing.
-      neighbour = 4;
-      widen(root, 604);
-      act(() => observers.at(-1)?.());
-      expect(root.dataset.layout).toBe('stacked');
-      Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+        widen(root, 620);
+        act(() => observers.at(-1)?.());
+        expect(root.dataset.layout).toBe('side-by-side');
+        // In one measure a 16px scrollbar takes 8px from the row's spare room
+        // and a column beside it takes 4px more: the row hides 4px, under half
+        // the narrowing, but the narrowing alone would have hidden nothing.
+        neighbour = 4;
+        widen(root, 604);
+        act(() => observers.at(-1)?.());
+        expect(root.dataset.layout).toBe('stacked');
+      } finally {
+        Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+      }
     });
 
     it('keeps the hold when the host draws the same chips again, and bounds it to a scrollbar', () => {
@@ -611,6 +620,91 @@ describe('SideBySide', () => {
       widen(root, 598);
       act(() => observers.at(-1)?.());
       expect(root.dataset.layout).toBe('stacked');
+    });
+
+    it('stacks a pair whose pop-up button would lose its end in a half', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={
+            <select aria-label="Timezone" className="field">
+              <option>Europe/Berlin</option>
+            </select>
+          }
+          firstLabel="Settings"
+          from={400}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const select = root.querySelector('select') as HTMLSelectElement;
+      // Its items need 200px; held to its column it has half the pair less 150px.
+      select.getBoundingClientRect = () =>
+        ({
+          width: root.hasAttribute('data-natural') ? 200 : Math.min(200, root.clientWidth / 2 - 150)
+        }) as DOMRect;
+      // The parts' boxes alone (a select narrows to nothing) ask for little.
+      content(root, 60, 60);
+
+      // At 600px the select would have 150px: it would lose its end, so stacked.
+      widen(root, 600);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+      expect(root.hasAttribute('data-natural')).toBe(false);
+      // At 700px it has its 200px: side by side.
+      widen(root, 700);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+    });
+
+    it('stacks a pair whose pop-up button a cell would clip, though it keeps its width', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={
+            <span className="row-meta" style={{ overflowX: 'hidden' }}>
+              <select aria-label="Timezone" className="field">
+                <option>America/Argentina/ComodRivadavia</option>
+              </select>
+            </span>
+          }
+          firstLabel="Settings"
+          from={400}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const cell = root.querySelector('.row-meta') as HTMLElement;
+      const select = root.querySelector('select') as HTMLSelectElement;
+      // It keeps its 260px from 100px in; the cell clips at half the pair less 40px.
+      select.getBoundingClientRect = () => ({ width: 260, right: 360 }) as DOMRect;
+      cell.getBoundingClientRect = () => ({ right: root.clientWidth / 2 - 40 }) as DOMRect;
+      content(root, 60, 60);
+
+      // At 700px the cell ends at 310px: the select's last 50px are clipped.
+      widen(root, 700);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+      // At 800px the cell ends at 360px: it shows whole.
+      widen(root, 800);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+    });
+
+    it('lifts a pop-up button’s hold on its column for the read alone', () => {
+      applyStylesheets(readStylesheet('src/styles.css'));
+      document.body.innerHTML = `<div class="side-by-side" data-natural>
+        <div class="side-by-side-part"><select class="field" id="pop"></select></div>
+        <div class="side-by-side-part"><select class="field" id="list" multiple></select></div>
+      </div>`;
+      const pop = getComputedStyle(document.querySelector('#pop') as Element);
+      const list = getComputedStyle(document.querySelector('#list') as Element);
+
+      expect([pop.minWidth, pop.maxWidth]).toEqual(['max-content', 'none']);
+      expect(list.minWidth).not.toBe('max-content');
+      document.body.innerHTML = '';
     });
 
     it('keeps narrow content side by side from the floor', () => {

@@ -66,12 +66,52 @@ const chipsExtent = (row: Element): number => {
 };
 
 /**
- * What the one-line chip rows show with the parts in their two halves, in
- * document order: the most any of them hides, in pixels, and each row's
- * room (`clientWidth`), its content width (`chipsExtent`), and what it
- * hides.
+ * A pop-up button (a `Select`, a native `select` that is no list box): it
+ * stands at its items' width but is held to its column (`max-width:
+ * 100%`, in a form), or kept whole and clipped by its cell (in a
+ * listing), so a narrow half cuts its words at their end, which no box it
+ * sits in reports. Its content width is read with the hold lifted
+ * (`data-natural`, which the stylesheet reads).
  */
-interface ChipsInHalves {
+const POP_UP_BUTTONS = 'select:not([multiple], [size])';
+
+/**
+ * How far `control` runs past the end of the boxes that clip it, up to its
+ * part (a listing's cell hides what overflows it): the end it would lose
+ * though it keeps its own width. Read where the line ends on the right.
+ */
+const cutEnd = (control: Element): number => {
+  const part = control.closest('.side-by-side-part');
+  const partEnd = part?.getBoundingClientRect().right;
+  let clip = partEnd !== undefined && Number.isFinite(partEnd) ? partEnd : Number.POSITIVE_INFINITY;
+
+  for (let box = control.parentElement; box !== null && box !== part; box = box.parentElement) {
+    const style = getComputedStyle(box);
+
+    const end = box.getBoundingClientRect().right - (parseFloat(style.borderRightWidth) || 0);
+
+    if (style.overflowX !== 'visible' && Number.isFinite(end)) clip = Math.min(clip, end);
+  }
+  const cut = control.getBoundingClientRect().right - clip;
+
+  // A box with no laid-out edge (a document without layout) cuts nothing.
+  return Number.isFinite(cut) ? Math.max(0, cut) : 0;
+};
+
+/** The controls a half can cut without its own box growing: one-line chip rows and pop-up buttons. */
+const CUT_CONTROLS = `${SCROLLING_CHIPS}, ${POP_UP_BUTTONS}`;
+
+/**
+ * What the controls a half can cut show with the parts in their two
+ * halves, in document order (the chip rows, then the pop-up buttons): the
+ * most any of them hides, in pixels, and each one's room, its content
+ * width, and what it hides. A chip row's room is its `clientWidth` and its
+ * content its chips end to end (`chipsExtent`); a pop-up button's room is
+ * what it shows as drawn (its width, less any end a cell or other box
+ * clips, `cutEnd`) and its content the width it takes with nothing holding
+ * it to its column.
+ */
+interface ControlsInHalves {
   readonly hidden: number;
   readonly rooms: readonly number[];
   readonly extents: readonly number[];
@@ -79,20 +119,23 @@ interface ChipsInHalves {
 }
 
 /**
- * Reads the one-line chip rows with the parts in their two halves: the
- * columns laid out side by side for one read (`data-layout`) and put back
- * before the browser paints. `hiddenChips` only bounds the room from
- * below: a listing whose flexible columns share the extra width gives its
- * chips only part of it, so the halves are read as they would be drawn. A
- * pair with no such row needs no read. A stacked pair keeps
- * `stackedHeight`, its height read before the measure touched its layout,
- * through the read (two columns are shorter than one stack), so a scrolled
- * pane around it never has its scroll clamped by it.
+ * Reads the controls a half can cut (`CUT_CONTROLS`) with the parts in
+ * their two halves: the columns laid out side by side for one read
+ * (`data-layout`), and, with pop-up buttons among them, once more with
+ * their hold lifted (`data-natural`), each put back before the browser
+ * paints. `hiddenChips` only bounds the room from below: a listing whose
+ * flexible columns share the extra width gives its chips only part of it,
+ * so the halves are read as they would be drawn. A pair with no such
+ * control needs no read. A stacked pair keeps `stackedHeight`, its height
+ * read before the measure touched its layout, through the read (two
+ * columns are shorter than one stack), so a scrolled pane around it never
+ * has its scroll clamped by it.
  */
-const chipsInHalves = (element: HTMLElement, stackedHeight: number | null): ChipsInHalves => {
-  const rows = element.querySelectorAll(SCROLLING_CHIPS);
+const controlsInHalves = (element: HTMLElement, stackedHeight: number | null): ControlsInHalves => {
+  const rows = [...element.querySelectorAll(SCROLLING_CHIPS)];
+  const buttons = [...element.querySelectorAll(POP_UP_BUTTONS)];
 
-  if (rows.length === 0) return { hidden: 0, rooms: [], extents: [], hiddens: [] };
+  if (rows.length + buttons.length === 0) return { hidden: 0, rooms: [], extents: [], hiddens: [] };
   const layout = element.getAttribute('data-layout');
   const height = element.style.minHeight;
 
@@ -107,6 +150,21 @@ const chipsInHalves = (element: HTMLElement, stackedHeight: number | null): Chip
     extents.push(chipsExtent(row));
     hiddens.push(row.scrollWidth - row.clientWidth);
   }
+  if (buttons.length > 0) {
+    // What each shows as drawn: its width, less any end a box clips.
+    const drawn = buttons.map((button) => button.getBoundingClientRect().width - cutEnd(button));
+
+    element.setAttribute('data-natural', '');
+    buttons.forEach((button, index) => {
+      const natural = button.getBoundingClientRect().width;
+      const room = drawn[index] ?? 0;
+
+      rooms.push(room);
+      extents.push(natural);
+      hiddens.push(natural - room);
+    });
+    element.removeAttribute('data-natural');
+  }
   if (layout === null) element.removeAttribute('data-layout');
   else element.setAttribute('data-layout', layout);
   element.style.minHeight = height;
@@ -114,16 +172,16 @@ const chipsInHalves = (element: HTMLElement, stackedHeight: number | null): Chip
 };
 
 /**
- * Whether a held pair's chip rows hide only what a scrollbar took from them:
- * the same rows in the same order as where they last all fit (`fit`), and
- * each row that hides chips now has lost no more room than `lost` (half the
- * pair's narrowing, what a scrollbar takes from a half, and a pixel for
- * rounding) and holds content no wider than it did there (to half a pixel,
- * as a range reads fractions). So neither chips that grew, even into room
- * the row had to spare, nor a column beside them that grew and took more,
- * leave chips hidden.
+ * Whether a held pair's cut controls hide only what a scrollbar took from
+ * them: the same controls in the same order as where they last all showed
+ * whole (`fit`), and each one that hides now has lost no more room than
+ * `lost` (half the pair's narrowing, what a scrollbar takes from a half,
+ * and a pixel for rounding) and holds content no wider than it did there
+ * (to half a pixel, as a range reads fractions). So neither content that
+ * grew, even into room the control had to spare, nor a column beside it
+ * that grew and took more, leaves anything hidden.
  */
-const chipsHeld = (fit: ChipsInHalves, now: ChipsInHalves, lost: number): boolean =>
+const controlsHeld = (fit: ControlsInHalves, now: ControlsInHalves, lost: number): boolean =>
   fit.rooms.length === now.rooms.length &&
   now.hiddens.every(
     (hidden, index) =>
@@ -218,11 +276,13 @@ export function SideBySide({
   // Where every chip row last showed all its chips in the halves: the
   // pair's width, and each row's room and content. A held pair narrowed
   // under that width by no more than a scrollbar's may hide chips only as
-  // `chipsHeld` allows: each hiding row has lost no more room than half the
+  // `controlsHeld` allows: each hiding row has lost no more room than half the
   // narrowing, and its content has not grown. Content that changes keeps
   // it, so a host drawing its parts again (new elements, the same chips)
   // keeps the hold, and chips or a column beside them that grow stack it.
-  const chipsFit = useRef<{ readonly width: number; readonly read: ChipsInHalves } | null>(null);
+  const controlsFit = useRef<{ readonly width: number; readonly read: ControlsInHalves } | null>(
+    null
+  );
   // The measure of the latest render, given whether the content changed.
   const measureNow = useRef<(contentChanged: boolean) => void>(() => undefined);
   // The watch on the content's own changes, whose records a measure in the
@@ -254,10 +314,10 @@ export function SideBySide({
       if (width === 0) return;
 
       // A stacked pair's height, read in the same flush as its width, for
-      // the halves read to keep (`chipsInHalves`); only with chips.
+      // the halves read to keep (`controlsInHalves`); only with such controls.
       const stackedHeight =
         element.getAttribute('data-layout') !== 'side-by-side' &&
-        element.querySelector(SCROLLING_CHIPS) !== null
+        element.querySelector(CUT_CONTROLS) !== null
           ? element.offsetHeight
           : null;
 
@@ -284,20 +344,20 @@ export function SideBySide({
         // Chips are read in the halves themselves. Held, and narrowed by
         // no more than a scrollbar's width under where they last showed
         // whole, a row may hide only what the narrowing took from it
-        // (`chipsHeld`); chips that grew, or a column beside them that grew,
+        // (`controlsHeld`); chips that grew, or a column beside them that grew,
         // get no room.
         if (width >= (hold ? need - SCROLLBAR_HOLD : need)) {
-          const read = chipsInHalves(element, stackedHeight);
-          const fit = chipsFit.current;
+          const read = controlsInHalves(element, stackedHeight);
+          const fit = controlsFit.current;
 
-          if (read.hidden < 1) chipsFit.current = { width, read };
+          if (read.hidden < 1) controlsFit.current = { width, read };
           next =
             read.hidden < 1 ||
             (hold &&
               fit !== null &&
               width < fit.width &&
               width >= fit.width - SCROLLBAR_HOLD &&
-              chipsHeld(fit.read, read, (fit.width - width) / 2));
+              controlsHeld(fit.read, read, (fit.width - width) / 2));
         }
       }
       shown.current = next;

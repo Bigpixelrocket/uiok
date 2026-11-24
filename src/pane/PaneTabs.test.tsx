@@ -118,7 +118,8 @@ describe('PaneTabs', () => {
       tabs: [
         ...TABS,
         { id: 'logs', name: 'logs', live: 'Taking input', tip: 'prod / logs', dirty: true },
-        { id: 'quiet', name: 'quiet', live: '' }
+        { id: 'quiet', name: 'quiet', live: '' },
+        { id: 'blank', name: 'blank', live: '   ' }
       ]
     });
 
@@ -136,8 +137,10 @@ describe('PaneTabs', () => {
       'prod / logs, Taking input, Changes not saved'
     );
     // Empty words are no live state.
-    expect(box('quiet').querySelector('.pane-tab-live')).toBeNull();
-    expect(tab('quiet').hasAttribute('aria-description')).toBe(false);
+    for (const name of ['quiet', 'blank']) {
+      expect(box(name).querySelector('.pane-tab-live')).toBeNull();
+      expect(tab(name).hasAttribute('aria-description')).toBe(false);
+    }
   });
 
   it('keeps a live tab’s lit mark, and a lead mark, out of its label’s floor', () => {

@@ -46,8 +46,8 @@ export interface PaneTabItem {
    * means here, in the host's words ("Taking input"). A lit mark, an accent
    * ring round a dot, stands after the name, apart from a state mark, a
    * spinner, or a dot the host draws in `mark`; the words are its tooltip
-   * and join the tab's accessible description. Absent, null, or empty, the
-   * tab is not live.
+   * and join the tab's accessible description. Absent, null, empty, or
+   * blank, the tab is not live.
    */
   readonly live?: string | null;
   /**
@@ -106,11 +106,11 @@ const NO_PICKS: readonly string[] = [];
 /** Keeps the focus where it was on a press, so a press on the strip leaves the keys where they were. */
 const keepFocus = (event: MouseEvent): void => event.preventDefault();
 
-/** The words a tab is called by: its context and name, as the strip shows them. */
-/** Whether a tab is live: it has the words that say what live means. */
+/** Whether a tab is live: it has words, not blank, that say what live means. */
 const isLive = (tab: PaneTabItem): tab is PaneTabItem & { readonly live: string } =>
-  typeof tab.live === 'string' && tab.live !== '';
+  typeof tab.live === 'string' && tab.live.trim() !== '';
 
+/** The words a tab is called by: its context and name, as the strip shows them. */
 const spokenTab = (tab: PaneTabItem): string =>
   tab.context === undefined ? tab.name : `${tab.context}/${tab.name}`;
 
