@@ -246,6 +246,9 @@ describe('@bigpixelrocket/uiok/styles.css', () => {
         <button class="toggle-chip" aria-pressed="false">Wrap</button>
         <button class="quiet-control">Stop</button>
         <button class="quiet-track-item" role="tab" aria-selected="false">Log</button>
+        <div class="row selected"><span class="row-meta"><span class="pane-quick-row">
+          <button class="pane-quick-button quiet-track-item" aria-pressed="false">Running</button>
+        </span></span></div>
       </fieldset>`;
       const elements = [...document.querySelectorAll('fieldset *')];
       const matched = elements.flatMap((element) =>

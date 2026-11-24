@@ -39,13 +39,19 @@ A line's `tone` is `danger` (a failure, in `--danger-text`), `warning` (`--warni
 
 The code face at the small size on a panel in a framed well. Each source sits in a column as wide as the longest (`--log-source-width`), in its colour, then a quiet bar, then the words, which wrap only where a line is longer than the well. A source's colour is `--log-source-1` to `--log-source-6` in turn, starting over after the sixth: the palette's green, pink, blue, peach, teal, and mauve, each moved until it keeps 4.5:1 as text on a panel and the ground ([Themes](../themes.md)). `logSourceIndexes(sources, order)` gives each source its turn, `logSourceColour(index)` its token as a `var()`, and `logSourceWidth(sources)` the column's width in characters.
 
+## Long logs
+
+The well draws only the lines in view and 20 more past each edge, with blank room standing for the rest, so a log of 20,000 lines costs what one screen of it does, and a new batch draws only the lines it brings into view. The host must give the well a bounded height (a flex or grid cell, a `max-height`): a well as tall as its content has every line in view. Lines wrap, so each drawn line is measured, and a new width measures again. A line not yet drawn counts at the height the first lines measured at this width had. Away from the foot, the line at the top of the view stays put by its key, at the same depth into it, as lines above it are measured, as the width changes, and as the host drops lines before it; a well held out of layout (a hidden tab, a closed dock) keeps its heights and comes back to that line (`overflow-anchor: none` keeps the browser from moving it a second time). With `follow` at the foot, the newest lines are the view, drawn before the paint.
+
+While a selection covers any of the well, every line it covers is drawn: one dragged past the view or past the well (to the log's first or last line), a select-all of the well, or a page-wide one around it, so a copy takes every line, and a copy draws them at once before the browser takes the text. Such a selection over a long log draws all it covers for as long as it lasts. The room between drawn runs is `.log-gap`, hidden from assistive technology; a screen reader browsing the log reads the lines drawn.
+
 ## Keyboard
 
-The well takes the focus, so the arrow keys and Page Up and Down scroll it. It is a `log` region: a screen reader hears new lines without the focus moving. Its words can be selected and copied.
+The well takes the focus, so the arrow keys and Page Up and Down scroll it. It is a `log` region with `aria-live="off"`, since the lines it draws come and go with the scroll; a visually hidden live region after it (`.log-live`, `aria-live="polite"`, `aria-relevant="additions text"`) holds the newest 50 lines as text, so a screen reader hears each new line, the last 50 of a large batch, and a new run's lines that reuse the old keys, without the focus moving, and never the old lines a scroll draws. It speaks a line's source and its words, never mounting the line's parts again: a string (an ANSI line without its escapes), numbers, and the words inside the elements a line holds (a link's), but not what a component draws beyond its children. Its words can be selected and copied.
 
 ## Styling
 
-`.log-well`, `.log-line` (`data-tone`), `.log-source` (reads `--log-source`), `.log-bar`, `.log-text`, `.log-empty`.
+`.log-well`, `.log-line` (`data-tone`, `data-index`, its place in `lines`), `.log-gap` (the room standing for lines not drawn; one always last, empty at the foot), `.log-live` (the hidden region that speaks new lines), `.log-source` (reads `--log-source`), `.log-bar`, `.log-text`, `.log-empty`.
 
 ## Labels read
 

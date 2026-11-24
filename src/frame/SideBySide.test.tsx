@@ -816,6 +816,123 @@ describe('SideBySide', () => {
       expect(root.dataset.layout).toBe('stacked');
     });
 
+    /**
+     * A held pair whose pop-up button sits in a clipping cell, its geometry
+     * given by `place` from the cell's content end (half the pair less
+     * 102px) and returned as the select's left and right edges. The cell
+     * is laid out `cellDirection`, the select `selectDirection`.
+     */
+    const heldInCell = (
+      place: (cellEnd: number) => { readonly left: number; readonly right: number },
+      cellDirection: 'ltr' | 'rtl' = 'ltr',
+      selectDirection: 'ltr' | 'rtl' = cellDirection
+    ) => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={
+            <span className="row-meta" style={{ direction: cellDirection, overflowX: 'hidden' }}>
+              <span className="prefix" />
+              <select aria-label="Report" className="field" style={{ direction: selectDirection }}>
+                <option>Weekly summary by project</option>
+              </select>
+            </span>
+          }
+          firstLabel="Settings"
+          from={600}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const cell = root.querySelector('.row-meta') as HTMLElement;
+      const select = root.querySelector('select') as HTMLSelectElement;
+      const cellEnd = () => root.clientWidth / 2 - 102;
+
+      cell.getBoundingClientRect = () =>
+        ({ left: 0, right: cellEnd(), width: cellEnd() }) as DOMRect;
+      select.getBoundingClientRect = () => {
+        const { left, right } = place(cellEnd());
+
+        return { left, right, width: right - left } as DOMRect;
+      };
+      content(root, 50, 50);
+      return root;
+    };
+
+    /** Sets the pair's width and lets its observer measure. */
+    const resize = (root: HTMLElement, width: number): void => {
+      widen(root, width);
+      act(() => observers.at(-1)?.());
+    };
+
+    it('stacks a held pair whose right-aligned pop-up button a column beside it squeezes from the left', () => {
+      let neighbour = 0;
+      // A 200px select at the end of a left-to-right cell, clipped at its left.
+      const root = heldInCell((cellEnd) => ({
+        left: cellEnd - neighbour - 200,
+        right: cellEnd - neighbour
+      }));
+      const cell = root.querySelector('.row-meta') as HTMLElement;
+      const cellEnd = () => root.clientWidth / 2 - 102 - neighbour;
+      cell.getBoundingClientRect = () =>
+        ({ left: 0, right: cellEnd(), width: cellEnd() }) as DOMRect;
+
+      // At 620px the cell has 208px: the select shows whole from 8px in.
+      resize(root, 620);
+      expect(root.dataset.layout).toBe('side-by-side');
+      // A 16px scrollbar takes 8px and a growing column 4px more: the cell
+      // shrinks to 196px, clipping 4px of the select's left. The whole
+      // cell lost 12px, more than half the narrowing: stacked.
+      neighbour = 4;
+      resize(root, 604);
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
+    it('stacks a held right-to-left pop-up button in a left-to-right cell that a prefix pushes out', () => {
+      let prefix = 8;
+      // The select is written right to left, but the cell lays it out after its prefix.
+      const root = heldInCell(() => ({ left: prefix, right: prefix + 200 }), 'ltr', 'rtl');
+
+      resize(root, 620);
+      expect(root.dataset.layout).toBe('side-by-side');
+      // The cell lost 8px, the select's room after the prefix 20px. Stacked.
+      prefix = 20;
+      resize(root, 604);
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
+    it('stacks a held pop-up button in a right-to-left cell whose prefix grows', () => {
+      let prefix = 8;
+      // Laid from the right: the prefix at the cell's right, the select before it.
+      const root = heldInCell(
+        (cellEnd) => ({ left: cellEnd - prefix - 200, right: cellEnd - prefix }),
+        'rtl'
+      );
+
+      resize(root, 620);
+      expect(root.dataset.layout).toBe('side-by-side');
+      // A scrollbar takes 8px from the cell and the prefix grows to 20px:
+      // the select runs 20px past the cell's left. Stacked.
+      prefix = 20;
+      resize(root, 604);
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
+    it('keeps a held pop-up button side by side when a scrollbar alone narrows its cell', () => {
+      // An 8px prefix, then the select, in a cell that ends at 208px; the
+      // scrollbar's 8px clip the select's end.
+      const root = heldInCell(() => ({ left: 8, right: 208 }));
+
+      resize(root, 620);
+      expect(root.dataset.layout).toBe('side-by-side');
+      resize(root, 604);
+      expect(root.dataset.layout).toBe('side-by-side');
+      // Under the scrollbar's hold, it stacks.
+      resize(root, 596);
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
     it('lifts a pop-up button’s hold on its column for the read alone', () => {
       applyStylesheets(readStylesheet('src/styles.css'));
       document.body.innerHTML = `<div class="side-by-side" data-natural>

@@ -2,7 +2,9 @@
  * A combined log of six processes, each prefix in its own colour, its
  * lines' ANSI colours read with `ansi` (the INFO and ERROR badges, a
  * dim run, a bold DONE), with a crash in the danger tone; a line arrives on Add line, and the well keeps
- * the newest in view while the reader is at its foot. Under it, a
+ * the newest in view while the reader is at its foot. Add 10,000 lines
+ * fills it the way a long-running process does; the well draws only the
+ * lines in view, so it scrolls and follows as lightly. Under it, a
  * service's own log, with no prefixes.
  */
 
@@ -47,6 +49,9 @@ const FIRST: readonly LogLine[] = [
   { key: 8, source: 'web', text: '2026-11-23 14:21:37 / ..................... ~ 503.12ms' }
 ];
 
+/** The combined log's sources, in colour order. */
+const SOURCES = ['vite', 'web', 'queue.1', 'queue.2', 'reverb', 'scheduler'];
+
 /** The log page's demo. */
 export function LogDemo() {
   const [lines, setLines] = useState<readonly LogLine[]>(FIRST);
@@ -54,14 +59,9 @@ export function LogDemo() {
   return (
     <div className="demo-stack">
       <div className="log-demo">
-        <LogWell
-          ansi
-          label="Combined log"
-          lines={lines}
-          sources={['vite', 'web', 'queue.1', 'queue.2', 'reverb', 'scheduler']}
-        />
+        <LogWell ansi label="Combined log" lines={lines} sources={SOURCES} />
       </div>
-      <div>
+      <div className="demo-row">
         <Button
           onClick={() =>
             setLines((now) => [
@@ -76,6 +76,26 @@ export function LogDemo() {
           size="small"
         >
           Add line
+        </Button>
+        <Button
+          onClick={() =>
+            setLines((now) => [
+              ...now,
+              ...Array.from({ length: 10_000 }, (_, index) => {
+                const at = now.length + index;
+                const source = SOURCES[at % SOURCES.length] ?? 'web';
+
+                return {
+                  key: at + 1,
+                  source,
+                  text: `\u001b[2m#${at + 1}\u001b[22m ${source} handled /orders/${at % 997} in ${(at % 400) + 12} ms${at % 7 === 0 ? ', with a longer note that wraps where the well is narrow enough to need it' : ''}`
+                };
+              })
+            ])
+          }
+          size="small"
+        >
+          Add 10,000 lines
         </Button>
       </div>
       <div className="log-demo">

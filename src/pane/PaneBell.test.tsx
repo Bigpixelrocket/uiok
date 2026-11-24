@@ -2,6 +2,7 @@ import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
+import { TreePane } from '../frame/Tree.js';
 import { PaneBox } from './Pane.js';
 
 const styles = readStylesheet('src/styles.css');
@@ -56,5 +57,30 @@ describe("PaneBox's bell", () => {
     expect(declaredValues(row, 'animation')).toEqual([
       'row-nudge-b var(--duration-slow) var(--ease-in-out)'
     ]);
+  });
+
+  it("rings the tree pane's cursor row the same way", () => {
+    const tree = (bell: number) => (
+      <div className="listing-root">
+        <TreePane active bell={bell}>
+          <div className="row cursor" />
+        </TreePane>
+      </div>
+    );
+    const { container, rerender } = render(tree(0));
+    const pane = container.querySelector('.tree-pane') as HTMLElement;
+
+    applyStylesheets(styles);
+    expect(pane.className).toBe('pane tree-pane active');
+    rerender(tree(1));
+    expect(pane.classList.contains('bell-1')).toBe(true);
+    expect(declaredValues(container.querySelector('.row') as HTMLElement, 'animation')).toEqual([
+      'row-nudge-b var(--duration-slow) var(--ease-in-out)'
+    ]);
+
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(pane.className).toBe('pane tree-pane active');
   });
 });
