@@ -172,8 +172,12 @@ const wordsOf = (node: ReactNode): string => {
   if (typeof node === 'number' || typeof node === 'bigint') return String(node);
   if (Array.isArray(node)) return node.map((child: ReactNode) => wordsOf(child)).join('');
   if (isValidElement<{ readonly children?: ReactNode }>(node)) return wordsOf(node.props.children);
-  // Any other iterable React draws (a Set, a generator's values).
-  if (typeof node === 'object' && node !== null && Symbol.iterator in node) {
+  // Any other iterable React draws again on each render (a Set).
+  if (
+    typeof node === 'object' &&
+    node !== null &&
+    typeof (node as { readonly [Symbol.iterator]?: unknown })[Symbol.iterator] === 'function'
+  ) {
     return Array.from(node as Iterable<ReactNode>, (child) => wordsOf(child)).join('');
   }
   return '';
@@ -283,15 +287,19 @@ export function LogWell({
   // and the scroll last read or made, so a scroll not yet heard is kept.
   const anchor = useRef<{ readonly key: LogLine['key']; readonly within: number } | null>(null);
   const lastTop = useRef(0);
-  // A selection whose end sits in room standing for lines, or between the
-  // well's children: the line it ends on, by key, and whether the end is
-  // the selection's anchor. Drawing the lines takes that room away and
-  // leaves the end before them, so the end moves to the line's end once
-  // it is drawn.
-  const pinEnd = useRef<{
-    readonly key: LogLine['key'];
+  // A selection with an end in room standing for lines not drawn yet, or
+  // between the well's children: the line each such end takes in, by key,
+  // whether the selection runs backward, and a live copy of its range.
+  // Drawing the lines takes that room away and can leave an end on the
+  // wrong side of them (or the range collapsed), so each such end moves to
+  // its line once the line is drawn, while the selection still matches the
+  // copy (the browser moves both alike as the lines go in; a selection made
+  // since does not match).
+  const pin = useRef<{
+    readonly start: LogLine['key'] | null;
+    readonly end: LogLine['key'] | null;
     readonly backward: boolean;
-    readonly start: readonly [Node, number];
+    readonly range: Range;
   } | null>(null);
   // The width the lines were last measured at, and whether the well is
   // out of layout now.
@@ -529,7 +537,7 @@ export function LogWell({
           : selection.getRangeAt(0);
 
       if (range === null || !range.intersectsNode(element)) {
-        pinEnd.current = null;
+        pin.current = null;
         setSelected(null);
         return;
       }
@@ -544,7 +552,7 @@ export function LogWell({
       const endLine = last === null ? undefined : lines[last];
 
       if (startLine === undefined || endLine === undefined) {
-        pinEnd.current = null;
+        pin.current = null;
         setSelected(null);
         return;
       }
@@ -555,16 +563,22 @@ export function LogWell({
 
       // Only an end whose line is not drawn yet: drawing it changes what
       // is drawn, so a commit comes, and the pin cannot outlive it.
-      pinEnd.current =
-        element.contains(range.endContainer) &&
-        elementOf(range.endContainer)?.closest('.log-line') === null &&
-        element.querySelector(`:scope > .log-line[data-index="${last}"]`) === null
+      const inRoom = (node: Node, index: number): boolean =>
+        element.contains(node) &&
+        elementOf(node)?.closest('.log-line') === null &&
+        element.querySelector(`:scope > .log-line[data-index="${index}"]`) === null;
+      const startInRoom = first !== null && inRoom(range.startContainer, first);
+      const endInRoom = last !== null && inRoom(range.endContainer, last);
+
+      pin.current =
+        startInRoom || endInRoom
           ? {
-              key: endLine.key,
-              start: [range.startContainer, range.startOffset],
+              start: startInRoom ? startLine.key : null,
+              end: endInRoom ? endLine.key : null,
               backward:
                 selection?.anchorNode === range.endContainer &&
-                selection.anchorOffset === range.endOffset
+                selection.anchorOffset === range.endOffset,
+              range: range.cloneRange()
             }
           : null;
 
@@ -582,43 +596,61 @@ export function LogWell({
     };
   }, []);
 
-  // A selection end left in room now drawn: moved to the end of its line,
-  // in the commit that draws it, so a copy takes every line it covered.
-  // After every commit: the lines may come with any render.
+  // A selection's ends left in room now drawn: each moved to its line (a
+  // start to the line's start, an end to its end) in the commit that draws
+  // it, so a copy takes every line it covered. After every commit: the
+  // lines may come with any render.
   useLayoutEffect(() => {
-    const pin = pinEnd.current;
+    const held = pin.current;
     const element = well.current;
-    const index = pin === null ? undefined : indexOf.get(pin.key);
 
-    if (pin === null || element === null) return;
-    // A line the host dropped takes its pin with it.
-    if (index === undefined) {
-      pinEnd.current = null;
+    if (held === null || element === null) return;
+    const rowOf = (key: LogLine['key'] | null): Element | null | undefined => {
+      if (key === null) return undefined;
+      const index = indexOf.get(key);
+
+      return index === undefined
+        ? null
+        : element.querySelector(`:scope > .log-line[data-index="${index}"]`);
+    };
+    const startRow = rowOf(held.start);
+    const endRow = rowOf(held.end);
+
+    // A line the host dropped takes the pin with it.
+    if (
+      (held.start !== null && !indexOf.has(held.start)) ||
+      (held.end !== null && !indexOf.has(held.end))
+    ) {
+      pin.current = null;
       return;
     }
-    const row = element.querySelector(`:scope > .log-line[data-index="${index}"]`);
+    if (startRow === null || endRow === null) return;
+    pin.current = null;
     const selection = element.ownerDocument.getSelection();
 
-    if (row === null || selection === null || selection.rangeCount === 0) return;
-    pinEnd.current = null;
+    if (selection === null || selection.rangeCount === 0) return;
     const range = selection.getRangeAt(0);
-    const endInRoom =
-      element.contains(range.endContainer) &&
-      elementOf(range.endContainer)?.closest('.log-line') === null;
+    const copy = held.range;
 
-    // A selection made since the end was read (a click elsewhere, not yet
-    // heard) is not the one to move: its start is not the one read, unless
-    // that start was in room the lines took.
-    const [startNode, startOffset] = pin.start;
-    const sameStart =
-      !startNode.isConnected ||
-      (range.startContainer === startNode && range.startOffset === startOffset);
+    // A selection made or changed since it was read is not the one to move.
+    if (
+      range.startContainer !== copy.startContainer ||
+      range.startOffset !== copy.startOffset ||
+      range.endContainer !== copy.endContainer ||
+      range.endOffset !== copy.endOffset
+    ) {
+      return;
+    }
+    const start =
+      startRow === undefined
+        ? ([range.startContainer, range.startOffset] as const)
+        : ([startRow, 0] as const);
+    const end =
+      endRow === undefined
+        ? ([range.endContainer, range.endOffset] as const)
+        : ([endRow, endRow.childNodes.length] as const);
 
-    if (range.collapsed || !sameStart || !endInRoom) return;
-    const start = [range.startContainer, range.startOffset] as const;
-    const end = [row, row.childNodes.length] as const;
-
-    if (pin.backward) selection.setBaseAndExtent(...end, ...start);
+    if (held.backward) selection.setBaseAndExtent(...end, ...start);
     else selection.setBaseAndExtent(...start, ...end);
   });
 

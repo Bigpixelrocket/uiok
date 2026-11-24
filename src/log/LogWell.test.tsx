@@ -447,6 +447,65 @@ describe('LogWell with many lines', () => {
     });
   });
 
+  describe('a selection over room not drawn yet', () => {
+    const scrolledTo300 = () => {
+      const view = render(
+        <div>
+          <p className="before">before the log</p>
+          <LogWell follow={false} label="Combined log" lines={linesTo(400)} />
+          <p className="after">after the log</p>
+        </div>
+      );
+      const well = view.container.querySelector('.log-well') as HTMLElement;
+
+      well.scrollTop = 300 * 18;
+      fireEvent.scroll(well);
+      expect(well.firstElementChild?.classList.contains('log-gap')).toBe(true);
+      return { ...view, well, selection: document.getSelection() as Selection };
+    };
+
+    afterEach(() => {
+      document.getSelection()?.removeAllRanges();
+    });
+
+    it('takes every line of a range that holds only the room, on a copy', () => {
+      const { container, well, selection } = scrolledTo300();
+      const range = document.createRange();
+
+      range.selectNode(well.firstElementChild as Node);
+      selection.removeAllRanges();
+      selection.addRange(range);
+      document.dispatchEvent(new Event('copy'));
+      expect(drawnLines(container)).toContain('line 0');
+      expect(selection.isCollapsed).toBe(false);
+      expect(selection.toString()).toContain('line 0');
+      expect(selection.toString()).toContain('line 279');
+      expect(selection.toString()).not.toContain('line 281');
+    });
+
+    it('leaves an end moved before the lines are drawn where it was moved', async () => {
+      const { container, well, selection } = scrolledTo300();
+
+      selection.setBaseAndExtent(
+        container.querySelector('.before')?.firstChild as Node,
+        0,
+        well.firstElementChild as Node,
+        0
+      );
+      // Heard, but not yet drawn: the end moves on to the room after the
+      // lines, and the lines are drawn before that move is heard.
+      document.dispatchEvent(new Event('selectionchange'));
+      selection.extend(well.lastElementChild as Node, 0);
+      await act(async () => {});
+      expect(drawnLines(container)).toContain('line 0');
+      await act(async () => {
+        document.dispatchEvent(new Event('selectionchange'));
+      });
+      expect(selection.toString()).toContain('line 150');
+      expect(selection.toString()).toContain('line 399');
+    });
+  });
+
   it('lets a reader leave the foot by a scroll not heard yet when lines arrive', () => {
     const { container, rerender } = render(<LogWell label="Combined log" lines={linesTo(1000)} />);
     const well = container.querySelector('.log-well') as HTMLElement;
