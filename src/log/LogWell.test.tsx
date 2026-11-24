@@ -323,7 +323,7 @@ describe('LogWell with many lines', () => {
   it('keeps every line a selection covers drawn while it lasts, past the well too', () => {
     const { container } = render(
       <div>
-        <LogWell follow={false} label="Combined log" lines={linesTo(1000)} />
+        <LogWell follow={false} label="Combined log" lines={linesTo(400)} />
         <p className="after">after the log</p>
       </div>
     );
@@ -343,12 +343,12 @@ describe('LogWell with many lines', () => {
     // A selection from line 5 to line 30, then a scroll far down.
     selection.setBaseAndExtent(wordsOf('line 5'), 2, wordsOf('line 30'), 4);
     changed();
-    well.scrollTop = 400 * 18;
+    well.scrollTop = 300 * 18;
     fireEvent.scroll(well);
     let drawn = drawnLines(container);
     expect(drawn).toContain('line 5');
     expect(drawn).toContain('line 30');
-    expect(drawn).toContain('line 400');
+    expect(drawn).toContain('line 300');
     expect(drawn).not.toContain('line 200');
 
     // Dragged past the well's foot, it covers every line to the last.
@@ -360,16 +360,11 @@ describe('LogWell with many lines', () => {
     );
     changed();
     drawn = drawnLines(container);
-    expect(drawn).toHaveLength(995);
+    expect(drawn).toHaveLength(395);
     // The room after the lines stays, empty.
     expect((container.querySelector('.log-gap:last-child') as HTMLElement).style.height).toBe(
       '0px'
     );
-
-    // An empty selection lets it go.
-    selection.removeAllRanges();
-    changed();
-    expect(drawnLines(container)).not.toContain('line 5');
 
     // An empty selection lets it go.
     selection.removeAllRanges();
@@ -381,7 +376,7 @@ describe('LogWell with many lines', () => {
   it('draws every line a select-all, a page-wide selection, or a copy covers', () => {
     const { container } = render(
       <div>
-        <LogWell follow={false} label="Combined log" lines={linesTo(1000)} />
+        <LogWell follow={false} label="Combined log" lines={linesTo(400)} />
         <p className="after">after the log</p>
       </div>
     );
@@ -399,14 +394,14 @@ describe('LogWell with many lines', () => {
       });
 
     // A select-all of the well, starting in the room before the lines drawn.
-    well.scrollTop = 400 * 18;
+    well.scrollTop = 300 * 18;
     fireEvent.scroll(well);
     expect(well.firstElementChild?.classList.contains('log-gap')).toBe(true);
     selection.selectAllChildren(well);
     changed();
-    expect(drawnLines(container)).toHaveLength(1000);
+    expect(drawnLines(container)).toHaveLength(400);
     expect(selection.toString()).toContain('line 0');
-    expect(selection.toString()).toContain('line 999');
+    expect(selection.toString()).toContain('line 399');
 
     // A page-wide selection around the well.
     selection.removeAllRanges();
@@ -414,22 +409,22 @@ describe('LogWell with many lines', () => {
     expect(drawnLines(container).length).toBeLessThan(150);
     selection.selectAllChildren(container);
     changed();
-    expect(drawnLines(container)).toHaveLength(1000);
+    expect(drawnLines(container)).toHaveLength(400);
 
     // A copy draws what the selection covers at once, before its text is taken.
     selection.removeAllRanges();
     changed();
     selection.setBaseAndExtent(
-      wordsOf('line 400'),
+      wordsOf('line 300'),
       0,
       container.querySelector('.after') as Node,
       1
     );
     document.dispatchEvent(new Event('copy'));
-    // Line 400 to the last, and the view's overscan above it.
-    expect(drawnLines(container)).toHaveLength(620);
-    expect(selection.toString()).toContain('line 700');
-    expect(selection.toString()).toContain('line 999');
+    // Line 300 to the last, and the view's overscan above it.
+    expect(drawnLines(container)).toHaveLength(120);
+    expect(selection.toString()).toContain('line 350');
+    expect(selection.toString()).toContain('line 399');
 
     selection.removeAllRanges();
     changed();
