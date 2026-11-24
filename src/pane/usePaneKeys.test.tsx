@@ -411,11 +411,11 @@ describe('usePaneKeys main cursor', () => {
     // A 120px page of 40px rows (rows that hold wrapping chips): two fit past the cursor row.
     const page = screen.getByRole('table', { name: 'Page' });
     Object.defineProperty(page, 'clientHeight', { configurable: true, value: 120 });
-    const rects = vi
-      .spyOn(Element.prototype, 'getBoundingClientRect')
-      .mockImplementation(function (this: Element) {
-        return { height: this.hasAttribute('data-row-key') ? 40 : 0 } as DOMRect;
-      });
+    const rects = vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+      this: Element
+    ) {
+      return { height: this.hasAttribute('data-row-key') ? 40 : 0 } as DOMRect;
+    });
 
     expect(cursorRows()).toEqual(['r0']);
     // 24px rows would page four (120 / 24 - 1); these page two.
