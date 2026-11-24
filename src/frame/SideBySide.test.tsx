@@ -773,6 +773,49 @@ describe('SideBySide', () => {
       expect(root.dataset.layout).toBe('stacked');
     });
 
+    it('stacks a held pair whose pop-up button a sibling before it in its cell pushes out', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={
+            <span className="row-meta" style={{ overflowX: 'hidden' }}>
+              <span className="prefix" />
+              <select aria-label="Report" className="field">
+                <option>Weekly summary by project</option>
+              </select>
+            </span>
+          }
+          firstLabel="Settings"
+          from={600}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const cell = root.querySelector('.row-meta') as HTMLElement;
+      const select = root.querySelector('select') as HTMLSelectElement;
+      let prefix = 8;
+      // The cell's content: half the pair less 102px. The select keeps its
+      // 200px after a prefix, and the cell clips what runs past its end.
+      const cellEnd = () => root.clientWidth / 2 - 102;
+      cell.getBoundingClientRect = () =>
+        ({ left: 0, right: cellEnd(), width: cellEnd() }) as DOMRect;
+      select.getBoundingClientRect = () =>
+        ({ left: prefix, right: prefix + 200, width: 200 }) as DOMRect;
+      content(root, 50, 50);
+
+      // At 620px the cell has 208px: 8px of prefix, then the whole select.
+      widen(root, 620);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // In one measure a 16px scrollbar takes 8px from the cell and the
+      // prefix grows to 20px: the cell lost 8px, the select 20px. Stacked.
+      prefix = 20;
+      widen(root, 604);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
     it('lifts a pop-up button’s hold on its column for the read alone', () => {
       applyStylesheets(readStylesheet('src/styles.css'));
       document.body.innerHTML = `<div class="side-by-side" data-natural>

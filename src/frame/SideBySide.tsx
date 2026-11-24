@@ -104,9 +104,11 @@ const innerSpan = (box: Element, padded: boolean): Span => {
  * the part that clips what overflows it (a listing's cell); it `shows`
  * its own span within that, on either side (a right-to-left cell clips
  * its start), and its `room` is its holder's content box within that (a
- * form's value column, a listing's cell), so room a squeezed column had
- * to spare counts. A box with no laid-out edges (a document without
- * layout) clips nothing.
+ * form's value column, a listing's cell) from the button's start on, so
+ * room a squeezed column had to spare counts and room a sibling before it
+ * in the cell takes does not. A box with no laid-out edges (a document
+ * without layout) clips nothing; a button with none shows and has its own
+ * width.
  */
 const popUpSpace = (button: Element): { readonly shows: number; readonly room: number } => {
   const part = button.closest('.side-by-side-part');
@@ -124,13 +126,23 @@ const popUpSpace = (button: Element): { readonly shows: number; readonly room: n
     // An empty value is no style read (a document without a stylesheet): no clip.
     if (overflow !== '' && overflow !== 'visible') seen = within(seen, innerSpan(box, false));
   }
-  const drawn = within(seen, { left: own.left, right: own.right });
+  const span: Span = { left: own.left, right: own.right };
+
+  // A button with no laid-out edges shows its width, and has it.
+  if (!finite(span)) return { shows: own.width, room: own.width };
   const holder =
     button.parentElement === null ? seen : within(seen, innerSpan(button.parentElement, true));
+  // From the button's start (its left, or its right in a right-to-left
+  // line) to its holder's end: room a sibling before it takes is not its.
+  const ahead: Span =
+    getComputedStyle(button).direction === 'rtl'
+      ? { left: -Infinity, right: span.right }
+      : { left: span.left, right: Infinity };
+  const room = overlap(holder, ahead);
 
   return {
-    shows: finite(drawn) ? width(drawn) : own.width,
-    room: finite(holder) ? width(holder) : own.width
+    shows: width(overlap(seen, span)),
+    room: finite(room) ? width(room) : own.width
   };
 };
 
