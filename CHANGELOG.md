@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - `PaneStatus`'s `tip`: more than the summary says (where what it names comes from), shown as the summary's tooltip at every width, under the summary's words when they are a string, and read as its accessible description.
+- `FilterChips`' `disabled`: every chip a disabled button, dimmed by the disabled rule, toggling nothing on a click or a key, a chip that is on still pressed. For chips whose setting cannot change while their owner is busy.
 - `TreePane`'s `bell`: the visual bell a `PaneBox` rings, for a sidebar key that could not act. Each rise of the count shoves the tree's cursor row sideways for one beat, or flashes it under reduced motion.
 
 ### Changed

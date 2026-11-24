@@ -139,6 +139,12 @@ With `wrap`, the row is a multi-choice control for a narrow cell instead: chips 
 <FilterChips label="Extensions" chips={extensions} on={picked} onToggle={toggle} wrap />
 ```
 
+With `disabled`, every chip is a disabled button while what the chips set cannot change (its owner is busy, as a `Select` or `Switch` beside them is disabled): the base sheet's disabled rule dims them, they leave the Tab order, a click or a key toggles nothing, no hover or press recipe touches them, and the words stay legible. A chip that is on keeps `aria-pressed="true"` and its on look under the dimming.
+
+```tsx
+<FilterChips label="Modes" chips={modes} on={picked} onToggle={toggle} wrap disabled={busy} />
+```
+
 | Prop       | Type                    | Purpose                                                                                                                   |
 | ---------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `chips`    | `readonly FilterChip[]` | `{ id, label, icon?, count? }`, in order                                                                                  |

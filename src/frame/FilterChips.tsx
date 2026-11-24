@@ -30,6 +30,13 @@ export interface FilterChipsProps<Id extends string> {
    * default.
    */
   readonly wrap?: boolean;
+  /**
+   * Every chip is a disabled button, dimmed by the base sheet's disabled
+   * rule, while what the chips set cannot change now (its owner is busy):
+   * a click or a key toggles nothing, the words stay legible, and a chip
+   * that is on still shows pressed.
+   */
+  readonly disabled?: boolean;
 }
 
 /**
@@ -42,14 +49,16 @@ export interface FilterChipsProps<Id extends string> {
  * (`sidewaysWheel`), and a chip the keys reach comes whole into view. With
  * `wrap` (`pane-quick-row-wrap`) the chips wrap onto further lines instead,
  * a multi-choice control for a narrow cell, nothing scrolling; the chips
- * stay buttons in the Tab order either way.
+ * stay buttons in the Tab order either way. With `disabled` every chip is
+ * a disabled button, out of the Tab order, pressed or not as `on` says.
  */
 export function FilterChips<Id extends string>({
   chips,
   on,
   onToggle,
   label,
-  wrap = false
+  wrap = false,
+  disabled = false
 }: FilterChipsProps<Id>): ReactElement {
   const rowRef = useRef<HTMLDivElement>(null);
 
@@ -104,6 +113,7 @@ export function FilterChips<Id extends string>({
           <button
             aria-pressed={on.includes(chip.id)}
             className="pane-quick-button quiet-track-item"
+            disabled={disabled}
             key={chip.id}
             onClick={() => onToggle(chip.id)}
             onMouseDown={(event) => event.preventDefault()}

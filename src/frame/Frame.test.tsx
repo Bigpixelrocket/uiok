@@ -126,6 +126,38 @@ describe('FilterChips', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Running 3' }));
     expect(onToggle).toHaveBeenCalledWith('running');
   });
+
+  it('toggles nothing while disabled, dimmed, an on chip still pressed', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const onToggle = vi.fn();
+    const chips = [
+      { id: 'running', label: 'Running' },
+      { id: 'updates', label: 'Updates' }
+    ] as const;
+    const { rerender } = render(
+      <FilterChips chips={chips} disabled label="Filters" on={['updates']} onToggle={onToggle} />
+    );
+    const running = screen.getByRole('button', { name: 'Running' }) as HTMLButtonElement;
+    const updates = screen.getByRole('button', { name: 'Updates' }) as HTMLButtonElement;
+
+    expect(running.disabled).toBe(true);
+    expect(updates.disabled).toBe(true);
+    expect(running.getAttribute('aria-pressed')).toBe('false');
+    expect(updates.getAttribute('aria-pressed')).toBe('true');
+    expect(declaredValues(running, 'opacity')).toContain('var(--disabled-opacity)');
+    expect(declaredValues(updates, 'background')).toContain('var(--accent-wash-strong)');
+    fireEvent.click(running);
+    fireEvent.keyDown(updates, { key: 'Enter' });
+    fireEvent.keyDown(updates, { key: ' ' });
+    fireEvent.click(updates);
+    expect(onToggle).not.toHaveBeenCalled();
+
+    rerender(<FilterChips chips={chips} label="Filters" on={['updates']} onToggle={onToggle} />);
+    expect(running.disabled).toBe(false);
+    expect(declaredValues(running, 'opacity')).not.toContain('var(--disabled-opacity)');
+    fireEvent.click(running);
+    expect(onToggle).toHaveBeenCalledWith('running');
+  });
 });
 
 describe('StatusNotice', () => {
