@@ -75,27 +75,60 @@ const chipsExtent = (row: Element): number => {
  */
 const POP_UP_BUTTONS = 'select:not([multiple], [size])';
 
+/** A horizontal span, left to right, in the viewport's pixels. */
+interface Span {
+  readonly left: number;
+  readonly right: number;
+}
+
+/** Where two spans overlap: empty (`right <= left`) where they do not. */
+const overlap = (a: Span, b: Span): Span => ({
+  left: Math.max(a.left, b.left),
+  right: Math.min(a.right, b.right)
+});
+
+/** A box's span inside its borders and, with `padded`, inside its padding too. */
+const innerSpan = (box: Element, padded: boolean): Span => {
+  const rect = box.getBoundingClientRect();
+  const style = getComputedStyle(box);
+  const inset = (side: 'Left' | 'Right'): number =>
+    (parseFloat(style[`border${side}Width`]) || 0) +
+    (padded ? parseFloat(style[`padding${side}`]) || 0 : 0);
+
+  return { left: rect.left + inset('Left'), right: rect.right - inset('Right') };
+};
+
 /**
- * How far `control` runs past the end of the boxes that clip it, up to its
- * part (a listing's cell hides what overflows it): the end it would lose
- * though it keeps its own width. Read where the line ends on the right.
+ * What a pop-up button shows and the room it is given, in pixels, in its
+ * half: the span it can show is its part's, narrowed by every box up to
+ * the part that clips what overflows it (a listing's cell); it `shows`
+ * its own span within that, on either side (a right-to-left cell clips
+ * its start), and its `room` is its holder's content box within that (a
+ * form's value column, a listing's cell), so room a squeezed column had
+ * to spare counts. A box with no laid-out edges (a document without
+ * layout) clips nothing.
  */
-const cutEnd = (control: Element): number => {
-  const part = control.closest('.side-by-side-part');
-  const partEnd = part?.getBoundingClientRect().right;
-  let clip = partEnd !== undefined && Number.isFinite(partEnd) ? partEnd : Number.POSITIVE_INFINITY;
+const popUpSpace = (button: Element): { readonly shows: number; readonly room: number } => {
+  const part = button.closest('.side-by-side-part');
+  const own = button.getBoundingClientRect();
+  const finite = (span: Span): boolean => Number.isFinite(span.left) && Number.isFinite(span.right);
+  // Narrows `span` by `by`, where `by` has laid-out edges.
+  const within = (span: Span, by: Span): Span => (finite(by) ? overlap(span, by) : span);
+  const width = (span: Span): number => Math.max(0, span.right - span.left);
+  let seen: Span = { left: -Infinity, right: Infinity };
 
-  for (let box = control.parentElement; box !== null && box !== part; box = box.parentElement) {
-    const style = getComputedStyle(box);
-
-    const end = box.getBoundingClientRect().right - (parseFloat(style.borderRightWidth) || 0);
-
-    if (style.overflowX !== 'visible' && Number.isFinite(end)) clip = Math.min(clip, end);
+  if (part !== null) seen = within(seen, innerSpan(part, false));
+  for (let box = button.parentElement; box !== null && box !== part; box = box.parentElement) {
+    if (getComputedStyle(box).overflowX !== 'visible') seen = within(seen, innerSpan(box, false));
   }
-  const cut = control.getBoundingClientRect().right - clip;
+  const drawn = within(seen, { left: own.left, right: own.right });
+  const holder =
+    button.parentElement === null ? seen : within(seen, innerSpan(button.parentElement, true));
 
-  // A box with no laid-out edge (a document without layout) cuts nothing.
-  return Number.isFinite(cut) ? Math.max(0, cut) : 0;
+  return {
+    shows: finite(drawn) ? width(drawn) : own.width,
+    room: finite(holder) ? width(holder) : own.width
+  };
 };
 
 /** The controls a half can cut without its own box growing: one-line chip rows and pop-up buttons. */
@@ -107,9 +140,9 @@ const CUT_CONTROLS = `${SCROLLING_CHIPS}, ${POP_UP_BUTTONS}`;
  * most any of them hides, in pixels, and each one's room, its content
  * width, and what it hides. A chip row's room is its `clientWidth` and its
  * content its chips end to end (`chipsExtent`); a pop-up button's room is
- * what it shows as drawn (its width, less any end a cell or other box
- * clips, `cutEnd`) and its content the width it takes with nothing holding
- * it to its column.
+ * its holder's width as drawn (`popUpSpace`), its content the width it
+ * takes with nothing holding it to its column, and what it hides that
+ * content less what it shows (its span within every box that clips it).
  */
 interface ControlsInHalves {
   readonly hidden: number;
@@ -151,17 +184,17 @@ const controlsInHalves = (element: HTMLElement, stackedHeight: number | null): C
     hiddens.push(row.scrollWidth - row.clientWidth);
   }
   if (buttons.length > 0) {
-    // What each shows as drawn: its width, less any end a box clips.
-    const drawn = buttons.map((button) => button.getBoundingClientRect().width - cutEnd(button));
+    // What each shows as drawn, and the room its holder gives it.
+    const spaces = buttons.map(popUpSpace);
 
     element.setAttribute('data-natural', '');
     buttons.forEach((button, index) => {
       const natural = button.getBoundingClientRect().width;
-      const room = drawn[index] ?? 0;
+      const space = spaces[index] ?? { shows: natural, room: natural };
 
-      rooms.push(room);
+      rooms.push(space.room);
       extents.push(natural);
-      hiddens.push(natural - room);
+      hiddens.push(natural - space.shows);
     });
     element.removeAttribute('data-natural');
   }

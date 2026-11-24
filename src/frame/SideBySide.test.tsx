@@ -679,8 +679,13 @@ describe('SideBySide', () => {
       const cell = root.querySelector('.row-meta') as HTMLElement;
       const select = root.querySelector('select') as HTMLSelectElement;
       // It keeps its 260px from 100px in; the cell clips at half the pair less 40px.
-      select.getBoundingClientRect = () => ({ width: 260, right: 360 }) as DOMRect;
-      cell.getBoundingClientRect = () => ({ right: root.clientWidth / 2 - 40 }) as DOMRect;
+      select.getBoundingClientRect = () => ({ left: 100, right: 360, width: 260 }) as DOMRect;
+      cell.getBoundingClientRect = () =>
+        ({
+          left: 90,
+          right: root.clientWidth / 2 - 40,
+          width: root.clientWidth / 2 - 130
+        }) as DOMRect;
       content(root, 60, 60);
 
       // At 700px the cell ends at 310px: the select's last 50px are clipped.
@@ -691,6 +696,81 @@ describe('SideBySide', () => {
       widen(root, 800);
       act(() => observers.at(-1)?.());
       expect(root.dataset.layout).toBe('side-by-side');
+    });
+
+    it('stacks a pair whose pop-up button a right-to-left cell would clip at its start', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={
+            <span className="row-meta" dir="rtl" style={{ overflowX: 'hidden' }}>
+              <select aria-label="Timezone" className="field">
+                <option>America/Argentina/ComodRivadavia</option>
+              </select>
+            </span>
+          }
+          firstLabel="Settings"
+          from={400}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const cell = root.querySelector('.row-meta') as HTMLElement;
+      const select = root.querySelector('select') as HTMLSelectElement;
+      // Laid from the right, the select runs 35px to 220px; the cell shows 100px to 220px.
+      select.getBoundingClientRect = () => ({ left: 35, right: 220, width: 185 }) as DOMRect;
+      cell.getBoundingClientRect = () => ({ left: 100, right: 220, width: 120 }) as DOMRect;
+      content(root, 60, 60);
+
+      widen(root, 700);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
+    it('stacks a held pair whose pop-up button, roomy at the fit, a column beside it squeezes', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={
+            <div className="field-value">
+              <select aria-label="Report" className="field">
+                <option>Weekly summary by project</option>
+              </select>
+            </div>
+          }
+          firstLabel="Settings"
+          from={600}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const holder = root.querySelector('.field-value') as HTMLElement;
+      const select = root.querySelector('select') as HTMLSelectElement;
+      let neighbour = 0;
+      // Its column: half the pair less 102px and whatever a column beside it takes.
+      const room = () => root.clientWidth / 2 - 102 - neighbour;
+      holder.getBoundingClientRect = () => ({ left: 0, right: room(), width: room() }) as DOMRect;
+      // 200px of items, held to the column but for the read with the hold lifted.
+      select.getBoundingClientRect = () => {
+        const width = root.hasAttribute('data-natural') ? 200 : Math.min(200, room());
+
+        return { left: 0, right: width, width } as DOMRect;
+      };
+      content(root, 50, 50);
+
+      // At 620px the column has 208px: the select shows whole, 8px to spare.
+      widen(root, 620);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // In one measure a 16px scrollbar takes 8px and a column beside it 4px
+      // more: the select shows 196px of 200, though the scrollbar alone
+      // would have left it whole, so the pair stacks.
+      neighbour = 4;
+      widen(root, 604);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
     });
 
     it('lifts a pop-up button’s hold on its column for the read alone', () => {
