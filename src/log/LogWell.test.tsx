@@ -1,5 +1,5 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, readStylesheet } from '../../test/stylesheets.js';
 
@@ -155,7 +155,7 @@ describe('LogWell with many lines', () => {
     expect(drawnLines(container)).toContain('line 1000');
   });
 
-  it('keeps a reader scrolled up where they are, drawing what they read and the newest lines', () => {
+  it('keeps a reader scrolled up where they are, drawing what they read', () => {
     const { container, rerender } = render(<LogWell label="Combined log" lines={linesTo(1000)} />);
     const well = container.querySelector('.log-well') as HTMLElement;
 
@@ -168,10 +168,147 @@ describe('LogWell with many lines', () => {
     rerender(<LogWell label="Combined log" lines={linesTo(1100)} />);
     expect(well.scrollTop).toBe(300 * 18);
     expect(drawnLines(container)).toContain('line 300');
-    // The newest lines stay drawn, so the log region still hears them.
-    expect(drawnLines(container).at(-1)).toBe('line 1099');
+    expect(drawnLines(container)).not.toContain('line 1099');
     expect(drawnLines(container)).not.toContain('line 700');
     expect(container.querySelectorAll('.log-line').length).toBeLessThan(150);
+  });
+
+  it('speaks new lines from a hidden region, never the lines a scroll draws', () => {
+    const { container, rerender } = render(<LogWell label="Combined log" lines={linesTo(1000)} />);
+    const well = screen.getByRole('log', { name: 'Combined log' });
+    const live = container.querySelector('.log-live') as HTMLElement;
+    const spoken = () => [...live.children].map((line) => line.textContent);
+
+    expect(well.getAttribute('aria-live')).toBe('off');
+    expect(live.getAttribute('aria-live')).toBe('polite');
+    expect(live.getAttribute('aria-relevant')).toBe('additions');
+    expect(spoken()).toHaveLength(50);
+    expect(spoken().at(-1)).toBe('web line 999 ');
+
+    // A scroll up draws old lines in the well; the region is untouched.
+    const before = [...live.children];
+    well.scrollTop = 300 * 18;
+    fireEvent.scroll(well);
+    expect(drawnLines(container)).toContain('line 300');
+    expect([...live.children]).toEqual(before);
+
+    // A batch while scrolled up reaches the region, its newest 50 lines.
+    rerender(<LogWell label="Combined log" lines={linesTo(1100)} />);
+    expect(spoken()).toHaveLength(50);
+    expect(spoken()[0]).toBe('web line 1050 ');
+    expect(spoken().at(-1)).toBe('web line 1099 ');
+  });
+
+  it('keeps the line at the top in place when the host drops lines before it', () => {
+    const { container, rerender } = render(
+      <LogWell follow={false} label="Combined log" lines={linesTo(1000)} />
+    );
+    const well = container.querySelector('.log-well') as HTMLElement;
+
+    well.scrollTop = 300 * 18 + 5;
+    fireEvent.scroll(well);
+    // The host trims the first 100 lines and appends 100.
+    rerender(
+      <LogWell
+        follow={false}
+        label="Combined log"
+        lines={Array.from({ length: 1000 }, (_, index) => lineOf(index + 100))}
+      />
+    );
+    expect(well.scrollTop).toBe(200 * 18 + 5);
+    expect(drawnLines(container)).toContain('line 300');
+  });
+
+  describe('measured at a width', () => {
+    let lineHeight = 36;
+    let resized: (() => void) | null = null;
+    const boxOf = HTMLElement.prototype.getBoundingClientRect;
+
+    beforeEach(() => {
+      lineHeight = 36;
+      vi.stubGlobal(
+        'ResizeObserver',
+        class {
+          constructor(callback: () => void) {
+            resized = callback;
+          }
+          observe(): void {}
+          disconnect(): void {}
+        }
+      );
+      HTMLElement.prototype.getBoundingClientRect = function (this: HTMLElement) {
+        return this.classList.contains('log-line')
+          ? DOMRect.fromRect({ width: 100, height: lineHeight })
+          : boxOf.call(this);
+      };
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+      HTMLElement.prototype.getBoundingClientRect = boxOf;
+      resized = null;
+    });
+
+    /** A log of 1,000 lines, 36px each at 400px wide, scrolled up to line 600. */
+    const scrolledUp = () => {
+      const { container } = render(
+        <LogWell follow={false} label="Combined log" lines={linesTo(1000)} />
+      );
+      const well = container.querySelector('.log-well') as HTMLElement;
+      let width = 400;
+      let height = VIEW;
+
+      Object.defineProperty(well, 'clientWidth', { configurable: true, get: () => width });
+      Object.defineProperty(well, 'clientHeight', { configurable: true, get: () => height });
+      act(() => resized?.());
+      well.scrollTop = 600 * 36 + 4;
+      fireEvent.scroll(well);
+      expect(drawnLines(container)).toContain('line 600');
+      return {
+        container,
+        well,
+        resize: (to: { readonly width: number; readonly height: number }) => {
+          width = to.width;
+          height = to.height;
+          act(() => resized?.());
+        }
+      };
+    };
+
+    it('keeps the line at the top in place when a new width wraps lines anew', () => {
+      const { container, well, resize } = scrolledUp();
+
+      // Wider, the lines no longer wrap: 18px each.
+      lineHeight = 18;
+      resize({ width: 800, height: VIEW });
+      expect(well.scrollTop).toBe(600 * 18 + 4);
+      expect(drawnLines(container)).toContain('line 600');
+      expect(drawnLines(container)).not.toContain('line 1150');
+    });
+
+    it('keeps its heights and its reader through a spell out of layout', () => {
+      const { well, resize } = scrolledUp();
+
+      // Hidden: no box, and the browser drops its scroll.
+      resize({ width: 0, height: 0 });
+      well.scrollTop = 0;
+      resize({ width: 400, height: VIEW });
+      expect(well.scrollTop).toBe(600 * 36 + 4);
+    });
+  });
+
+  it('keeps a scroll the well has not heard yet when lines arrive', () => {
+    const { container, rerender } = render(
+      <LogWell follow={false} label="Combined log" lines={linesTo(1000)} />
+    );
+    const well = container.querySelector('.log-well') as HTMLElement;
+
+    well.scrollTop = 300 * 18;
+    fireEvent.scroll(well);
+    // The reader scrolls on; a batch renders before the scroll event comes.
+    well.scrollTop = 500 * 18;
+    rerender(<LogWell follow={false} label="Combined log" lines={linesTo(1010)} />);
+    expect(well.scrollTop).toBe(500 * 18);
   });
 
   it('starts at the head without follow', () => {
@@ -224,12 +361,77 @@ describe('LogWell with many lines', () => {
     changed();
     drawn = drawnLines(container);
     expect(drawn).toHaveLength(995);
-    expect(container.querySelector('.log-gap:not(:first-child)')).toBeNull();
+    // The room after the lines stays, empty.
+    expect((container.querySelector('.log-gap:last-child') as HTMLElement).style.height).toBe(
+      '0px'
+    );
+
+    // An empty selection lets it go.
+    selection.removeAllRanges();
+    changed();
+    expect(drawnLines(container)).not.toContain('line 5');
 
     // An empty selection lets it go.
     selection.removeAllRanges();
     changed();
     expect(drawnLines(container)).not.toContain('line 5');
     expect(drawnLines(container).length).toBeLessThan(150);
+  });
+
+  it('draws every line a select-all, a page-wide selection, or a copy covers', () => {
+    const { container } = render(
+      <div>
+        <LogWell follow={false} label="Combined log" lines={linesTo(1000)} />
+        <p className="after">after the log</p>
+      </div>
+    );
+    const well = container.querySelector('.log-well') as HTMLElement;
+    const wordsOf = (text: string) =>
+      (
+        [...container.querySelectorAll('.log-text')].find(
+          (words) => words.textContent === text
+        ) as HTMLElement
+      ).firstChild as Node;
+    const selection = document.getSelection() as Selection;
+    const changed = () =>
+      act(() => {
+        document.dispatchEvent(new Event('selectionchange'));
+      });
+
+    // A select-all of the well, starting in the room before the lines drawn.
+    well.scrollTop = 400 * 18;
+    fireEvent.scroll(well);
+    expect(well.firstElementChild?.classList.contains('log-gap')).toBe(true);
+    selection.selectAllChildren(well);
+    changed();
+    expect(drawnLines(container)).toHaveLength(1000);
+    expect(selection.toString()).toContain('line 0');
+    expect(selection.toString()).toContain('line 999');
+
+    // A page-wide selection around the well.
+    selection.removeAllRanges();
+    changed();
+    expect(drawnLines(container).length).toBeLessThan(150);
+    selection.selectAllChildren(container);
+    changed();
+    expect(drawnLines(container)).toHaveLength(1000);
+
+    // A copy draws what the selection covers at once, before its text is taken.
+    selection.removeAllRanges();
+    changed();
+    selection.setBaseAndExtent(
+      wordsOf('line 400'),
+      0,
+      container.querySelector('.after') as Node,
+      1
+    );
+    document.dispatchEvent(new Event('copy'));
+    // Line 400 to the last, and the view's overscan above it.
+    expect(drawnLines(container)).toHaveLength(620);
+    expect(selection.toString()).toContain('line 700');
+    expect(selection.toString()).toContain('line 999');
+
+    selection.removeAllRanges();
+    changed();
   });
 });

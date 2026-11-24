@@ -9,7 +9,9 @@ import {
   type ReactElement,
   type ReactNode
 } from 'react';
+import { flushSync } from 'react-dom';
 
+import { VisuallyHidden } from '../VisuallyHidden.js';
 import { ansiSegments } from './Ansi.logic.js';
 import {
   joinedRuns,
@@ -91,8 +93,8 @@ const FOOT_SLACK = 8;
 const OVERSCAN = 20;
 
 /**
- * The newest lines, always drawn wherever the reader is, so the `log`
- * region still hears each new line as it comes.
+ * How many of the newest lines the hidden live region holds, so a screen
+ * reader hears each new line as it comes, the last ones of a large batch.
  */
 const LIVE_TAIL = 50;
 
@@ -111,50 +113,61 @@ const lineKey = (key: LogLine['key']): string => `${typeof key}:${key}`;
 const elementOf = (node: Node | null): Element | null =>
   node === null ? null : node.nodeType === 1 ? (node as Element) : node.parentElement;
 
+/** A selection's start before the well, or its end after it: no line's key can be either. */
+const HEAD: unique symbol = Symbol('head');
+const FOOT: unique symbol = Symbol('foot');
+
+/** Where a selection over the well starts and ends: a line by key, or past the well's head or foot. */
+interface SelectedLines {
+  readonly start: LogLine['key'] | typeof HEAD;
+  readonly end: LogLine['key'] | typeof FOOT;
+}
+
 /**
- * The index of the line a selection's end sits in, in `well`: its line,
- * or, in the room standing for undrawn lines, the line at that room's
- * edge away from `from` (the selection's other end), so the selection
- * covers the whole room. A start in that room (`from` of -1) has no line.
+ * The index of the line a selection's `side` boundary at `node` and
+ * `offset` takes in, in `well`: its line, or, in the room standing for
+ * undrawn lines, that room's first line for a start and its last for an
+ * end, since a boundary there covers the whole room. Null where it takes
+ * in no line (a start after the last child, the empty words).
  */
-const lineIn = (well: Element, node: Node, offset: number, from: number): number | null => {
-  // An end between the well's children names the child after it.
+const lineIn = (
+  well: Element,
+  node: Node,
+  offset: number,
+  side: 'start' | 'end'
+): number | null => {
+  // A boundary between the well's children takes in the child after it
+  // (a start) or before it (an end).
   const at =
-    node === well ? (well.childNodes[Math.min(offset, well.childNodes.length - 1)] ?? null) : node;
-  const box = elementOf(at);
-  const row = box?.closest<HTMLElement>('.log-line, .log-gap');
+    node === well ? (well.childNodes[side === 'start' ? offset : offset - 1] ?? null) : node;
+  const row = elementOf(at)?.closest<HTMLElement>('.log-line, .log-gap');
 
   if (row === null || row === undefined || !well.contains(row)) return null;
   if (row.classList.contains('log-line')) return Number(row.dataset.index);
-  if (from < 0) return null;
-  const start = Number(row.dataset.from);
-  const end = Number(row.dataset.to) - 1;
-
-  return start > from ? end : start;
+  return side === 'start' ? Number(row.dataset.from) : Number(row.dataset.to) - 1;
 };
 
 /** The run of lines a selection covers (`LogWell`'s), empty with none. */
 const selectedRun = (
   lines: readonly LogLine[],
-  selected: {
-    readonly anchor: LogLine['key'];
-    readonly focus: LogLine['key'] | 'head' | 'foot';
-  } | null
+  indexOf: ReadonlyMap<LogLine['key'], number>,
+  selected: SelectedLines | null
 ): LineRun => {
   if (selected === null) return { start: 0, end: 0 };
-  const anchor = lines.findIndex((line) => line.key === selected.anchor);
+  const start = selected.start === HEAD ? 0 : indexOf.get(selected.start);
+  const end = selected.end === FOOT ? lines.length - 1 : indexOf.get(selected.end);
 
-  if (anchor < 0) return { start: 0, end: 0 };
-  const found =
-    selected.focus === 'head'
-      ? 0
-      : selected.focus === 'foot'
-        ? lines.length - 1
-        : lines.findIndex((line) => line.key === selected.focus);
-  const focus = found < 0 ? anchor : found;
-
-  return { start: Math.min(anchor, focus), end: Math.max(anchor, focus) + 1 };
+  if (start === undefined || end === undefined) return { start: 0, end: 0 };
+  return { start: Math.min(start, end), end: Math.max(start, end) + 1 };
 };
+
+/** A line's words as plain text, for the live region: an ANSI line without its escapes. */
+const plainText = (line: LogLine, ansi: boolean): ReactNode =>
+  ansi && typeof line.text === 'string'
+    ? ansiSegments(line.text)
+        .map((run) => run.text)
+        .join('')
+    : line.text;
 
 /** One line of the well, drawn again only when what it shows changes. */
 const LogRow = memo(function LogRow({
@@ -211,12 +224,14 @@ const LogRow = memo(function LogRow({
  * room standing for the rest, so a log of tens of thousands of lines
  * costs what one screen of it does. Each line drawn is measured, as long
  * lines wrap; a line not yet drawn counts as tall as the first lines
- * measured at this width, and the line at the top of the view stays put
- * as lines above it are measured. Two more runs stay drawn: the newest
- * lines, so the region hears each new one wherever the reader is, and,
- * while a selection starts in the well, every line it covers (to the
- * log's first or last line when it runs past the well), so a copy takes
- * every line it covers.
+ * measured at this width. Away from the foot, the line at the top of the
+ * view stays put by its key as lines above it are measured, the width
+ * changes, or the host drops lines before it. While a selection covers
+ * any of the well (dragged past it, a select-all of the well or the
+ * page), every line it covers is drawn, so a copy takes them all. The
+ * well itself is quiet (`aria-live="off"`), as lines it draws come and go
+ * with the scroll; a hidden region after it holds the newest lines and
+ * speaks each new one.
  */
 export function LogWell({
   lines,
@@ -230,12 +245,9 @@ export function LogWell({
   const [atFoot, setAtFoot] = useState(true);
   // The well's scroll and its laid-out size, as last read.
   const [view, setView] = useState({ top: 0, height: 0, width: 0 });
-  // A selection in the well: the line it starts on and where it ends (a
-  // line, or past the well's head or foot), every line between kept drawn.
-  const [selected, setSelected] = useState<{
-    readonly anchor: LogLine['key'];
-    readonly focus: LogLine['key'] | 'head' | 'foot';
-  } | null>(null);
+  // A selection over the well: where it starts and ends in document order
+  // (a line, or past the well's head or foot), every line between kept drawn.
+  const [selected, setSelected] = useState<SelectedLines | null>(null);
   // Each line's measured height by key, and the height a line not yet
   // measured counts as: set by the first lines measured at this width and
   // kept, so lines measured later never move the ones around them.
@@ -243,14 +255,25 @@ export function LogWell({
   const settledEstimate = useRef<number | null>(null);
   // Raised each time a measure changes the heights.
   const [measures, setMeasures] = useState(0);
-  // A scroll to make once the heights a measure changed are drawn, so the
-  // line at the top of the view stays put as lines above it are measured.
-  const pendingShift = useRef<{ readonly by: number; readonly at: number } | null>(null);
+  // Away from the foot, the line at the top of the view by key and how far
+  // into it the view starts, so that line stays put as lines above it are
+  // measured, the well's width changes, or the host drops lines before it;
+  // and the scroll last read or made, so a scroll not yet heard is kept.
+  const anchor = useRef<{ readonly key: LogLine['key']; readonly within: number } | null>(null);
+  const lastTop = useRef(0);
+  // The width the lines were last measured at, and whether the well is
+  // out of layout now.
+  const laidWidth = useRef(0);
+  const unlaid = useRef(false);
   const latestLines = useRef(lines);
 
   latestLines.current = lines;
 
   const names = useMemo(() => lines.map((line) => line.source), [lines]);
+  const indexOf = useMemo(
+    () => new Map(lines.map((line, index) => [line.key, index] as const)),
+    [lines]
+  );
   const indexes = useMemo(() => logSourceIndexes(names, sources), [names, sources]);
   const width = useMemo(() => logSourceWidth(names), [names]);
   const estimate = settledEstimate.current ?? LINE_ESTIMATE;
@@ -278,22 +301,33 @@ export function LogWell({
     height,
     OVERSCAN
   );
-  const runs = joinedRuns(
-    [shown, { start: lines.length - LIVE_TAIL, end: lines.length }, selectedRun(lines, selected)],
-    lines.length
-  );
+  const runs = joinedRuns([shown, selectedRun(lines, indexOf, selected)], lines.length);
 
   // The runs drawn, as a value, so measuring waits for what it draws to change.
   const drawnRuns = runs.map((run) => `${run.start}-${run.end}`).join();
 
+  // The line at `top` by the heights this render draws, and how far into it `top` is.
+  const anchorAt = (
+    top: number
+  ): { readonly key: LogLine['key']; readonly within: number } | null => {
+    const first = lineAt(tops, top);
+    const line = lines[first];
+
+    return line === undefined ? null : { key: line.key, within: top - (tops[first] ?? 0) };
+  };
+
   // The drawn lines' heights, after each render that changes what is
-  // drawn: a change draws again with the room each line takes, and, away
-  // from the foot, scrolls by what the lines above the view gained, so
-  // the line at its top stays put.
+  // drawn: a change draws again with the room each line takes.
   useLayoutEffect(() => {
     const element = well.current;
 
     if (element === null) return;
+    // An emptied log forgets its heights: a new run's keys may repeat.
+    if (latestLines.current.length === 0) {
+      heights.current = new Map();
+      settledEstimate.current = null;
+      return;
+    }
     const known = heights.current;
     const changed: number[] = [];
 
@@ -314,7 +348,7 @@ export function LogWell({
       settledEstimate.current = changed.reduce((sum, value) => sum + value, 0) / changed.length;
     }
     // Lines the host has dropped give their heights back.
-    if (known.size > 2 * latestLines.current.length + LIVE_TAIL) {
+    if (known.size > 2 * latestLines.current.length + OVERSCAN) {
       const kept = new Map<LogLine['key'], number>();
 
       for (const line of latestLines.current) {
@@ -324,44 +358,44 @@ export function LogWell({
       }
       heights.current = kept;
     }
-    if (!following) {
-      const top = element.scrollTop;
-      const first = lineAt(tops, top);
-      const now = settledEstimate.current;
-      let moved = 0;
-
-      for (let index = 0; index < first; index += 1) {
-        const line = latestLines.current[index];
-
-        moved += (line === undefined ? undefined : heights.current.get(line.key)) ?? now;
-      }
-      const by = moved - (tops[first] ?? 0);
-
-      if (Math.abs(by) >= 0.5) {
-        pendingShift.current = { by, at: measures + 1 };
-        setView((before) => ({ ...before, top: before.top + by }));
-      }
-    }
     setMeasures(measures + 1);
-  }, [lines, drawnRuns, view.width, ansi, following, measures, tops]);
+  }, [lines, drawnRuns, view.width, ansi, measures]);
 
   // At the foot, the newest line in view, after the lines are measured;
-  // elsewhere, the scroll a measure asked for, once its heights are drawn.
+  // elsewhere, the anchor line back at the top of the view by the heights
+  // this render drew, unless the reader scrolled since the last read.
+  // After every commit, as what any render draws can move the view; it
+  // sets the view only when the scroll moved, so it settles in one pass.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useLayoutEffect(() => {
     const element = well.current;
 
-    if (element === null) return;
+    if (element === null || unlaid.current) return;
     if (following) {
-      pendingShift.current = null;
+      anchor.current = null;
       element.scrollTop = element.scrollHeight;
+      lastTop.current = element.scrollTop;
       return;
     }
-    const shift = pendingShift.current;
-
-    if (shift !== null && shift.at === measures) {
-      pendingShift.current = null;
-      element.scrollTop += shift.by;
+    if (Math.abs(element.scrollTop - lastTop.current) >= 0.5) {
+      anchor.current = anchorAt(element.scrollTop);
+      lastTop.current = element.scrollTop;
+      return;
     }
+    const held = anchor.current;
+    const index = held === null ? undefined : indexOf.get(held.key);
+
+    // A line the host dropped leaves the scroll where it is.
+    if (held === null || index === undefined) return;
+    const top = tops[index] ?? 0;
+    const target = top + Math.min(held.within, Math.max(0, (tops[index + 1] ?? top) - top));
+
+    if (Math.abs(element.scrollTop - target) < 0.5) return;
+    element.scrollTop = target;
+    lastTop.current = element.scrollTop;
+    setView((before) =>
+      before.top === element.scrollTop ? before : { ...before, top: element.scrollTop }
+    );
   });
 
   // The well's size: a new width wraps lines anew, so what was measured
@@ -371,17 +405,28 @@ export function LogWell({
 
     if (element === null) return undefined;
     const read = (): void => {
-      setView((before) => {
-        const next = {
-          top: element.scrollTop,
-          height: element.clientHeight,
-          width: element.clientWidth
-        };
+      const width = element.clientWidth;
 
-        if (before.width !== next.width && before.width > 0) {
-          heights.current = new Map();
-          settledEstimate.current = null;
-        }
+      // A well held out of layout (a hidden tab, a closed dock) keeps what
+      // it measured and where its reader was, for when it shows again; a
+      // scroll a hidden well lost is no reader's, so the anchor comes back.
+      if (width === 0 && element.clientHeight === 0) {
+        unlaid.current = true;
+        return;
+      }
+      if (unlaid.current) {
+        unlaid.current = false;
+        lastTop.current = element.scrollTop;
+      }
+      if (width > 0 && laidWidth.current > 0 && width !== laidWidth.current) {
+        heights.current = new Map();
+        settledEstimate.current = null;
+        setMeasures((count) => count + 1);
+      }
+      if (width > 0) laidWidth.current = width;
+      setView((before) => {
+        const next = { top: element.scrollTop, height: element.clientHeight, width };
+
         return before.top === next.top &&
           before.height === next.height &&
           before.width === next.width
@@ -399,9 +444,11 @@ export function LogWell({
     return () => observer.disconnect();
   }, []);
 
-  // A selection that starts in the well, so every line it covers stays
-  // drawn and a copy takes them all, as a dragged selection runs past the
-  // view or past the well; an empty selection, or one elsewhere, lets go.
+  // A selection over the well, so every line it covers stays drawn and a
+  // copy takes them all: dragged past the view or past the well, a select-
+  // all of the well, or a page-wide one around it. An empty selection, or
+  // one elsewhere, lets go. A copy reads it again and draws the lines at
+  // once, before the browser takes the selection's text.
   useEffect(() => {
     const element = well.current;
 
@@ -409,46 +456,46 @@ export function LogWell({
     const document = element.ownerDocument;
     const read = (): void => {
       const selection = document.getSelection();
-      const start = selection?.anchorNode ?? null;
-      const end = selection?.focusNode ?? null;
+      const range =
+        selection === null || selection.isCollapsed || selection.rangeCount === 0
+          ? null
+          : selection.getRangeAt(0);
 
-      if (
-        selection === null ||
-        selection.isCollapsed ||
-        start === null ||
-        end === null ||
-        !element.contains(start)
-      ) {
+      if (range === null || !range.intersectsNode(element)) {
         setSelected(null);
         return;
       }
       const lines = latestLines.current;
-      const anchorIndex = lineIn(element, start, selection.anchorOffset, -1);
+      const first = element.contains(range.startContainer)
+        ? lineIn(element, range.startContainer, range.startOffset, 'start')
+        : 0;
+      const last = element.contains(range.endContainer)
+        ? lineIn(element, range.endContainer, range.endOffset, 'end')
+        : lines.length - 1;
+      const startLine = first === null ? undefined : lines[first];
+      const endLine = last === null ? undefined : lines[last];
 
-      // A start in the room between lines keeps the line it had.
-      if (anchorIndex === null) return;
-      const anchor = lines[anchorIndex];
-
-      if (anchor === undefined) return;
-      const focusIndex = element.contains(end)
-        ? lineIn(element, end, selection.focusOffset, anchorIndex)
-        : null;
-      const focus =
-        focusIndex !== null
-          ? (lines[focusIndex]?.key ?? anchor.key)
-          : element.compareDocumentPosition(end) & Node.DOCUMENT_POSITION_FOLLOWING
-            ? 'foot'
-            : 'head';
+      if (startLine === undefined || endLine === undefined) {
+        setSelected(null);
+        return;
+      }
+      const next: SelectedLines = {
+        start: element.contains(range.startContainer) ? startLine.key : HEAD,
+        end: element.contains(range.endContainer) ? endLine.key : FOOT
+      };
 
       setSelected((before) =>
-        before?.anchor === anchor.key && before.focus === focus
-          ? before
-          : { anchor: anchor.key, focus }
+        before?.start === next.start && before.end === next.end ? before : next
       );
     };
+    const copy = (): void => flushSync(read);
 
     document.addEventListener('selectionchange', read);
-    return () => document.removeEventListener('selectionchange', read);
+    document.addEventListener('copy', copy, true);
+    return () => {
+      document.removeEventListener('selectionchange', read);
+      document.removeEventListener('copy', copy, true);
+    };
   }, []);
 
   const drawn: ReactNode[] = [];
@@ -488,40 +535,56 @@ export function LogWell({
     }
     at = run.end;
   }
-  const after = total - (tops[at] ?? 0);
-
-  if (after > 0) {
-    drawn.push(
-      <div
-        aria-hidden
-        className="log-gap"
-        data-from={at}
-        data-to={lines.length}
-        key={`gap:${at}`}
-        style={{ height: after }}
-      />
-    );
-  }
+  // The room after the last run, always there, even empty, under one key:
+  // lines a selection draws go in before it, so a selection that ends after
+  // the well's last child takes them in rather than ending before them.
+  drawn.push(
+    <div
+      aria-hidden
+      className="log-gap"
+      data-from={at}
+      data-to={lines.length}
+      key="gap:end"
+      style={{ height: Math.max(0, total - (tops[at] ?? 0)) }}
+    />
+  );
 
   return (
-    <div
-      aria-label={label}
-      className="log-well selectable"
-      onScroll={(event) => {
-        const element = event.currentTarget;
+    <>
+      <div
+        aria-label={label}
+        // The lines drawn come and go as the reader scrolls; the hidden
+        // region after the well is the one that speaks new lines.
+        aria-live="off"
+        className="log-well selectable"
+        onScroll={(event) => {
+          const element = event.currentTarget;
+          const foot =
+            element.scrollHeight - element.scrollTop - element.clientHeight <= FOOT_SLACK;
 
-        setAtFoot(element.scrollHeight - element.scrollTop - element.clientHeight <= FOOT_SLACK);
-        setView((before) =>
-          before.top === element.scrollTop ? before : { ...before, top: element.scrollTop }
-        );
-      }}
-      ref={well}
-      role="log"
-      style={{ '--log-source-width': `${width}ch` } as CSSProperties}
-      tabIndex={0}
-    >
-      {lines.length === 0 && empty !== undefined ? <p className="log-empty">{empty}</p> : null}
-      {drawn}
-    </div>
+          anchor.current = follow && foot ? null : anchorAt(element.scrollTop);
+          lastTop.current = element.scrollTop;
+          setAtFoot(foot);
+          setView((before) =>
+            before.top === element.scrollTop ? before : { ...before, top: element.scrollTop }
+          );
+        }}
+        ref={well}
+        role="log"
+        style={{ '--log-source-width': `${width}ch` } as CSSProperties}
+        tabIndex={0}
+      >
+        {lines.length === 0 && empty !== undefined ? <p className="log-empty">{empty}</p> : null}
+        {drawn}
+      </div>
+      <VisuallyHidden aria-live="polite" aria-relevant="additions" className="log-live">
+        {lines.slice(-LIVE_TAIL).map((line) => (
+          <span key={lineKey(line.key)}>
+            {line.source === undefined || line.source === null ? null : `${line.source} `}
+            {plainText(line, ansi)}{' '}
+          </span>
+        ))}
+      </VisuallyHidden>
+    </>
   );
 }

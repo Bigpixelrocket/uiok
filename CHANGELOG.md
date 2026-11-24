@@ -16,7 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ### Changed
 
-- `LogWell` draws only the lines in view, 20 more past each edge, the newest 50, and, while a selection starts in the well, every line it covers, with blank room (`.log-gap`) standing for the rest. A log of 20,000 lines now draws about a screen of nodes for each batch instead of every line. Following the tail, a reader scrolled up staying put, selection and copy, and the `log` region hearing new lines work as before. Each drawn line is measured, as lines wrap; lines carry their place in `lines` as `data-index`.
+- `LogWell` draws only the lines in view and 20 more past each edge, and, while a selection covers any of the well, every line it covers, with blank room (`.log-gap`) standing for the rest. A log of 20,000 lines now draws about a screen of nodes for each batch instead of every line. Following the tail, a reader scrolled up staying on their line (through measuring, a new width, and lines the host drops before it), selection and copy (a select-all included), and new lines being announced work as before. The well is now `aria-live="off"`, and a hidden region after it (`.log-live`) announces the newest 50 lines, so scrolling announces nothing. Each drawn line is measured, as lines wrap; lines carry their place in `lines` as `data-index`.
 
 ### Fixed
 
