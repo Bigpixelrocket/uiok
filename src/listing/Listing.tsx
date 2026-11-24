@@ -225,7 +225,8 @@ export function Strip({
           key={entry.label}
           role={table ? 'columnheader' : undefined}
         >
-          {entry.control}
+          {/* The hidden label first, so the control is the column's last
+              child and keeps the edge rules a cell's last action wears. */}
           {entry.hidden === true
             ? table && <span className="visually-hidden">{entry.label}</span>
             : entry.control === undefined &&
@@ -248,6 +249,7 @@ export function Strip({
                   tip={entry.tip}
                 />
               ))}
+          {entry.control}
         </span>
       ))}
     </div>
@@ -547,7 +549,8 @@ export interface RowProps {
   /**
    * More than the name says, in the host's words: what a narrow pane's
    * dropped columns held ("running · 5432"). The name's tooltip at every
-   * width, under the whole name (a name in markup by its drawn words), in
+   * width, under the whole name (a name in markup by its words as assistive
+   * technology reads them, kept current as they change), in
    * place of the tooltip a cut name shows alone; its words are also read
    * as the description (below).
    */
@@ -555,8 +558,9 @@ export interface RowProps {
   /**
    * Read by assistive technology before `nameTip`'s words, and never shown:
    * what kind of item the row is ("Database"), never the name itself. The
-   * two are the description of the name's cell, of the row when it takes
-   * the focus (`focusable`, `tabbable`), and of a radio row's radio.
+   * two are the description of the name's cell, of the row when it or its
+   * controls take the focus (`focusable`, `tabbable`), and of a radio row's
+   * radio.
    */
   readonly nameDescription?: string;
   readonly className?: string;
@@ -632,6 +636,107 @@ function nameTooltip(name: ReactNode, nameText: string | null, tip: string | und
   });
 }
 
+/** Roles that take no name of their own, so a label on them is not read. */
+const UNNAMED_ROLES = new Set(['none', 'presentation', 'generic']);
+
+/**
+ * The role assistive technology gives `element`, as far as naming goes:
+ * the first token of its `role` attribute, or null for its implicit role
+ * (no role, or an empty one). A presentational role (`none`,
+ * `presentation`) gives way to the implicit role on an element that takes
+ * the focus or carries a label, as WAI-ARIA's conflict resolution says.
+ */
+function effectiveRole(element: Element): string | null {
+  const role = element.getAttribute('role')?.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
+
+  if (role === '') return null;
+  if (
+    (role === 'none' || role === 'presentation') &&
+    (element.hasAttribute('tabindex') ||
+      element.hasAttribute('aria-label') ||
+      element.hasAttribute('aria-labelledby'))
+  ) {
+    return null;
+  }
+  return role;
+}
+
+/**
+ * An element's own text alternative, read in place of its content, or null
+ * when it has none: the text of the elements `aria-labelledby` names, else
+ * `aria-label`, on an element whose role takes a name (an `svg` or an
+ * `img`, or one with an explicit role but none, presentation, or generic; a
+ * plain `span`'s label is not read); else an `img`'s `alt`, unless the
+ * image is presentational too. The role is the one in effect
+ * (`effectiveRole`), not the attribute as written.
+ */
+function textAlternative(element: Element): string | null {
+  const role = effectiveRole(element);
+  const tag = element.localName;
+  const named = role === null ? tag === 'svg' || tag === 'img' : !UNNAMED_ROLES.has(role);
+
+  if (named) {
+    const ids = element.getAttribute('aria-labelledby')?.trim();
+    const root = element.getRootNode() as Partial<Pick<Document, 'getElementById'>>;
+
+    if (ids && typeof root.getElementById === 'function') {
+      const text = ids
+        .split(/\s+/)
+        .map((id) => root.getElementById?.(id)?.textContent ?? '')
+        .join(' ')
+        .trim();
+
+      if (text !== '') return text;
+    }
+    const label = element.getAttribute('aria-label')?.trim();
+
+    if (label) return label;
+    // A presentational image (role none or presentation) is not read by its alt either.
+    if (tag === 'img') return element.getAttribute('alt');
+  }
+  return null;
+}
+
+/**
+ * A marked-up name's words as assistive technology reads them: every text
+ * node but those under an `aria-hidden="true"` or `hidden` element, an
+ * element's own text alternative (`textAlternative`) in place of its
+ * content, its runs of space made one. So a name drawn twice, once for sight
+ * (`aria-hidden`) and once read whole (`.visually-hidden`), as `NameCut`
+ * draws a cut name, gives its words once, the whole name; a glyph or word
+ * drawn for sight alone is left out, a glyph labelled "Production" reads
+ * as its label; and words given to assistive technology alone
+ * (`.visually-hidden`) are read, as they are part of the name the row's
+ * description follows.
+ */
+function readName(box: Node): string {
+  let words = '';
+  const walk = (node: Node): void => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      words += node.nodeValue ?? '';
+      return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    const element = node as Element;
+
+    if (node !== box) {
+      if (element.getAttribute('aria-hidden') === 'true' || element.hasAttribute('hidden')) return;
+
+      const alternative = textAlternative(element);
+
+      // A word of its own, apart from the words around it.
+      if (alternative !== null) {
+        words += ` ${alternative} `;
+        return;
+      }
+    }
+    for (const child of node.childNodes) walk(child);
+  };
+
+  walk(box);
+  return words.replace(/\s+/g, ' ').trim();
+}
+
 /** What a row's name is described by: the host's description, then its tip; none when neither. */
 function nameDescribed(description: string | undefined, tip: string | undefined) {
   const parts = [description, tip].filter((part) => part !== undefined && part !== '');
@@ -689,7 +794,7 @@ export function Row({
   const [drawnName, setDrawnName] = useState<string | null>(null);
   const nameText = typeof name === 'string' ? name : drawnName;
   const tipped = nameTip !== undefined && nameTip !== '';
-  // Read where the focus lands (a focusable or tabbable row, a radio) and in
+  // Read where the focus lands (a focusable row, or a row whose controls take it, a radio) and in
   // the name's cell for a table's navigation.
   const described = nameDescribed(nameDescription, nameTip);
 
@@ -699,15 +804,37 @@ export function Row({
     return () => cursor.rowsChanged?.();
   }, [cursor, rowKey]);
 
-  // Whenever the name is drawn again: a name in markup is a new element
-  // each time its host draws it.
+  // Whenever the name is drawn again (a name in markup is a new element
+  // each time its host draws it), and whenever its words change on their
+  // own: a component inside the name drawing new words, or showing or
+  // hiding some, with no new `name` from the host.
+  const picked = radio !== undefined;
+
   useLayoutEffect(() => {
-    if (!tipped || typeof name === 'string') return;
+    const box = nameBox.current;
 
-    const text = nameBox.current?.textContent ?? '';
+    if (!tipped || typeof name === 'string' || box === null) return undefined;
 
-    setDrawnName((now) => (now === text ? now : text));
-  }, [tipped, name]);
+    const read = (): void => {
+      const text = readName(box);
+
+      setDrawnName((now) => (now === text ? now : text));
+    };
+
+    read();
+    const observer = new MutationObserver(read);
+
+    // Only the attributes that hide words: the tooltip this reading sets
+    // on the box is an attribute too, and must not wake it again.
+    observer.observe(box, {
+      attributes: true,
+      attributeFilter: ['aria-hidden', 'hidden', 'aria-label', 'aria-labelledby', 'alt', 'role'],
+      characterData: true,
+      childList: true,
+      subtree: true
+    });
+    return () => observer.disconnect();
+  }, [tipped, name, picked]);
 
   return (
     <InListingRowContext.Provider value>
@@ -837,7 +964,12 @@ export interface CellProps {
   /** The value is missing (SQL NULL): its words in the row-meta tone's italic (`.value-null`). */
   readonly missing?: boolean;
   readonly className?: string;
-  /** The cell's whole text, for one cut short, as its tooltip and description; none when null. */
+  /**
+   * The cell's whole text, for one cut short, as its tooltip and description
+   * at every width. `null` or `''`: no tooltip at all. Left out
+   * (`undefined`): a cell whose children are text or a number shows them
+   * whole as its tooltip only while the column cuts them.
+   */
   readonly tip?: string | null;
   readonly children?: ReactNode;
 }
@@ -868,7 +1000,16 @@ export function Cell({
         .filter(Boolean)
         .join(' ')}
       role="cell"
-      {...(tip === undefined || tip === null ? {} : describedTooltip(tip))}
+      // The host's tip at every width; none for null or ''; and with no
+      // tip at all, words given as text carry themselves whole as the
+      // tooltip, only while the column cuts them.
+      {...(tip === undefined
+        ? typeof children === 'string' || typeof children === 'number'
+          ? cutTooltip(String(children))
+          : {}
+        : tip === null || tip === ''
+          ? {}
+          : describedTooltip(tip))}
     >
       {children}
     </span>

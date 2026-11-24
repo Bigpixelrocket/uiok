@@ -20,12 +20,19 @@ export interface PaneTabsLabels {
    * "6 tabs folded here, 1 with changes not saved".
    */
   readonly folded: (count: number, dirty: number) => string;
-  /** The heading of the folded tabs' menu, and the count's accessible name: "Folded here". */
+  /** The heading of the folded tabs' menu: "Folded here". */
   readonly foldedHeading: string;
+  /**
+   * The folded tabs' count's accessible name, given how many folded: what it
+   * shows and what a press opens, "6 more tabs". Optional, so a group written
+   * whole before it came still type-checks; the English words stand in when
+   * it is absent.
+   */
+  readonly foldedName?: (count: number) => string;
 }
 
 /** English tab strip words: the `paneTabs` group `UiokProvider` starts from. */
-export const DEFAULT_PANE_TABS_LABELS: PaneTabsLabels = {
+export const DEFAULT_PANE_TABS_LABELS: Required<PaneTabsLabels> = {
   newTab: 'New Tab',
   close: (name) => `Close ${name}`,
   picked: (name) => `${name}, picked`,
@@ -35,5 +42,6 @@ export const DEFAULT_PANE_TABS_LABELS: PaneTabsLabels = {
     `${count.toLocaleString('en-US')} ${count === 1 ? 'tab' : 'tabs'} folded here${
       dirty > 0 ? `, ${dirty.toLocaleString('en-US')} with changes not saved` : ''
     }`,
-  foldedHeading: 'Folded here'
+  foldedHeading: 'Folded here',
+  foldedName: (count) => `${count.toLocaleString('en-US')} more ${count === 1 ? 'tab' : 'tabs'}`
 };

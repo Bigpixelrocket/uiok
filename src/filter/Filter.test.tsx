@@ -5,11 +5,13 @@ import { FilterEscape } from './FilterEscape.js';
 import { FilterIcon } from './FilterIcon.js';
 
 describe('FilterEscape', () => {
-  it('does what Escape does on a press, named and titled by its label', () => {
+  it('does what Escape does on a press, named by its label and the key it shows, titled by its label', () => {
     const onEscape = vi.fn();
     render(<FilterEscape label="Clear filter" onEscape={onEscape} />);
 
-    const button = screen.getByRole('button', { name: 'Clear filter' });
+    const button = screen.getByRole('button', { name: 'Clear filter, Escape' });
+
+    expect(button.getAttribute('aria-keyshortcuts')).toBe('Escape');
     fireEvent.click(button);
 
     expect(onEscape).toHaveBeenCalledTimes(1);
@@ -25,7 +27,7 @@ describe('FilterEscape', () => {
       </>
     );
     const field = screen.getByRole('textbox', { name: 'Filter' });
-    const button = screen.getByRole('button', { name: 'Clear filter' });
+    const button = screen.getByRole('button', { name: 'Clear filter, Escape' });
     field.focus();
 
     // A cancelled mousedown is what keeps the browser from moving the focus.

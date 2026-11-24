@@ -258,3 +258,71 @@ describe("FilterChips' one line", () => {
     expect(declaredValues(chip, 'white-space').at(-1)).toBe('nowrap');
   });
 });
+
+describe("FilterChips' wrap", () => {
+  const CHIPS = [
+    { id: 'running', label: 'Running', count: 3 },
+    { id: 'updates', label: 'Updates', count: 2 },
+    { id: 'stopped', label: 'Stopped', count: 9 }
+  ] as const;
+
+  it('wraps onto further lines with no edge fade and no scroll; the one scrolling line stays the default', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const { rerender } = render(
+      <FilterChips chips={CHIPS} label="Filters" on={[]} onToggle={() => undefined} wrap />
+    );
+    const row = screen.getByRole('toolbar', { name: 'Filters' });
+
+    expect(row.classList.contains('scroll-fade-x')).toBe(false);
+    expect(declaredValues(row, 'flex-wrap').at(-1)).toBe('wrap');
+    expect(declaredValues(row, 'overflow-x').at(-1)).toBe('visible');
+    expect(declaredValues(row, 'overflow-y').at(-1)).toBe('visible');
+
+    rerender(<FilterChips chips={CHIPS} label="Filters" on={[]} onToggle={() => undefined} />);
+    expect(row.classList.contains('scroll-fade-x')).toBe(true);
+    expect(declaredValues(row, 'flex-wrap')).toEqual([]);
+    expect(declaredValues(row, 'overflow-x').at(-1)).toBe('auto');
+  });
+
+  it('leaves the wheel to the page and keeps every chip a button the keys reach in order', () => {
+    const onToggle = vi.fn();
+    const shown: unknown[] = [];
+    Object.defineProperty(HTMLElement.prototype, 'scrollIntoView', {
+      configurable: true,
+      value: function (this: HTMLElement) {
+        shown.push(this.textContent);
+      }
+    });
+    try {
+      render(
+        <FilterChips chips={CHIPS} label="Filters" on={['updates']} onToggle={onToggle} wrap />
+      );
+      const row = screen.getByRole('toolbar', { name: 'Filters' });
+      Object.defineProperty(row, 'clientWidth', { configurable: true, value: 200 });
+      Object.defineProperty(row, 'scrollWidth', { configurable: true, value: 500 });
+      const wheel = new WheelEvent('wheel', { bubbles: true, cancelable: true, deltaY: 40 });
+
+      row.dispatchEvent(wheel);
+      expect(wheel.defaultPrevented).toBe(false);
+
+      const chips = screen.getAllByRole('button');
+
+      expect(chips.map((chip) => [chip.textContent, chip.tabIndex])).toEqual([
+        ['Running 3', 0],
+        ['Updates 2', 0],
+        ['Stopped 9', 0]
+      ]);
+      for (const chip of chips) {
+        chip.focus();
+        expect(document.activeElement).toBe(chip);
+      }
+      // The focus's own scroll is the browser's; the row scrolls nothing sideways.
+      expect(shown).toEqual([]);
+      expect(chips[1]?.getAttribute('aria-pressed')).toBe('true');
+      fireEvent.click(chips[2] as HTMLElement);
+      expect(onToggle).toHaveBeenCalledWith('stopped');
+    } finally {
+      delete (HTMLElement.prototype as { scrollIntoView?: unknown }).scrollIntoView;
+    }
+  });
+});

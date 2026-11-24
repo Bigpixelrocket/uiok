@@ -1,5 +1,5 @@
-import { act, render, screen } from '@testing-library/react';
-import { Profiler } from 'react';
+import { act, cleanup, render, screen } from '@testing-library/react';
+import { Profiler, useState, type ReactElement, type ReactNode } from 'react';
 import { Trash2 } from 'lucide-react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,6 +31,9 @@ import {
 } from './Listing.js';
 import { TimelineCell, TimelineScale } from './Timeline.js';
 import { MarkedText } from '../text/MarkedText.js';
+import { NameCut } from '../namecut/NameCut.js';
+import { nameParts } from '../namecut/NameCut.logic.js';
+import { VisuallyHidden } from '../VisuallyHidden.js';
 
 const styles = readStylesheet('src/styles.css');
 
@@ -513,6 +516,181 @@ describe('a row', () => {
     expect(screen.getByRole('cell', { name: 'postgres' }).dataset.tooltip).toBe(
       'postgres\nrunning · 5432'
     );
+  });
+
+  it('draws a hidden column label before its control, so the control’s last action is the last child', () => {
+    render(
+      <Listing
+        columns={[
+          {
+            label: 'Actions',
+            hidden: true,
+            control: (
+              <>
+                <QuietAction
+                  icon={Trash2}
+                  label="Copy Path"
+                  onClick={() => undefined}
+                  word="Copy Path"
+                />
+                <QuietAction icon={Trash2} label="Clear" onClick={() => undefined} word="Clear" />
+              </>
+            )
+          }
+        ]}
+        grid="20px 1fr auto"
+        title="Files"
+      />
+    );
+    const column = screen.getByRole('columnheader', { name: /Actions/ });
+
+    expect(column.firstElementChild?.className).toBe('visually-hidden');
+    expect(column.lastElementChild?.textContent).toBe('Clear');
+  });
+
+  it('shows a cell’s words whole in a tooltip only while its column cuts them, a host’s tip at every width', () => {
+    render(
+      <RowCursorContext value={cursorOn('a', [])}>
+        <Listing
+          columns={[{ label: 'Note' }, { label: 'Size' }]}
+          grid="20px 1fr 1fr 1fr"
+          title="Deps"
+        >
+          <Row name="php" rowKey="a">
+            <Cell>not part of this Start</Cell>
+            <Cell>{42}</Cell>
+            <Cell tip="not part of this Start, nor the next">not part…</Cell>
+            <Cell tip={null}>no tooltip asked</Cell>
+            <Cell tip="">none either</Cell>
+          </Row>
+        </Listing>
+      </RowCursorContext>
+    );
+    const [words, number, tipped, nulled, emptied] = screen.getAllByRole('cell').slice(1);
+
+    expect(words?.dataset.tooltip).toBe('not part of this Start');
+    expect(words?.hasAttribute('data-tooltip-cut')).toBe(true);
+    expect(number?.dataset.tooltip).toBe('42');
+    expect(tipped?.dataset.tooltip).toBe('not part of this Start, nor the next');
+    expect(tipped?.hasAttribute('data-tooltip-cut')).toBe(false);
+    // null and '' ask for no tooltip at all, cut or not.
+    for (const cell of [nulled, emptied]) {
+      expect(cell?.hasAttribute('data-tooltip')).toBe(false);
+      expect(cell?.hasAttribute('aria-description')).toBe(false);
+    }
+  });
+
+  describe('a marked-up name’s words in the tip’s tooltip', () => {
+    const tipOf = (name: ReactNode) => {
+      render(
+        <RowCursorContext value={cursorOn('a', [])}>
+          <Listing columns={[]} grid="20px 1fr" title="Services">
+            <Row name={name} nameTip="Running" rowKey="a" />
+          </Listing>
+        </RowCursorContext>
+      );
+      return () =>
+        (document.querySelector('[data-row-key="a"] .row-name') as HTMLElement).dataset.tooltip;
+    };
+
+    it('follows a name a component inside it renames on its own', async () => {
+      let rename: (to: string) => void = () => undefined;
+      function Renaming(): ReactElement {
+        const [name, setName] = useState('Old');
+
+        rename = setName;
+        return <span>{name}</span>;
+      }
+      const tip = tipOf(<Renaming />);
+
+      expect(tip()).toBe('Old\nRunning');
+      await act(async () => rename('New'));
+      expect(tip()).toBe('New\nRunning');
+    });
+
+    it('leaves out words drawn for sight alone, and keeps words read alone', async () => {
+      let hide: (hidden: boolean) => void = () => undefined;
+      function Flagged(): ReactElement {
+        const [hidden, setHidden] = useState(true);
+
+        hide = setHidden;
+        return (
+          <>
+            <span aria-hidden={hidden}>Draft </span>
+            <VisuallyHidden>Database </VisuallyHidden>
+            Postgres
+          </>
+        );
+      }
+      const tip = tipOf(<Flagged />);
+
+      expect(tip()).toBe('Database Postgres\nRunning');
+      // Shown to assistive technology too, its words join the name.
+      await act(async () => hide(false));
+      expect(tip()).toBe('Draft Database Postgres\nRunning');
+    });
+
+    it('reads a labelled glyph as its label, and follows the label as it changes', async () => {
+      let relabel: (to: string) => void = () => undefined;
+      function Badged(): ReactElement {
+        const [label, setLabel] = useState('Production');
+
+        relabel = setLabel;
+        return (
+          <>
+            <svg aria-label={label} role="img">
+              <text>★</text>
+            </svg>
+            Replica
+            <span aria-label="ignored">, primary</span>
+            <img alt="eu-west" src="data:," />
+          </>
+        );
+      }
+      const tip = tipOf(<Badged />);
+
+      // A plain span's label is not read: its words are.
+      expect(tip()).toBe('Production Replica, primary eu-west\nRunning');
+      await act(async () => relabel('Staging'));
+      expect(tip()).toBe('Staging Replica, primary eu-west\nRunning');
+    });
+
+    it('reads no alt of a presentational image, and a plain image’s alt', () => {
+      for (const role of ['presentation', 'none', ' presentation ', 'NONE']) {
+        const tip = tipOf(
+          <>
+            <img alt="Badge" role={role} src="data:," />
+            Replica
+          </>
+        );
+
+        expect(tip()).toBe('Replica\nRunning');
+        cleanup();
+      }
+      for (const image of [
+        <img alt="Badge" key="plain" src="data:," />,
+        // Focusable, so WAI-ARIA gives it back its own role and its alt is read.
+        <img alt="Badge" key="focusable" role="presentation" src="data:," tabIndex={0} />
+      ]) {
+        const tip = tipOf(
+          <>
+            {image}
+            Replica
+          </>
+        );
+
+        expect(tip()).toBe('Badge Replica\nRunning');
+        cleanup();
+      }
+    });
+
+    it('reads a cut NameCut name once, whole', () => {
+      const tip = tipOf(
+        <NameCut parts={nameParts([{ name: 'quarterly-report-final-version-2.sql' }])} />
+      );
+
+      expect(tip()).toBe('quarterly-report-final-version-2.sql\nRunning');
+    });
   });
 
   it('takes the cursor on a secondary click, then hands the click and its key to the app', () => {

@@ -1,5 +1,8 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState, type ReactElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { Listing, Row, RowCursorContext, type RowCursor } from '../listing/Listing.js';
 
 import { TooltipLayer } from './Tooltip.js';
 import { cutTooltip, describedTooltip, tooltip, TOOLTIP_DELAY_MS } from './Tooltip.logic.js';
@@ -8,6 +11,13 @@ const rest = (): void => {
   act(() => {
     vi.advanceTimersByTime(TOOLTIP_DELAY_MS);
   });
+};
+
+/** A cursor on no row, which the rows here only read. */
+const NO_CURSOR: RowCursor = {
+  current: () => null,
+  subscribe: () => () => undefined,
+  point: () => undefined
 };
 
 const shown = (): string | null => screen.queryByRole('tooltip')?.textContent ?? null;
@@ -81,7 +91,7 @@ describe('TooltipLayer', () => {
     fireEvent.mouseOver(screen.getByText('plain'));
     fireEvent.mouseOver(button);
     rest();
-    expect(shown()).toBe('New Tab⌘T');
+    expect(shown()).toBe('New Tab ⌘T');
   });
 
   it('hangs from the element in full screen, where nothing on the body is drawn', () => {
@@ -234,5 +244,110 @@ describe('TooltipLayer with a chord given as data, and a tooltip only for cut te
     expect(valueClass('path')).toBe(true);
     expect(valueClass('mono')).toBe(true);
     expect(valueClass('words')).toBe(false);
+  });
+});
+
+describe('An open tooltip', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('follows a row name renamed under it, and closes when its words go', async () => {
+    let rename: (to: string) => void = () => undefined;
+    function Renaming(): ReactElement {
+      const [name, setName] = useState('Old');
+
+      rename = setName;
+      return <span>{name}</span>;
+    }
+    const view = (tip: string | undefined) => (
+      <>
+        <RowCursorContext value={NO_CURSOR}>
+          <Listing columns={[]} grid="20px 1fr" title="Services">
+            <Row name={<Renaming />} nameTip={tip} rowKey="a" />
+          </Listing>
+        </RowCursorContext>
+        <TooltipLayer />
+      </>
+    );
+    const { container, rerender } = render(view('Running'));
+    const name = container.querySelector('[data-row-key="a"] .row-name') as HTMLElement;
+
+    fireEvent.mouseOver(name);
+    rest();
+    expect(shown()).toBe('Old\nRunning');
+
+    await act(async () => rename('New'));
+    expect(name.dataset.tooltip).toBe('New\nRunning');
+    expect(shown()).toBe('New\nRunning');
+
+    // No tip, and a whole name: nothing to say, so it closes.
+    rerender(view(undefined));
+    await act(async () => undefined);
+    expect(shown()).toBeNull();
+  });
+
+  it('stays closed when a wheel closes it in the task its words changed in', async () => {
+    render(
+      <>
+        <button type="button" {...tooltip('Copy')}>
+          c
+        </button>
+        <TooltipLayer />
+      </>
+    );
+    const button = screen.getByRole('button');
+
+    fireEvent.mouseOver(button);
+    rest();
+    expect(shown()).toBe('Copy');
+
+    await act(async () => {
+      button.setAttribute('data-tooltip', 'Copy again');
+      document.dispatchEvent(new WheelEvent('wheel', { bubbles: true }));
+    });
+    expect(shown()).toBeNull();
+  });
+
+  it('keeps one watch on its control while its words change', async () => {
+    const Original = globalThis.MutationObserver;
+    let made = 0;
+
+    vi.stubGlobal(
+      'MutationObserver',
+      class extends Original {
+        constructor(callback: MutationCallback) {
+          super(callback);
+          made += 1;
+        }
+      }
+    );
+    try {
+      render(
+        <>
+          <button type="button" {...tooltip('Copy')}>
+            c
+          </button>
+          <TooltipLayer />
+        </>
+      );
+      const button = screen.getByRole('button');
+
+      fireEvent.mouseOver(button);
+      rest();
+      const watching = made;
+
+      for (const words of ['Copy once', 'Copy twice']) {
+        await act(async () => button.setAttribute('data-tooltip', words));
+        expect(shown()).toBe(words);
+      }
+      expect(made).toBe(watching);
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

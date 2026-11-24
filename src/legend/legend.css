@@ -111,6 +111,27 @@
 /* Hover (wash and frosted ring) and press come from the base sheet's quiet
    control recipe, with the Button's transition. */
 
+/* The host's alert at the strip's end: why the last key did nothing, in
+   the warning's words, as short as the room after the verbs allows. Cut
+   with an ellipsis, its whole words in a tooltip (cutTooltip); the live
+   region keeps no room while it is empty. */
+.keylegend-alert {
+  display: flex;
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 50%;
+}
+
+.keylegend-alert-text {
+  min-width: 0;
+  overflow: hidden;
+  margin-inline-start: var(--space-6);
+  color: var(--warning-text);
+  font-size: var(--font-size-small);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Two directions of one action in one slot: each key cap is its own button,
    lit alone under the pointer, and the shared label is not a target. The
    caps keep a plain slot's spacing: 4px in, 6px apart, 6px to the label,

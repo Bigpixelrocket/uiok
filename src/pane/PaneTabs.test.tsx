@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
+import type { PaneTabsLabels } from '../labels/paneTabs.js';
 import { UiokProvider } from '../labels/UiokProvider.js';
 import { PaneTabs, type PaneTabItem, type PaneTabsProps } from './PaneTabs.js';
 
@@ -53,6 +55,28 @@ afterEach(() => {
 });
 
 describe('PaneTabs', () => {
+  it('shows a cut tab’s whole words in a tooltip while the strip cuts them, unless its tip names it', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const { container } = strip();
+    const label = (id: string) =>
+      container.querySelector(`[data-pane-tab="${id}"] .pane-tab-label`) as HTMLElement;
+    const context = label('archive').querySelector('.pane-tab-context') as HTMLElement;
+    const name = label('archive').querySelector('.pane-tab-name') as HTMLElement;
+
+    for (const part of [context, name]) {
+      expect(part.dataset.tooltip).toBe('shop_archive/orders');
+      expect(part.hasAttribute('data-tooltip-cut')).toBe(true);
+      // Each is the box that cuts its words.
+      expect(declaredValues(part, 'overflow').at(-1)).toBe('hidden');
+      expect(declaredValues(part, 'text-overflow').at(-1)).toBe('ellipsis');
+    }
+    expect(label('payments').querySelector('.pane-tab-name')?.getAttribute('data-tooltip')).toBe(
+      'payment_attempts'
+    );
+    // A tip already names the tab whole, at every width.
+    expect(label('customers').querySelector('[data-tooltip]')).toBeNull();
+  });
+
   it('draws a named tablist of tabs that take no focus, the front one selected', () => {
     strip();
 
@@ -417,6 +441,35 @@ describe('PaneTabs folding', () => {
     { id: 'f', name: 'f' }
   ];
 
+  it('takes a tab strip label group written whole before the count had a name of its own', () => {
+    // A group typed as 0.7.0 shaped it, which `pnpm run typecheck` compiles:
+    // the count's name is optional, its English words standing in.
+    const before: PaneTabsLabels = {
+      newTab: 'Neuer Tab',
+      close: (name) => `${name} schließen`,
+      picked: (name) => `${name}, ausgewählt`,
+      pinned: 'Angeheftet',
+      notSaved: 'Nicht gesichert',
+      folded: (count) => `${count} Tabs hier eingeklappt`,
+      foldedHeading: 'Hier eingeklappt'
+    };
+
+    layout(350);
+    render(
+      <UiokProvider labels={{ paneTabs: before }}>
+        <div className="listing-root">
+          <div className="pane active">
+            <PaneTabs front="e" label="Main tabs" onClose={noop} onSelect={noop} tabs={FOLDING} />
+          </div>
+        </div>
+      </UiokProvider>
+    );
+
+    expect(
+      screen.getByRole('button', { name: '3 more tabs' }).getAttribute('aria-description')
+    ).toBe('3 Tabs hier eingeklappt');
+  });
+
   it('folds the tabs farthest from the front one into a count with a menu', () => {
     layout(350);
     const { onSelect } = strip({ front: 'e', tabs: FOLDING });
@@ -427,7 +480,7 @@ describe('PaneTabs folding', () => {
       'f'
     ]);
 
-    const count = screen.getByRole('button', { name: 'Folded here' });
+    const count = screen.getByRole('button', { name: '3 more tabs' });
 
     expect(count.getAttribute('aria-haspopup')).toBe('menu');
     expect(count.getAttribute('aria-expanded')).toBe('false');
@@ -479,7 +532,7 @@ describe('PaneTabs folding', () => {
         front: 'e',
         tabs: FOLDING.map((item) => (item.id === 'c' ? { ...item, tip: 'local / c' } : item))
       });
-      fireEvent.click(screen.getByRole('button', { name: 'Folded here' }));
+      fireEvent.click(screen.getByRole('button', { name: /^\d+ more tabs?$/ }));
 
       const menu = screen.getByRole('menu');
 
@@ -499,7 +552,7 @@ describe('PaneTabs folding', () => {
     layout(350);
     strip({ front: 'e', tabs: FOLDING });
 
-    const count = screen.getByRole('button', { name: 'Folded here' });
+    const count = screen.getByRole('button', { name: /^\d+ more tabs?$/ });
     const at = (top: number): DOMRect =>
       ({ top, bottom: top + 20, left: 0, right: 40, width: 40, height: 20 }) as DOMRect;
 
@@ -518,7 +571,7 @@ describe('PaneTabs folding', () => {
   it('closes its menu when the window changes size, the focus back on the count', () => {
     layout(350);
     const { onSelect } = strip({ front: 'e', tabs: FOLDING });
-    const count = screen.getByRole('button', { name: 'Folded here' });
+    const count = screen.getByRole('button', { name: /^\d+ more tabs?$/ });
 
     count.focus();
     fireEvent.click(count);
@@ -535,7 +588,7 @@ describe('PaneTabs folding', () => {
   it('closes its menu on Escape and hands the focus back to the count', () => {
     layout(350);
     const { onSelect } = strip({ front: 'e', tabs: FOLDING });
-    const count = screen.getByRole('button', { name: 'Folded here' });
+    const count = screen.getByRole('button', { name: /^\d+ more tabs?$/ });
 
     count.focus();
     fireEvent.click(count);
@@ -566,6 +619,6 @@ describe('PaneTabs folding', () => {
     layout(1000);
     strip({ front: 'e', tabs: FOLDING });
 
-    expect(screen.queryByRole('button', { name: 'Folded here' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^\d+ more tabs?$/ })).toBeNull();
   });
 });

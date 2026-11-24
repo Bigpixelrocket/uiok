@@ -628,6 +628,22 @@ button.crumb-label.crumb-siblings > svg {
   margin-right: calc(-1 * var(--pane-glyph-reach));
 }
 
+/* An action with a control after it ends where its own box does: the pulls
+   above, which take the room after the last action's words or glyph into
+   the cell's edge, are for the last one alone, so no neighbour's hit area
+   runs under another's (a strip's Show in Finder, Copy Path, and Clear
+   meet edge to edge). A worded action gives up the room after its words
+   instead, so its words stand exactly as far from the next control as the
+   pull drew them; a glyph alone keeps its square, as far from the next
+   glyph as two icon controls stand. */
+:where(.listing-root) .row-meta .pane-act:not(:last-child) {
+  margin-right: 0;
+}
+
+:where(.listing-root) .row-meta .pane-act:not(.wordless, :last-child) {
+  padding-right: 0;
+}
+
 /* A compact icon control (RowIconAction): a row's hover icon, or Reveal and
    Copy at a status line's end. */
 .pane-icon-act {
@@ -1384,6 +1400,32 @@ button.crumb-label.crumb-siblings > svg {
   color: var(--text);
 }
 
+/* An add row that cannot add yet (`.pane-add.row-dim`: what it needs is
+   missing) reads as unavailable in every theme. Its plus gives up the
+   accent and is drawn at the disabled opacity in every state but a
+   selection: where a theme's quiet tones are one (Latte draws the dim,
+   row-meta, and on-surface words alike, and a cursor row takes an add
+   row's plus to the on-surface tone too), colour alone cannot say it, and
+   the plus is a glyph, not words, so it keeps no contrast floor of its
+   own. Its words rest in the row-meta tone and rise, as the plus does, only
+   to the on-surface tone on the cursor, a mark, the focus, or under the
+   pointer, as a dim row's name does, never to full words. A selection
+   paints it as it paints every row. */
+:where(.listing-root) .row.pane-add.row-dim:where(:not(.selected)) {
+  color: var(--row-meta-text);
+}
+
+:where(.listing-root) .row.pane-add.row-dim:where(:not(.selected)) > :is(.row-icon, .tree-glyph) {
+  color: var(--row-meta-text);
+  opacity: var(--disabled-opacity);
+}
+
+:where(.listing-root)
+  .row.pane-add.row-dim:where(:not(.selected)):is(:hover, :focus-visible, .cursor, .marked)
+  > :is(.row-icon, .tree-glyph, .row-name) {
+  color: var(--text-on-surface);
+}
+
 :where(.listing-root) .row-icon {
   display: inline-flex;
   align-items: center;
@@ -1713,16 +1755,14 @@ button.crumb-label.crumb-siblings > svg {
 
 /* A warning (.warning): the warning tone's TriangleAlert, drawn as a mask
    in --warning as the danger line's glyph is, then the words in --text. A
-   host that draws its own glyph first (an svg, inside a PaneMessage's
-   words too) gets no second one. */
+   host that draws its own glyph first (an svg, or a PaneMessage's icon)
+   gets no second one. */
 :where(.listing-root) .pane-message.warning {
   color: var(--text);
 }
 
 :where(.listing-root)
-  .pane-message.warning:not(
-    :has(> svg:first-child, > .pane-message-text > svg:first-child)
-  )::before {
+  .pane-message.warning:not(:has(> svg:first-child, > .pane-message-led))::before {
   content: '';
   flex: none;
   width: var(--icon-md);
@@ -1733,14 +1773,14 @@ button.crumb-label.crumb-siblings > svg {
 }
 
 :where(.listing-root) .pane-message.warning > svg:first-child,
-:where(.listing-root) .pane-message.warning > .pane-message-text > svg:first-child {
+:where(.listing-root) .pane-message.warning > .pane-message-led > svg:first-child {
   flex: none;
   color: var(--warning);
 }
 
 /* A refusal's own glyph takes the danger tone, as the drawn one does. */
 :where(.listing-root) .pane-message.danger > svg:first-child,
-:where(.listing-root) .pane-message.danger > .pane-message-text > svg:first-child {
+:where(.listing-root) .pane-message.danger > .pane-message-led > svg:first-child {
   flex: none;
   color: var(--danger);
 }
@@ -1757,17 +1797,19 @@ button.crumb-label.crumb-siblings > svg {
 
 /* A message's words in one box (PaneMessage), so text and inline code
    flow as a sentence beside the glyph instead of as separate flex items.
-   A glyph the host leads the words with lands in that box too: it keeps
-   the glyph's place, the message's gap before the words, on the text's
-   middle. The box takes the room after the glyph from a zero basis, so a
-   long sentence wraps in its own column beside the glyph (a hanging
-   indent), never under it. */
+   A glyph leading the words (`.pane-message-led`: PaneMessage's icon, or
+   an svg first in its words, which the component checks, since
+   :first-child would also take an icon after some words) lands in that
+   box too: it keeps the glyph's place, the message's gap before the words,
+   on the text's middle. The box takes the room after the glyph from a
+   zero basis, so a long sentence wraps in its own column beside the glyph
+   (a hanging indent), never under it. */
 :where(.listing-root) .pane-message-text {
   flex: 1;
   min-width: 0;
 }
 
-:where(.listing-root) .pane-message-text > svg:first-child {
+:where(.listing-root) .pane-message-led > svg:first-child {
   width: var(--icon-md);
   height: var(--icon-md);
   margin-inline-end: var(--space-4);
@@ -1777,7 +1819,7 @@ button.crumb-label.crumb-siblings > svg {
 /* The words after a glyph of the host's own hang in their own column, as
    they do beside the drawn one: the box steps in by the glyph and its gap,
    and its first line steps back out to start with the glyph. */
-:where(.listing-root) .pane-message-text:has(> svg:first-child) {
+:where(.listing-root) .pane-message-text.pane-message-led {
   padding-inline-start: calc(var(--icon-md) + var(--space-4));
   text-indent: calc(-1 * (var(--icon-md) + var(--space-4)));
 }
@@ -1953,6 +1995,14 @@ button.crumb-label.crumb-siblings > svg {
    alone: its empty word box keeps no gap after it. */
 :where(.listing-root) .pane-state-word:empty {
   display: none;
+}
+
+/* The mark alone is only as tall as the mark, so on a line of text (a row's
+   cell) it stands on the text's middle, where a word beside it would hold
+   it, not at the top of the line, where the state's top alignment would
+   leave it. A flex line places it by its own rules. */
+:where(.listing-root) .pane-state:has(> .pane-state-word:empty) {
+  vertical-align: middle;
 }
 
 /* A quiet ring draws in the edge tone a state row sets for its marks

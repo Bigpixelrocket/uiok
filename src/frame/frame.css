@@ -377,9 +377,17 @@
   text-overflow: ellipsis;
 }
 
-/* A group's name reads as a heading over its rows. */
-.tree .row.tree-group .tree-name {
+/* A group's name reads as a heading over its rows; a dim group's keeps
+   the dim row's tone (listing.css), which says its item is not there yet. */
+.tree .row.tree-group:where(:not(.row-dim)) .tree-name {
   color: var(--text-dim);
+}
+
+/* A dim row's name lifts under the pointer as a listing's does. A tree
+   takes the pointer without the listing's `.pointer` mark, so the tree says
+   it here. */
+.tree .row.row-dim:hover:where(:not(.selected)) > .row-name {
+  color: var(--text-on-surface);
 }
 
 /* Words after a name, quieter. */
@@ -552,6 +560,15 @@
     var(--scroll-fade-size, var(--space-6)) + var(--focus-ring-width) + var(--focus-offset)
   );
   scrollbar-width: none;
+}
+
+/* A row that wraps (FilterChips' wrap: a multi-choice control in a narrow
+   cell): chips that do not fit go on to further lines, the gap between
+   lines as between chips, so nothing scrolls, fades, or hides. */
+.pane-quick-row.pane-quick-row-wrap {
+  flex-wrap: wrap;
+  overflow-x: visible;
+  overflow-y: visible;
 }
 
 .pane-quick-button {
@@ -807,9 +824,9 @@
 }
 
 /* Two of a page's listings or sections (SideBySide): one over the other
-   until the pair's own room reaches its threshold, then in two equal
-   columns; the component measures the room and says which in
-   data-layout. A hairline parts them, under the first stacked and after
+   until the pair's own room reaches its threshold and holds each part at
+   its min-content width, then in two equal columns; the component
+   measures the room and the parts and says which in data-layout. A hairline parts them, under the first stacked and after
    it side by side, where the first stretches to the taller one's height so
    the line runs the pair's whole height. */
 .side-by-side {
@@ -833,6 +850,21 @@
 .side-by-side[data-layout='side-by-side'] > .side-by-side-part:first-child {
   align-self: stretch;
   border-block-end: none;
+  border-inline-end: var(--line) solid var(--border);
+}
+
+/* For one read while the component measures (data-measuring, gone before
+   the browser paints): one column as wide as the wider part's min-content
+   width, the first part with the hairline it has side by side, so the
+   width read is the room the wider half needs there. One column, and the
+   hairline under the first kept, so the pair never grows shorter for the
+   read and a scrolled pane keeps its scroll. */
+.side-by-side[data-measuring] {
+  grid-template-columns: min-content;
+}
+
+.side-by-side[data-measuring] > .side-by-side-part:first-child {
+  border-block-end: var(--line) solid var(--border);
   border-inline-end: var(--line) solid var(--border);
 }
 

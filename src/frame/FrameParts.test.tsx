@@ -215,6 +215,29 @@ describe('TreeRow', () => {
     expect(row.querySelector('.tree-glyph svg')).not.toBe(null);
   });
 
+  it('draws a dim row in the dim look, still opening and taking the cursor', () => {
+    const cursor = cursorAt(null);
+    const onOpen = vi.fn();
+
+    render(
+      <RowCursorContext value={cursor}>
+        <TreeList label="Runtimes">
+          <TreeRow dim name="Add runtime…" add onOpen={onOpen} rowKey="add" />
+          <TreeRow name="PHP" rowKey="php" />
+        </TreeList>
+      </RowCursorContext>
+    );
+    const [dim, plain] = screen.getAllByRole('treeitem');
+
+    expect(dim?.classList.contains('row-dim')).toBe(true);
+    expect(dim?.classList.contains('pane-add')).toBe(true);
+    expect(plain?.classList.contains('row-dim')).toBe(false);
+    fireEvent.pointerMove(dim as HTMLElement);
+    expect(dim?.getAttribute('aria-current')).toBe('true');
+    fireEvent.click(dim as HTMLElement);
+    expect(onOpen).toHaveBeenCalledTimes(1);
+  });
+
   it('follows the pane’s cursor, and the pointer moves the cursor to it', () => {
     const cursor = cursorAt('a');
 

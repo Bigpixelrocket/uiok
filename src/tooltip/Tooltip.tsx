@@ -57,6 +57,16 @@ const besideOf = (anchor: Element, rtl: boolean): TooltipBeside | null => {
   return (side === 'end') !== rtl ? 'right' : 'left';
 };
 
+/** The attributes a tooltip is read from, which an open one watches. */
+const TOOLTIP_ATTRIBUTES = [
+  'data-tooltip',
+  'data-tooltip-cut',
+  'data-tooltip-shortcut',
+  'data-tooltip-chord',
+  'data-tooltip-value',
+  'data-tooltip-side'
+];
+
 const read = (anchor: Element, pointerX: number): ShownTooltip | null => {
   const label = anchor.getAttribute('data-tooltip');
 
@@ -180,6 +190,32 @@ export function TooltipLayer(): ReactElement | null {
     };
   }, []);
 
+  // An open tooltip follows its control's words: a host that renames the
+  // control, or a name read again (a row's name in markup), changes its
+  // attributes, and the tooltip reads them again, or closes when they go.
+  // One observer for as long as the tooltip stays open on the same control.
+  // Its update keeps whatever stands when it lands: a tooltip a wheel, a
+  // key, or a press closed in the same task, or one that moved to another
+  // control, is never brought back by a reading queued before.
+  const shownAnchor = shown?.anchor ?? null;
+  const shownPointerX = shown?.pointerX ?? 0;
+
+  useEffect(() => {
+    if (shownAnchor === null) {
+      return undefined;
+    }
+
+    const anchor = shownAnchor;
+    const observer = new MutationObserver(() => {
+      const refreshed = anchor.isConnected ? read(anchor, shownPointerX) : null;
+
+      setShown((now) => (now?.anchor === anchor ? refreshed : now));
+    });
+
+    observer.observe(anchor, { attributeFilter: TOOLTIP_ATTRIBUTES });
+    return () => observer.disconnect();
+  }, [shownAnchor, shownPointerX]);
+
   // Placed from the drawn box, before the first paint, so the tooltip never shows out of place.
   useLayoutEffect(() => {
     const tip = tipRef.current;
@@ -210,6 +246,9 @@ export function TooltipLayer(): ReactElement | null {
   return createPortal(
     <div className={shown.value ? 'tooltip tooltip-value' : 'tooltip'} ref={tipRef} role="tooltip">
       <span className="tooltip-label">{shown.label}</span>
+      {/* A word apart in the tooltip's name ("New Tab ⌘T"); a space between
+          flex items draws nothing, and the gap draws the room. */}
+      {shown.chord !== null || shown.shortcut !== null ? ' ' : null}
       {shown.chord !== null ? (
         <span className="tooltip-shortcut tooltip-chord">
           <KeyChord chord={shown.chord} />

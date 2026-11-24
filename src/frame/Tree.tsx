@@ -216,6 +216,15 @@ export interface TreeRowProps {
   readonly tool?: ReactNode;
   /** Marked as chosen though it is not the cursor row (the page the main pane shows). */
   readonly marked?: boolean;
+  /**
+   * The row's item is not there yet or cannot be used yet (a tool not
+   * installed, an add row whose requirement is missing): its name in the
+   * quieter row-meta tone (`.row-dim`), lifted to the on-surface tone on the
+   * cursor row, a marked row, and under the pointer, as a listing's dim
+   * `Row`. Only the look changes: the row still takes the cursor, opens,
+   * and opens its menu.
+   */
+  readonly dim?: boolean;
   /** Opens the row's item on a click anywhere but its controls. */
   readonly onOpen?: () => void;
   /**
@@ -259,6 +268,7 @@ export function TreeRow({
   trailing,
   tool,
   marked = false,
+  dim = false,
   onOpen,
   onContextMenu,
   focusable = false,
@@ -284,6 +294,7 @@ export function TreeRow({
     kind === 'group' ? 'tree-group' : '',
     current ? 'cursor' : '',
     marked ? 'marked' : '',
+    dim ? 'row-dim' : '',
     add ? 'pane-add' : ''
   ]
     .filter(Boolean)

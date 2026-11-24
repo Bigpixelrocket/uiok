@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-11-23
+
+### Added
+
+- `KeyLegendStrip`'s `alert` (`LegendAlert`, `{ text }`) and `onAlertDismiss`: a short alert in the host's words (why the last key did nothing) at the strip's end, in the warning's words, cut with an ellipsis and whole in its tooltip, spoken through a polite live region. On the next key the strip calls `onAlertDismiss` with the alert then showing, and the host clears only that one, so a refusal that same key raises stays, whatever order the strip's and the host's key listeners run in, even when the host commits it at once (`flushSync`) from a listener that runs before the strip's: the strip tells the key that raised an alert by its event, not by a clock, so a second key in the same millisecond, or under a test's frozen timers, still dismisses. Each alert, a repeat of the same words included, is spoken again.
+- `FilterChips`' `wrap`: chips that do not fit wrap onto further lines instead of scrolling sideways (no edge fade, no scroll, no sideways wheel), for a multi-choice control in a narrow cell. The chips stay buttons in the Tab order; the one scrolling line stays the default.
+- `TreeRow`'s `dim`: a row whose item is not there or cannot be used yet (an Add row while a tool it needs is missing) shows its name in the row-meta tone, `--text-on-surface` on the cursor, a mark, and hover, as a listing `Row`'s `dim` does. The row still takes the cursor and opens. A dim add row, on `Row` or `TreeRow`, reads as unavailable in every theme: its plus leaves the accent for the row-meta tone at `--disabled-opacity`, and its words never rise past the on-surface tone.
+- `PaneMessage`'s `icon`: a glyph of the host's own leading the words, at `--icon-md`, the words hanging beside it, in place of a tone's glyph.
+- `UiokLabels.paneTabs.foldedName(count)`: the folded tabs' count's accessible name, "6 more tabs". Optional on `PaneTabsLabels`, so a group typed whole against 0.7.0 still compiles; the English words stand in without it.
+
+### Changed
+
+- `SideBySide` stands its parts side by side only where each equal half holds its part at the part's min-content width, so content that will not narrow (a toolbar of tools that keep their size, a form) stacks though the room passes `from`, which is now a floor. Content that changes decides again with no resize of the pair: new parts, and any change to the nodes or words inside. The content is measured in one column, the first part's hairline kept, so the pair never grows shorter for the read and a scrolled pane keeps its scroll; not at all under the floor, nor in the hold when only the width moved, and once at most per render; the scrollbar's hold is dropped for content that needs more than it did.
+
+### Fixed
+
+- A `Row` name in markup gives its `nameTip` tooltip its words as assistive technology reads them, read again whenever they change: words under `aria-hidden="true"` or `hidden` are left out, a labelled glyph reads as its label (`aria-labelledby`, `aria-label`, or an `img`'s `alt`), so a cut `NameCut` name shows once, whole, and a component inside the name that renames it on its own updates the tooltip.
+- `PaneMessage` hangs its words beside a glyph only when one leads them (`icon`, or an svg that is the first thing in its words), not beside an icon inside the sentence, which now keeps its own size while a tone keeps its glyph.
+- A tooltip's label and shortcut are a word apart in its accessible name ("New Tab ⌘T", not "New Tab⌘T").
+- An open tooltip follows its element's tooltip attributes, so a `Row` name renamed under it shows its new words at once, and the tooltip closes when its words go.
+- `RowProps.nameDescription`'s docs: it describes the row when it or its controls take the focus (`focusable`, `tabbable`).
+- `PaneTabs`' folded tabs' count is named by what it shows and opens ("6 more tabs"), not "Folded here", which stays its menu's heading.
+- A cut tab name or context in `PaneTabs`, and a `Cell` whose text its column cuts, shows its whole words as a tooltip while cut, as a row's name does. A tab's `tip` and a cell's `tip` still name them whole at every width, and a cell's `tip` of `null` or `''` still means no tooltip at all.
+- Neighbouring actions in a row's or a strip's cell meet edge to edge: an action with another after it is no longer pulled under its neighbour, so their click areas do not overlap, and a worded action's words stand as far from the next control as before. A strip column's hidden label now comes before its control, so the control's last action is its cell's last and reaches the edge.
+- `FilterEscape` is named by what it does and the key it shows ("Clear filter, Escape"), with `aria-keyshortcuts="Escape"`.
+- A `StateMark` with no word stands on the middle of its line of text, not at the top of a row's cell.
+
 ## [0.7.0] - 2026-11-23
 
 ### Added
@@ -340,7 +367,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.4.0...v0.5.0

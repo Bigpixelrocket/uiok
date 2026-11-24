@@ -27,6 +27,7 @@ import {
   FolderOpen,
   FolderPlus,
   GitBranch,
+  Info,
   Lock,
   Plus,
   Server,
@@ -454,7 +455,7 @@ export function ListingDemo() {
               <Cell />
             </Row>
           </Listing>
-          <PaneMessage>Updates come from the runtime's own release feed.</PaneMessage>
+          <PaneMessage icon={Info}>Updates come from the runtime's own release feed.</PaneMessage>
           <Listing
             columns={[
               { label: 'Size' },

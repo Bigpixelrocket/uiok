@@ -19,7 +19,7 @@ import { FilterEscape, FilterIcon } from '@bigpixelrocket/uiok/filter';
 ## Props
 
 - `FilterIcon`: none. Decorative (`aria-hidden`); the input's own label names the field.
-- `FilterEscape` (`FilterEscapeProps`): `label` (what a press does, used as the accessible name and tooltip) and `onEscape` (do what Escape does in the field: clear the query, or close).
+- `FilterEscape` (`FilterEscapeProps`): `label` (what a press does: the tooltip, and with the key it shows the accessible name, "Clear filter, Escape", the key's name from `UiokLabels.keys`; `aria-keyshortcuts="Escape"`) and `onEscape` (do what Escape does in the field: clear the query, or close).
 
 ## Behaviour
 
@@ -37,4 +37,4 @@ The rules apply inside the listing scope, `.listing-root`:
 
 ## Labels read
 
-`keys.escapeCap`, through `KeyChord`.
+`keys.escapeCap`, through `KeyChord`, and `keys.names` for the key's name in `FilterEscape`'s accessible name.
