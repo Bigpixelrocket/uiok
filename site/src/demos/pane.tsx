@@ -226,11 +226,11 @@ function PathFacts({
 /**
  * Trails past the plain case: a five-crumb trail at full width and in a
  * 300px pane (the trail deeper than its row: `data-cramped`, its start
- * faded), a 240px bar so narrow that its action's word steps down to its
- * icon (`data-tight`), a fact whose mark is a host's own glyph rather than a
- * `StateMark`, and a trail written by hand whose first crumb is the home
- * (`.home`) and whose middle one a short fixed name (`.brief`), both of
- * which keep their width.
+ * faded), where, as in every narrow bar here, the action's word steps down
+ * to its icon before a crumb is cut (`data-tight`); a 240px bar; a fact
+ * whose mark is a host's own glyph rather than a `StateMark`; and a trail
+ * written by hand whose first crumb is the home (`.home`) and whose middle
+ * one a short fixed name (`.brief`), both of which keep their width.
  */
 function DeepTrails({ say }: { readonly say: (what: string) => void }) {
   const deep = [
@@ -261,8 +261,8 @@ function DeepTrails({ say }: { readonly say: (what: string) => void }) {
         </section>
       ))}
       <section className="pane demo-pane demo-facts-tight">
-        {/* So narrow that even the last crumb's stem would cut: the action's
-            word steps down to its icon, and the word becomes its tooltip. */}
+        {/* Too narrow for the crumbs whole beside the action's word: the word
+            steps down to its icon first, and becomes its tooltip. */}
         <PanePathBar
           here={<CurrentDot label="Open service" />}
           trail={[{ label: 'Servers', onOpen: () => say('went to Servers') }, 'production-eu']}

@@ -212,7 +212,7 @@ const PAGES: readonly {
     subsections: ['Appearance', 'Light theme', 'Dark theme']
   },
   { id: 'updates', title: 'Updates', icon: Download, subsections: [] },
-  { id: 'files', title: 'Files', icon: FileText, subsections: ['Folder', 'settings.toml'] }
+  { id: 'files', title: 'Files', icon: FileText, subsections: [] }
 ];
 
 /** The Appearance page: the appearance, then each appearance's themes. */
@@ -285,7 +285,6 @@ const done = (): Promise<string | null> => Promise.resolve(null);
 function FilesPage(): ReactElement {
   return (
     <section className="settings-subsection">
-      <h4 className="overline">Files</h4>
       <SettingsFiles
         copyPathLabel="Copy Path"
         files={[
