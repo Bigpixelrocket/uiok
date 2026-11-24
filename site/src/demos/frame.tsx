@@ -4,7 +4,8 @@
  * with a lockup, its brand mark, and a local build's channel marker; a
  * sidebar tree with its quick row of filters (one line that scrolls
  * sideways under an edge fade when the sidebar is too narrow for them all,
- * a mouse wheel over it scrolling it sideways), a band, a group, rows
+ * a mouse wheel over it scrolling it sideways), a band with an amber update
+ * arrow (`ToneIcon`), a group, rows
  * stepped in by level with a state and a switch, a service's own menu on a
  * secondary click (or the Menu key, Shift-F10, on the tree, which a button
  * under the window focuses), a note, the edge that
@@ -16,12 +17,14 @@
  * Extensions side by side from 520px of the pane's own width, stacked in
  * less or once their toolbars no longer fit the halves, the page's one
  * cursor walking the first listing, then the second; then `FilterChips`
- * with `wrap` in a cell the slider narrows.
+ * with `wrap` in a listing row's cell the slider narrows, the row growing
+ * to hold its lines.
  */
 
 import {
   ArrowUp,
   CircleAlert,
+  CircleArrowUp,
   Database,
   Layers,
   PanelLeft,
@@ -58,7 +61,7 @@ import {
   usePaneSplit,
   WindowFrame
 } from '@bigpixelrocket/uiok/frame';
-import { ICON_MD } from '@bigpixelrocket/uiok/icon';
+import { ICON_MD, ToneIcon } from '@bigpixelrocket/uiok/icon';
 import { KeyLegendStrip, type LegendVerb } from '@bigpixelrocket/uiok/legend';
 import {
   Cell,
@@ -100,13 +103,16 @@ const EXTENSIONS: readonly (readonly [string, string])[] = [
  * A pane the slider narrows, holding two listings in `SideBySide`: side by
  * side from 520px of the pane's own width, stacked in less. With the
  * toolbars shown, tools that keep their size stack the pair at a wider
- * room than the floor, since each half must hold its part. The page's one
+ * room than the floor, since each half must hold its part; so does a row
+ * of chips on one line, counted at its whole width. The page's one
  * cursor walks the first listing's rows, then the second's.
  */
 function SideBySideDemo() {
   const [width, setWidth] = useState(640);
   const [tools, setTools] = useState(false);
-  const keys = [...SETTINGS, ...EXTENSIONS].map(([name]) => name);
+  const [chips, setChips] = useState(false);
+  const [modes, setModes] = useState<readonly string[]>(['develop']);
+  const keys = [...(chips ? ['Modes'] : []), ...[...SETTINGS, ...EXTENSIONS].map(([name]) => name)];
   const { cursor, onKeyDown } = useDemoCursor(keys);
   const listing = (
     title: string,
@@ -124,6 +130,23 @@ function SideBySideDemo() {
         </Toolbar>
       ) : null}
       <Listing columns={[{ label: 'Value', align: 'right' }]} grid="20px 1fr auto" title={title}>
+        {chips && title === 'Settings' ? (
+          // One line of chips that scrolls: counted whole, so it stacks the pair.
+          <Row name="Modes" rowKey="Modes">
+            <Cell>
+              <FilterChips
+                chips={MODE_CHIPS}
+                label="Modes"
+                on={modes}
+                onToggle={(id) =>
+                  setModes((now) =>
+                    now.includes(id) ? now.filter((each) => each !== id) : [...now, id]
+                  )
+                }
+              />
+            </Cell>
+          </Row>
+        ) : null}
         {rows.map(([name, value]) => (
           <Row key={name} name={name} rowKey={name}>
             <Cell align="right">{value}</Cell>
@@ -144,6 +167,7 @@ function SideBySideDemo() {
         valueText={`${width}px`}
       />
       <Switch checked={tools} label="Toolbars that keep their size" onChange={setTools} />
+      <Switch checked={chips} label="A row of chips on one line" onChange={setChips} />
       <div
         className="listing-root"
         style={{ width: `${width}px`, maxWidth: '100%' } as CSSProperties}
@@ -180,40 +204,69 @@ function SideBySideDemo() {
   );
 }
 
+/** The modes the one-line `FilterChips` in the side-by-side demo offers. */
+const MODE_CHIPS = ['develop', 'debug', 'coverage', 'profile', 'trace'].map((id) => ({
+  id,
+  label: id
+}));
+
 /** The choices the wrapping `FilterChips` offers. */
 const EXTENSION_CHIPS = ['intl', 'redis', 'xdebug', 'imagick', 'pcov', 'swoole', 'mongodb'].map(
   (id) => ({ id, label: id })
 );
 
 /**
- * `FilterChips` with `wrap` as a multi-choice control in a cell the slider
- * narrows: the chips go on to further lines rather than scrolling.
+ * `FilterChips` with `wrap` as a multi-choice control in a listing row's
+ * cell the slider narrows: the chips go on to further lines rather than
+ * scrolling, and the row grows to hold them, so the row under it stays
+ * clear.
  */
 function WrappingChipsDemo() {
-  const [width, setWidth] = useState(220);
+  const [width, setWidth] = useState(420);
   const [on, setOn] = useState<readonly string[]>(['intl', 'redis']);
+  const { cursor } = useDemoCursor(['extensions', 'start']);
 
   return (
     <div className="demo-stack">
       <Range
-        label="Cell width"
-        max={480}
-        min={140}
+        label="Pane width"
+        max={640}
+        min={260}
         onChange={setWidth}
         step={10}
         value={width}
         valueText={`${width}px`}
       />
-      <div style={{ width: `${width}px`, maxWidth: '100%' } as CSSProperties}>
-        <FilterChips
-          chips={EXTENSION_CHIPS}
-          label="Extensions"
-          on={on}
-          onToggle={(id) =>
-            setOn((now) => (now.includes(id) ? now.filter((each) => each !== id) : [...now, id]))
-          }
-          wrap
-        />
+      <div
+        className="listing-root"
+        style={{ width: `${width}px`, maxWidth: '100%' } as CSSProperties}
+      >
+        <PaneBox label="Extensions">
+          <PaneList label="Extensions">
+            <RowCursorContext value={cursor}>
+              <Listing columns={[{ label: 'Value' }]} grid="20px auto 1fr" title="Xdebug">
+                <Row name="Extensions" rowKey="extensions">
+                  <Cell>
+                    <FilterChips
+                      chips={EXTENSION_CHIPS}
+                      label="Extensions"
+                      on={on}
+                      onToggle={(id) =>
+                        setOn((now) =>
+                          now.includes(id) ? now.filter((each) => each !== id) : [...now, id]
+                        )
+                      }
+                      wrap
+                    />
+                  </Cell>
+                </Row>
+                <Row name="Start" rowKey="start">
+                  <Cell>on request</Cell>
+                </Row>
+              </Listing>
+            </RowCursorContext>
+          </PaneList>
+        </PaneBox>
       </div>
     </div>
   );
@@ -406,6 +459,9 @@ function FrameWindowDemo() {
                       kind="band"
                       name="This Mac"
                       rowKey="mac"
+                      trailing={
+                        <ToneIcon icon={CircleArrowUp} label="Updates available" tone="warning" />
+                      }
                     />
                     <TreeRow
                       glyph={<Server size={ICON_MD} />}

@@ -30,8 +30,60 @@ export interface SideBySideProps {
 }
 
 /**
+ * A one-line `FilterChips` row, which scrolls its chips sideways: a scroll
+ * container's own box says nothing of the chips it holds (in a listing's
+ * flexible column it lays out nearly nothing wide).
+ */
+const SCROLLING_CHIPS = '.pane-quick-row:not(.pane-quick-row-wrap)';
+
+/**
+ * How much wider `part` needs to be for its widest one-line chip row to
+ * show every chip, as laid out now: the width that row hides, which the
+ * part's own box does not count.
+ */
+const hiddenChips = (part: Element): number => {
+  let hidden = 0;
+
+  for (const row of part.querySelectorAll(SCROLLING_CHIPS)) {
+    hidden = Math.max(hidden, row.scrollWidth - row.clientWidth);
+  }
+  return hidden;
+};
+
+/**
+ * The most any one-line chip row hides with the parts in their two halves,
+ * in pixels: the columns laid out side by side for one read (`data-layout`)
+ * and put back before the browser paints. `hiddenChips` only bounds the
+ * room from below: a listing whose flexible columns share the extra width
+ * gives its chips only part of it, so the halves are read as they would be
+ * drawn. A pair with no such row needs no read. A stacked pair keeps
+ * `stackedHeight`, its height read before the measure touched its layout,
+ * through the read (two columns are shorter than one stack), so a scrolled
+ * pane around it never has its scroll clamped by it.
+ */
+const chipsHiddenInHalves = (element: HTMLElement, stackedHeight: number | null): number => {
+  const rows = element.querySelectorAll(SCROLLING_CHIPS);
+
+  if (rows.length === 0) return 0;
+  const layout = element.getAttribute('data-layout');
+  const height = element.style.minHeight;
+
+  if (stackedHeight !== null) element.style.minHeight = `${stackedHeight}px`;
+  element.setAttribute('data-layout', 'side-by-side');
+  let hidden = 0;
+
+  for (const row of rows) hidden = Math.max(hidden, row.scrollWidth - row.clientWidth);
+  if (layout === null) element.removeAttribute('data-layout');
+  else element.setAttribute('data-layout', layout);
+  element.style.minHeight = height;
+  return hidden;
+};
+
+/**
  * The room the two parts need to stand side by side, in pixels: twice the
- * wider part's min-content width, as the columns are equal. Measured by
+ * wider part's min-content width, as the columns are equal, a one-line
+ * chip row counted at its full content width (`hiddenChips`), so chips
+ * that would scroll out of sight in a half stack the pair. Measured by
  * laying the parts out in one `min-content` column for one read
  * (`data-measuring`, which the stylesheet reads), whose width is the wider
  * part's, and back again before the browser paints, so the reader never
@@ -46,8 +98,8 @@ const contentRoom = (element: HTMLElement): number => {
   if (first === undefined || second === undefined) return 0;
   element.setAttribute('data-measuring', '');
   const widest = Math.max(
-    first.getBoundingClientRect().width,
-    second.getBoundingClientRect().width
+    first.getBoundingClientRect().width + hiddenChips(first),
+    second.getBoundingClientRect().width + hiddenChips(second)
   );
 
   element.removeAttribute('data-measuring');
@@ -59,7 +111,8 @@ const contentRoom = (element: HTMLElement): number => {
  * the room the pair is given is `from` pixels wide or more and each part
  * fits its half at its min-content width, one over the other otherwise, a
  * hairline between them either way. So wide content (a form whose labels
- * and fields will not narrow, long unbreakable words) stacks though the
+ * and fields will not narrow, long unbreakable words, a one-line
+ * `FilterChips` row whose chips would scroll) stacks though the
  * room passes `from`, and `from` stays a floor under which the pair never
  * stands side by side. Once side by side, it stacks only under the room it
  * needs less a scrollbar's width, so a scrollbar the two columns bring
@@ -67,6 +120,9 @@ const contentRoom = (element: HTMLElement): number => {
  * first width measured against it. The room is the pair's own, measured as
  * it resizes (`data-layout`: `side-by-side` or `stacked`), so a pane
  * narrowed by its sidebar or a split stacks them though the window is wide.
+ *
+ * A one-line chip row counts at its whole width, and the halves are then
+ * checked as drawn, so no chip scrolls out of sight in a half.
  *
  * The min-content widths are read in the same `ResizeObserver` callback
  * that reads the room (one forced layout per resize frame, never a read and
@@ -106,6 +162,13 @@ export function SideBySide({
   // Whether the content is as it was at the last measure, so the need read
   // then still holds; a change to the content makes it uncertain.
   const needKnown = useRef(false);
+  // The width at which every chip row last showed all its chips in the
+  // halves. A held pair narrowed under it by d pixels (a scrollbar's width
+  // at most) narrows each half by d / 2, so it may hide that much of a chip
+  // row and no more: anything past it is chips that grew, which stack the
+  // pair. Content that changes keeps it, so a host drawing its parts again
+  // (new elements, the same chips) keeps the hold.
+  const chipsFitWidth = useRef<number | null>(null);
   // The measure of the latest render, given whether the content changed.
   const measureNow = useRef<(contentChanged: boolean) => void>(() => undefined);
   // The watch on the content's own changes, whose records a measure in the
@@ -136,6 +199,14 @@ export function SideBySide({
 
       if (width === 0) return;
 
+      // A stacked pair's height, read in the same flush as its width, for
+      // the halves read to keep (`chipsHiddenInHalves`); only with chips.
+      const stackedHeight =
+        element.getAttribute('data-layout') !== 'side-by-side' &&
+        element.querySelector(SCROLLING_CHIPS) !== null
+          ? element.offsetHeight
+          : null;
+
       const holding = shown.current && measuredFrom.current === from;
       let next = false;
 
@@ -156,7 +227,23 @@ export function SideBySide({
 
         measuredNeed.current = need;
         needKnown.current = true;
-        next = width >= (hold ? need - SCROLLBAR_HOLD : need);
+        // Chips are read in the halves themselves. Held and narrower than
+        // where they last showed whole, the chips may hide what the
+        // narrowing took from a half (with a pixel for rounding), within a
+        // scrollbar's width; chips that grew hide more and get no room.
+        if (width >= (hold ? need - SCROLLBAR_HOLD : need)) {
+          const hidden = chipsHiddenInHalves(element, stackedHeight);
+          const fitWidth = chipsFitWidth.current;
+
+          if (hidden < 1) chipsFitWidth.current = width;
+          next =
+            hidden < 1 ||
+            (hold &&
+              fitWidth !== null &&
+              width < fitWidth &&
+              width >= fitWidth - SCROLLBAR_HOLD &&
+              hidden <= (fitWidth - width) / 2 + 1);
+        }
       }
       shown.current = next;
       setSideBySide(next);

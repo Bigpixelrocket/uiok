@@ -9,7 +9,7 @@
  * list whose names are buttons (`.pane-row-open`), and a listing with
  * nothing in it. Then, under their own headings: strips with a
  * strip link and a pane message (a version with an update waiting in the
- * warning tone, and a runtime not installed, dim, its offered version in the
+ * warning tone, one with an amber update arrow after it (`ToneIcon`), and a runtime not installed, dim, its offered version in the
  * accent tone), a WellColumn and an empty one with its
  * note, a pane with nothing in it and one that could not load,
  * marked rows in a listing wider than its box with its action column pinned,
@@ -23,6 +23,7 @@
 
 import {
   ArrowDownToLine,
+  CircleArrowUp,
   FileText,
   FolderOpen,
   FolderPlus,
@@ -37,7 +38,7 @@ import {
 import { useRef, useState, type KeyboardEvent } from 'react';
 
 import { Button } from '@bigpixelrocket/uiok/button';
-import { ICON_MD, ICON_SM } from '@bigpixelrocket/uiok/icon';
+import { ICON_MD, ICON_SM, ToneIcon } from '@bigpixelrocket/uiok/icon';
 import {
   Cell,
   column,
@@ -159,7 +160,9 @@ const TIMING: readonly {
 
 const RUNTIMES = [
   { key: 'node', name: 'Node.js', version: '24.11.0' },
-  { key: 'php', name: 'PHP', version: '8.4.12', tone: 'warning' as const }
+  { key: 'php', name: 'PHP', version: '8.4.12', tone: 'warning' as const },
+  // Its words stay quiet; the arrow after them says an update waits.
+  { key: 'ruby', name: 'Ruby', version: '3.4.1', update: true }
 ];
 
 const WELL_TEXT = [
@@ -438,7 +441,15 @@ export function ListingDemo() {
                 name={runtime.name}
                 rowKey={runtime.key}
               >
-                <Cell tone={runtime.tone}>{runtime.version}</Cell>
+                <Cell tone={runtime.tone}>
+                  {runtime.version}
+                  {runtime.update === true ? (
+                    <>
+                      {' '}
+                      <ToneIcon icon={CircleArrowUp} label="Update available" tone="warning" />
+                    </>
+                  ) : null}
+                </Cell>
                 <Cell className="pane-action-cell">
                   <QuietAction
                     icon={ArrowDownToLine}

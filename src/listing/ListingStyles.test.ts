@@ -304,6 +304,88 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
+  it('keeps a toned icon in its tone in a plain cell and a tree’s trailing column, apart from the words', () => {
+    applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
+    const cells = `<span class="row-meta">8.4.15 <span class="tone-icon" data-tone="warning"></span></span>
+      <span class="row-meta align-right"><span class="tone-icon" data-tone="ready"></span></span>`;
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-list pointer">
+      <div class="row">${cells}</div>
+      <div class="row cursor">${cells}</div>
+      <div class="row marked">${cells}</div>
+      <div class="row is-hovered">${cells}</div>
+    </div><div class="pane-list tree">
+      <div class="row cursor" role="treeitem">${cells}</div>
+    </div><div class="pane active"><div class="pane-list">
+      <div class="row selected" id="selected">${cells}</div>
+    </div></div></section>`;
+
+    for (const row of document.querySelectorAll('.row:not(.selected)')) {
+      const [words, alone] = row.querySelectorAll('.row-meta');
+
+      expect(colour(words?.querySelector('.tone-icon') as Element)).toBe('var(--warning-text)');
+      expect(colour(alone?.querySelector('.tone-icon') as Element)).toBe('var(--success-text)');
+      // The words beside the icon keep their own quiet tone.
+      expect(colour(words as Element)).not.toBe('var(--warning-text)');
+    }
+    // On an active selection's accent fill the tone would vanish: it takes the selection's words.
+    for (const icon of document.querySelectorAll('#selected .tone-icon')) {
+      expect(colour(icon)).toBe('var(--on-selected)');
+    }
+    document.body.innerHTML = '';
+  });
+
+  it('grows a row to hold its chips, and draws chips in a cell without a band’s rule', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="row" id="wraps"><span class="row-name">Modes</span>
+        <span class="row-meta" id="wrap-cell"><div class="pane-quick-row pane-quick-row-wrap" id="wrap"></div></span></div>
+      <div class="row" id="line"><span class="row-name">Modes</span>
+        <span class="row-meta" id="line-cell"><div class="pane-quick-row scroll-fade-x" id="one-line"></div></span></div>
+      <div class="row" id="plain"><span class="row-name">Port</span></div>
+      <div class="pane-quick-row" id="band"></div>
+    </section>`;
+    const style = (id: string) => getComputedStyle(document.getElementById(id) as Element);
+
+    // Chips on one line or wrapping: the row height is the floor, not the cap.
+    for (const id of ['wraps', 'line']) {
+      expect([style(id).height, style(id).minHeight]).toEqual(['auto', 'var(--row-height)']);
+    }
+    expect(style('plain').height).toBe('var(--row-height)');
+    expect(style('wrap-cell').whiteSpace).toBe('normal');
+    expect(style('line-cell').whiteSpace).not.toBe('normal');
+    // Declared in source order; the cell's rule outweighs the band's (two classes to one).
+    const rules = (id: string, property = 'border-bottom') =>
+      declaredValues(document.getElementById(id) as Element, property);
+    for (const id of ['wrap', 'one-line']) {
+      expect(rules(id, 'border-bottom-style')).toContain('none');
+      expect(rules(id, 'padding')).toContain('var(--space-1) 0');
+    }
+    // A pane's quick row under its path bar keeps its band's rule.
+    expect(rules('band', 'border-bottom-style')).not.toContain('none');
+    expect(rules('band').join()).toContain('solid');
+    document.body.innerHTML = '';
+  });
+
+  it('rings a focused chip in a cell inside it, since the cell clips', () => {
+    applyStylesheets(styles.replaceAll(':focus-visible', '.is-focused'));
+    document.body.innerHTML = `<section class="listing-root"><div class="row">
+      <span class="row-meta"><div class="pane-quick-row">
+        <button class="pane-quick-button is-focused" aria-pressed="false">debug</button>
+      </div></span>
+    </div><div class="pane-quick-row" id="band">
+      <button class="pane-quick-button is-focused" aria-pressed="false">Running</button>
+    </div></section>`;
+
+    expect(
+      getComputedStyle(document.querySelector('.row .pane-quick-button') as Element).outlineOffset
+    ).toBe('var(--focus-offset-inset)');
+    // A pane's quick row keeps its padding, so its chips ring outside.
+    expect(
+      getComputedStyle(document.querySelector('#band .pane-quick-button') as Element).outlineOffset
+    ).not.toBe('var(--focus-offset-inset)');
+    document.body.innerHTML = '';
+  });
+
   it('dims the name of a row whose item is not there yet, and lifts it on the cursor row', () => {
     applyStylesheets(styles);
     document.body.innerHTML = `<section class="listing-root">

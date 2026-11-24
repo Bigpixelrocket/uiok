@@ -1,13 +1,14 @@
 /**
  * The four icon sizes: the three that sit beside text, each with the text
  * size it belongs with, and the glyph alone over an empty state or a
- * failure; then the Spinner at each text size; then ProductMark, each
+ * failure; then the Spinner at each text size; then ToneIcon in each tone
+ * after the words it stands beside; then ProductMark, each
  * product's brand mark from the demo's own data, and a fallback glyph.
  * Every icon keeps lucide's default stroke, which the largest holds at 2px
  * on screen.
  */
 
-import { Database, FolderOpen } from 'lucide-react';
+import { CircleArrowUp, CircleCheck, CircleX, Database, FolderOpen, Sparkles } from 'lucide-react';
 
 import {
   ICON_LG,
@@ -15,7 +16,9 @@ import {
   ICON_SM,
   ICON_XL,
   ProductMark,
-  Spinner
+  Spinner,
+  ToneIcon,
+  type IconTone
 } from '@bigpixelrocket/uiok/icon';
 
 import { DemoState, DemoStates } from '../DemoStates';
@@ -26,6 +29,19 @@ const SIZES = [
   { name: 'ICON_MD', size: ICON_MD, text: 'var(--font-size-body)' },
   { name: 'ICON_LG', size: ICON_LG, text: 'var(--font-size-heading)' }
 ] as const;
+
+/** One glyph per tone, after the words it says something more about. */
+const TONES: readonly {
+  readonly tone: IconTone;
+  readonly icon: typeof CircleArrowUp;
+  readonly words: string;
+  readonly label: string;
+}[] = [
+  { tone: 'accent', icon: Sparkles, words: '3.13.9', label: 'Offered' },
+  { tone: 'ready', icon: CircleCheck, words: '24.11.0', label: 'Up to date' },
+  { tone: 'warning', icon: CircleArrowUp, words: '8.4.12', label: 'Update available' },
+  { tone: 'danger', icon: CircleX, words: '1.3.2', label: 'Install failed' }
+];
 
 /** The icon page's demo. */
 export function IconDemo() {
@@ -65,6 +81,16 @@ export function IconDemo() {
             >
               <Spinner size={size} />
               Saving
+            </span>
+          </DemoState>
+        ))}
+      </DemoStates>
+      <DemoStates minCell="160px" title="ToneIcon">
+        {TONES.map(({ tone, icon, words, label }) => (
+          <DemoState key={tone} label={tone}>
+            <span className="demo-row">
+              {words}
+              <ToneIcon icon={icon} label={label} tone={tone} />
             </span>
           </DemoState>
         ))}

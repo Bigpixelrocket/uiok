@@ -94,6 +94,57 @@
   padding-left: var(--space-4);
 }
 
+/* A palette's option (PaletteOption) lays its parts out in one row that
+   gives way in one order: the context first, then the trail's words, then
+   the name, so a long trail never cuts the name while it can still give.
+   The context's words count for nothing in the row's sizing
+   (`contain: inline-size`), so it takes only the room the name and the
+   trail leave; the trail's shrink factor is a million times the name's, so
+   the name gives less than a layout unit while the trail gives way. Words
+   in the trail (`.palette-meta-text`) cut with an ellipsis down to one
+   character, beside the current item's dot, which never gives; any other
+   trail (a chord) keeps its width. */
+.folder-menu-option.palette-option {
+  display: flex;
+}
+
+.palette-option > .row-icon {
+  flex: none;
+  width: var(--icon-column);
+}
+
+.palette-option > .palette-text {
+  flex: 1 1 auto;
+}
+
+.palette-option .palette-context {
+  contain: inline-size;
+}
+
+.palette-option > .palette-trail {
+  flex: 0 1000000 auto;
+  box-sizing: border-box;
+  min-width: calc-size(max-content, min(size, var(--space-4) + 2ch));
+}
+
+.palette-option > .palette-trail:has(> .current-dot) {
+  min-width: calc-size(max-content, min(size, var(--space-4) + 3ch + var(--space-1) + var(--dot)));
+}
+
+.palette-option > .palette-trail:not(:has(> .palette-meta > .palette-meta-text)) {
+  flex-shrink: 0;
+}
+
+.palette-meta:has(> .palette-meta-text) {
+  min-width: 0;
+}
+
+.palette-meta-text {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* What a row says after its name when that is a sentence rather than a
    path: it reads and gives way at its end, in the interface face, as every
    description does. */

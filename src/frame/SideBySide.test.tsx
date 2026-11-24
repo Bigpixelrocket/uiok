@@ -242,6 +242,217 @@ describe('SideBySide', () => {
       expect(root.hasAttribute('data-measuring')).toBe(false);
     });
 
+    it('counts a one-line chip row at its full content width, and a wrapping one as laid out', () => {
+      observe();
+      const chipsPair = (wrap: boolean) => (
+        <SideBySide
+          first={
+            <div className={wrap ? 'pane-quick-row pane-quick-row-wrap' : 'pane-quick-row'}>
+              chips
+            </div>
+          }
+          firstLabel="Settings"
+          from={400}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const { container, rerender } = render(chipsPair(false));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const chips = () => root.querySelector('.pane-quick-row') as HTMLElement;
+      /**
+       * The chip row lays out 20px wide in the measuring column and hides
+       * 200px more; in the halves it has all its room.
+       */
+      const hide = () => {
+        Object.defineProperty(chips(), 'clientWidth', {
+          configurable: true,
+          get: () => (root.hasAttribute('data-measuring') ? 20 : 220)
+        });
+        Object.defineProperty(chips(), 'scrollWidth', { configurable: true, value: 220 });
+      };
+
+      // The parts' own boxes need 100px: the floor alone would stand them side by side.
+      content(root, 100, 100);
+      hide();
+      widen(root, 500);
+      act(() => observers.at(-1)?.());
+      // The first needs 100 + 200 = 300px, so the halves need 600px.
+      expect(root.dataset.layout).toBe('stacked');
+      widen(root, 600);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+
+      // Chips that wrap hide nothing sideways: only the part's box counts.
+      rerender(chipsPair(true));
+      hide();
+      widen(root, 500);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+    });
+
+    it('checks one-line chips in the halves themselves, where flexible columns share the room', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={<div className="pane-quick-row">chips</div>}
+          firstLabel="Settings"
+          from={400}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const chips = root.querySelector('.pane-quick-row') as HTMLElement;
+      // The measuring column hides 100px of chips; side by side, a second
+      // flexible column takes half of each extra pixel, so the half still
+      // hides chips until the pair is 700px wide.
+      Object.defineProperty(chips, 'clientWidth', {
+        configurable: true,
+        get: () =>
+          root.hasAttribute('data-measuring')
+            ? 20
+            : root.getAttribute('data-layout') === 'side-by-side'
+              ? Math.min(120, root.clientWidth / 2 - 230)
+              : 120
+      });
+      Object.defineProperty(chips, 'scrollWidth', { configurable: true, value: 120 });
+      content(root, 100, 100);
+
+      // The bound alone ((100 + 100) * 2 = 400px) would stand them side by side.
+      widen(root, 600);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+      widen(root, 700);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // A scrollbar narrows the pair held side by side: chips hiding less
+      // than its width keep the layout, so it cannot flip back and forth.
+      widen(root, 685);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // The read in the halves is put back before the paint, and a stacked
+      // pair keeps its height through it, so a scrolled pane keeps its scroll.
+      widen(root, 600);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+      Object.defineProperty(root, 'offsetHeight', { configurable: true, value: 480 });
+      let heldAt = '';
+      const read = Object.getOwnPropertyDescriptor(chips, 'clientWidth')!.get!;
+      Object.defineProperty(chips, 'clientWidth', {
+        configurable: true,
+        get: () => {
+          if (root.getAttribute('data-layout') === 'side-by-side') heldAt = root.style.minHeight;
+          return read();
+        }
+      });
+      widen(root, 620);
+      act(() => observers.at(-1)?.());
+      expect(heldAt).toBe('480px');
+      expect(root.style.minHeight).toBe('');
+    });
+
+    it('stacks a held pair whose chips grow at the same width, the floor masking the growth', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={<div className="pane-quick-row">chips</div>}
+          firstLabel="Settings"
+          from={600}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const chips = root.querySelector('.pane-quick-row') as HTMLElement;
+      let chipsWide = 100;
+      Object.defineProperty(chips, 'clientWidth', { configurable: true, value: 100 });
+      Object.defineProperty(chips, 'scrollWidth', { configurable: true, get: () => chipsWide });
+      // The parts' boxes are narrow, so the floor (600px) is the need throughout.
+      content(root, 50, 50);
+
+      widen(root, 620);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // The chips grow 10px on their own at the same width (a word that
+      // loads late): the need is the floor as before, but the chips hide.
+      chipsWide = 110;
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
+    it('stacks a held pair whose chips grow after a scrollbar narrowed it', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={<div className="pane-quick-row">chips</div>}
+          firstLabel="Settings"
+          from={600}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const chips = root.querySelector('.pane-quick-row') as HTMLElement;
+      let grown = 0;
+      // The chip row's half: the pair's half less 210px, its words 100px and whatever they grew.
+      Object.defineProperty(chips, 'clientWidth', {
+        configurable: true,
+        get: () => root.clientWidth / 2 - 210
+      });
+      Object.defineProperty(chips, 'scrollWidth', { configurable: true, get: () => 100 + grown });
+      content(root, 50, 50);
+
+      widen(root, 620);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // A scrollbar takes 15px: each half loses 7.5px, and so do the chips. Held.
+      widen(root, 605);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // A late font widens the chips 10px at that width: more than the
+      // narrowing took, so they stack the pair though the need (the floor) stood.
+      grown = 10;
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
+    it('keeps the hold when the host draws the same chips again, and bounds it to a scrollbar', () => {
+      observe();
+      const pairOf = (label: string) => (
+        <SideBySide
+          first={<div className="pane-quick-row">chips</div>}
+          firstLabel={label}
+          from={600}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const { container, rerender } = render(pairOf('Settings'));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const chips = root.querySelector('.pane-quick-row') as HTMLElement;
+      Object.defineProperty(chips, 'clientWidth', {
+        configurable: true,
+        get: () => root.clientWidth / 2 - 210
+      });
+      Object.defineProperty(chips, 'scrollWidth', { configurable: true, value: 100 });
+      content(root, 50, 50);
+
+      widen(root, 620);
+      act(() => observers.at(-1)?.());
+      widen(root, 605);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // New elements for the same parts (a chip pressed, any host render): still held.
+      rerender(pairOf('Settings'));
+      rerender(pairOf('Settings '));
+      expect(root.dataset.layout).toBe('side-by-side');
+      // Narrowed past a scrollbar's width under where the chips fit: no hold.
+      widen(root, 598);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
     it('keeps narrow content side by side from the floor', () => {
       observe();
       const { container } = render(pair(400));

@@ -17,6 +17,7 @@ import {
   isTabStop,
   nextTabStop,
   pageRows,
+  pageRowsFrom,
   paneRow,
   paneRows,
   showRow,
@@ -397,7 +398,15 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
     const rows = paneRows(mainRef.current);
     const current = rowCursor.current();
     const at = rows.findIndex((entry) => entry.dataset.rowKey === current);
-    const next = movedIndex(rows.length, at, to, pageRows(mainRef.current));
+    const next = movedIndex(
+      rows.length,
+      at,
+      to,
+      // Only a page move reads the rows' heights.
+      to === 'page-up' || to === 'page-down'
+        ? pageRowsFrom(mainRef.current, rows, at, to === 'page-up')
+        : 1
+    );
     const target = next === null ? undefined : rows[next];
     const key = target?.dataset.rowKey;
 

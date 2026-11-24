@@ -101,10 +101,11 @@
 /* The path bar's row: the first inside the frame, on the pane's own surface.
    It holds the trail and the tools (facts and compact controls) on one
    line, and they give way in one order (docs/components/pane.md, "How a
-   narrow bar gives way"): the crumbs before the last, to one character
-   each; the last crumb, to a stem of eight; a fact's words, to one; the
-   crumbs before the last, out of view at the trail's start; the last
-   crumb, to one character. The trail's floor (`--pane-crumb-room`: every
+   narrow bar gives way"): the quiet actions' words, to their icons
+   (PanePathBar's `data-tight`, measured); the crumbs before the last, to
+   one character each; the last crumb, to a stem of eight; a fact's words,
+   to one; the crumbs before the last, out of view at the trail's start;
+   the last crumb, to one character. The trail's floor (`--pane-crumb-room`: every
    crumb at its least, the slashes, a root's mark, the current dot) is what
    the tools may not take while they can still give, and only what the
    tools cannot give at all goes below it. */
@@ -467,9 +468,9 @@ button.crumb-label.crumb-siblings > svg {
   margin-right: calc(-1 * var(--pane-glyph-reach));
 }
 
-/* Where even the last crumb's stem would not fit, a bar's quiet actions
-   say their verbs with their icons alone (PanePathBar's `data-tight`), as
-   a row's actions do where values need the room. A toolbar fitted by
+/* Before a crumb or a fact gives way, a bar's quiet actions say their
+   verbs with their icons alone (PanePathBar's `data-tight`), as a row's
+   actions do where values need the room. A toolbar fitted by
    useToolbarFit (`data-tool-fit`) steps its tools the same way when their
    words do not fit its line, a tool marked `data-keep-word` only at its
    last step (`data-tight="all"`); it is drawn outside the listing look
@@ -903,6 +904,36 @@ button.crumb-label.crumb-siblings > svg {
   cursor: default;
   /* Holds its edge (below), placed out of its grid. */
   position: relative;
+}
+
+/* A row whose cell holds chips (FilterChips) grows to hold them: the
+   row's height is then its floor, not its cap, so chips on one line keep
+   their own height and chips that wrap (`wrap`, a multi-choice control)
+   every line of theirs, never running over the rows below. A cell of
+   chips that wrap lays them out as a block of lines rather than one kept
+   line; the row's other cells stay centred on it. */
+:where(.listing-root) .row:has(> .row-meta > .pane-quick-row) {
+  height: auto;
+  min-height: var(--row-height);
+}
+
+:where(.listing-root) .row-meta:has(> .pane-quick-row-wrap) {
+  white-space: normal;
+}
+
+/* Chips in a row's cell are a control in the cell, not a pane's band: no
+   rule under them and no row inset of their own, so they start where the
+   cell's words do, and a slim block padding, so a row of chips on one line
+   stands little taller than a row. With nothing between a chip and the
+   edges that clip it (the chip row, the cell), its focus ring is drawn
+   inside it. */
+:where(.listing-root) .row-meta > .pane-quick-row {
+  padding: var(--space-1) 0;
+  border-bottom: none;
+}
+
+:where(.listing-root) .row-meta > .pane-quick-row > .pane-quick-button:focus-visible {
+  outline-offset: var(--focus-offset-inset);
 }
 
 /* The column strip, pinned over the scrolling listing: a band a shade under
@@ -2457,7 +2488,7 @@ button.crumb-label.crumb-siblings > svg {
       .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
     )
   )
-  :is(.row-icon, .row-name, .pane-path-name, .pane-act, .pane-icon-act, .pane-state) {
+  :is(.row-icon, .row-name, .pane-path-name, .pane-act, .pane-icon-act, .pane-state, .tone-icon) {
   color: var(--on-selected);
 }
 

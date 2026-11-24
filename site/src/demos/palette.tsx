@@ -2,7 +2,8 @@
  * A command palette: type to filter, ↑ ↓ move, Return runs, Escape clears
  * the query and then closes. Switch Branch… opens a second level, with a
  * note and a failure under its list and the branch checked out marked with
- * its current dot; the chip, ←, or Backspace in an empty
+ * its current dot, and a branch whose long trail gives way before its
+ * name; the chip, ←, or Backspace in an empty
  * field steps back. Run Task… lists command lines (`.palette-command`) and
  * Open Recent… paths that give way at their start. Add Project… lists the
  * scripts to include, checkable together: Return or a click ticks one, and
@@ -150,7 +151,11 @@ export function PaletteDemo() {
       icon: <GitBranch size={size} />,
       level: ['main', 'release/1.4', 'fix/settings-type', 'feat/dark-charts'].map((name) => ({
         ...command(`branch-${name}`, name, `Check out ${name}`, <GitBranch size={size} />),
-        ...(name === 'main' ? { meta: '2 days', current: 'Checked out' } : {})
+        ...(name === 'main' ? { meta: '2 days', current: 'Checked out' } : {}),
+        // A long trail gives way before the branch's name does.
+        ...(name === 'feat/dark-charts'
+          ? { meta: 'ahead 12, behind 340 of main, last pushed 3 weeks ago' }
+          : {})
       })),
       notes: [
         { text: 'Branches as of 2 minutes ago.' },

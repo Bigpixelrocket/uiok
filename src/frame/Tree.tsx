@@ -255,7 +255,10 @@ export interface TreeRowProps {
  * the cursor there, and one with `onContextMenu` takes the cursor on a
  * secondary click, then hands the click and its key to the app for the
  * row's menu. Its controls leave the Tab order, since the tree's keys run
- * them. The expansion and its keys stay the host's.
+ * them. Its accessible name is its name, its detail, and its trailing
+ * column, in the order drawn (`aria-labelledby`), never its chevron's
+ * label or its tool's, which are controls of their own. The expansion and
+ * its keys stay the host's.
  */
 export function TreeRow({
   rowKey,
@@ -277,6 +280,8 @@ export function TreeRow({
   const cursor = useContext(RowCursorContext);
   const tree = useContext(TreeIdContext);
   const current = useSyncExternalStore(cursor.subscribe, () => cursor.current() === rowKey);
+  const parts = useId();
+  const hasTrailing = trailing !== undefined && trailing !== null && trailing !== false;
 
   useLayoutEffect(() => {
     cursor.rowsChanged?.();
@@ -306,6 +311,9 @@ export function TreeRow({
         <div
           aria-current={current ? 'true' : undefined}
           aria-expanded={toggle === undefined ? undefined : toggle.open}
+          // Named by the words it draws, so its chevron's label ("Collapse
+          // shop") and its tool's never join the name a row is read by.
+          aria-labelledby={hasTrailing ? `${parts}-name ${parts}-trailing` : `${parts}-name`}
           aria-level={level + 1}
           aria-selected={marked}
           className={classes}
@@ -339,6 +347,7 @@ export function TreeRow({
           </span>
           <span
             className="row-name tree-name"
+            id={`${parts}-name`}
             {...(typeof name === 'string' && detail === undefined ? cutTooltip(name) : {})}
           >
             {name}
@@ -350,7 +359,7 @@ export function TreeRow({
             )}
           </span>
           <span className="row-meta align-right">
-            {trailing}
+            {hasTrailing ? <span id={`${parts}-trailing`}>{trailing}</span> : null}
             {tool === undefined ? null : <span className="tree-row-tool">{tool}</span>}
           </span>
         </div>

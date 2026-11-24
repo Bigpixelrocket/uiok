@@ -41,6 +41,7 @@ export {
   isTabStop,
   nextTabStop,
   pageRows,
+  pageRowsFrom,
   paneRow,
   paneRows,
   showRow,

@@ -207,6 +207,41 @@ export const pageRows = (pane: Element | null): number => {
   return Math.max(1, Math.floor((list?.clientHeight ?? 0) / 24) - 1);
 };
 
+/**
+ * The rows one Page Up (`back`) or Page Down moves from `rows[at]` in a
+ * pane whose rows may differ in height (a row that grows to hold chips
+ * that wrap): as many as its home shows past the row it starts on, so that
+ * row stays in view, read from the rows' laid-out heights. Rows of one
+ * height (24px) give what `pageRows` gives; with no row to start from, or
+ * no laid-out height (a pane out of sight), it is `pageRows`.
+ */
+export const pageRowsFrom = (
+  pane: Element | null,
+  rows: readonly Element[],
+  at: number,
+  back: boolean
+): number => {
+  const start = rows[at];
+  const room = shownHome(pane)?.clientHeight ?? 0;
+  const kept = start?.getBoundingClientRect().height ?? 0;
+
+  if (start === undefined || room === 0 || kept === 0) return pageRows(pane);
+
+  let used = kept;
+  let step = 0;
+
+  for (
+    let index = at + (back ? -1 : 1);
+    index >= 0 && index < rows.length;
+    index += back ? -1 : 1
+  ) {
+    used += rows[index]?.getBoundingClientRect().height ?? 0;
+    if (used > room) break;
+    step += 1;
+  }
+  return Math.max(1, step);
+};
+
 /** Brings a row the keys moved to into view, clear of its strip (the row's own scroll margin). */
 export const showRow = (row: HTMLElement | null): void => {
   // Optional call: jsdom has no scrollIntoView.

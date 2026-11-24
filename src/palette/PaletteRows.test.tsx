@@ -35,7 +35,7 @@ describe('PaletteOption', () => {
     });
 
     expect(screen.getByRole('listbox', { name: 'Runtimes' }).id).toBe('list');
-    expect(option.className).toBe('folder-menu-option cursor');
+    expect(option.className).toBe('folder-menu-option palette-option cursor');
     expect(option.getAttribute('aria-selected')).toBe('true');
     expect(option.querySelector('.palette-context.palette-sentence')?.textContent).toBe(
       'JavaScript runtime and toolkit'
@@ -43,6 +43,70 @@ describe('PaletteOption', () => {
     expect(option.querySelector('.palette-meta')?.textContent).toBe('1.3.2');
     expect(screen.getByRole('img', { name: 'Installed' }).className).toBe('current-dot');
     expect(screen.getByText('Languages').getAttribute('role')).toBe('presentation');
+  });
+
+  it('cuts a trail of words with its tooltip, and keeps a chord whole', () => {
+    render(
+      <PaletteList id="list" label="Branches">
+        <PaletteOption
+          id="main"
+          name="main"
+          onPick={() => undefined}
+          trail="ahead 12, behind 340, 3 weeks ago"
+        />
+        <PaletteOption id="count" name="Files" onPick={() => undefined} trail={42} />
+        <PaletteOption
+          id="save"
+          name="Save"
+          onPick={() => undefined}
+          trail={<KeyChord chord={{ key: 's', meta: true }} />}
+        />
+      </PaletteList>
+    );
+    const [words, count, chord] = screen.getAllByRole('option');
+    const text = words?.querySelector('.palette-meta > .palette-meta-text') as HTMLElement;
+
+    expect(text.textContent).toBe('ahead 12, behind 340, 3 weeks ago');
+    expect([text.dataset.tooltip, text.hasAttribute('data-tooltip-cut')]).toEqual([
+      'ahead 12, behind 340, 3 weeks ago',
+      true
+    ]);
+    expect(count?.querySelector('.palette-meta-text')?.getAttribute('data-tooltip')).toBe('42');
+    expect(chord?.querySelector('.palette-meta-text')).toBe(null);
+    expect(chord?.querySelector('.palette-meta > .keychord')).not.toBe(null);
+  });
+
+  it('gives way in one order: the context, then the trail’s words, then the name', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    render(
+      <PaletteList id="list" label="Branches">
+        <PaletteOption
+          context="Check out main"
+          id="main"
+          name="main"
+          onPick={() => undefined}
+          trail="ahead 12"
+        />
+        <PaletteOption
+          id="save"
+          name="Save"
+          onPick={() => undefined}
+          trail={<KeyChord chord={{ key: 's', meta: true }} />}
+        />
+      </PaletteList>
+    );
+    const [words, chord] = screen.getAllByRole('option') as [HTMLElement, HTMLElement];
+    const style = (element: Element | null) => getComputedStyle(element as Element);
+
+    expect(style(words).display).toBe('flex');
+    // The context's words count for nothing in the row's sizing: it has only the room left.
+    expect(style(words.querySelector('.palette-context')).contain).toBe('inline-size');
+    // The trail gives a million times faster than the name, which shrinks at 1.
+    expect(style(words.querySelector('.palette-text')).flexShrink).toBe('1');
+    expect(style(words.querySelector('.palette-trail')).flexShrink).toBe('1000000');
+    expect(style(words.querySelector('.palette-meta-text')).textOverflow).toBe('ellipsis');
+    // A chord never gives.
+    expect(style(chord.querySelector('.palette-trail')).flexShrink).toBe('0');
   });
 
   it('names itself by every word it draws, in the order drawn, and describes only what it does not draw', () => {
