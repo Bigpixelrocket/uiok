@@ -334,34 +334,69 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
-  it('grows a row to hold chips that wrap, and draws chips in a cell without a band’s rule', () => {
+  it('grows a row to hold its chips, and draws chips in a cell without a band’s rule', () => {
     applyStylesheets(styles);
     document.body.innerHTML = `<section class="listing-root">
       <div class="row" id="wraps"><span class="row-name">Modes</span>
         <span class="row-meta" id="wrap-cell"><div class="pane-quick-row pane-quick-row-wrap" id="wrap"></div></span></div>
       <div class="row" id="line"><span class="row-name">Modes</span>
-        <span class="row-meta"><div class="pane-quick-row scroll-fade-x" id="one-line"></div></span></div>
+        <span class="row-meta" id="line-cell"><div class="pane-quick-row scroll-fade-x" id="one-line"></div></span></div>
+      <div class="row" id="plain"><span class="row-name">Port</span></div>
       <div class="pane-quick-row" id="band"></div>
     </section>`;
     const style = (id: string) => getComputedStyle(document.getElementById(id) as Element);
 
-    expect([style('wraps').height, style('wraps').minHeight]).toEqual([
-      'auto',
-      'var(--row-height)'
-    ]);
+    // Chips on one line or wrapping: the row height is the floor, not the cap.
+    for (const id of ['wraps', 'line']) {
+      expect([style(id).height, style(id).minHeight]).toEqual(['auto', 'var(--row-height)']);
+    }
+    expect(style('plain').height).toBe('var(--row-height)');
     expect(style('wrap-cell').whiteSpace).toBe('normal');
-    // A row whose chips keep one line keeps its one-line height.
-    expect(style('line').height).toBe('var(--row-height)');
+    expect(style('line-cell').whiteSpace).not.toBe('normal');
     // Declared in source order; the cell's rule outweighs the band's (two classes to one).
     const rules = (id: string, property = 'border-bottom') =>
       declaredValues(document.getElementById(id) as Element, property);
     for (const id of ['wrap', 'one-line']) {
       expect(rules(id, 'border-bottom-style')).toContain('none');
-      expect(style(id).paddingLeft).toBe('0');
+      expect(rules(id, 'padding')).toContain('var(--space-1) 0');
     }
     // A pane's quick row under its path bar keeps its band's rule.
     expect(rules('band', 'border-bottom-style')).not.toContain('none');
     expect(rules('band').join()).toContain('solid');
+    document.body.innerHTML = '';
+  });
+
+  it('rings a chip in a cell inside it, and floors its words on state fills and selections', () => {
+    applyStylesheets(
+      styles.replaceAll(':hover', '.is-hovered').replaceAll(':focus-visible', '.is-focused')
+    );
+    const chips = `<span class="row-meta"><div class="pane-quick-row">
+        <button class="pane-quick-button quiet-track-item" aria-pressed="false">debug <span class="pane-quick-count">2</span></button>
+        <button class="pane-quick-button quiet-track-item" aria-pressed="true">develop</button>
+      </div></span>`;
+    document.body.innerHTML = `<section class="listing-root"><div class="pane active"><div class="pane-list pointer">
+      <div class="row" id="rest">${chips}</div>
+      <div class="row cursor" id="cursor">${chips}</div>
+      <div class="row marked" id="marked">${chips}</div>
+      <div class="row is-hovered" id="hovered">${chips}</div>
+      <div class="row selected" id="selected">${chips}</div>
+    </div></div></section>`;
+    const colour = (selector: string) =>
+      getComputedStyle(document.querySelector(selector) as Element).getPropertyValue('color');
+
+    expect(colour('#rest [aria-pressed="false"]')).toBe('var(--row-meta-text)');
+    for (const row of ['cursor', 'marked', 'hovered']) {
+      expect(colour(`#${row} [aria-pressed="false"]`)).toBe('var(--text-on-surface)');
+      expect(colour(`#${row} .pane-quick-count`)).toBe('var(--text-on-surface)');
+      // A pressed chip keeps its own words on its wash.
+      expect(colour(`#${row} [aria-pressed="true"]`)).toBe('var(--text)');
+    }
+    for (const chip of ['[aria-pressed="false"]', '[aria-pressed="true"]', '.pane-quick-count']) {
+      expect(colour(`#selected ${chip}`)).toBe('var(--on-selected)');
+    }
+    const focused = document.querySelector('#rest [aria-pressed="false"]') as HTMLElement;
+    focused.classList.add('is-focused');
+    expect(getComputedStyle(focused).outlineOffset).toBe('var(--focus-offset-inset)');
     document.body.innerHTML = '';
   });
 
