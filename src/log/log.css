@@ -2,7 +2,9 @@
    kept as written (wrapping only where a line is longer than the well),
    each source in a column as wide as the longest, in its own colour
    (--log-source, which the component sets to a --log-source-N token, each
-   legible as text on a panel). */
+   legible as text on a panel). A line is one run of text, never a grid
+   or blocks, so a copy takes each line as one line of text: the source,
+   the bar, and the words, a space either side of the bar. */
 .log-well {
   min-height: 0;
   margin: 0;
@@ -19,26 +21,47 @@
     var(--font-mono);
 }
 
+/* The words start past the source's column, the bar, and the room either
+   side of it, and a long line's words wrap back to there, a hanging indent:
+   the first line starts that far back, at the source. */
 .log-line {
-  display: grid;
-  grid-template-columns: var(--log-source-width) auto minmax(0, 1fr);
-  column-gap: var(--space-3);
+  --log-words-start: calc(var(--log-source-width) + 1ch + 2 * var(--space-3));
+  padding-inline-start: var(--log-words-start);
+  text-indent: calc(-1 * var(--log-words-start));
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
 
 /* A log with no sources: the words alone. */
-.log-line:not(:has(> .log-source)) {
-  grid-template-columns: minmax(0, 1fr);
+.log-line:not(:has(> .log-lead)) {
+  --log-words-start: 0px;
 }
 
-.log-source {
-  color: var(--log-source, var(--text-dim));
+/* The source's column, then the bar with a space either side, on one
+   line together: the line breaks only in the words. Each space is a
+   character of the code face, so the bar's margins give back what the
+   spaces take past the room between columns. */
+.log-lead {
   white-space: nowrap;
 }
 
+.log-source {
+  display: inline-block;
+  width: var(--log-source-width);
+  text-indent: 0;
+  color: var(--log-source, var(--text-dim));
+}
+
 .log-bar {
+  margin-inline: calc(var(--space-3) - 1ch);
   color: var(--text-faint);
+}
+
+/* The words: inline, so the line's own first line keeps its hanging
+   indent, but none of it reaches a block inside them (a link's or a tag's
+   label, a match), which would start its own first line that far back. */
+.log-text {
+  text-indent: 0;
 }
 
 .log-line[data-tone='danger'] > .log-text {

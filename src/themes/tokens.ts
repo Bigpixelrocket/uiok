@@ -1641,6 +1641,7 @@ const BASE_TOKEN_NAMES = [
   '--tree-indent',
   '--log-source',
   '--log-source-width',
+  '--log-words-start',
   '--text-gutter-width',
   '--terminal-box-height',
   '--product-mark-colour',

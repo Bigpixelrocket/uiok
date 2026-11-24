@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.5] - 2026-11-24
+
+### Fixed
+
+- Copying lines from a `LogWell` whose lines have sources puts each line on the clipboard as one line, as drawn (`web | Server running`), for a drag, a select-all of the well, and a selection that reaches lines not drawn yet. Before, each line copied as three: the source, the bar, and the words. A line is now one run of text, not a grid: the source stands in its own column and a long line's words wrap back to theirs, as before. The source and the bar sit in a new `.log-lead`, and the bar holds a no-break space either side.
+- One `LogWell` selection that runs from one well's undrawn room into another's, as a host script can set, keeps both ends once the lines are drawn, so a copy takes the selected lines of both wells. Before, the first well's move of its end made the second drop its own, which left the second well's lines out.
+- A `LogWell` selection whose direction a host script reverses before the well draws its lines keeps the new direction. Before, the direction read earlier was put back.
+- Under reduced motion, a pane's bell flash paints the cursor row's words in the selection's ink, and each part that sets an ink of its own in the one a selected row gives it, each holding its contrast on the selection fill in every theme: a tree row's glyph and quiet words, a `StateMark` and its word, a `ToneIcon`, a `RowIconAction`, a `TextLink`, a `TimelineCell`'s bars, an on `FilterChips` chip with its ring and focus ring, and a tool row's glyph, field, placeholder, caret, and underline. Before, they kept their own tones, which can fall below contrast on the accent, down to 1:1 for an accent-toned mark.
+- A `TreeTool` under the cursor rings with the pane's bell as a `TreeRow` does: shoved for a beat, or flashed under reduced motion.
+
 ## [0.7.4] - 2026-11-24
 
 ### Added
@@ -417,7 +427,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.4...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.5...HEAD
+[0.7.5]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.4...v0.7.5
 [0.7.4]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.1...v0.7.2
