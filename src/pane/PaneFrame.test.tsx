@@ -367,7 +367,7 @@ describe('PanePathBar trail fit', () => {
     ]);
   });
 
-  it('steps the action words down to icons only where the last crumb would fall below its stem', () => {
+  it('steps the action words down to icons before the last crumb is cut', () => {
     // "web" needs 30px; its box holds 20.
     layout({ 'crumb-text': { left: 0, right: 20 } }, { width: 100, client: 100 });
     Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
@@ -398,5 +398,119 @@ describe('PanePathBar trail fit', () => {
     expect(row.hasAttribute('data-tight')).toBe(false);
     expect(act.hasAttribute('data-tooltip')).toBe(false);
     Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect');
+  });
+
+  describe('the words step before any crumb or fact gives way', () => {
+    /**
+     * Lays each box out by its id: its own width, and its words' whole
+     * width, which a range over it reads; the trail scrolls when `scroll`
+     * is wider than its box.
+     */
+    function boxes(
+      widths: Record<string, { box: number; words: number }>,
+      scroll = { width: 100, client: 100 }
+    ): void {
+      const rect = (width: number) =>
+        ({ left: 0, right: width, width, top: 0, bottom: 0, height: 0, x: 0, y: 0 }) as DOMRect;
+      const sized = (element: Element | null) =>
+        element instanceof Element ? widths[element.id] : undefined;
+      vi.spyOn(Element.prototype, 'getBoundingClientRect').mockImplementation(function (
+        this: Element
+      ) {
+        return rect(sized(this)?.box ?? 0);
+      });
+      Object.defineProperty(Range.prototype, 'getBoundingClientRect', {
+        configurable: true,
+        value(this: Range) {
+          const at = this.startContainer;
+          return rect(sized(at instanceof Element ? at : null)?.words ?? 0);
+        }
+      });
+      vi.spyOn(Element.prototype, 'scrollWidth', 'get').mockImplementation(function (
+        this: Element
+      ) {
+        return this.classList.contains('pane-crumbs') ? scroll.width : 0;
+      });
+      vi.spyOn(Element.prototype, 'clientWidth', 'get').mockImplementation(function (
+        this: Element
+      ) {
+        return this.classList.contains('pane-crumbs') ? scroll.client : 0;
+      });
+    }
+
+    afterEach(() => Reflect.deleteProperty(Range.prototype, 'getBoundingClientRect'));
+
+    /** A bar of two crumbs and a fact, then one action, its crumbs' and fact's words given ids. */
+    function bar(): { row: HTMLElement; act: HTMLElement } {
+      const { container } = render(
+        <PanePathBar trail={['shop', 'web']}>
+          <PathFact>Stopped</PathFact>
+          <button className="pane-act" data-word="Start" type="button">
+            Start
+          </button>
+        </PanePathBar>
+      );
+      const [first, last] = container.querySelectorAll('.crumb-text');
+      first!.id = 'first';
+      last!.id = 'last';
+      container.querySelector('.path-fact-text')!.id = 'fact';
+      return {
+        row: container.querySelector('.pane-path-row') as HTMLElement,
+        act: container.querySelector('.pane-act') as HTMLElement
+      };
+    }
+
+    /** Fits the bar again, as the focus leaving its trail does. */
+    function refit(row: HTMLElement): void {
+      row
+        .querySelector('.pane-crumbs')
+        ?.dispatchEvent(new FocusEvent('focusout', { bubbles: true, relatedTarget: null }));
+    }
+
+    it('while a crumb before the last is cut, the last one whole', () => {
+      const { row, act: action } = bar();
+      expect(row.hasAttribute('data-tight')).toBe(false);
+      boxes({
+        first: { box: 20, words: 40 },
+        last: { box: 30, words: 30 },
+        fact: { box: 70, words: 70 }
+      });
+      refit(row);
+      expect(row.hasAttribute('data-tight')).toBe(true);
+      expect(action.dataset.tooltip).toBe('Start');
+    });
+
+    it('while a fact’s words are cut', () => {
+      const { row } = bar();
+      boxes({
+        first: { box: 40, words: 40 },
+        last: { box: 30, words: 30 },
+        fact: { box: 30, words: 70 }
+      });
+      refit(row);
+      expect(row.hasAttribute('data-tight')).toBe(true);
+    });
+
+    it('while a crumb is out of view at the trail’s start', () => {
+      const { row } = bar();
+      boxes(
+        { first: { box: 40, words: 40 }, last: { box: 30, words: 30 } },
+        { width: 120, client: 100 }
+      );
+      refit(row);
+      expect(row.hasAttribute('data-tight')).toBe(true);
+    });
+
+    it('and not while every crumb and fact shows whole', () => {
+      const { row, act: action } = bar();
+      boxes({
+        first: { box: 40, words: 40 },
+        last: { box: 30, words: 30 },
+        fact: { box: 70, words: 70 }
+      });
+      refit(row);
+      expect(row.hasAttribute('data-tight')).toBe(false);
+      expect(action.hasAttribute('data-tooltip')).toBe(false);
+    });
   });
 });

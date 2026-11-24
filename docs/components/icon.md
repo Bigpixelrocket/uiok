@@ -1,4 +1,4 @@
-# Icon sizes, the spinner, and product marks (`@bigpixelrocket/uiok/icon`)
+# Icon sizes, the spinner, toned icons, and product marks (`@bigpixelrocket/uiok/icon`)
 
 The four sizes an icon may take, as numbers for lucide's `size` prop. They mirror the `--icon-sm`, `--icon-md`, `--icon-lg`, and `--icon-xl` tokens, which size an icon drawn from CSS ([tokens](../tokens.md)).
 
@@ -43,6 +43,33 @@ import { Spinner } from '@bigpixelrocket/uiok/icon';
 <span className="saving">
   <Spinner /> Saving
 </span>;
+```
+
+## ToneIcon
+
+`ToneIcon` draws an icon in a theme tone of its own, apart from the words around it: an amber update arrow after a version in a listing `Cell`, or in a `TreeRow`'s trailing column. A `Cell`'s `tone` colours its words; `ToneIcon` colours the glyph alone, the words keeping theirs.
+
+| Prop    | Type         | Use                                                                                                |
+| ------- | ------------ | -------------------------------------------------------------------------------------------------- |
+| `icon`  | `LucideIcon` | The glyph                                                                                          |
+| `tone`  | `IconTone`   | `'accent'` (something offered), `'ready'`, `'warning'` (an update waiting), `'danger'` (a failure) |
+| `label` | `string`     | What it says when it stands alone (`role="img"`, and its tooltip); absent, it is decorative        |
+| `size`  | `number`     | One of the icon sizes; `ICON_MD` unless given                                                      |
+
+Each tone is its text colour (`--accent-text`, `--success-text`, `--warning-text`, `--danger-text`, drawn as `.tone-icon[data-tone]`), which keeps 4.5:1 on the listing, the cursor and hover fills, and a mark in every theme, so the quiet-word rules over a row's cells leave it alone. On a selection that holds the keys it takes the selection's words (`--on-selected`), as a row's icon and states do, since a tone would vanish on the accent fill. It sits on the line of the words beside it.
+
+```tsx
+import { CircleArrowUp } from 'lucide-react';
+import { ToneIcon } from '@bigpixelrocket/uiok/icon';
+
+<Cell>
+  3.4.1 <ToneIcon icon={CircleArrowUp} label="Update available" tone="warning" />
+</Cell>;
+<TreeRow
+  name="This Mac"
+  rowKey="mac"
+  trailing={<ToneIcon icon={CircleArrowUp} label="Updates available" tone="warning" />}
+/>;
 ```
 
 ## ProductMark

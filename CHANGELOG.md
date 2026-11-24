@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.2] - 2026-11-24
+
+### Added
+
+- `ToneIcon` (`@bigpixelrocket/uiok/icon`, `IconTone`: `accent`, `ready`, `warning`, `danger`): an icon in a theme tone of its own, apart from the words around it, such as an amber update arrow after a version in a `Cell` or in a `TreeRow`'s trailing column. It takes the tone's text colour, which holds on the cursor and hover fills and a mark, and the selection's words on an active selection. With a `label` it is an image named by it, with that tooltip; without one it is decorative.
+- `SettingsFiles`' per-file Show in Finder and Copy Path: a `SettingsFileEntry` takes `onShow` (under the page's `showFolderLabel`) and `onCopyPath` (under the new `copyPathLabel`), drawn after Open. A refused request shows under the file's row, and each file's verbs are described by its name.
+
+### Changed
+
+- A `PanePathBar` steps its quiet actions' words down to icons first: while any crumb or fact would be cut, or a crumb out of view, with the words shown, the words go before the trail or a fact gives a character. Before, the crumbs and the facts gave way first and the words only once the last crumb fell below its stem.
+- A `PaletteOption` gives way context first, then its trail's words, then its name, so a long trail no longer squeezes or cuts the name. A trail of words (a string or a number) cuts with an ellipsis, whole in its tooltip while cut (`.palette-meta-text`); a `KeyChord` keeps its width. The option is now a flex row (`.palette-option`).
+
+### Fixed
+
+- A `TreeRow` is named by the words it draws, its name with its detail and then its trailing column ("shop 5/8"), no longer with its chevron's label or its tool's ("Collapse shop shop 5/8").
+- A `Row`'s `nameTip` tooltip reads a presentational image (`role="presentation"` or `none`) by its `alt` whenever the image carries any WAI-ARIA 1.2 global state or property (`aria-describedby`, `aria-details`, `aria-keyshortcuts`, `aria-live`, and the rest), not only a label, and follows `tabindex` and every one of those attributes as a component inside the name changes them after mount.
+
 ## [0.7.1] - 2026-11-23
 
 ### Added
@@ -367,7 +384,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.2...HEAD
+[0.7.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.5.0...v0.6.0

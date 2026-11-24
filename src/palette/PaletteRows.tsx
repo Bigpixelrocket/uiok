@@ -53,7 +53,12 @@ export interface PaletteOptionProps {
   readonly context?: string;
   /** How the context reads and gives way; a sentence when absent. */
   readonly contextKind?: PaletteContextKind;
-  /** The trailing column: a version, a count (words in the quiet tone), or a `KeyChord`. */
+  /**
+   * The trailing column: a version, a count (words in the quiet tone), or a
+   * `KeyChord`. Words (a string or a number) give way before the name: cut
+   * with an ellipsis down to one character, whole in their tooltip. Any
+   * other trail (a chord) keeps its width.
+   */
   readonly trail?: ReactNode;
   /**
    * Marks the row's item as the current one (the version in use, the place
@@ -95,7 +100,10 @@ export interface PaletteOptionProps {
  * One option of a palette's list: its mark, its name, its context (a
  * sentence, a path, or a command, one line, cut with an ellipsis and shown
  * whole in its tooltip), and a trailing column (a version, a count, a
- * chord) with the current item's dot. The cursor row wears the cursor fill
+ * chord) with the current item's dot. A narrow row gives way in one order:
+ * the context first (it has only the room the name and trail leave), then
+ * the trail's words, then the name, so a long trail never cuts the name
+ * while it can still give. The cursor row wears the cursor fill
  * and bar, its quiet words in the tone made for that fill; a disabled row
  * is dimmed and never takes the cursor or a pick. A `checked` row, one of
  * several picked together, wears the check mark while it is ticked, as a
@@ -140,7 +148,9 @@ export function PaletteOption({
       aria-description={description === undefined || description === '' ? undefined : description}
       aria-disabled={disabled || undefined}
       aria-selected={cursor}
-      className={cursor ? 'folder-menu-option cursor' : 'folder-menu-option'}
+      className={
+        cursor ? 'folder-menu-option palette-option cursor' : 'folder-menu-option palette-option'
+      }
       id={id}
       onClick={() => {
         if (!disabled) onPick();
@@ -171,7 +181,16 @@ export function PaletteOption({
       </span>{' '}
       <span className="palette-trail">
         {trail === undefined || trail === null ? null : (
-          <span className="palette-meta">{trail}</span>
+          <span className="palette-meta">
+            {typeof trail === 'string' || typeof trail === 'number' ? (
+              // Words that give way, cut with an ellipsis and whole in their tooltip.
+              <span className="palette-meta-text" {...cutTooltip(String(trail))}>
+                {trail}
+              </span>
+            ) : (
+              trail
+            )}
+          </span>
         )}
         {current === null ? null : (
           <>

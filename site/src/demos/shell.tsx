@@ -1,7 +1,7 @@
 /**
  * The shell's shared surfaces: a Settings dialog with its sidebar of pages
  * (Appearance with the theme picker, Updates with the status card and its
- * notes, Files with a file's problems), the theme picker and the update
+ * notes, Files with each file's verbs and problems), the theme picker and the update
  * card in each tone on the page itself (a note under the ready card's head,
  * a failed download under a ruled-off head), the alert a settings file's new
  * mistake raises, the update pill's states, the channel tag in the accent and in a
@@ -20,7 +20,6 @@ import {
   Cog,
   Download,
   FileText,
-  Info,
   KeyRound,
   LoaderCircle,
   Palette as PaletteIcon,
@@ -37,6 +36,7 @@ import { Button } from '@bigpixelrocket/uiok/button';
 import { ConfirmDialog, ModalDialog } from '@bigpixelrocket/uiok/dialog';
 import { ICON_MD, ICON_SM, ICON_XL } from '@bigpixelrocket/uiok/icon';
 import { RunHeader } from '@bigpixelrocket/uiok/run';
+import { SettingsFiles } from '@bigpixelrocket/uiok/shell';
 import { DARK_THEME_IDS, LIGHT_THEME_IDS, type ThemeId } from '@bigpixelrocket/uiok/themes';
 import { cutTooltip, tooltip } from '@bigpixelrocket/uiok/tooltip';
 
@@ -273,58 +273,59 @@ function AppearancePage(): ReactElement {
   );
 }
 
-/** The Files page: the folder, then a file with its problems. */
+/** A host request the demo answers at once, as a desktop bridge would. */
+const done = (): Promise<string | null> => Promise.resolve(null);
+
+/**
+ * The Files page: the folder with Show in Finder, then each file with its
+ * verbs (Open, Show in Finder, Copy Path) and its problems; a file not
+ * created yet offers Copy Path alone. Copying the second file's path is
+ * refused, so its failure shows under its row.
+ */
 function FilesPage(): ReactElement {
   return (
-    <>
-      <section className="settings-subsection">
-        <h4 className="overline">Folder</h4>
-        <div className="field-grid">
-          <span className="field-label">Folder</span>
-          <div className="field-option">
-            <span className="settings-file-path">~/.config/example-app</span>
-            <Button className="settings-file-action" size="small">
-              Show in Finder
-            </Button>
-          </div>
-        </div>
-      </section>
-      <section className="settings-subsection">
-        {/* A subsection may head itself with settings-subsection-title. */}
-        <h4 className="settings-subsection-title overline">settings.toml</h4>
-        <div className="field-grid">
-          <span className="field-label settings-file-name">settings.toml</span>
-          <div className="field-value">
-            <div className="field-option">
-              <span>2 problems</span>
-              <Button className="settings-file-action" size="small">
-                Open
-              </Button>
-            </div>
-            <ul className="settings-file-problems">
-              <li className="settings-file-problem notice notice-danger">
-                <CircleAlert aria-hidden size={ICON_MD} />
-                <span className="notice-text settings-file-problem-text">
-                  <span className="settings-file-problem-place">
-                    Line 12, <code>appearance.theme</code>
-                  </span>
-                  <span>Expected one of system, light, or dark.</span>
-                </span>
-              </li>
-              <li className="settings-file-problem notice">
-                <Info aria-hidden size={ICON_MD} />
-                <span className="notice-text settings-file-problem-text">
-                  <span className="settings-file-problem-place">
-                    Line 30, <code>window.zoom</code>
-                  </span>
-                  <span>This version does not know this key; it is kept as it is.</span>
-                </span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
-    </>
+    <section className="settings-subsection">
+      <h4 className="overline">Files</h4>
+      <SettingsFiles
+        copyPathLabel="Copy Path"
+        files={[
+          {
+            name: 'settings.toml',
+            summary: '2 problems',
+            onOpen: done,
+            onShow: done,
+            onCopyPath: done,
+            problemsLabel: 'Problems in settings.toml',
+            problems: [
+              {
+                kind: 'problem',
+                place: 'Line 12',
+                key: 'appearance.theme',
+                message: 'Expected one of system, light, or dark.'
+              },
+              {
+                kind: 'note',
+                place: 'Line 30',
+                key: 'window.zoom',
+                message: 'This version does not know this key; it is kept as it is.'
+              }
+            ]
+          },
+          {
+            name: 'keys.toml',
+            summary: 'Not created yet',
+            onCopyPath: () => Promise.resolve('The clipboard could not be written.'),
+            problemsLabel: 'Problems in keys.toml',
+            problems: []
+          }
+        ]}
+        folder="~/.config/example-app"
+        folderLabel="Folder"
+        onShowFolder={done}
+        openLabel="Open"
+        showFolderLabel="Show in Finder"
+      />
+    </section>
   );
 }
 

@@ -304,6 +304,36 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
+  it('keeps a toned icon in its tone in a plain cell and a tree’s trailing column, apart from the words', () => {
+    applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
+    const cells = `<span class="row-meta">8.4.15 <span class="tone-icon" data-tone="warning"></span></span>
+      <span class="row-meta align-right"><span class="tone-icon" data-tone="ready"></span></span>`;
+    document.body.innerHTML = `<section class="listing-root"><div class="pane-list pointer">
+      <div class="row">${cells}</div>
+      <div class="row cursor">${cells}</div>
+      <div class="row marked">${cells}</div>
+      <div class="row is-hovered">${cells}</div>
+    </div><div class="pane-list tree">
+      <div class="row cursor" role="treeitem">${cells}</div>
+    </div><div class="pane active"><div class="pane-list">
+      <div class="row selected" id="selected">${cells}</div>
+    </div></div></section>`;
+
+    for (const row of document.querySelectorAll('.row:not(.selected)')) {
+      const [words, alone] = row.querySelectorAll('.row-meta');
+
+      expect(colour(words?.querySelector('.tone-icon') as Element)).toBe('var(--warning-text)');
+      expect(colour(alone?.querySelector('.tone-icon') as Element)).toBe('var(--success-text)');
+      // The words beside the icon keep their own quiet tone.
+      expect(colour(words as Element)).not.toBe('var(--warning-text)');
+    }
+    // On an active selection's accent fill the tone would vanish: it takes the selection's words.
+    for (const icon of document.querySelectorAll('#selected .tone-icon')) {
+      expect(colour(icon)).toBe('var(--on-selected)');
+    }
+    document.body.innerHTML = '';
+  });
+
   it('dims the name of a row whose item is not there yet, and lifts it on the cursor row', () => {
     applyStylesheets(styles);
     document.body.innerHTML = `<section class="listing-root">

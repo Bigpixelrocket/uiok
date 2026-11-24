@@ -267,6 +267,34 @@ describe('TreeRow', () => {
     expect(second?.id).not.toBe('');
   });
 
+  it('is named by its name, detail, and trailing column, never its chevron or tool', () => {
+    render(
+      <RowCursorContext value={cursorAt('shop')}>
+        <TreeList label="Projects">
+          <TreeRow
+            detail="×3"
+            name="shop"
+            rowKey="shop"
+            toggle={{ open: true, onToggle: () => undefined, label: 'Collapse shop' }}
+            tool={
+              <button aria-label="Hide shop" type="button">
+                Hide
+              </button>
+            }
+            trailing="5/8"
+          />
+          <TreeRow name="blog" rowKey="blog" />
+        </TreeList>
+      </RowCursorContext>
+    );
+
+    expect(screen.getByRole('treeitem', { name: 'shop ×3 5/8' })).not.toBe(null);
+    expect(screen.getByRole('treeitem', { name: 'blog' })).not.toBe(null);
+    // The chevron and the tool are still there, named as controls of their own.
+    expect(screen.getByRole('button', { name: 'Collapse shop' })).not.toBe(null);
+    expect(screen.getByRole('button', { name: 'Hide shop' })).not.toBe(null);
+  });
+
   /** A sidebar tree whose pane, list, and first two rows each have a menu, as a host draws one. */
   const menuTree = (cursor: RowCursor, opened: string[]) =>
     render(

@@ -640,11 +640,49 @@ function nameTooltip(name: ReactNode, nameText: string | null, tip: string | und
 const UNNAMED_ROLES = new Set(['none', 'presentation', 'generic']);
 
 /**
+ * WAI-ARIA 1.2's global states and properties, the deprecated ones
+ * included: any of them on a presentational element gives it back its
+ * implicit role (conflict resolution for `none` and `presentation`).
+ */
+const GLOBAL_ARIA = [
+  'aria-atomic',
+  'aria-busy',
+  'aria-controls',
+  'aria-current',
+  'aria-describedby',
+  'aria-details',
+  'aria-disabled',
+  'aria-dropeffect',
+  'aria-errormessage',
+  'aria-flowto',
+  'aria-grabbed',
+  'aria-haspopup',
+  'aria-hidden',
+  'aria-invalid',
+  'aria-keyshortcuts',
+  'aria-label',
+  'aria-labelledby',
+  'aria-live',
+  'aria-owns',
+  'aria-relevant',
+  'aria-roledescription'
+];
+
+/**
+ * Every attribute a marked-up name's reading depends on (`readName`):
+ * what hides words, what names an element, and what decides its role
+ * (`effectiveRole`). The tooltip the reading sets on the name's box is an
+ * attribute too, and stays out of this list so it never wakes the reading.
+ */
+const NAME_ATTRIBUTES = ['hidden', 'alt', 'role', 'tabindex', ...GLOBAL_ARIA];
+
+/**
  * The role assistive technology gives `element`, as far as naming goes:
  * the first token of its `role` attribute, or null for its implicit role
  * (no role, or an empty one). A presentational role (`none`,
  * `presentation`) gives way to the implicit role on an element that takes
- * the focus or carries a label, as WAI-ARIA's conflict resolution says.
+ * the focus (`tabindex`) or carries any global ARIA state or property
+ * (`GLOBAL_ARIA`), as WAI-ARIA's conflict resolution says.
  */
 function effectiveRole(element: Element): string | null {
   const role = element.getAttribute('role')?.trim().split(/\s+/)[0]?.toLowerCase() ?? '';
@@ -653,8 +691,7 @@ function effectiveRole(element: Element): string | null {
   if (
     (role === 'none' || role === 'presentation') &&
     (element.hasAttribute('tabindex') ||
-      element.hasAttribute('aria-label') ||
-      element.hasAttribute('aria-labelledby'))
+      GLOBAL_ARIA.some((attribute) => element.hasAttribute(attribute)))
   ) {
     return null;
   }
@@ -824,11 +861,11 @@ export function Row({
     read();
     const observer = new MutationObserver(read);
 
-    // Only the attributes that hide words: the tooltip this reading sets
-    // on the box is an attribute too, and must not wake it again.
+    // Only the attributes the reading depends on (`NAME_ATTRIBUTES`): the
+    // tooltip it sets on the box is an attribute too, and must not wake it.
     observer.observe(box, {
       attributes: true,
-      attributeFilter: ['aria-hidden', 'hidden', 'aria-label', 'aria-labelledby', 'alt', 'role'],
+      attributeFilter: NAME_ATTRIBUTES,
       characterData: true,
       childList: true,
       subtree: true

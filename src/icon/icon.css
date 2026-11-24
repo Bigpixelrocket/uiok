@@ -51,3 +51,34 @@
 .product-mark.glyph > svg {
   fill: none;
 }
+
+/* ---- Toned icons (ToneIcon) ----
+
+   An icon in a theme tone of its own, apart from the words beside it (an
+   update arrow after a version). It takes the tone's text colour, which
+   keeps 4.5:1 on the listing, the cursor and hover fills, and a mark, so
+   the quiet-word rules over a row's cells leave it alone; an active
+   selection gives it the selection's words (listing.css). It sits on the
+   text's line, as a glyph between words does. */
+.tone-icon {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  vertical-align: text-bottom;
+}
+
+.tone-icon[data-tone='accent'] {
+  color: var(--accent-text);
+}
+
+.tone-icon[data-tone='ready'] {
+  color: var(--success-text);
+}
+
+.tone-icon[data-tone='warning'] {
+  color: var(--warning-text);
+}
+
+.tone-icon[data-tone='danger'] {
+  color: var(--danger-text);
+}

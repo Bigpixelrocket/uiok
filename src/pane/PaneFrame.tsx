@@ -141,33 +141,52 @@ function fitTrail(row: HTMLElement): void {
 }
 
 /**
- * The bar's last step before the last crumb falls below its stem: its
- * quiet actions say their verbs with their icons alone (`data-tight` on
- * the row), as a row's actions do where values need the room. Each keeps
- * its accessible name, and one without a tooltip of its own takes its
- * word as one while the word is hidden.
+ * Whether `box` shows less than its whole words: an ellipsis, or a word
+ * clipped. Exact widths: a box a fraction of a pixel short of its words
+ * already shows its ellipsis.
+ */
+function cutShort(box: HTMLElement): boolean {
+  const words = document.createRange();
+  words.selectNodeContents(box);
+  // A document without range geometry reads the whole pixels it has.
+  if (typeof words.getBoundingClientRect !== 'function') return box.scrollWidth > box.clientWidth;
+  const style = getComputedStyle(box);
+  const room =
+    box.getBoundingClientRect().width -
+    (parseFloat(style.paddingLeft) || 0) -
+    (parseFloat(style.paddingRight) || 0) -
+    (parseFloat(style.borderLeftWidth) || 0) -
+    (parseFloat(style.borderRightWidth) || 0);
+  return room < words.getBoundingClientRect().width - 0.01;
+}
+
+/**
+ * The bar's first step: while its quiet actions say their verbs in words,
+ * any crumb or fact that gives way (cut short, or a crumb out of view)
+ * counts as overflow, so the actions say their verbs with their icons
+ * alone (`data-tight` on the row) before the trail or a fact loses a
+ * character, as a row's actions do where values need the room: where the
+ * pane is reads before the wording of a verb. Measured with the words
+ * shown, so they come back as soon as everything fits beside them. Each
+ * action keeps its accessible name, and one without a tooltip of its own
+ * takes its word as one while the word is hidden.
  */
 function stepActionWords(row: HTMLElement, trail: HTMLElement): void {
   delete row.dataset.tight;
   clearWordTips(row);
   const acts = row.querySelectorAll<HTMLElement>(':scope > .path-tools > .pane-act');
-  const text = trail.lastElementChild?.querySelector<HTMLElement>('.crumb-text');
-  if (acts.length === 0 || text == null) return;
+  if (acts.length === 0) return;
 
-  // The stem shows the shorter of the name and eight characters, and an
-  // ellipsis after eight. Exact widths: a name a fraction of a pixel short
-  // of its box already shows its ellipsis.
-  const name = text.textContent ?? '';
-  if (name.length === 0) return;
-  const words = document.createRange();
-  words.selectNodeContents(text);
-  // A document without range geometry reads the whole pixels it has.
-  const whole =
-    typeof words.getBoundingClientRect === 'function'
-      ? words.getBoundingClientRect().width
-      : text.scrollWidth;
-  const stem = name.length > 8 ? (whole / name.length) * 9 : whole;
-  if (text.getBoundingClientRect().width >= stem - 0.01) return;
+  const hidden = trail.scrollWidth - trail.clientWidth >= 1;
+  const cut =
+    hidden ||
+    [
+      ...trail.querySelectorAll<HTMLElement>(':scope > .crumb .crumb-text'),
+      ...row.querySelectorAll<HTMLElement>(
+        `:scope > .path-tools > .path-facts .path-fact-text, :scope > .path-tools > ${WORDS_FACT}`
+      )
+    ].some(cutShort);
+  if (!cut) return;
 
   row.dataset.tight = '';
   giveWordTips(acts);
@@ -282,12 +301,14 @@ function SiblingsCrumb({
  * Facts and controls sit at the bar's end (`.path-tools`): a state
  * as `PathFact`, compact verbs as `QuietAction` and `.path-star` icon
  * buttons. In a bar too narrow for everything, things give way in one
- * order (`pane.md`, "How a narrow bar gives way"): the crumbs before the
- * last, then the last down to a stem, then a fact's words, then the crumbs
- * before the last scroll out at the trail's start, then the quiet actions'
- * words step down to icons, then the last crumb cuts to one character.
- * Nothing is drawn over anything, and no control leaves the row. The bar
- * fits itself after every render and whenever any box in it resizes.
+ * order (`pane.md`, "How a narrow bar gives way"): first the quiet
+ * actions' words step down to icons, so no crumb or fact is cut while a
+ * verb still says its word; then the crumbs before the last, then the last
+ * down to a stem, then a fact's words, then the crumbs before the last
+ * scroll out at the trail's start, then the last crumb cuts to one
+ * character. Nothing is drawn over anything, and no control leaves the
+ * row. The bar fits itself after every render and whenever any box in it
+ * resizes.
  */
 export function PanePathBar({
   trail,

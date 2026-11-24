@@ -4,7 +4,8 @@
  * with a lockup, its brand mark, and a local build's channel marker; a
  * sidebar tree with its quick row of filters (one line that scrolls
  * sideways under an edge fade when the sidebar is too narrow for them all,
- * a mouse wheel over it scrolling it sideways), a band, a group, rows
+ * a mouse wheel over it scrolling it sideways), a band with an amber update
+ * arrow (`ToneIcon`), a group, rows
  * stepped in by level with a state and a switch, a service's own menu on a
  * secondary click (or the Menu key, Shift-F10, on the tree, which a button
  * under the window focuses), a note, the edge that
@@ -22,6 +23,7 @@
 import {
   ArrowUp,
   CircleAlert,
+  CircleArrowUp,
   Database,
   Layers,
   PanelLeft,
@@ -58,7 +60,7 @@ import {
   usePaneSplit,
   WindowFrame
 } from '@bigpixelrocket/uiok/frame';
-import { ICON_MD } from '@bigpixelrocket/uiok/icon';
+import { ICON_MD, ToneIcon } from '@bigpixelrocket/uiok/icon';
 import { KeyLegendStrip, type LegendVerb } from '@bigpixelrocket/uiok/legend';
 import {
   Cell,
@@ -406,6 +408,9 @@ function FrameWindowDemo() {
                       kind="band"
                       name="This Mac"
                       rowKey="mac"
+                      trailing={
+                        <ToneIcon icon={CircleArrowUp} label="Updates available" tone="warning" />
+                      }
                     />
                     <TreeRow
                       glyph={<Server size={ICON_MD} />}

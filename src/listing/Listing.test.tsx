@@ -684,6 +684,65 @@ describe('a row', () => {
       }
     });
 
+    it('gives a presentational image its role back for any global ARIA property', () => {
+      for (const global of [
+        { 'aria-describedby': 'badge-help' } as const,
+        { 'aria-details': 'badge-help' },
+        { 'aria-keyshortcuts': 'B' },
+        { 'aria-live': 'polite' } as const,
+        { 'aria-roledescription': 'badge' }
+      ]) {
+        const tip = tipOf(
+          <>
+            <img alt="Badge" role="presentation" src="data:," {...global} />
+            Replica
+          </>
+        );
+
+        expect(tip()).toBe('Badge Replica\nRunning');
+        cleanup();
+      }
+      // A local property (one only some roles take) leaves it presentational.
+      const tip = tipOf(
+        <>
+          <img alt="Badge" aria-checked="true" role="presentation" src="data:," />
+          Replica
+        </>
+      );
+
+      expect(tip()).toBe('Replica\nRunning');
+    });
+
+    it('follows a presentational image a component makes focusable or describes after mount', async () => {
+      let set: (to: { tabIndex?: number; describedBy?: string }) => void = () => undefined;
+      function Badge(): ReactElement {
+        const [state, setState] = useState<{ tabIndex?: number; describedBy?: string }>({});
+
+        set = setState;
+        return (
+          <>
+            <img
+              alt="Badge"
+              aria-describedby={state.describedBy}
+              role="presentation"
+              src="data:,"
+              tabIndex={state.tabIndex}
+            />
+            Replica
+          </>
+        );
+      }
+      const tip = tipOf(<Badge />);
+
+      expect(tip()).toBe('Replica\nRunning');
+      await act(async () => set({ tabIndex: 0 }));
+      expect(tip()).toBe('Badge Replica\nRunning');
+      await act(async () => set({}));
+      expect(tip()).toBe('Replica\nRunning');
+      await act(async () => set({ describedBy: 'badge-help' }));
+      expect(tip()).toBe('Badge Replica\nRunning');
+    });
+
     it('reads a cut NameCut name once, whole', () => {
       const tip = tipOf(
         <NameCut parts={nameParts([{ name: 'quarterly-report-final-version-2.sql' }])} />
