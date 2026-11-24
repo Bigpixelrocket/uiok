@@ -3079,4 +3079,49 @@ button.crumb-label.crumb-siblings > svg {
     background: var(--selection-hit);
     box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--on-selected);
   }
+
+  /* A chip that is on stands on the selection's highlight inside a ring in
+     its words, as one under the pointer or held does, and its focus ring
+     is drawn in those words. */
+  :where(.listing-root)
+    .pane:is(.bell-0, .bell-1)
+    :is(.row, .tree-tool).cursor
+    .row-meta
+    .pane-quick-button:is([aria-pressed='true'], :enabled:hover, :enabled:active) {
+    background: var(--selection-hit);
+  }
+
+  :where(.listing-root)
+    .pane:is(.bell-0, .bell-1)
+    :is(.row, .tree-tool).cursor
+    .row-meta
+    .pane-quick-button {
+    --current-ring: var(--on-selected);
+  }
+
+  :where(.listing-root)
+    .pane:is(.bell-0, .bell-1)
+    :is(.row, .tree-tool).cursor
+    .row-meta
+    .pane-quick-button:focus-visible {
+    outline-color: var(--on-selected);
+  }
+
+  /* A timeline's wait and bar in the selection's quiet words, the solid
+     bar in its words, keeping their step. */
+  :where(.listing-root)
+    .pane:is(.bell-0, .bell-1)
+    :is(.row, .tree-tool).cursor
+    .timeline-cell
+    :is(.timeline-wait, .timeline-bar) {
+    background: var(--on-selected-dim);
+  }
+
+  :where(.listing-root)
+    .pane:is(.bell-0, .bell-1)
+    :is(.row, .tree-tool).cursor
+    .timeline-cell[data-emphasis]
+    .timeline-bar {
+    background: var(--on-selected);
+  }
 }

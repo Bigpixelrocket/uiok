@@ -5,9 +5,11 @@ import { CircleArrowUp, Square } from 'lucide-react';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 import { TextLink } from '../button/TextLink.js';
+import { FilterChips } from '../frame/FilterChips.js';
 import { TreeFilterInput, TreePane, TreeTool } from '../frame/Tree.js';
 import { ToneIcon } from '../icon/ToneIcon.js';
 import { StateMark } from '../listing/Listing.js';
+import { TimelineCell } from '../listing/Timeline.js';
 import { PaneBox } from './Pane.js';
 import { RowIconAction } from './PaneActions.js';
 
@@ -228,6 +230,54 @@ describe("PaneBox's bell", () => {
     );
     expect(underline.map((rule) => rule.style.getPropertyValue('box-shadow'))).toEqual([
       'inset 0 calc(-1 * var(--line-strong)) 0 var(--on-selected)'
+    ]);
+  });
+  it("flashes a listing's timeline and an on chip without motion in the selection's ink", () => {
+    const pane = (bell: number) => (
+      <div className="listing-root">
+        <PaneBox active bell={bell}>
+          <div className="row cursor">
+            <span className="row-name">GET /orders</span>
+            <TimelineCell emphasis end={6} label="From 2 to 6 ms" max={10} start={2} waited />
+            <span className="row-meta">
+              <FilterChips
+                chips={[
+                  { id: 'errors', label: 'Errors' },
+                  { id: 'slow', label: 'Slow' }
+                ]}
+                label="Show"
+                on={['errors']}
+                onToggle={() => undefined}
+              />
+            </span>
+          </div>
+        </PaneBox>
+      </div>
+    );
+    const { container, rerender } = render(pane(0));
+
+    rerender(pane(1));
+    applyStylesheets(styles);
+    const part = (selector: string) => container.querySelector(selector) as Element;
+    const last = (element: Element, property: string) =>
+      reducedMotionValues(element, property).at(-1);
+
+    // The solid bar in the selection's words, the wait in its quiet words:
+    // in the accent they would vanish on the accent fill.
+    expect(last(part('.timeline-bar'), 'background')).toBe('var(--on-selected)');
+    expect(last(part('.timeline-wait'), 'background')).toBe('var(--on-selected-dim)');
+    // The on chip on the selection's highlight inside a ring in its words.
+    const on = part(".pane-quick-button[aria-pressed='true']");
+    expect(last(on, 'background')).toBe('var(--selection-hit)');
+    expect(last(on, '--current-ring')).toBe('var(--on-selected)');
+    // A chip's focus ring in the selection's words.
+    const focus = reducedMotionRules().filter(
+      (rule) =>
+        rule.selectorText.includes('.pane-quick-button:focus-visible') &&
+        rule.selectorText.includes('.bell-0')
+    );
+    expect(focus.map((rule) => rule.style.getPropertyValue('outline-color'))).toEqual([
+      'var(--on-selected)'
     ]);
   });
 });
