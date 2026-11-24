@@ -47,7 +47,7 @@ While a selection covers any of the well, every line it covers is drawn: one dra
 
 ## Keyboard
 
-The well takes the focus, so the arrow keys and Page Up and Down scroll it. It is a `log` region with `aria-live="off"`, since the lines it draws come and go with the scroll; a visually hidden live region after it (`.log-live`, `aria-live="polite"`, additions only) holds the newest 50 lines as plain text, so a screen reader hears each new line, the last 50 of a large batch, without the focus moving, and never the old lines a scroll draws. Its words can be selected and copied.
+The well takes the focus, so the arrow keys and Page Up and Down scroll it. It is a `log` region with `aria-live="off"`, since the lines it draws come and go with the scroll; a visually hidden live region after it (`.log-live`, `aria-live="polite"`, `aria-relevant="additions text"`) holds the newest 50 lines as text, so a screen reader hears each new line, the last 50 of a large batch, and a new run's lines that reuse the old keys, without the focus moving, and never the old lines a scroll draws. It speaks a line's source and its words, never mounting the line's parts again: a string (an ANSI line without its escapes), numbers, and the words inside the elements a line holds (a link's), but not what a component draws beyond its children. Its words can be selected and copied.
 
 ## Styling
 

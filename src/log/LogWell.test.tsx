@@ -181,7 +181,7 @@ describe('LogWell with many lines', () => {
 
     expect(well.getAttribute('aria-live')).toBe('off');
     expect(live.getAttribute('aria-live')).toBe('polite');
-    expect(live.getAttribute('aria-relevant')).toBe('additions');
+    expect(live.getAttribute('aria-relevant')).toBe('additions text');
     expect(spoken()).toHaveLength(50);
     expect(spoken().at(-1)).toBe('web line 999 ');
 
@@ -197,6 +197,67 @@ describe('LogWell with many lines', () => {
     expect(spoken()).toHaveLength(50);
     expect(spoken()[0]).toBe('web line 1050 ');
     expect(spoken().at(-1)).toBe('web line 1099 ');
+  });
+
+  it('speaks a line in words only, never mounting its parts again', () => {
+    const { container, rerender } = render(
+      <LogWell
+        label="Combined log"
+        lines={[
+          { key: 1, source: 'web', text: <a href="#details">Details</a> },
+          { key: 2, text: ['Took ', 42, ' ms'] }
+        ]}
+      />
+    );
+    const live = container.querySelector('.log-live') as HTMLElement;
+
+    expect(live.querySelector('a')).toBeNull();
+    expect(container.querySelectorAll('a')).toHaveLength(1);
+    expect([...live.children].map((line) => line.textContent)).toEqual([
+      'web Details ',
+      'Took 42 ms '
+    ]);
+
+    // A new run with the same keys speaks its new words.
+    rerender(
+      <LogWell
+        label="Combined log"
+        lines={[
+          { key: 1, text: 'Starting' },
+          { key: 2, text: 'Ready' }
+        ]}
+      />
+    );
+    expect([...live.children].map((line) => line.textContent)).toEqual(['Starting ', 'Ready ']);
+  });
+
+  it('keeps the line at the top when lines dropped before it clamp the scroll', () => {
+    const { container, rerender } = render(
+      <LogWell follow={false} label="Combined log" lines={linesTo(1000)} />
+    );
+    const well = container.querySelector('.log-well') as HTMLElement;
+    let stored = 0;
+
+    // The browser's clamp: no scroll past the end of what the well holds.
+    Object.defineProperty(well, 'scrollTop', {
+      configurable: true,
+      get: () => Math.max(0, Math.min(stored, well.scrollHeight - VIEW)),
+      set: (value: number) => {
+        stored = value;
+      }
+    });
+    well.scrollTop = 900 * 18;
+    fireEvent.scroll(well);
+    // The host drops the first 200 lines and adds none.
+    rerender(
+      <LogWell
+        follow={false}
+        label="Combined log"
+        lines={Array.from({ length: 800 }, (_, index) => lineOf(index + 200))}
+      />
+    );
+    expect(well.scrollTop).toBe(700 * 18);
+    expect(drawnLines(container)).toContain('line 900');
   });
 
   it('keeps the line at the top in place when the host drops lines before it', () => {
@@ -251,7 +312,7 @@ describe('LogWell with many lines', () => {
 
     /** A log of 1,000 lines, 36px each at 400px wide, scrolled up to line 600. */
     const scrolledUp = () => {
-      const { container } = render(
+      const { container, rerender } = render(
         <LogWell follow={false} label="Combined log" lines={linesTo(1000)} />
       );
       const well = container.querySelector('.log-well') as HTMLElement;
@@ -267,6 +328,12 @@ describe('LogWell with many lines', () => {
       return {
         container,
         well,
+        append: (count: number) =>
+          rerender(<LogWell follow={false} label="Combined log" lines={linesTo(count)} />),
+        hide: () => {
+          width = 0;
+          height = 0;
+        },
         resize: (to: { readonly width: number; readonly height: number }) => {
           width = to.width;
           height = to.height;
@@ -284,6 +351,17 @@ describe('LogWell with many lines', () => {
       expect(well.scrollTop).toBe(600 * 18 + 4);
       expect(drawnLines(container)).toContain('line 600');
       expect(drawnLines(container)).not.toContain('line 1150');
+    });
+
+    it('keeps its reader through lines that arrive while it is hidden, before its size is heard', () => {
+      const { well, append, hide, resize } = scrolledUp();
+
+      // Hidden, the browser drops its scroll, and lines render before the observer hears it.
+      hide();
+      well.scrollTop = 0;
+      append(1010);
+      resize({ width: 400, height: VIEW });
+      expect(well.scrollTop).toBe(600 * 36 + 4);
     });
 
     it('keeps its heights and its reader through a spell out of layout', () => {
@@ -376,6 +454,7 @@ describe('LogWell with many lines', () => {
   it('draws every line a select-all, a page-wide selection, or a copy covers', () => {
     const { container } = render(
       <div>
+        <p className="before">before the log</p>
         <LogWell follow={false} label="Combined log" lines={linesTo(400)} />
         <p className="after">after the log</p>
       </div>
@@ -410,6 +489,21 @@ describe('LogWell with many lines', () => {
     selection.selectAllChildren(container);
     changed();
     expect(drawnLines(container)).toHaveLength(400);
+
+    // A selection from above the well to the room before the lines drawn.
+    selection.removeAllRanges();
+    changed();
+    selection.setBaseAndExtent(
+      container.querySelector('.before')?.firstChild as Node,
+      0,
+      well.firstElementChild as Node,
+      0
+    );
+    changed();
+    expect(selection.toString()).toContain('line 0');
+    expect(selection.toString()).toContain('line 150');
+    expect(selection.toString()).toContain('line 279');
+    expect(selection.toString()).not.toContain('line 281');
 
     // A copy draws what the selection covers at once, before its text is taken.
     selection.removeAllRanges();

@@ -1,4 +1,5 @@
 import {
+  isValidElement,
   memo,
   useEffect,
   useLayoutEffect,
@@ -161,13 +162,30 @@ const selectedRun = (
   return { start: Math.min(start, end), end: Math.max(start, end) + 1 };
 };
 
-/** A line's words as plain text, for the live region: an ANSI line without its escapes. */
-const plainText = (line: LogLine, ansi: boolean): ReactNode =>
-  ansi && typeof line.text === 'string'
-    ? ansiSegments(line.text)
-        .map((run) => run.text)
-        .join('')
-    : line.text;
+/**
+ * The words in `node` as text, never mounting it: strings and numbers, and
+ * the children of the elements that hold them (a link's words). What a
+ * component draws of its own, beyond its children, has no words here.
+ */
+const wordsOf = (node: ReactNode): string => {
+  if (typeof node === 'string') return node;
+  if (typeof node === 'number' || typeof node === 'bigint') return String(node);
+  if (Array.isArray(node)) return node.map((child: ReactNode) => wordsOf(child)).join('');
+  if (isValidElement<{ readonly children?: ReactNode }>(node)) return wordsOf(node.props.children);
+  return '';
+};
+
+/** A line as the live region speaks it: its source, then its words as text, an ANSI line's without its escapes. */
+const spokenLine = (line: LogLine, ansi: boolean): string => {
+  const words =
+    ansi && typeof line.text === 'string'
+      ? ansiSegments(line.text)
+          .map((run) => run.text)
+          .join('')
+      : wordsOf(line.text);
+
+  return line.source === undefined || line.source === null ? words : `${line.source} ${words}`;
+};
 
 /** One line of the well, drawn again only when what it shows changes. */
 const LogRow = memo(function LogRow({
@@ -261,6 +279,12 @@ export function LogWell({
   // and the scroll last read or made, so a scroll not yet heard is kept.
   const anchor = useRef<{ readonly key: LogLine['key']; readonly within: number } | null>(null);
   const lastTop = useRef(0);
+  // A selection whose end sits in room standing for lines, or between the
+  // well's children: the line it ends on, by key, and whether the end is
+  // the selection's anchor. Drawing the lines takes that room away and
+  // leaves the end before them, so the end moves to the line's end once
+  // it is drawn.
+  const pinEnd = useRef<{ readonly key: LogLine['key']; readonly backward: boolean } | null>(null);
   // The width the lines were last measured at, and whether the well is
   // out of layout now.
   const laidWidth = useRef(0);
@@ -371,13 +395,24 @@ export function LogWell({
     const element = well.current;
 
     if (element === null || unlaid.current) return;
+    // A well with no box (hidden before its size was heard) has no scroll
+    // of its reader's to read: it is out of layout until its size comes.
+    if (element.clientWidth === 0 && element.clientHeight === 0) {
+      unlaid.current = true;
+      return;
+    }
     if (following) {
       anchor.current = null;
       element.scrollTop = element.scrollHeight;
       lastTop.current = element.scrollTop;
       return;
     }
-    if (Math.abs(element.scrollTop - lastTop.current) >= 0.5) {
+    // A scroll that moved since the last read is the reader's, unless the
+    // browser clamped it to a log grown shorter (lines dropped before it).
+    const end = Math.max(0, element.scrollHeight - element.clientHeight);
+    const clamped = lastTop.current > end + 0.5 && Math.abs(element.scrollTop - end) < 0.5;
+
+    if (!clamped && Math.abs(element.scrollTop - lastTop.current) >= 0.5) {
       anchor.current = anchorAt(element.scrollTop);
       lastTop.current = element.scrollTop;
       return;
@@ -462,6 +497,7 @@ export function LogWell({
           : selection.getRangeAt(0);
 
       if (range === null || !range.intersectsNode(element)) {
+        pinEnd.current = null;
         setSelected(null);
         return;
       }
@@ -476,6 +512,7 @@ export function LogWell({
       const endLine = last === null ? undefined : lines[last];
 
       if (startLine === undefined || endLine === undefined) {
+        pinEnd.current = null;
         setSelected(null);
         return;
       }
@@ -483,6 +520,17 @@ export function LogWell({
         start: element.contains(range.startContainer) ? startLine.key : HEAD,
         end: element.contains(range.endContainer) ? endLine.key : FOOT
       };
+
+      pinEnd.current =
+        element.contains(range.endContainer) &&
+        elementOf(range.endContainer)?.closest('.log-line') === null
+          ? {
+              key: endLine.key,
+              backward:
+                selection?.anchorNode === range.endContainer &&
+                selection.anchorOffset === range.endOffset
+            }
+          : null;
 
       setSelected((before) =>
         before?.start === next.start && before.end === next.end ? before : next
@@ -497,6 +545,28 @@ export function LogWell({
       document.removeEventListener('copy', copy, true);
     };
   }, []);
+
+  // A selection end left in room now drawn: moved to the end of its line,
+  // in the commit that draws it, so a copy takes every line it covered.
+  // After every commit: the lines may come with any render.
+  useLayoutEffect(() => {
+    const pin = pinEnd.current;
+    const element = well.current;
+    const index = pin === null ? undefined : indexOf.get(pin.key);
+
+    if (pin === null || element === null || index === undefined) return;
+    const row = element.querySelector(`:scope > .log-line[data-index="${index}"]`);
+    const selection = element.ownerDocument.getSelection();
+
+    if (row === null || selection === null || selection.rangeCount === 0) return;
+    pinEnd.current = null;
+    const range = selection.getRangeAt(0);
+    const start = [range.startContainer, range.startOffset] as const;
+    const end = [row, row.childNodes.length] as const;
+
+    if (pin.backward) selection.setBaseAndExtent(...end, ...start);
+    else selection.setBaseAndExtent(...start, ...end);
+  });
 
   const drawn: ReactNode[] = [];
   let at = 0;
@@ -577,12 +647,9 @@ export function LogWell({
         {lines.length === 0 && empty !== undefined ? <p className="log-empty">{empty}</p> : null}
         {drawn}
       </div>
-      <VisuallyHidden aria-live="polite" aria-relevant="additions" className="log-live">
+      <VisuallyHidden aria-live="polite" aria-relevant="additions text" className="log-live">
         {lines.slice(-LIVE_TAIL).map((line) => (
-          <span key={lineKey(line.key)}>
-            {line.source === undefined || line.source === null ? null : `${line.source} `}
-            {plainText(line, ansi)}{' '}
-          </span>
+          <span key={lineKey(line.key)}>{`${spokenLine(line, ansi)} `}</span>
         ))}
       </VisuallyHidden>
     </>
