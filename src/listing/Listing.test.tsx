@@ -687,6 +687,7 @@ describe('a row', () => {
     it('gives a presentational image its role back for any global ARIA property', () => {
       for (const global of [
         { 'aria-describedby': 'badge-help' } as const,
+        { 'aria-description': 'Verified' },
         { 'aria-details': 'badge-help' },
         { 'aria-keyshortcuts': 'B' },
         { 'aria-live': 'polite' } as const,

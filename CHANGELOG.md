@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - `ToneIcon` (`@bigpixelrocket/uiok/icon`, `IconTone`: `accent`, `ready`, `warning`, `danger`): an icon in a theme tone of its own, apart from the words around it, such as an amber update arrow after a version in a `Cell` or in a `TreeRow`'s trailing column. It takes the tone's text colour, which holds on the cursor and hover fills and a mark, and the selection's words on an active selection. With a `label` it is an image named by it, with that tooltip; without one it is decorative.
-- `SettingsFiles`' per-file Show in Finder and Copy Path: a `SettingsFileEntry` takes `onShow` (under the page's `showFolderLabel`) and `onCopyPath` (under the new `copyPathLabel`), drawn after Open. A refused request shows under the file's row, and each file's verbs are described by its name. Of a row's requests the latest started decides what shows, so one that ends late never replaces a newer answer.
+- `SettingsFiles`' per-file Show in Finder and Copy Path: a `SettingsFileEntry` takes `onShow` (under the page's `showFolderLabel`) and `onCopyPath` (under the new `copyPathLabel`), drawn after Open. A refused request shows under the file's row, and each file's verbs are described by its name (the folder's Show in Finder by the folder's label). Of a row's requests the latest started decides what shows, so one that ends late never replaces a newer answer.
 
 ### Changed
 
@@ -23,7 +23,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Fixed
 
 - A `TreeRow` is named by the words it draws, its name with its detail and then its trailing column ("shop 5/8"), no longer with its chevron's label or its tool's ("Collapse shop shop 5/8").
-- A `Row`'s `nameTip` tooltip reads a presentational image (`role="presentation"` or `none`) by its `alt` whenever the image carries any WAI-ARIA 1.2 global state or property (`aria-describedby`, `aria-details`, `aria-keyshortcuts`, `aria-live`, and the rest), not only a label, and follows `tabindex` and every one of those attributes as a component inside the name changes them after mount.
+- A `Row`'s `nameTip` tooltip reads a presentational image (`role="presentation"` or `none`) by its `alt` whenever the image carries any WAI-ARIA 1.2 global state or property (`aria-describedby`, `aria-details`, `aria-keyshortcuts`, `aria-live`, and the rest) or `aria-description`, not only a label, and follows `tabindex` and every one of those attributes as a component inside the name changes them after mount.
 
 ## [0.7.1] - 2026-11-23
 

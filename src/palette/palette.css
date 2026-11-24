@@ -123,6 +123,7 @@
 
 .palette-option > .palette-trail {
   flex: 0 1000000 auto;
+  box-sizing: border-box;
   min-width: calc-size(max-content, min(size, var(--space-4) + 2ch));
 }
 

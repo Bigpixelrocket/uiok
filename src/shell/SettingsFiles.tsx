@@ -218,16 +218,17 @@ export function SettingsFiles({
     copyPath: copyPathLabel
   };
   const { failure, run } = useRowRequests();
+  const folderId = useId();
 
   return (
     <div className="field-grid">
-      <span className="field-label" {...labelHelp(folderHelp).label}>
+      <span className="field-label" id={folderId} {...labelHelp(folderHelp).label}>
         {folderLabel}
       </span>
       <div className="field-value">
         <div className="field-option">
           <code className="settings-file-path">{folder}</code>
-          <Button onClick={() => run(onShowFolder)} size="small">
+          <Button aria-describedby={folderId} onClick={() => run(onShowFolder)} size="small">
             <FolderOpen aria-hidden size={ICON_SM} />
             {showFolderLabel}
           </Button>

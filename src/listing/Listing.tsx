@@ -641,8 +641,10 @@ const UNNAMED_ROLES = new Set(['none', 'presentation', 'generic']);
 
 /**
  * WAI-ARIA 1.2's global states and properties, the deprecated ones
- * included: any of them on a presentational element gives it back its
- * implicit role (conflict resolution for `none` and `presentation`).
+ * included, and 1.3's `aria-description`, which browsers already treat as
+ * global (and `describedTooltip` writes): any of them on a presentational
+ * element gives it back its implicit role (conflict resolution for `none`
+ * and `presentation`).
  */
 const GLOBAL_ARIA = [
   'aria-atomic',
@@ -650,6 +652,7 @@ const GLOBAL_ARIA = [
   'aria-controls',
   'aria-current',
   'aria-describedby',
+  'aria-description',
   'aria-details',
   'aria-disabled',
   'aria-dropeffect',
