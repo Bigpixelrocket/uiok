@@ -961,6 +961,51 @@ describe('StateMark', () => {
     expect(declaredValues(warning as Element, 'color')).toEqual(['var(--warning-text)']);
     expect(declaredValues(danger as Element, 'color')).toEqual(['var(--danger-text)']);
   });
+
+  it('gives its word a tone of its own where it differs, the mark keeping the state’s', () => {
+    applyStylesheets(styles.replaceAll(':hover', '.is-hovered'));
+    const failed = <StateMark tone="muted" word="failed" wordTone="danger" />;
+    const quiet = <StateMark tone="danger" word="skipped" wordTone="muted" />;
+    render(
+      <div className="listing-root">
+        <div className="pane active">
+          <div className="pane-list pointer">
+            <div className="row" id="rest">
+              {failed}
+              {quiet}
+            </div>
+            <div className="row cursor" id="cursor">
+              {failed}
+              {quiet}
+            </div>
+            <div className="row selected" id="selected">
+              {failed}
+              {quiet}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+    const word = (row: string, index: number) =>
+      getComputedStyle(
+        document.querySelectorAll(`#${row} .pane-state-word`)[index] as Element
+      ).getPropertyValue('color');
+
+    expect(document.querySelector('#rest .pane-state')?.className).toBe(
+      'pane-state pane-tone-muted'
+    );
+    expect(document.querySelector('#rest .pane-state-word')?.getAttribute('data-tone')).toBe(
+      'danger'
+    );
+    expect(word('rest', 0)).toBe('var(--danger-text)');
+    expect(word('rest', 1)).toBe('var(--row-meta-text)');
+    // A quiet word on a state fill takes the on-surface tone; a failure's keeps its own.
+    expect(word('cursor', 0)).toBe('var(--danger-text)');
+    expect(word('cursor', 1)).toBe('var(--text-on-surface)');
+    // A selection paints every word in its own.
+    expect(word('selected', 0)).toBe('var(--on-selected)');
+    expect(word('selected', 1)).toBe('var(--on-selected)');
+  });
 });
 
 describe('PathCell', () => {

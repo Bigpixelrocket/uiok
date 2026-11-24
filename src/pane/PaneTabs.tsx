@@ -1,4 +1,4 @@
-import { ChevronDown, Pin, Plus, X } from 'lucide-react';
+import { ChevronDown, CircleDot, Pin, Plus, X } from 'lucide-react';
 import {
   Fragment,
   useEffect,
@@ -41,6 +41,15 @@ export interface PaneTabItem {
   readonly tip?: string;
   /** The next place opened takes this tab over: its name is set in italic. */
   readonly following?: boolean;
+  /**
+   * The tab is live (its process takes input, a stream is open): what that
+   * means here, in the host's words ("Taking input"). A lit mark, an accent
+   * ring round a dot, stands after the name, apart from a state mark, a
+   * spinner, or a dot the host draws in `mark`; the words are its tooltip
+   * and join the tab's accessible description. Absent, null, or empty, the
+   * tab is not live.
+   */
+  readonly live?: string | null;
   /**
    * The tab holds changes not saved: the warning mark stands where its close
    * control is, and the control comes back under the pointer.
@@ -98,6 +107,10 @@ const NO_PICKS: readonly string[] = [];
 const keepFocus = (event: MouseEvent): void => event.preventDefault();
 
 /** The words a tab is called by: its context and name, as the strip shows them. */
+/** Whether a tab is live: it has the words that say what live means. */
+const isLive = (tab: PaneTabItem): tab is PaneTabItem & { readonly live: string } =>
+  typeof tab.live === 'string' && tab.live !== '';
+
 const spokenTab = (tab: PaneTabItem): string =>
   tab.context === undefined ? tab.name : `${tab.context}/${tab.name}`;
 
@@ -329,7 +342,11 @@ function FoldedTabs({ folded, labels, onSelect }: FoldedProps): ReactElement {
                 {folded.map((tab, index) => (
                   <div
                     aria-description={
-                      [tab.tip, tab.dirty === true ? labels.notSaved : undefined]
+                      [
+                        tab.tip,
+                        isLive(tab) ? tab.live : undefined,
+                        tab.dirty === true ? labels.notSaved : undefined
+                      ]
                         .filter((part) => part !== undefined && part !== '')
                         .join(', ') || undefined
                     }
@@ -360,6 +377,11 @@ function FoldedTabs({ folded, labels, onSelect }: FoldedProps): ReactElement {
                       <span className="pane-tab-name">{tab.name}</span>
                     </span>
                     <span aria-hidden className="pane-tabs-folded-marks">
+                      {isLive(tab) ? (
+                        <span className="pane-tab-live">
+                          <CircleDot size={ICON_SM} />
+                        </span>
+                      ) : null}
                       {tab.dirty === true ? <StateMark tone="warning" word="" /> : null}
                       {tab.tone === 'danger' ? <StateMark tone="danger" word="" /> : null}
                     </span>
@@ -436,7 +458,9 @@ export function PaneTabs({
       (tab) =>
         `${tab.id}:${tab.pinned === true ? 'p' : ''}${tab.following === true ? 'f' : ''}${
           tab.mark === undefined ? '' : 'm'
-        }${closes(tab) ? 'x' : ''}${tab.dirty === true ? 'd' : ''}:${tab.context ?? ''}/${tab.name}`
+        }${closes(tab) ? 'x' : ''}${tab.dirty === true ? 'd' : ''}${
+          isLive(tab) ? 'l' : ''
+        }:${tab.context ?? ''}/${tab.name}`
     )
     .join('|')}`;
   const [folding, setFolding] = useState({ shape, count: 0 });
@@ -529,6 +553,7 @@ export function PaneTabs({
     const floor = tabLabelFloor(tab);
     const description = [
       tab.tip,
+      isLive(tab) ? tab.live : undefined,
       tab.pinned === true ? labels.pinned : undefined,
       tab.dirty === true ? labels.notSaved : undefined
     ]
@@ -614,6 +639,11 @@ export function PaneTabs({
             </span>
           )}
           <TabLabel tab={tab} />
+          {isLive(tab) ? (
+            <span aria-hidden className="pane-tab-live" {...tooltip(tab.live)}>
+              <CircleDot size={ICON_SM} />
+            </span>
+          ) : null}
           {tab.dirty === true ? (
             <span aria-hidden className="pane-tab-dirty" {...tooltip(labels.notSaved)}>
               <StateMark tone="warning" word="" />

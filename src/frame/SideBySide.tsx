@@ -51,9 +51,24 @@ const hiddenChips = (part: Element): number => {
 };
 
 /**
+ * A chip row's content width, whatever room its box has: the chips laid
+ * end to end, read from a range over its contents. `scrollWidth` is no
+ * measure of it, since a row that fits reports its own width, room to
+ * spare included. A document without range geometry reads `scrollWidth`.
+ */
+const chipsExtent = (row: Element): number => {
+  const chips = document.createRange();
+
+  chips.selectNodeContents(row);
+  return typeof chips.getBoundingClientRect === 'function'
+    ? chips.getBoundingClientRect().width
+    : row.scrollWidth;
+};
+
+/**
  * What the one-line chip rows show with the parts in their two halves:
  * the most any of them hides, in pixels, and each one's content width
- * (`scrollWidth`), in document order.
+ * (`chipsExtent`), in document order.
  */
 interface ChipsInHalves {
   readonly hidden: number;
@@ -85,7 +100,7 @@ const chipsInHalves = (element: HTMLElement, stackedHeight: number | null): Chip
 
   for (const row of rows) {
     hidden = Math.max(hidden, row.scrollWidth - row.clientWidth);
-    extents.push(row.scrollWidth);
+    extents.push(chipsExtent(row));
   }
   if (layout === null) element.removeAttribute('data-layout');
   else element.setAttribute('data-layout', layout);
@@ -95,11 +110,12 @@ const chipsInHalves = (element: HTMLElement, stackedHeight: number | null): Chip
 
 /**
  * Whether every chip row is as wide in content as it was where they last
- * all fit (`fit`), the same rows in the same order: then whatever a row
- * hides is room its own column lost, never chips that grew.
+ * all fit (`fit`), the same rows in the same order, to half a pixel (a
+ * range reads fractions): then whatever a row hides is room its own column
+ * lost, never chips that grew, even into room the row had to spare.
  */
 const chipsUnchanged = (fit: readonly number[], now: readonly number[]): boolean =>
-  fit.length === now.length && now.every((extent, index) => extent <= (fit[index] ?? 0));
+  fit.length === now.length && now.every((extent, index) => extent <= (fit[index] ?? 0) + 0.5);
 
 /**
  * The room the two parts need to stand side by side, in pixels: twice the
@@ -254,8 +270,10 @@ export function SideBySide({
         needKnown.current = true;
         // Chips are read in the halves themselves. Held, and narrowed by
         // no more than a scrollbar's width under where they last showed
-        // whole, they may hide what their own columns lost, while no row's
-        // content grew (`chipsUnchanged`); chips that grew get no room.
+        // whole, they may hide what the narrowing took from a half (a
+        // column next to them that grew takes more), and only while no
+        // row's content grew (`chipsUnchanged`): chips that grew get no
+        // room, even inside that half of the narrowing.
         if (width >= (hold ? need - SCROLLBAR_HOLD : need)) {
           const read = chipsInHalves(element, stackedHeight);
           const fit = chipsFit.current;
@@ -267,6 +285,7 @@ export function SideBySide({
               fit !== null &&
               width < fit.width &&
               width >= fit.width - SCROLLBAR_HOLD &&
+              read.hidden <= (fit.width - width) / 2 + 1 &&
               chipsUnchanged(fit.extents, read.extents));
         }
       }

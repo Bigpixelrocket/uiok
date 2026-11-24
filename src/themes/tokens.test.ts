@@ -721,6 +721,9 @@ const PAIRINGS = [
     'a hovered zebra row',
     ...MARKED_GROUNDS
   ]),
+  // A live tab's lit mark (PaneTabs' `live`) on a tab at the back, a
+  // hovered tab, and the tab in front.
+  ...pairs('var(--accent)', 3, ['a recessed surface', 'a hovered ground', 'a hovered panel']),
   ...pairs('var(--scrollbar-thumb)', 3, ['ground', 'panel', 'header']),
   ...pairs('var(--bg-panel)', 3, ['the off track']),
   ...pairs('var(--idle-mark)', 3, ['listing', 'the cursor row', 'panel', 'ground']),

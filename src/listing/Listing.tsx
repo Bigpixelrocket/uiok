@@ -1067,6 +1067,13 @@ export interface StateMarkProps {
   readonly tone: StateTone;
   /** The state in words ("running", "error"). */
   readonly word: string;
+  /**
+   * The word's tone where it differs from the mark's: a one-shot that
+   * failed is a quiet mark (`tone="muted"`) with its word in the danger
+   * tone (`wordTone="danger"`). In a row, where a state's word takes a
+   * tone, the word takes this one; the mark keeps `tone`.
+   */
+  readonly wordTone?: StateTone;
   /** A transition under way: a spinner in place of the dot. */
   readonly busy?: boolean;
   /** What the state means, beyond its word: the mark's tooltip and accessible description. */
@@ -1078,12 +1085,19 @@ export interface StateMarkProps {
  * ("running", "error"), or a spinner for a transition (the shared
  * `Spinner`, as `RunHeader` turns). Each tone's mark has its own shape too, so it reads
  * without its hue. Inside a row the word takes the tone too, so a failure
- * reads red and a stopped line dim. A word wider than its column ends in an
+ * reads red and a stopped line dim, or `wordTone` where the word's differs
+ * (a quiet mark with a failure's word). A word wider than its column ends in an
  * ellipsis and carries itself whole as its tooltip, which a word shown
  * whole does not open; a `tip` says what the state means instead, as the
  * whole mark's tooltip and description.
  */
-export function StateMark({ tone, word, busy = false, tip }: StateMarkProps): ReactElement {
+export function StateMark({
+  tone,
+  word,
+  wordTone,
+  busy = false,
+  tip
+}: StateMarkProps): ReactElement {
   return (
     <span className={`pane-state pane-tone-${tone}`} {...describedTooltip(tip)}>
       {busy ? (
@@ -1091,7 +1105,11 @@ export function StateMark({ tone, word, busy = false, tip }: StateMarkProps): Re
       ) : (
         <span aria-hidden className="pane-state-dot" />
       )}
-      <span className="pane-state-word" {...(tip === undefined ? cutTooltip(word) : {})}>
+      <span
+        className="pane-state-word"
+        data-tone={wordTone}
+        {...(tip === undefined ? cutTooltip(word) : {})}
+      >
         {word}
       </span>
     </span>

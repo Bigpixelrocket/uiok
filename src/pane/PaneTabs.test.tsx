@@ -113,6 +113,33 @@ describe('PaneTabs', () => {
     expect(box('shop_archive/orders').style.getPropertyValue('--pane-tab-floor')).toBe('11ch');
   });
 
+  it('lights a live tab apart from its other marks, its words its tooltip and read with the tab', () => {
+    strip({
+      tabs: [
+        ...TABS,
+        { id: 'logs', name: 'logs', live: 'Taking input', tip: 'prod / logs', dirty: true },
+        { id: 'quiet', name: 'quiet', live: '' }
+      ]
+    });
+
+    const live = box('logs').querySelector('.pane-tab-live') as HTMLElement;
+    expect(live.getAttribute('aria-hidden')).toBe('true');
+    expect(live.dataset.tooltip).toBe('Taking input');
+    expect(live.querySelector('svg')).not.toBeNull();
+    // After the name, before the dirty mark; its words join the description.
+    expect([...(tab('logs').children as HTMLCollection)].map((part) => part.className)).toEqual([
+      'pane-tab-label',
+      'pane-tab-live',
+      'pane-tab-dirty'
+    ]);
+    expect(tab('logs').getAttribute('aria-description')).toBe(
+      'prod / logs, Taking input, Changes not saved'
+    );
+    // Empty words are no live state.
+    expect(box('quiet').querySelector('.pane-tab-live')).toBeNull();
+    expect(tab('quiet').hasAttribute('aria-description')).toBe(false);
+  });
+
   it('holds no control inside a tab, its close control beside the tab in the box', () => {
     strip();
     const tabs = screen.getAllByRole('tab');

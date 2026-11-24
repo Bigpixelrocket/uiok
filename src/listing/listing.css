@@ -943,9 +943,10 @@ button.crumb-label.crumb-siblings > svg {
    quiet tone does not. An on chip gives up its accent wash, which over a
    fill makes a ground nothing is floored on, and says it is on by its
    words in the text colour and its ring, the current item's (3:1 on each
-   of those fills) or, on the grey selection's fill, where that ring is
-   not, the strong control edge. A chip under the pointer or held already
-   keeps the row's fill (the quiet track item above). */
+   of those fills) or, on the neutral fill of a quiet mark or the grey
+   selection, where that ring is not, the strong control edge (below). A
+   chip under the pointer or held already keeps the row's fill (the quiet
+   track item above). */
 :where(.listing-root)
   :is(
     .row:is(.cursor, .marked):where(:not(.selected)),
@@ -976,14 +977,29 @@ button.crumb-label.crumb-siblings > svg {
   background: transparent;
 }
 
+/* On the neutral fill a quiet mark and the grey selection wear (--fill),
+   the current item's ring and the accent focus ring are not floored, so a
+   chip there draws both in the strong control edge, which keeps 3:1 on
+   it. The ring is set through the token the on recipe reads, so its press
+   (the held shadow inside the ring) still shows. */
 :where(
     :root[data-window-inactive] .listing-root,
     .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
   )
-  .row.selected
+  .row:is(.marked, .selected)
   .row-meta
-  .pane-quick-button[aria-pressed='true'] {
-  box-shadow: inset 0 0 0 var(--line) var(--control-border-strong);
+  .pane-quick-button {
+  --current-ring: var(--control-border-strong);
+}
+
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row:is(.marked, .selected)
+  .row-meta
+  .pane-quick-button:focus-visible {
+  outline-color: var(--control-border-strong);
 }
 
 /* The column strip, pinned over the scrolling listing: a band a shade under
@@ -1434,7 +1450,10 @@ button.crumb-label.crumb-siblings > svg {
   :is(.row-icon, .row-meta:where(:not([data-tone]))),
 :where(.listing-root)
   .row:is(.cursor, .marked):where(:not(.selected))
-  .pane-state:is(.pane-tone-muted, .pane-tone-busy),
+  :is(
+    .pane-state:is(.pane-tone-muted, .pane-tone-busy),
+    .pane-state-word:is([data-tone='muted'], [data-tone='busy'])
+  ),
 :where(.listing-root)
   .row.marked:where(:not(.cursor, .selected))
   :is(.pane-act, .pane-icon-act):where(:not(.lit, :hover, .danger:focus-visible)),
@@ -1443,7 +1462,8 @@ button.crumb-label.crumb-siblings > svg {
   :is(
     .row-icon,
     .row-meta:where(:not([data-tone])),
-    .pane-state:is(.pane-tone-muted, .pane-tone-busy)
+    .pane-state:is(.pane-tone-muted, .pane-tone-busy),
+    .pane-state-word:is([data-tone='muted'], [data-tone='busy'])
   ),
 :where(.listing-root .pane-list.pointer)
   .row:hover:where(:not(.cursor, .marked, .selected))
@@ -2203,6 +2223,31 @@ button.crumb-label.crumb-siblings > svg {
   color: var(--row-meta-text);
 }
 
+/* A word in a tone of its own (StateMark's `wordTone`): in a row it takes
+   that tone's words, as a state's word takes its own, the mark keeping the
+   state's tone. The state rows' and the selections' rules below give a
+   quiet or busy word, and every word on a selection, the words those
+   fills need. */
+:where(.listing-root) .row .pane-state-word[data-tone='ready'] {
+  color: var(--success-text);
+}
+
+:where(.listing-root) .row .pane-state-word[data-tone='danger'] {
+  color: var(--danger-text);
+}
+
+:where(.listing-root) .row .pane-state-word[data-tone='warning'] {
+  color: var(--warning-text);
+}
+
+:where(.listing-root) .row .pane-state-word[data-tone='info'] {
+  color: var(--accent-text);
+}
+
+:where(.listing-root) .row .pane-state-word:is([data-tone='muted'], [data-tone='busy']) {
+  color: var(--row-meta-text);
+}
+
 /* A row's name that is the keyboard's way to its page: a button that reads
    as the name. */
 :where(.listing-root) .pane-row-open {
@@ -2538,7 +2583,16 @@ button.crumb-label.crumb-siblings > svg {
       .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
     )
   )
-  :is(.row-icon, .row-name, .pane-path-name, .pane-act, .pane-icon-act, .pane-state, .tone-icon) {
+  :is(
+    .row-icon,
+    .row-name,
+    .pane-path-name,
+    .pane-act,
+    .pane-icon-act,
+    .pane-state,
+    .pane-state-word[data-tone],
+    .tone-icon
+  ) {
   color: var(--on-selected);
 }
 
@@ -2698,8 +2752,8 @@ button.crumb-label.crumb-siblings > svg {
     )
   )
   .row-meta
-  .pane-quick-button[aria-pressed='true'] {
-  box-shadow: inset 0 0 0 var(--line) var(--on-selected);
+  .pane-quick-button {
+  --current-ring: var(--on-selected);
 }
 
 :where(.listing-root)
@@ -2772,6 +2826,7 @@ button.crumb-label.crumb-siblings > svg {
     .pane-path-head,
     .pane-path-tail,
     .pane-state:is(.pane-tone-muted, .pane-tone-busy),
+    .pane-state-word:is([data-tone='muted'], [data-tone='busy']),
     :is(.pane-act, .pane-icon-act):not(:hover, :focus-visible)
   ) {
   color: var(--text-on-surface);

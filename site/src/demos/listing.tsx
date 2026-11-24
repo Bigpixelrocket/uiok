@@ -1,7 +1,8 @@
 /**
  * A listing of a project's files: sort by name or size, move the cursor row
  * with the arrows or the pointer, Return opens the cursor row. Two rows are
- * selected, as a multi-select draws them. Every state mark, a busy transition, selected rows,
+ * selected, as a multi-select draws them. Every state mark, a busy transition, a
+ * quiet mark whose word is a failure's (`wordTone`), selected rows,
  * a destructive hover action, and the path cell are in it; the path cell
  * colours a markdown file's name by its kind (`nameClassName`), and an
  * ignored file's name is quieter, as a host draws hidden files. Under it, a
@@ -72,14 +73,16 @@ import { bytes, FILES, type SampleFile } from './data';
 
 type SortKey = 'name' | 'size';
 
-const STATES: readonly { tone: StateTone; word: string; busy?: boolean }[] = [
+const STATES: readonly { tone: StateTone; word: string; busy?: boolean; wordTone?: StateTone }[] = [
   { tone: 'ready', word: 'synced' },
   { tone: 'ready', word: 'synced' },
   { tone: 'warning', word: 'changed' },
   { tone: 'busy', word: 'uploading' },
   { tone: 'muted', word: 'ignored' },
   { tone: 'danger', word: 'conflict' },
-  { tone: 'busy', word: 'checking', busy: true }
+  { tone: 'busy', word: 'checking', busy: true },
+  // A one-shot that failed: a quiet ring, its word in the danger tone.
+  { tone: 'muted', word: 'failed', wordTone: 'danger' }
 ];
 const stateOf = (index: number) => STATES[index % STATES.length] ?? { tone: 'muted', word: '' };
 
@@ -325,7 +328,12 @@ export function ListingDemo() {
                   rowKey={file.id}
                 >
                   <Cell>
-                    <StateMark busy={state.busy} tone={state.tone} word={state.word} />
+                    <StateMark
+                      busy={state.busy}
+                      tone={state.tone}
+                      word={state.word}
+                      wordTone={state.wordTone}
+                    />
                   </Cell>
                   {/* PathCell is the cell: it draws its own `.row-meta`. */}
                   <PathCell

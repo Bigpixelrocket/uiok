@@ -1,6 +1,7 @@
 /**
  * A pane hanging from its tabs (`PaneTabs`): a pinned tab, two tabs named
- * orders told apart by their context, a dirty one, a following one in
+ * orders told apart by their context, a live one (lit while it takes
+ * input), a dirty one, a following one in
  * italic, tabs on a production place in the danger tone, and enough tabs
  * to fold into the count at the strip's end. Drag a tab to reorder, ⌘- or
  * ⇧-click to pick, double-click to keep, middle-click or × to close, + or a
@@ -48,7 +49,8 @@ const START: readonly PaneTabItem[] = [
   local('analytics', 'analytics'),
   prod('orders', 'orders', { context: 'shop', dirty: true }),
   prod('archive', 'orders', { context: 'shop_archive', tip: 'prod / shop_archive / orders' }),
-  prod('customers', 'customers'),
+  // Live: its process takes input, so the tab is lit.
+  prod('customers', 'customers', { live: 'Taking input' }),
   prod('payments', 'payment_attempts', { following: true }),
   local('events', 'events_by_campaign'),
   local('views', 'page_views_daily'),

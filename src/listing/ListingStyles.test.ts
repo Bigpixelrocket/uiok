@@ -382,7 +382,11 @@ describe('the listing states', () => {
         <div class="row selected" id="selected">${chips}</div>
         <div class="row cursor selected" id="cursor-selected">${chips}</div>
       </div></div>
-      <div class="pane"><div class="pane-list"><div class="row selected" id="grey">${chips}</div></div></div>
+      <div class="pane"><div class="pane-list">
+        <div class="row selected" id="grey">${chips}</div>
+        <div class="row marked" id="grey-marked">${chips}</div>
+        <div class="row marked cursor" id="grey-marked-cursor">${chips}</div>
+      </div></div>
     </section>`;
     const style = (selector: string) =>
       getComputedStyle(document.querySelector(selector) as Element);
@@ -395,7 +399,14 @@ describe('the listing states', () => {
     expect(style(`#rest ${off}`).color).toBe('var(--row-meta-text)');
     expect(style(`#rest ${on}`).background).toBe('var(--accent-wash-strong)');
 
-    for (const row of ['cursor', 'marked', 'hovered', 'grey']) {
+    for (const row of [
+      'cursor',
+      'marked',
+      'hovered',
+      'grey',
+      'grey-marked',
+      'grey-marked-cursor'
+    ]) {
       expect(style(`#${row} ${off}`).color).toBe('var(--text-on-surface)');
       expect(style(`#${row} .pane-quick-count`).color).toBe('var(--text-on-surface)');
       // An on chip gives up its wash and keeps its words; its ring says it is on.
@@ -406,19 +417,33 @@ describe('the listing states', () => {
     for (const row of ['cursor', 'marked', 'hovered']) {
       expect(declared(`#${row} ${on}`, 'box-shadow').at(-1)).toContain('var(--current-ring)');
     }
-    // On the grey selection's fill the current ring is not floored: the strong edge is.
+    // On the neutral fill of a grey selection or a quiet mark the current
+    // ring and the accent focus ring are not floored: the strong edge is,
+    // set through the token the on recipe (and its press) reads.
+    const ring = (selector: string) => style(selector).getPropertyValue('--current-ring');
+    for (const row of ['grey', 'grey-marked', 'grey-marked-cursor']) {
+      expect(ring(`#${row} ${on}`)).toBe('var(--control-border-strong)');
+      const chip = document.querySelector(`#${row} ${off}`) as HTMLElement;
+      chip.classList.add('is-focused');
+      expect(getComputedStyle(chip).outlineColor).toBe('var(--control-border-strong)');
+      chip.classList.remove('is-focused');
+    }
+    // The on recipe still draws the ring, and its press inside it, from the token.
     expect(declared(`#grey ${on}`, 'box-shadow')).toContain(
-      'inset 0 0 0 var(--line) var(--control-border-strong)'
+      'inset 0 0 0 var(--line) var(--current-ring)'
     );
+    // A window that is not in front greys a mark and a selection the same way.
+    document.documentElement.setAttribute('data-window-inactive', '');
+    expect(ring(`#marked ${on}`)).toBe('var(--control-border-strong)');
+    expect(ring(`#selected ${on}`)).toBe('var(--control-border-strong)');
+    document.documentElement.removeAttribute('data-window-inactive');
 
     for (const row of ['selected', 'cursor-selected']) {
       for (const part of [off, on, '.pane-quick-count']) {
         expect(style(`#${row} ${part}`).color).toBe('var(--on-selected)');
       }
       expect(style(`#${row} ${on}`).background).toBe('var(--selection-hit)');
-      expect(declared(`#${row} ${on}`, 'box-shadow')).toContain(
-        'inset 0 0 0 var(--line) var(--on-selected)'
-      );
+      expect(ring(`#${row} ${on}`)).toBe('var(--on-selected)');
       const chip = document.querySelector(`#${row} ${off}`) as HTMLElement;
       // Under the pointer: the highlight, without the on ring.
       chip.classList.add('is-hovered');

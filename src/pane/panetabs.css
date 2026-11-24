@@ -250,6 +250,23 @@
   display: none;
 }
 
+/* A live tab (`live`: its process takes input) is lit: an accent ring
+   round a dot after its name, a shape no state mark, spinner, or host dot
+   takes, in the accent, which keeps 3:1 on a tab at the back, a hovered
+   tab, and the tab in front in every theme. It keeps its place under the
+   pointer. In the folded menu the row carries it with its other marks. */
+:where(.listing-root) .pane-tab-live {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+}
+
+:where(.listing-root) .pane-tab-live > svg {
+  color: var(--accent);
+}
+
 /* A pinned tab stands before the pin rule, keeps its width however crowded
    the strip, and carries a pin where a tab's close control is. */
 :where(.listing-root) .pane-tab.pinned {
