@@ -70,6 +70,16 @@ describe('LogWell', () => {
       expect(declaredValues(row.querySelector('.log-lead') as Element, 'white-space')).toEqual([
         'nowrap'
       ]);
+      // The words start no line of a block inside them (a link's label, a
+      // tag) at the line's hanging indent.
+      expect(declaredValues(row.querySelector('.log-text') as Element, 'text-indent')).toEqual([
+        '0px'
+      ]);
+      // A screen reader skips the bar alone: its spaces keep the source and
+      // the words two words.
+      expect(
+        [...row.querySelectorAll('[aria-hidden]')].map((hidden) => hidden.textContent)
+      ).toEqual(['|']);
     }
   });
 
@@ -83,6 +93,11 @@ describe('LogWell', () => {
     );
 
     expect(container.querySelector('.log-source, .log-bar')).toBeNull();
+    // No hanging indent: the words start at the line's start.
+    applyStylesheets(readStylesheet('src/styles.css'));
+    expect(
+      declaredValues(container.querySelector('.log-line') as Element, '--log-words-start').at(-1)
+    ).toBe('0px');
     rerender(<LogWell empty="No output yet." label="Output" lines={[]} />);
     expect(screen.getByText('No output yet.')).toBeTruthy();
   });
@@ -928,7 +943,9 @@ describe('LogWell with many lines', { timeout: MANY_LINES_TIMEOUT_MS }, () => {
     selectionChanged();
 
     const text = selection.toString();
-    expect(text).toContain(`line ${from}`);
+    // The first well's lines from the first one past those drawn, and no earlier.
+    expect(text).toMatch(new RegExp(`line ${from}(?!\\d)`));
+    expect(text).not.toMatch(new RegExp(`line ${from - 1}(?!\\d)`));
     expect(text).toContain('line 399');
     expect(text).toContain('second 0');
     expect(text).toContain(`second ${to - 1}`);

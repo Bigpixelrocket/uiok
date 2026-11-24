@@ -658,7 +658,12 @@ const PAIRINGS = [
     // (listing.css), a tree's glyph and quiet words included.
     'the bell flash'
   ]),
-  ...pairs('var(--on-selected-dim)', 4.5, ['the selection', 'the cursor on the selection']),
+  ...pairs('var(--on-selected-dim)', 4.5, [
+    'the selection',
+    'the cursor on the selection',
+    // A ringing row's quiet words and its filter's placeholder.
+    'the bell flash'
+  ]),
   ...pairs('var(--on-accent)', 4.5, ['the accent', 'the accent held']),
   ...pairs('var(--on-danger)', 4.5, ['the danger fill held']),
   ...pairs('var(--on-warning)', 4.5, ['the warning fill held']),

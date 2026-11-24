@@ -57,6 +57,13 @@
   color: var(--text-faint);
 }
 
+/* The words: inline, so the line's own first line keeps its hanging
+   indent, but none of it reaches a block inside them (a link's or a tag's
+   label, a match), which would start its own first line that far back. */
+.log-text {
+  text-indent: 0;
+}
+
 .log-line[data-tone='danger'] > .log-text {
   color: var(--danger-text);
 }

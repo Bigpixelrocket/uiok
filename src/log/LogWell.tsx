@@ -132,13 +132,21 @@ const sameBounds = (a: AbstractRange, b: AbstractRange): boolean =>
   a.endOffset === b.endOffset;
 
 /**
- * Per document, a live copy of the last selection a well pinned: every
- * well that pins ends of that one selection holds the same copy, and each
- * well that moves an end moves the copy with it, so a selection running
- * from one well's undrawn room into another's still matches the copy the
- * second well holds once the first has moved its end.
+ * Per document, a live copy of the selection wells have pinned and not yet
+ * moved: every well that pins ends of that one selection holds the same
+ * copy, and each well that moves an end moves the copy with it, so a
+ * selection running from one well's undrawn room into another's still
+ * matches the copy the second well holds once the first has moved its end.
+ * Only a read before the first move needs the entry (a later read finds the
+ * selection moved already), so the first move, or a pin let go, forgets it:
+ * the copy never outlives the wells that hold it, nor keeps their lines.
  */
 const pinnedRanges = new WeakMap<Document, Range>();
+
+/** Forgets `range` as `doc`'s shared copy, if it is the one held there. */
+const forgetPinned = (doc: Document, range: Range | undefined): void => {
+  if (range !== undefined && pinnedRanges.get(doc) === range) pinnedRanges.delete(doc);
+};
 
 /**
  * The index of the line a selection's `side` boundary at `node` and
@@ -563,6 +571,7 @@ export function LogWell({
           : selection.getRangeAt(0);
 
       if (range === null || !range.intersectsNode(element)) {
+        forgetPinned(document, pin.current?.range);
         pin.current = null;
         setSelected(null);
         return;
@@ -578,6 +587,7 @@ export function LogWell({
       const endLine = last === null ? undefined : lines[last];
 
       if (startLine === undefined || endLine === undefined) {
+        forgetPinned(document, pin.current?.range);
         pin.current = null;
         setSelected(null);
         return;
@@ -602,6 +612,7 @@ export function LogWell({
         const kept =
           shared !== undefined && sameBounds(shared, range) ? shared : range.cloneRange();
 
+        if (pin.current?.range !== kept) forgetPinned(document, pin.current?.range);
         pinnedRanges.set(document, kept);
         pin.current = {
           start: startInRoom ? startLine.key : null,
@@ -612,6 +623,7 @@ export function LogWell({
           range: kept
         };
       } else {
+        forgetPinned(document, pin.current?.range);
         pin.current = null;
       }
 
@@ -626,6 +638,7 @@ export function LogWell({
     return () => {
       document.removeEventListener('selectionchange', read);
       document.removeEventListener('copy', copy, true);
+      forgetPinned(document, pin.current?.range);
     };
   }, []);
 
@@ -654,10 +667,12 @@ export function LogWell({
       (held.start !== null && !indexOf.has(held.start)) ||
       (held.end !== null && !indexOf.has(held.end))
     ) {
+      forgetPinned(element.ownerDocument, held.range);
       pin.current = null;
       return;
     }
     if (startRow === null || endRow === null) return;
+    forgetPinned(element.ownerDocument, held.range);
     pin.current = null;
     const selection = element.ownerDocument.getSelection();
 
@@ -683,8 +698,8 @@ export function LogWell({
 
     if (backward) selection.setBaseAndExtent(...end, ...start);
     else selection.setBaseAndExtent(...start, ...end);
-    // The copy follows, so another well pinning this selection still finds
-    // it the one it read.
+    // The copy follows, so another well that read this selection before the
+    // move, and holds the copy, still finds it the one it read.
     copy.setStart(...start);
     copy.setEnd(...end);
   });

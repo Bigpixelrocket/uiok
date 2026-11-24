@@ -1,9 +1,15 @@
 import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { CircleArrowUp, Square } from 'lucide-react';
+
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
-import { TreePane, TreeTool } from '../frame/Tree.js';
+import { TextLink } from '../button/TextLink.js';
+import { TreeFilterInput, TreePane, TreeTool } from '../frame/Tree.js';
+import { ToneIcon } from '../icon/ToneIcon.js';
+import { StateMark } from '../listing/Listing.js';
 import { PaneBox } from './Pane.js';
+import { RowIconAction } from './PaneActions.js';
 
 const styles = readStylesheet('src/styles.css');
 
@@ -11,7 +17,7 @@ const styles = readStylesheet('src/styles.css');
  * What the rules inside the stylesheets' `prefers-reduced-motion: reduce`
  * blocks that match `element` declare for `property`, in source order.
  */
-const reducedMotionValues = (element: Element, property: string): string[] =>
+const reducedMotionRules = (): CSSStyleRule[] =>
   [...document.styleSheets]
     .flatMap((sheet) => [...sheet.cssRules])
     .filter(
@@ -19,10 +25,11 @@ const reducedMotionValues = (element: Element, property: string): string[] =>
         rule instanceof CSSMediaRule && rule.conditionText.includes('prefers-reduced-motion')
     )
     .flatMap((media) => [...media.cssRules])
-    .filter(
-      (rule): rule is CSSStyleRule =>
-        rule instanceof CSSStyleRule && element.matches(rule.selectorText)
-    )
+    .filter((rule): rule is CSSStyleRule => rule instanceof CSSStyleRule);
+
+const reducedMotionValues = (element: Element, property: string): string[] =>
+  reducedMotionRules()
+    .filter((rule) => !rule.selectorText.includes('::') && element.matches(rule.selectorText))
     .map((rule) => rule.style.getPropertyValue(property))
     .filter((value) => value !== '');
 
@@ -157,5 +164,70 @@ describe("PaneBox's bell", () => {
     ]) {
       expect(reducedMotionValues(part as Element, 'color')).toEqual(['var(--on-selected)']);
     }
+  });
+  it('flashes without motion with the ink a selection gives every part of the row', () => {
+    const tree = (bell: number) => (
+      <div className="listing-root">
+        <TreePane active bell={bell}>
+          <div className="row cursor">
+            <span className="row-name">postgres</span>
+            <span className="row-meta">
+              <StateMark tone="ready" word="5432" wordTone="warning" />
+            </span>
+            <ToneIcon icon={CircleArrowUp} label="Update available" tone="warning" />
+            <RowIconAction icon={Square} label="Stop" onClick={() => undefined} />
+            <TextLink onClick={() => undefined}>Details</TextLink>
+          </div>
+          <TreeTool cursor>
+            <TreeFilterInput
+              label="Filter"
+              onChange={() => undefined}
+              placeholder="Filter services"
+              value=""
+            />
+          </TreeTool>
+        </TreePane>
+      </div>
+    );
+    const { container, rerender } = render(tree(0));
+
+    rerender(tree(1));
+    applyStylesheets(styles);
+    const part = (selector: string) => container.querySelector(selector) as Element;
+    const last = (element: Element, property: string) =>
+      reducedMotionValues(element, property).at(-1);
+
+    // A state, its word in a tone of its own, a toned icon, an icon action, and a link in words
+    // each set an ink of their own that vanishes on the accent fill.
+    for (const selector of [
+      '.pane-state',
+      '.pane-state-word',
+      '.tone-icon',
+      '.pane-icon-act',
+      '.text-link'
+    ]) {
+      expect(last(part(selector), 'color'), selector).toBe('var(--on-selected)');
+    }
+    // A filled state mark wears a hairline in the selection's words.
+    expect(last(part('.pane-state-dot'), 'box-shadow')).toBe(
+      '0 0 0 var(--line) var(--on-selected)'
+    );
+    // The filter's caret, and its placeholder in the selection's quiet words.
+    expect(last(part('.tree-filter-input'), 'caret-color')).toBe('var(--on-selected)');
+    const placeholder = reducedMotionRules().filter(
+      (rule) =>
+        rule.selectorText.includes('.tree-filter-input::placeholder') &&
+        rule.selectorText.includes('.bell-0')
+    );
+    expect(placeholder.map((rule) => rule.style.getPropertyValue('color'))).toEqual([
+      'var(--on-selected-dim)'
+    ]);
+    // The filter's underline while it holds the keys, in the selection's words.
+    const underline = reducedMotionRules().filter((rule) =>
+      rule.selectorText.includes(':has(.tree-filter-input:focus-visible)')
+    );
+    expect(underline.map((rule) => rule.style.getPropertyValue('box-shadow'))).toEqual([
+      'inset 0 calc(-1 * var(--line-strong)) 0 var(--on-selected)'
+    ]);
   });
 });
