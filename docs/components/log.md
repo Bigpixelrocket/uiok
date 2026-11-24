@@ -39,13 +39,17 @@ A line's `tone` is `danger` (a failure, in `--danger-text`), `warning` (`--warni
 
 The code face at the small size on a panel in a framed well. Each source sits in a column as wide as the longest (`--log-source-width`), in its colour, then a quiet bar, then the words, which wrap only where a line is longer than the well. A source's colour is `--log-source-1` to `--log-source-6` in turn, starting over after the sixth: the palette's green, pink, blue, peach, teal, and mauve, each moved until it keeps 4.5:1 as text on a panel and the ground ([Themes](../themes.md)). `logSourceIndexes(sources, order)` gives each source its turn, `logSourceColour(index)` its token as a `var()`, and `logSourceWidth(sources)` the column's width in characters.
 
+## Long logs
+
+The well draws only the lines in view and 20 more past each edge, with blank room standing for the rest, so a log of 20,000 lines costs what one screen of it does, and a new batch draws only the lines it brings into view. Lines wrap, so each drawn line is measured, and a new width measures again. Two more runs stay drawn: the newest 50 lines, so the `log` region still hears each new line wherever the reader is, and, while a selection starts in the well, every line it covers (to the log's first or last line when it runs past the well), so a selection dragged past the edge keeps its start and a copy takes every line it covers. A line not yet drawn counts at the height the first lines measured at this width had, and the line at the top of the view stays put as lines above it are measured (`overflow-anchor: none` keeps the browser from moving it a second time). With `follow` at the foot, the newest lines are the view, drawn before the paint. The room between drawn runs is `.log-gap`, hidden from assistive technology; a screen reader browsing the log reads the lines drawn.
+
 ## Keyboard
 
 The well takes the focus, so the arrow keys and Page Up and Down scroll it. It is a `log` region: a screen reader hears new lines without the focus moving. Its words can be selected and copied.
 
 ## Styling
 
-`.log-well`, `.log-line` (`data-tone`), `.log-source` (reads `--log-source`), `.log-bar`, `.log-text`, `.log-empty`.
+`.log-well`, `.log-line` (`data-tone`, `data-index`, its place in `lines`), `.log-gap` (the room standing for lines not drawn), `.log-source` (reads `--log-source`), `.log-bar`, `.log-text`, `.log-empty`.
 
 ## Labels read
 

@@ -597,6 +597,7 @@ describe('usePaneKeys rows a page reads on its own', () => {
 const SideRow = memo(function SideRow({
   cursor,
   rowKey,
+  resting,
   counts
 }: {
   readonly cursor: RowCursor;
@@ -611,6 +612,7 @@ const SideRow = memo(function SideRow({
   return (
     <div
       className={current ? 'cursor' : undefined}
+      data-resting={resting ? '' : undefined}
       data-row-key={rowKey}
       onPointerMove={() => {
         if (!current) cursor.point(rowKey);
@@ -737,5 +739,22 @@ describe('usePaneKeys sidebar cursor', () => {
       <SidebarSpace counts={counts} keys={SIDE_KEYS.filter((key) => key !== 's8')} openKey="s3" />
     );
     expect(sideCursorRows()).toEqual(['s3']);
+  });
+
+  it('rests on the first shown row while a collapsed or filtered tree hides the open row', () => {
+    const counts: Counts = { space: 0, rows: [] };
+    const hidden = SIDE_KEYS.filter((key) => key !== 's3');
+    const { rerender } = render(<SidebarSpace counts={counts} keys={hidden} openKey="s3" />);
+
+    // The open row is not drawn: the cursor rests on the first row, never on nothing.
+    expect(sideCursorRows()).toEqual(['s0']);
+    expect(rowOf('s0').getAttribute('data-resting')).toBe('');
+    // The keys walk on from there.
+    fireEvent.keyDown(document.activeElement ?? window, { key: 'ArrowDown' });
+    expect(sideCursorRows()).toEqual(['s1']);
+
+    // Shown again, with no row moved to it, the open row takes the rest back.
+    rerender(<SidebarSpace counts={counts} openKey="s3" />);
+    expect(rowOf('s3').getAttribute('data-resting')).toBe('');
   });
 });

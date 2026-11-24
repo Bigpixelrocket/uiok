@@ -530,21 +530,38 @@ export interface PaneStatusProps {
   readonly children?: ReactNode;
   /** Compact controls at the line's end (Reveal, Copy). */
   readonly tools?: ReactNode;
+  /**
+   * More than the summary says (where what it names comes from), as the
+   * summary's tooltip at every width, under the summary's words when they
+   * are a string, and as its accessible description.
+   */
+  readonly tip?: string;
 }
+
+/**
+ * The summary's tooltip: with no `tip`, a summary in words shows itself
+ * whole only while a narrow pane cuts it; a `tip` shows at every width,
+ * under the words (all of them, cut or not) when they are a string, and is
+ * the summary's accessible description.
+ */
+const summaryTooltip = (summary: ReactNode, tip: string | undefined) => {
+  const words = typeof summary === 'string' && summary !== '' ? summary : null;
+
+  if (tip === undefined || tip === '') return cutTooltip(words);
+  return { ...tooltip(words === null ? tip : `${words}\n${tip}`), 'aria-description': tip };
+};
 
 /**
  * The line a pane closes with: one summary of what the pane lists or
  * shows, and compact icon controls at its end (`tools`, `RowIconAction`s),
  * which the summary gives way to. A summary in words that a narrow pane
- * cuts with an ellipsis carries itself whole as its tooltip.
+ * cuts with an ellipsis carries itself whole as its tooltip; a `tip` adds
+ * more under it at every width.
  */
-export function PaneStatus({ children, tools }: PaneStatusProps): ReactElement {
+export function PaneStatus({ children, tools, tip }: PaneStatusProps): ReactElement {
   return (
     <footer className="pane-status">
-      <span
-        className="pane-summary"
-        {...(typeof children === 'string' ? cutTooltip(children) : {})}
-      >
+      <span className="pane-summary" {...summaryTooltip(children, tip)}>
         {children}
       </span>
       {tools !== undefined && tools !== null && tools !== false && (

@@ -18,6 +18,7 @@ import {
 } from 'react';
 
 import { ICON_MD } from '../icon/sizes.js';
+import { useBellBeat } from '../menu/useBellBeat.js';
 import { RowCursorContext } from '../listing/Listing.js';
 import {
   regionHandlers,
@@ -55,6 +56,14 @@ export interface TreePaneProps extends RegionHandlers {
   /** The pane holds the keyboard: its frame wears the accent. */
   readonly active?: boolean;
   readonly label?: string;
+  /**
+   * The visual bell, as a `PaneBox`'s: a count the host raises each time a
+   * key could not act in the sidebar (a move past the last row, a verb the
+   * cursor row does not offer). Each rise shoves the cursor row sideways for
+   * one beat; under reduced motion the row flashes the selection fill
+   * instead. Only its change rings.
+   */
+  readonly bell?: number;
   readonly ref?: Ref<HTMLElement>;
   /** Its path bar, quick row (`FilterChips`), `TreeList`, and status line. */
   readonly children: ReactNode;
@@ -64,20 +73,26 @@ export interface TreePaneProps extends RegionHandlers {
  * The sidebar's pane, which holds a tree: a pane at the sidebar's width
  * whose rows lay out as the chevron's slot, the node's glyph, its name, and
  * one trailing column. Narrower than its title and its tools side by side,
- * its path bar takes a line for each.
+ * its path bar takes a line for each. `bell` rings on its cursor row as a
+ * `PaneBox`'s does (`useBellBeat`; `.bell-0`, `.bell-1`).
  */
 export function TreePane({
   width,
   active = false,
   label,
+  bell = 0,
   ref,
   children,
   ...handlers
 }: TreePaneProps): ReactElement {
+  const beat = useBellBeat(bell);
+
   return (
     <aside
       aria-label={label}
-      className={active ? 'pane tree-pane active' : 'pane tree-pane'}
+      className={['pane', 'tree-pane', active ? 'active' : '', beat === null ? '' : `bell-${beat}`]
+        .filter(Boolean)
+        .join(' ')}
       ref={ref}
       style={width === undefined ? undefined : { width }}
       {...regionHandlers(handlers)}

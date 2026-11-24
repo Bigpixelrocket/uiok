@@ -8,6 +8,9 @@
   margin: 0;
   padding: var(--space-3) var(--space-4);
   overflow: auto;
+  /* LogWell keeps the line at the top of the view in place itself as lines
+     above it are measured; the browser's own anchoring would move it twice. */
+  overflow-anchor: none;
   border: var(--line) solid var(--border-strong);
   border-radius: var(--radius-md);
   background: var(--surface);

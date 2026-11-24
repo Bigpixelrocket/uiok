@@ -103,20 +103,31 @@ const innerSpan = (box: Element, padded: boolean): Span => {
  * half: the span it can show is its part's, narrowed by every box up to
  * the part that clips what overflows it (a listing's cell); it `shows`
  * its own span within that, on either side (a right-to-left cell clips
- * its start), and its `room` is its holder's content box within that (a
- * form's value column, a listing's cell) from the button's start on, so
- * room a squeezed column had to spare counts and room a sibling before it
- * in the cell takes does not. A box with no laid-out edges (a document
- * without layout) clips nothing; a button with none shows and has its own
- * width.
+ * its start). Its `rooms` are three bounds on its holder's content box
+ * within that span (a form's value column, a listing's cell): the whole
+ * box, so room a squeezed column had to spare counts; the box from its
+ * left edge to the button's right edge, for a clip that comes from the
+ * left; and the box from the button's left edge to the box's right
+ * edge, for a clip from the right. The sides follow where the button sits in its
+ * holder, not any `direction`, so a sibling that grows before it on
+ * either side (a prefix in the cell, laid left to right or right to
+ * left) takes room it counts. A button with no laid-out edges (a
+ * document without layout) shows and has its own width, read before any
+ * clipping box is; a box with no laid-out edges clips nothing.
  */
-const popUpSpace = (button: Element): { readonly shows: number; readonly room: number } => {
-  const part = button.closest('.side-by-side-part');
+const popUpSpace = (
+  button: Element
+): { readonly shows: number; readonly rooms: readonly number[] } => {
   const own = button.getBoundingClientRect();
-  const finite = (span: Span): boolean => Number.isFinite(span.left) && Number.isFinite(span.right);
-  // Narrows `span` by `by`, where `by` has laid-out edges.
-  const within = (span: Span, by: Span): Span => (finite(by) ? overlap(span, by) : span);
-  const width = (span: Span): number => Math.max(0, span.right - span.left);
+  const span: Span = { left: own.left, right: own.right };
+  const finite = (edges: Span): boolean =>
+    Number.isFinite(edges.left) && Number.isFinite(edges.right);
+
+  if (!finite(span)) return { shows: own.width, rooms: [own.width, own.width, own.width] };
+  // Narrows `edges` by `by`, where `by` has laid-out edges.
+  const within = (edges: Span, by: Span): Span => (finite(by) ? overlap(edges, by) : edges);
+  const width = (edges: Span): number => Math.max(0, edges.right - edges.left);
+  const part = button.closest('.side-by-side-part');
   let seen: Span = { left: -Infinity, right: Infinity };
 
   if (part !== null) seen = within(seen, innerSpan(part, false));
@@ -126,23 +137,17 @@ const popUpSpace = (button: Element): { readonly shows: number; readonly room: n
     // An empty value is no style read (a document without a stylesheet): no clip.
     if (overflow !== '' && overflow !== 'visible') seen = within(seen, innerSpan(box, false));
   }
-  const span: Span = { left: own.left, right: own.right };
-
-  // A button with no laid-out edges shows its width, and has it.
-  if (!finite(span)) return { shows: own.width, room: own.width };
   const holder =
     button.parentElement === null ? seen : within(seen, innerSpan(button.parentElement, true));
-  // From the button's start (its left, or its right in a right-to-left
-  // line) to its holder's end: room a sibling before it takes is not its.
-  const ahead: Span =
-    getComputedStyle(button).direction === 'rtl'
-      ? { left: -Infinity, right: span.right }
-      : { left: span.left, right: Infinity };
-  const room = overlap(holder, ahead);
+  const room = (edges: Span): number => (finite(edges) ? width(edges) : own.width);
 
   return {
     shows: width(overlap(seen, span)),
-    room: finite(room) ? width(room) : own.width
+    rooms: [
+      room(holder),
+      room(overlap(holder, { left: -Infinity, right: span.right })),
+      room(overlap(holder, { left: span.left, right: Infinity }))
+    ]
   };
 };
 
@@ -155,7 +160,8 @@ const CUT_CONTROLS = `${SCROLLING_CHIPS}, ${POP_UP_BUTTONS}`;
  * most any of them hides, in pixels, and each one's room, its content
  * width, and what it hides. A chip row's room is its `clientWidth` and its
  * content its chips end to end (`chipsExtent`); a pop-up button's room is
- * its holder's width as drawn (`popUpSpace`), its content the width it
+ * its holder's width as drawn, whole and on each side of the button
+ * (`popUpSpace`), its content the width it
  * takes with nothing holding it to its column, and what it hides that
  * content less what it shows (its span within every box that clips it).
  */
@@ -163,7 +169,8 @@ interface ControlsInHalves {
   /** How many of the controls, the first ones, are chip rows; the rest are pop-up buttons. */
   readonly chips: number;
   readonly hidden: number;
-  readonly rooms: readonly number[];
+  /** Each control's bounds on its room: one for a chip row, three for a pop-up button (`popUpSpace`). */
+  readonly rooms: readonly (readonly number[])[];
   readonly extents: readonly number[];
   readonly hiddens: readonly number[];
 }
@@ -193,12 +200,12 @@ const controlsInHalves = (element: HTMLElement, stackedHeight: number | null): C
 
   if (stackedHeight !== null) element.style.minHeight = `${stackedHeight}px`;
   element.setAttribute('data-layout', 'side-by-side');
-  const rooms: number[] = [];
+  const rooms: (readonly number[])[] = [];
   const extents: number[] = [];
   const hiddens: number[] = [];
 
   for (const row of rows) {
-    rooms.push(row.clientWidth);
+    rooms.push([row.clientWidth]);
     extents.push(chipsExtent(row));
     hiddens.push(row.scrollWidth - row.clientWidth);
   }
@@ -209,9 +216,9 @@ const controlsInHalves = (element: HTMLElement, stackedHeight: number | null): C
     element.setAttribute('data-natural', '');
     buttons.forEach((button, index) => {
       const natural = button.getBoundingClientRect().width;
-      const space = spaces[index] ?? { shows: natural, room: natural };
+      const space = spaces[index] ?? { shows: natural, rooms: [natural] };
 
-      rooms.push(space.room);
+      rooms.push(space.rooms);
       extents.push(natural);
       hiddens.push(natural - space.shows);
     });
@@ -226,8 +233,8 @@ const controlsInHalves = (element: HTMLElement, stackedHeight: number | null): C
 /**
  * Whether a held pair's cut controls hide only what a scrollbar took from
  * them: the same controls in the same order as where they last all showed
- * whole (`fit`), and each one that hides now has lost no more room than
- * `lost` (half the pair's narrowing, what a scrollbar takes from a half,
+ * whole (`fit`), and each one that hides now has lost no more room, on
+ * any of its bounds, than `lost` (half the pair's narrowing, what a scrollbar takes from a half,
  * and a pixel for rounding) and holds content no wider than it did there
  * (to half a pixel, as a range reads fractions). So neither content that
  * grew, even into room the control had to spare, nor a column beside it
@@ -239,7 +246,9 @@ const controlsHeld = (fit: ControlsInHalves, now: ControlsInHalves, lost: number
   now.hiddens.every(
     (hidden, index) =>
       hidden < 1 ||
-      ((now.rooms[index] ?? 0) >= (fit.rooms[index] ?? 0) - lost - 1 &&
+      ((now.rooms[index] ?? []).every(
+        (room, bound) => room >= (fit.rooms[index]?.[bound] ?? Infinity) - lost - 1
+      ) &&
         (now.extents[index] ?? 0) <= (fit.extents[index] ?? 0) + 0.5)
   );
 

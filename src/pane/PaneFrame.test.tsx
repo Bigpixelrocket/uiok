@@ -26,6 +26,28 @@ describe('PaneStatus', () => {
 
     expect(container.querySelector('.pane-summary')?.hasAttribute('data-tooltip')).toBe(false);
   });
+
+  it('shows a tip under the summary at every width, and reads it as the description', () => {
+    const { container, rerender } = render(
+      <PaneStatus tip="github.com/example/plugin">2 versions installed</PaneStatus>
+    );
+    const summary = () => container.querySelector('.pane-summary') as HTMLElement;
+
+    expect(summary().getAttribute('data-tooltip')).toBe(
+      '2 versions installed\ngithub.com/example/plugin'
+    );
+    // Opened whether the pane cuts the summary or not.
+    expect(summary().hasAttribute('data-tooltip-cut')).toBe(false);
+    expect(summary().getAttribute('aria-description')).toBe('github.com/example/plugin');
+
+    // A summary in markup shows the tip alone.
+    rerender(
+      <PaneStatus tip="github.com/example/plugin">
+        <strong>2</strong> versions installed
+      </PaneStatus>
+    );
+    expect(summary().getAttribute('data-tooltip')).toBe('github.com/example/plugin');
+  });
 });
 
 describe('PanePathBar', () => {

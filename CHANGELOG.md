@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.4] - 2026-11-24
+
+### Added
+
+- `PaneStatus`'s `tip`: more than the summary says (where what it names comes from), shown as the summary's tooltip at every width, under the summary's words when they are a string, and read as its accessible description.
+- `TreePane`'s `bell`: the visual bell a `PaneBox` rings, for a sidebar key that could not act. Each rise of the count shoves the tree's cursor row sideways for one beat, or flashes it under reduced motion.
+
+### Changed
+
+- `LogWell` draws only the lines in view, 20 more past each edge, the newest 50, and, while a selection starts in the well, every line it covers, with blank room (`.log-gap`) standing for the rest. A log of 20,000 lines now draws about a screen of nodes for each batch instead of every line. Following the tail, a reader scrolled up staying put, selection and copy, and the `log` region hearing new lines work as before. Each drawn line is measured, as lines wrap; lines carry their place in `lines` as `data-index`.
+
+### Fixed
+
+- A `SideBySide` pair held side by side through a scrollbar stacks when a pop-up button it holds loses more than half the narrowing on any of three bounds: its holder's whole content box, the holder up to the button's right edge (a clip from the left), and the holder from its left edge (a clip from the right). The sides follow where the button sits in its holder, not its `direction`. Before, the room ran from the button's start by its own `direction` to the holder's end, so a right-aligned select clipped at its left, or a right-to-left select after a growing prefix in a left-to-right cell, stayed clipped. A button with no laid-out edges is now recognised before any clipping box is read.
+- `usePaneKeys` rests the sidebar's cursor on `openKey` only while `sidebarKeys` lists it, and on the first row otherwise, so a collapsed or filtered tree that hides the open row no longer leaves the cursor on a row the tree does not draw (`sidebarKey`, `sidebarCursor.current()`, and `sidebarRest`).
+
 ## [0.7.3] - 2026-11-24
 
 ### Added
@@ -400,7 +416,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.3...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.4...HEAD
+[0.7.4]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.3...v0.7.4
 [0.7.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.0...v0.7.1

@@ -42,7 +42,11 @@ export interface PaneKeysOptions<Action extends { readonly kind: string }, Verbs
   readonly page: string;
   /** The sidebar's rows top to bottom by key, as its cursor walks them. */
   readonly sidebarKeys: readonly string[];
-  /** The sidebar row the cursor rests on until the keys or the pointer move it: the open page's. */
+  /**
+   * The sidebar row the cursor rests on until the keys or the pointer move
+   * it: the open page's. Only while `sidebarKeys` lists it; a collapsed or
+   * filtered tree that hides it rests the cursor on its first row instead.
+   */
   readonly openKey: string | null;
   /** What the main pane's cursor row and path bar offer, read off the rendered pane. */
   readonly readVerbs: (main: Element | null, cursor: string | null) => Verbs;
@@ -103,7 +107,7 @@ export interface PaneKeys<Verbs> {
   readonly activePane: Pane;
   /**
    * The sidebar's cursor row: the one the keys or the pointer moved to,
-   * else `openKey`. Always null where the view leaves the cursor out of
+   * else `openKey` while the tree lists it, else its first row. Always null where the view leaves the cursor out of
    * render (`cursorInRender`), which reads `sidebarCursor.current()`.
    */
   readonly sidebarKey: string | null;
@@ -117,7 +121,7 @@ export interface PaneKeys<Verbs> {
   readonly sidebarCursor: RowCursor;
   /**
    * The row the sidebar's cursor rests on while it is moved to none: the
-   * open row, else the first. A row that follows `sidebarCursor` and is
+   * open row while `sidebarKeys` lists it, else the first. A row that follows `sidebarCursor` and is
    * memoized takes whether it is this one as a prop, so it draws in the
    * same render that moves the rest there or away.
    */
@@ -161,12 +165,21 @@ interface MainCursor {
   readonly key: string;
 }
 
-/** The sidebar's cursor row: the one moved to while it is listed, else the open row, else the first. */
+/**
+ * The row the sidebar's cursor rests on: the open row while the tree shows
+ * it, else the first shown. A collapsed branch or a filter can hide the
+ * open row, and a cursor on a row the tree does not draw has nothing to
+ * stand on.
+ */
+const restRow = (keys: readonly string[], openKey: string | null): string | null =>
+  openKey !== null && keys.includes(openKey) ? openKey : (keys[0] ?? null);
+
+/** The sidebar's cursor row: the one moved to while it is listed, else where it rests (`restRow`). */
 const sidebarRow = (
   moved: string | null,
   keys: readonly string[],
   openKey: string | null
-): string | null => (moved !== null && keys.includes(moved) ? moved : (openKey ?? keys[0] ?? null));
+): string | null => (moved !== null && keys.includes(moved) ? moved : restRow(keys, openKey));
 
 /** The sidebar pane: the frame around its home, which holds its other controls (Refresh) too. */
 const sidebarPane = (root: Element): Element | null =>
@@ -212,7 +225,7 @@ export function usePaneKeys<Action extends { readonly kind: string }, Verbs exte
   const mainRef = useRef<HTMLDivElement>(null);
   const mainKey = inRender && mainCursor?.page === page ? mainCursor.key : null;
   const sidebarKey = inRender ? sidebarRow(sidebarMoved, sidebarKeys, openKey) : null;
-  const sidebarRest = openKey ?? sidebarKeys[0] ?? null;
+  const sidebarRest = restRow(sidebarKeys, openKey);
   const optionsRef = useRef(options);
 
   optionsRef.current = options;
