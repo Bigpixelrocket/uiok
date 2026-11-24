@@ -219,12 +219,16 @@ const EXTENSION_CHIPS = ['intl', 'redis', 'xdebug', 'imagick', 'pcov', 'swoole',
  * `FilterChips` with `wrap` as a multi-choice control in a listing row's
  * cell the slider narrows: the chips go on to further lines rather than
  * scrolling, and the row grows to hold them, so the row under it stays
- * clear.
+ * clear. The same chips stand on the cursor row, a marked row, and a
+ * selection, each keeping its words and its on look legible.
  */
 function WrappingChipsDemo() {
   const [width, setWidth] = useState(420);
   const [on, setOn] = useState<readonly string[]>(['intl', 'redis']);
-  const { cursor } = useDemoCursor(['extensions', 'start']);
+  const [modes, setModes] = useState<readonly string[]>(['develop']);
+  const { cursor } = useDemoCursor(['extensions', 'modes', 'profiles', 'start']);
+  const toggle = (set: typeof setOn) => (id: string) =>
+    set((now) => (now.includes(id) ? now.filter((each) => each !== id) : [...now, id]));
 
   return (
     <div className="demo-stack">
@@ -251,11 +255,30 @@ function WrappingChipsDemo() {
                       chips={EXTENSION_CHIPS}
                       label="Extensions"
                       on={on}
-                      onToggle={(id) =>
-                        setOn((now) =>
-                          now.includes(id) ? now.filter((each) => each !== id) : [...now, id]
-                        )
-                      }
+                      onToggle={toggle(setOn)}
+                      wrap
+                    />
+                  </Cell>
+                </Row>
+                {/* Chips on a marked row and on a selection keep their words and their on look. */}
+                <Row marked name="Modes" rowKey="modes">
+                  <Cell>
+                    <FilterChips
+                      chips={MODE_CHIPS}
+                      label="Modes"
+                      on={modes}
+                      onToggle={toggle(setModes)}
+                      wrap
+                    />
+                  </Cell>
+                </Row>
+                <Row name="Profiles" rowKey="profiles" selected>
+                  <Cell>
+                    <FilterChips
+                      chips={MODE_CHIPS}
+                      label="Profiles"
+                      on={modes}
+                      onToggle={toggle(setModes)}
                       wrap
                     />
                   </Cell>

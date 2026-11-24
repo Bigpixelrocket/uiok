@@ -936,6 +936,56 @@ button.crumb-label.crumb-siblings > svg {
   outline-offset: var(--focus-offset-inset);
 }
 
+/* Chips in a row's cell on a state fill (the cursor, a mark, the pointer's
+   row hover, the grey selection) keep to the grounds their tones are
+   floored on, as the row's other quiet words do: a chip at rest and every
+   count take the on-surface tone, which keeps 4.5:1 on each fill where the
+   quiet tone does not. An on chip gives up its accent wash, which over a
+   fill makes a ground nothing is floored on, and says it is on by its
+   words in the text colour and its ring, the current item's (3:1 on each
+   of those fills) or, on the grey selection's fill, where that ring is
+   not, the strong control edge. A chip under the pointer or held already
+   keeps the row's fill (the quiet track item above). */
+:where(.listing-root)
+  :is(
+    .row:is(.cursor, .marked):where(:not(.selected)),
+    .pane-list.pointer .row:hover:where(:not(.selected)),
+    :where(
+        :root[data-window-inactive] .listing-root,
+        .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+      )
+      .row.selected
+  )
+  .row-meta
+  :is(.pane-quick-button:where(:not([aria-pressed='true'], :hover, :active)), .pane-quick-count) {
+  color: var(--text-on-surface);
+}
+
+:where(.listing-root)
+  :is(
+    .row:is(.cursor, .marked):where(:not(.selected)),
+    .pane-list.pointer .row:hover:where(:not(.selected)),
+    :where(
+        :root[data-window-inactive] .listing-root,
+        .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+      )
+      .row.selected
+  )
+  .row-meta
+  .pane-quick-button[aria-pressed='true'] {
+  background: transparent;
+}
+
+:where(
+    :root[data-window-inactive] .listing-root,
+    .listing-root:has(.pane.active) .pane:not(.active, .active .pane)
+  )
+  .row.selected
+  .row-meta
+  .pane-quick-button[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 var(--line) var(--control-border-strong);
+}
+
 /* The column strip, pinned over the scrolling listing: a band a shade under
    the list, labels in the interface font so they read as labels and the rows
    as data, and a short rule in each gutter. */
@@ -2606,6 +2656,62 @@ button.crumb-label.crumb-siblings > svg {
   .name-hit {
   background: var(--selection-hit);
   box-shadow: inset 0 calc(-1 * var(--line-strong)) 0 var(--on-selected);
+}
+
+/* Chips in a row's cell on a selection that holds the keys: the accent
+   fill would swallow their tones, their accent wash and ring, and the
+   accent focus ring, so every chip and count takes the selection's words,
+   an on chip stands on the selection's highlight (as a match does) inside
+   a ring in those words, a chip under the pointer or held takes the
+   highlight without the ring, and the focus ring is drawn in the
+   selection's words. Each keeps 4.5:1, or 3:1 for a ring, on the
+   selection and the cursor on it. */
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .row-meta
+  :is(.pane-quick-button, .pane-quick-count) {
+  color: var(--on-selected);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .row-meta
+  .pane-quick-button:is([aria-pressed='true'], :hover, :active) {
+  background: var(--selection-hit);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .row-meta
+  .pane-quick-button[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 var(--line) var(--on-selected);
+}
+
+:where(.listing-root)
+  .row.selected:where(
+    :not(
+      :root[data-window-inactive] .listing-root *,
+      .listing-root:has(.pane.active) .pane:not(.active, .active .pane) *
+    )
+  )
+  .row-meta
+  .pane-quick-button:focus-visible {
+  outline-color: var(--on-selected);
 }
 
 /* A lit action's accent glyph would vanish on the accent fill: on a

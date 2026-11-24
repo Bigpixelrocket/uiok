@@ -417,6 +417,43 @@ describe('SideBySide', () => {
       expect(root.dataset.layout).toBe('stacked');
     });
 
+    it('stacks a held pair whose chips grow by less than the narrowing, in a column the half shares', () => {
+      observe();
+      const { container } = render(
+        <SideBySide
+          first={<div className="pane-quick-row">chips</div>}
+          firstLabel="Settings"
+          from={600}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const chips = root.querySelector('.pane-quick-row') as HTMLElement;
+      let grown = 0;
+      // Two flexible columns share the half: the chip row has a quarter of
+      // the pair less 55px, so a 16px scrollbar takes 4px from it.
+      Object.defineProperty(chips, 'clientWidth', {
+        configurable: true,
+        get: () => root.clientWidth / 4 - 55
+      });
+      Object.defineProperty(chips, 'scrollWidth', { configurable: true, get: () => 100 + grown });
+      content(root, 50, 50);
+
+      widen(root, 620);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // The scrollbar: the row loses 4px and hides 4px of the same chips. Held.
+      widen(root, 604);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+      // The chips grow 4px: the row hides 8px, under half the narrowing (8px)
+      // but past what its own column lost, so the pair stacks.
+      grown = 4;
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('stacked');
+    });
+
     it('keeps the hold when the host draws the same chips again, and bounds it to a scrollbar', () => {
       observe();
       const pairOf = (label: string) => (

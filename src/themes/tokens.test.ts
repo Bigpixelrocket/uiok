@@ -709,6 +709,18 @@ const PAIRINGS = [
     'the track over the header',
     ...MARKED_GROUNDS
   ]),
+  // An on chip in a row's cell gives up its wash on a state fill and says it
+  // is on by its ring (listing.css); on the grey selection's fill, where this
+  // ring is not floored, it takes --control-border-strong (above).
+  ...pairs('var(--current-ring)', 3, [
+    'the cursor row',
+    'a hovered panel',
+    'a hovered listing',
+    'a hovered row over the ground',
+    'a hovered row over a listing',
+    'a hovered zebra row',
+    ...MARKED_GROUNDS
+  ]),
   ...pairs('var(--scrollbar-thumb)', 3, ['ground', 'panel', 'header']),
   ...pairs('var(--bg-panel)', 3, ['the off track']),
   ...pairs('var(--idle-mark)', 3, ['listing', 'the cursor row', 'panel', 'ground']),

@@ -366,6 +366,72 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
+  it('keeps chips in a cell legible on every state fill and selection', () => {
+    applyStylesheets(
+      styles.replaceAll(':hover', '.is-hovered').replaceAll(':focus-visible', '.is-focused')
+    );
+    const chips = `<span class="row-meta"><div class="pane-quick-row">
+        <button class="pane-quick-button quiet-track-item" aria-pressed="false">debug <span class="pane-quick-count">2</span></button>
+        <button class="pane-quick-button quiet-track-item" aria-pressed="true">develop</button>
+      </div></span>`;
+    document.body.innerHTML = `<section class="listing-root"><div class="pane active"><div class="pane-list pointer">
+        <div class="row" id="rest">${chips}</div>
+        <div class="row cursor" id="cursor">${chips}</div>
+        <div class="row marked" id="marked">${chips}</div>
+        <div class="row is-hovered" id="hovered">${chips}</div>
+        <div class="row selected" id="selected">${chips}</div>
+        <div class="row cursor selected" id="cursor-selected">${chips}</div>
+      </div></div>
+      <div class="pane"><div class="pane-list"><div class="row selected" id="grey">${chips}</div></div></div>
+    </section>`;
+    const style = (selector: string) =>
+      getComputedStyle(document.querySelector(selector) as Element);
+    const declared = (selector: string, property: string) =>
+      declaredValues(document.querySelector(selector) as Element, property);
+    const off = '[aria-pressed="false"]';
+    const on = '[aria-pressed="true"]';
+
+    // At rest on the list: the quiet tone, and an on chip's accent wash.
+    expect(style(`#rest ${off}`).color).toBe('var(--row-meta-text)');
+    expect(style(`#rest ${on}`).background).toBe('var(--accent-wash-strong)');
+
+    for (const row of ['cursor', 'marked', 'hovered', 'grey']) {
+      expect(style(`#${row} ${off}`).color).toBe('var(--text-on-surface)');
+      expect(style(`#${row} .pane-quick-count`).color).toBe('var(--text-on-surface)');
+      // An on chip gives up its wash and keeps its words; its ring says it is on.
+      // Transparent, as jsdom reads it.
+      expect(style(`#${row} ${on}`).background).toBe('rgba(0, 0, 0, 0)');
+      expect(style(`#${row} ${on}`).color).toBe('var(--text)');
+    }
+    for (const row of ['cursor', 'marked', 'hovered']) {
+      expect(declared(`#${row} ${on}`, 'box-shadow').at(-1)).toContain('var(--current-ring)');
+    }
+    // On the grey selection's fill the current ring is not floored: the strong edge is.
+    expect(declared(`#grey ${on}`, 'box-shadow')).toContain(
+      'inset 0 0 0 var(--line) var(--control-border-strong)'
+    );
+
+    for (const row of ['selected', 'cursor-selected']) {
+      for (const part of [off, on, '.pane-quick-count']) {
+        expect(style(`#${row} ${part}`).color).toBe('var(--on-selected)');
+      }
+      expect(style(`#${row} ${on}`).background).toBe('var(--selection-hit)');
+      expect(declared(`#${row} ${on}`, 'box-shadow')).toContain(
+        'inset 0 0 0 var(--line) var(--on-selected)'
+      );
+      const chip = document.querySelector(`#${row} ${off}`) as HTMLElement;
+      // Under the pointer: the highlight, without the on ring.
+      chip.classList.add('is-hovered');
+      expect(getComputedStyle(chip).background).toBe('var(--selection-hit)');
+      chip.classList.remove('is-hovered');
+      // The focus ring in the selection's words, not the accent it stands on.
+      chip.classList.add('is-focused');
+      expect(getComputedStyle(chip).outlineColor).toBe('var(--on-selected)');
+      chip.classList.remove('is-focused');
+    }
+    document.body.innerHTML = '';
+  });
+
   it('rings a focused chip in a cell inside it, since the cell clips', () => {
     applyStylesheets(styles.replaceAll(':focus-visible', '.is-focused'));
     document.body.innerHTML = `<section class="listing-root"><div class="row">
