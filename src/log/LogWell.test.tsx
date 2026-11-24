@@ -122,7 +122,14 @@ describe('LogWell', () => {
   });
 });
 
-describe('LogWell with many lines', () => {
+/**
+ * The budget of a case that draws a long well whole, a select-all of 400
+ * lines four times over the longest: about a second on a quiet machine,
+ * past the default five seconds on a shared CI runner.
+ */
+const MANY_LINES_TIMEOUT_MS = 20_000;
+
+describe('LogWell with many lines', { timeout: MANY_LINES_TIMEOUT_MS }, () => {
   /** The well's laid-out height: ten lines of the 18px each counts as until measured. */
   const VIEW = 180;
   const lineOf = (index: number) => ({ key: index, source: 'web', text: `line ${index}` });
