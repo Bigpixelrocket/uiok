@@ -119,7 +119,10 @@ const popUpSpace = (button: Element): { readonly shows: number; readonly room: n
 
   if (part !== null) seen = within(seen, innerSpan(part, false));
   for (let box = button.parentElement; box !== null && box !== part; box = box.parentElement) {
-    if (getComputedStyle(box).overflowX !== 'visible') seen = within(seen, innerSpan(box, false));
+    const overflow = getComputedStyle(box).overflowX;
+
+    // An empty value is no style read (a document without a stylesheet): no clip.
+    if (overflow !== '' && overflow !== 'visible') seen = within(seen, innerSpan(box, false));
   }
   const drawn = within(seen, { left: own.left, right: own.right });
   const holder =
@@ -145,6 +148,8 @@ const CUT_CONTROLS = `${SCROLLING_CHIPS}, ${POP_UP_BUTTONS}`;
  * content less what it shows (its span within every box that clips it).
  */
 interface ControlsInHalves {
+  /** How many of the controls, the first ones, are chip rows; the rest are pop-up buttons. */
+  readonly chips: number;
   readonly hidden: number;
   readonly rooms: readonly number[];
   readonly extents: readonly number[];
@@ -168,7 +173,9 @@ const controlsInHalves = (element: HTMLElement, stackedHeight: number | null): C
   const rows = [...element.querySelectorAll(SCROLLING_CHIPS)];
   const buttons = [...element.querySelectorAll(POP_UP_BUTTONS)];
 
-  if (rows.length + buttons.length === 0) return { hidden: 0, rooms: [], extents: [], hiddens: [] };
+  if (rows.length + buttons.length === 0) {
+    return { chips: 0, hidden: 0, rooms: [], extents: [], hiddens: [] };
+  }
   const layout = element.getAttribute('data-layout');
   const height = element.style.minHeight;
 
@@ -201,7 +208,7 @@ const controlsInHalves = (element: HTMLElement, stackedHeight: number | null): C
   if (layout === null) element.removeAttribute('data-layout');
   else element.setAttribute('data-layout', layout);
   element.style.minHeight = height;
-  return { hidden: Math.max(0, ...hiddens), rooms, extents, hiddens };
+  return { chips: rows.length, hidden: Math.max(0, ...hiddens), rooms, extents, hiddens };
 };
 
 /**
@@ -215,6 +222,7 @@ const controlsInHalves = (element: HTMLElement, stackedHeight: number | null): C
  * that grew and took more, leaves anything hidden.
  */
 const controlsHeld = (fit: ControlsInHalves, now: ControlsInHalves, lost: number): boolean =>
+  fit.chips === now.chips &&
   fit.rooms.length === now.rooms.length &&
   now.hiddens.every(
     (hidden, index) =>
@@ -266,10 +274,12 @@ const contentRoom = (element: HTMLElement): number => {
  * narrowed by its sidebar or a split stacks them though the window is wide.
  *
  * A one-line chip row counts at its whole width, and the halves are then
- * checked as drawn, so no chip scrolls out of sight in a half.
+ * checked as drawn, so no chip scrolls out of sight and no pop-up button
+ * (a `Select`) is cut in a half.
  *
  * The min-content widths are read in the same `ResizeObserver` callback
- * that reads the room (one forced layout per resize frame, never a read and
+ * that reads the room (one forced layout per resize frame, two with a
+ * one-line chip row and three with a pop-up button, never a read and
  * a write interleaved), and never while the room is under the floor, where
  * nothing they say could stand the pair side by side. Content that changes
  * them decides again with no resize of the pair, as the parts' own boxes

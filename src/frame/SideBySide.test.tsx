@@ -776,14 +776,21 @@ describe('SideBySide', () => {
     it('lifts a pop-up button’s hold on its column for the read alone', () => {
       applyStylesheets(readStylesheet('src/styles.css'));
       document.body.innerHTML = `<div class="side-by-side" data-natural>
-        <div class="side-by-side-part"><select class="field" id="pop"></select></div>
-        <div class="side-by-side-part"><select class="field" id="list" multiple></select></div>
+        <div class="side-by-side-part"><div class="field-value"><select class="field" id="pop"></select></div></div>
+        <div class="side-by-side-part">
+          <select class="field" id="list" multiple></select>
+          <select class="field" id="box" size="4"></select>
+        </div>
       </div>`;
       const pop = getComputedStyle(document.querySelector('#pop') as Element);
       const list = getComputedStyle(document.querySelector('#list') as Element);
 
       expect([pop.minWidth, pop.maxWidth]).toEqual(['max-content', 'none']);
       expect(list.minWidth).not.toBe('max-content');
+      // A list box shows its rows, so no hold of its is lifted.
+      expect(getComputedStyle(document.querySelector('#box') as Element).minWidth).not.toBe(
+        'max-content'
+      );
       document.body.innerHTML = '';
     });
 
