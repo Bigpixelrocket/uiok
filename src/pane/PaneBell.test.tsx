@@ -2,10 +2,29 @@ import { act, render } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
-import { TreePane } from '../frame/Tree.js';
+import { TreePane, TreeTool } from '../frame/Tree.js';
 import { PaneBox } from './Pane.js';
 
 const styles = readStylesheet('src/styles.css');
+
+/**
+ * What the rules inside the stylesheets' `prefers-reduced-motion: reduce`
+ * blocks that match `element` declare for `property`, in source order.
+ */
+const reducedMotionValues = (element: Element, property: string): string[] =>
+  [...document.styleSheets]
+    .flatMap((sheet) => [...sheet.cssRules])
+    .filter(
+      (rule): rule is CSSMediaRule =>
+        rule instanceof CSSMediaRule && rule.conditionText.includes('prefers-reduced-motion')
+    )
+    .flatMap((media) => [...media.cssRules])
+    .filter(
+      (rule): rule is CSSStyleRule =>
+        rule instanceof CSSStyleRule && element.matches(rule.selectorText)
+    )
+    .map((rule) => rule.style.getPropertyValue(property))
+    .filter((value) => value !== '');
 
 describe("PaneBox's bell", () => {
   beforeEach(() => {
@@ -82,5 +101,61 @@ describe("PaneBox's bell", () => {
       vi.advanceTimersByTime(400);
     });
     expect(pane.className).toBe('pane tree-pane active');
+  });
+  it("shoves a tree's tool row under the cursor as it does a tree row", () => {
+    const tree = (bell: number) => (
+      <div className="listing-root">
+        <TreePane active bell={bell}>
+          <TreeTool cursor text="Show 20 more" />
+        </TreePane>
+      </div>
+    );
+    const { container, rerender } = render(tree(0));
+
+    applyStylesheets(styles);
+    rerender(tree(1));
+    const tool = container.querySelector('.tree-tool') as HTMLElement;
+
+    expect(tool.classList.contains('cursor')).toBe(true);
+    expect(declaredValues(tool, 'animation')).toEqual([
+      'row-nudge-b var(--duration-slow) var(--ease-in-out)'
+    ]);
+  });
+
+  it("flashes without motion with every part of the tree's cursor row in the selection's ink", () => {
+    const tree = (bell: number) => (
+      <div className="listing-root">
+        <TreePane active bell={bell}>
+          <div className="row cursor">
+            <span className="tree-glyph" />
+            <span className="row-name tree-name">
+              orders <span className="tree-detail">view</span>
+            </span>
+          </div>
+          <TreeTool cursor text="Show 20 more" />
+        </TreePane>
+      </div>
+    );
+    const { container, rerender } = render(tree(0));
+
+    rerender(tree(1));
+    applyStylesheets(styles);
+    const row = container.querySelector('.row') as HTMLElement;
+    const tool = container.querySelector('.tree-tool') as HTMLElement;
+
+    for (const element of [row, tool]) {
+      expect(reducedMotionValues(element, 'animation')).toEqual(['none']);
+      expect(reducedMotionValues(element, '--row-fill')).toEqual(['var(--selected-bg)']);
+    }
+    // Each part that sets its own ink takes the selection's, which holds
+    // its contrast on the selection fill in every theme (tokens.test.ts).
+    for (const part of [
+      row.querySelector('.tree-glyph'),
+      row.querySelector('.tree-detail'),
+      row.querySelector('.row-name'),
+      tool
+    ]) {
+      expect(reducedMotionValues(part as Element, 'color')).toEqual(['var(--on-selected)']);
+    }
   });
 });

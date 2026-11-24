@@ -124,6 +124,22 @@ interface SelectedLines {
   readonly end: LogLine['key'] | typeof FOOT;
 }
 
+/** Whether two ranges start and end at the same boundaries. */
+const sameBounds = (a: AbstractRange, b: AbstractRange): boolean =>
+  a.startContainer === b.startContainer &&
+  a.startOffset === b.startOffset &&
+  a.endContainer === b.endContainer &&
+  a.endOffset === b.endOffset;
+
+/**
+ * Per document, a live copy of the last selection a well pinned: every
+ * well that pins ends of that one selection holds the same copy, and each
+ * well that moves an end moves the copy with it, so a selection running
+ * from one well's undrawn room into another's still matches the copy the
+ * second well holds once the first has moved its end.
+ */
+const pinnedRanges = new WeakMap<Document, Range>();
+
 /**
  * The index of the line a selection's `side` boundary at `node` and
  * `offset` takes in, in `well`: its line, or, in the room standing for
@@ -211,21 +227,30 @@ const LogRow = memo(function LogRow({
 }): ReactElement {
   return (
     <div className="log-line" data-index={index} data-tone={line.tone}>
+      {/* The source, then the bar with a no-break space either side, kept
+          on one line together, so a copy takes the line as one line of text
+          as drawn ("web | ready"; the clipboard's plain text takes the
+          spaces as spaces), and a long first word wraps in the words'
+          column, never before or after the bar. The bar alone is hidden:
+          the spaces keep the source and the words two words to a screen
+          reader. */}
       {sourced ? (
-        <span
-          className="log-source"
-          style={
-            colour === undefined
-              ? undefined
-              : ({ '--log-source': logSourceColour(colour) } as CSSProperties)
-          }
-        >
-          {line.source ?? null}
-        </span>
-      ) : null}
-      {sourced ? (
-        <span aria-hidden className="log-bar">
-          |
+        <span className="log-lead">
+          <span
+            className="log-source"
+            style={
+              colour === undefined
+                ? undefined
+                : ({ '--log-source': logSourceColour(colour) } as CSSProperties)
+            }
+          >
+            {line.source ?? null}
+          </span>
+          <span className="log-bar">
+            {'\u00a0'}
+            <span aria-hidden>|</span>
+            {'\u00a0'}
+          </span>
         </span>
       ) : null}
       <span className="log-text">
@@ -289,12 +314,13 @@ export function LogWell({
   const lastTop = useRef(0);
   // A selection with an end in room standing for lines not drawn yet, or
   // between the well's children: the line each such end takes in, by key,
-  // whether the selection runs backward, and a live copy of its range.
-  // Drawing the lines takes that room away and can leave an end on the
-  // wrong side of them (or the range collapsed), so each such end moves to
-  // its line once the line is drawn, while the selection still matches the
-  // copy (the browser moves both alike as the lines go in; a selection made
-  // since does not match).
+  // whether the selection runs backward, and a live copy of its range,
+  // shared with every other well that pins the same selection
+  // (`pinnedRanges`). Drawing the lines takes that room away and can leave
+  // an end on the wrong side of them (or the range collapsed), so each such
+  // end moves to its line once the line is drawn, while the selection still
+  // matches the copy (the browser moves both alike as the lines go in; a
+  // selection made since does not match).
   const pin = useRef<{
     readonly start: LogLine['key'] | null;
     readonly end: LogLine['key'] | null;
@@ -570,17 +596,24 @@ export function LogWell({
       const startInRoom = first !== null && inRoom(range.startContainer, first);
       const endInRoom = last !== null && inRoom(range.endContainer, last);
 
-      pin.current =
-        startInRoom || endInRoom
-          ? {
-              start: startInRoom ? startLine.key : null,
-              end: endInRoom ? endLine.key : null,
-              backward:
-                selection?.anchorNode === range.endContainer &&
-                selection.anchorOffset === range.endOffset,
-              range: range.cloneRange()
-            }
-          : null;
+      if (startInRoom || endInRoom) {
+        // Another well that pinned this selection already holds its copy.
+        const shared = pinnedRanges.get(document);
+        const kept =
+          shared !== undefined && sameBounds(shared, range) ? shared : range.cloneRange();
+
+        pinnedRanges.set(document, kept);
+        pin.current = {
+          start: startInRoom ? startLine.key : null,
+          end: endInRoom ? endLine.key : null,
+          backward:
+            selection?.anchorNode === range.endContainer &&
+            selection.anchorOffset === range.endOffset,
+          range: kept
+        };
+      } else {
+        pin.current = null;
+      }
 
       setSelected((before) =>
         before?.start === next.start && before.end === next.end ? before : next
@@ -633,14 +666,12 @@ export function LogWell({
     const copy = held.range;
 
     // A selection made or changed since it was read is not the one to move.
-    if (
-      range.startContainer !== copy.startContainer ||
-      range.startOffset !== copy.startOffset ||
-      range.endContainer !== copy.endContainer ||
-      range.endOffset !== copy.endOffset
-    ) {
-      return;
-    }
+    if (!sameBounds(range, copy)) return;
+    // Its direction as it stands, so a host's reversal since the read
+    // stays; a range the drawing collapsed has none, so the one read holds.
+    const backward = range.collapsed
+      ? held.backward
+      : selection.anchorNode === range.endContainer && selection.anchorOffset === range.endOffset;
     const start =
       startRow === undefined
         ? ([range.startContainer, range.startOffset] as const)
@@ -650,8 +681,12 @@ export function LogWell({
         ? ([range.endContainer, range.endOffset] as const)
         : ([endRow, endRow.childNodes.length] as const);
 
-    if (held.backward) selection.setBaseAndExtent(...end, ...start);
+    if (backward) selection.setBaseAndExtent(...end, ...start);
     else selection.setBaseAndExtent(...start, ...end);
+    // The copy follows, so another well pinning this selection still finds
+    // it the one it read.
+    copy.setStart(...start);
+    copy.setEnd(...end);
   });
 
   const drawn: ReactNode[] = [];

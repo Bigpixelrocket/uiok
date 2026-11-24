@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { applyStylesheets, readStylesheet } from '../../test/stylesheets.js';
+import { applyStylesheets, declaredValues, readStylesheet } from '../../test/stylesheets.js';
 
 import { LogWell } from './LogWell.js';
 
@@ -35,6 +35,42 @@ describe('LogWell', () => {
       )
     ).toBe('6ch');
     expect(container.querySelectorAll('.log-line')[3]?.getAttribute('data-tone')).toBe('danger');
+  });
+
+  it('copies each line as one line of text, its source, the bar, and its words', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    const { container } = render(
+      <LogWell
+        label="Combined log"
+        lines={[
+          { key: 1, source: 'web', text: 'Server running' },
+          { key: 2, source: 'queue.1', text: 'Processing jobs' }
+        ]}
+      />
+    );
+    const rows = [...container.querySelectorAll<HTMLElement>('.log-line')];
+
+    // A no-break space either side of the bar.
+    expect(rows.map((row) => row.textContent)).toEqual([
+      'web\u00a0|\u00a0Server running',
+      'queue.1\u00a0|\u00a0Processing jobs'
+    ]);
+    // One run of text: no grid or block of its own for any part, which a
+    // copy would end with a line break of its own.
+    for (const row of rows) {
+      expect(declaredValues(row, 'display')).toEqual([]);
+      expect(declaredValues(row.querySelector('.log-source') as Element, 'display')).toEqual([
+        'inline-block'
+      ]);
+      for (const part of ['.log-bar', '.log-text']) {
+        expect(declaredValues(row.querySelector(part) as Element, 'display')).toEqual([]);
+      }
+      // The source, the bar, and its spaces stay on one line, so the words
+      // wrap in their own column and never leave the bar at a line's end.
+      expect(declaredValues(row.querySelector('.log-lead') as Element, 'white-space')).toEqual([
+        'nowrap'
+      ]);
+    }
   });
 
   it('draws the words alone when no line has a source, and says when it is empty', () => {
@@ -295,6 +331,44 @@ describe('LogWell with many lines', () => {
     );
     expect(well.scrollTop).toBe(700 * 18);
     expect(drawnLines(container)).toContain('line 900');
+  });
+
+  it('reads the view where a clamp put it when the anchor line is dropped too', () => {
+    const { container, rerender } = render(
+      <LogWell follow={false} label="Combined log" lines={linesTo(1000)} />
+    );
+    const well = container.querySelector('.log-well') as HTMLElement;
+    const tall = 100 * 18;
+    let stored = 0;
+
+    // A well 100 lines tall, its scroll clamped by the browser.
+    Object.defineProperty(well, 'clientHeight', { configurable: true, get: () => tall });
+    Object.defineProperty(well, 'scrollTop', {
+      configurable: true,
+      get: () => Math.max(0, Math.min(stored, well.scrollHeight - tall)),
+      set: (value: number) => {
+        stored = value;
+      }
+    });
+    well.scrollTop = 900 * 18;
+    fireEvent.scroll(well);
+    // The host replaces every line, line 900 included, with 300 new ones.
+    rerender(
+      <LogWell
+        follow={false}
+        label="Combined log"
+        lines={Array.from({ length: 300 }, (_, index) => ({
+          key: `new-${index}`,
+          text: `new ${index}`
+        }))}
+      />
+    );
+    // The clamp leaves the last 100 lines in view, and the well draws from
+    // the first of them, read from the clamped scroll.
+    expect(well.scrollTop).toBe(200 * 18);
+    const drawn = drawnLines(container);
+    expect(drawn).toContain('new 200');
+    expect(drawn).not.toContain('new 100');
   });
 
   it('keeps the line at the top in place when the host drops lines before it', () => {
@@ -711,5 +785,149 @@ describe('LogWell with many lines', () => {
 
     selection.removeAllRanges();
     changed();
+  });
+
+  /** The words of the line drawn with `text`, in `container`. */
+  const wordsIn = (container: HTMLElement, text: string): Node =>
+    (
+      [...container.querySelectorAll('.log-text')].find(
+        (words) => words.textContent === text
+      ) as HTMLElement
+    ).firstChild as Node;
+  const selectionChanged = () =>
+    act(() => {
+      document.dispatchEvent(new Event('selectionchange'));
+    });
+
+  it('keeps a backward selection backward as it draws the room it starts in', () => {
+    const { container } = render(
+      <LogWell follow={false} label="Combined log" lines={linesTo(400)} />
+    );
+    const well = container.querySelector('.log-well') as HTMLElement;
+    const selection = document.getSelection() as Selection;
+
+    well.scrollTop = 300 * 18;
+    fireEvent.scroll(well);
+    // Dragged up from line 310 into the room before the lines drawn. Each
+    // boundary at a node's start: jsdom moves a later offset inside a text
+    // node when nodes go in before its range's start, which no browser does.
+    selection.setBaseAndExtent(
+      wordsIn(container, 'line 310'),
+      0,
+      well.firstElementChild as Node,
+      0
+    );
+    selectionChanged();
+
+    expect(selection.anchorNode).toBe(wordsIn(container, 'line 310'));
+    expect(selection.anchorOffset).toBe(0);
+    expect(selection.focusNode).toBe(wordsIn(container, 'line 0').parentElement?.parentElement);
+    expect(selection.focusOffset).toBe(0);
+    expect(selection.toString()).toContain('line 0');
+
+    selection.removeAllRanges();
+    selectionChanged();
+  });
+
+  it('keeps the direction a host script gives a selection before the lines are drawn', () => {
+    const { container } = render(
+      <LogWell follow={false} label="Combined log" lines={linesTo(400)} />
+    );
+    const well = container.querySelector('.log-well') as HTMLElement;
+    const selection = document.getSelection() as Selection;
+
+    well.scrollTop = 300 * 18;
+    fireEvent.scroll(well);
+    const words = wordsIn(container, 'line 310');
+    const room = well.firstElementChild as Node;
+
+    // Read backward, then turned forward over the same boundaries before
+    // the commit that draws the room (each at a node's start, as above).
+    act(() => {
+      selection.setBaseAndExtent(words, 0, room, 0);
+      document.dispatchEvent(new Event('selectionchange'));
+      selection.setBaseAndExtent(room, 0, words, 0);
+    });
+
+    expect(selection.anchorNode).toBe(wordsIn(container, 'line 0').parentElement?.parentElement);
+    expect(selection.anchorOffset).toBe(0);
+    expect(selection.focusNode).toBe(words);
+    expect(selection.focusOffset).toBe(0);
+
+    selection.removeAllRanges();
+    selectionChanged();
+  });
+
+  it('takes in every line after a start in the room after the lines drawn', () => {
+    const { container } = render(
+      <div>
+        <LogWell follow={false} label="Combined log" lines={linesTo(400)} />
+        <p className="after">after the log</p>
+      </div>
+    );
+    const well = container.querySelector('.log-well') as HTMLElement;
+    const selection = document.getSelection() as Selection;
+    const room = well.lastElementChild as HTMLElement;
+    const first = Number(room.dataset.from);
+
+    expect(room.dataset.to).toBe('400');
+    expect(first).toBeLessThan(100);
+    selection.setBaseAndExtent(room, 0, container.querySelector('.after')?.firstChild as Node, 3);
+    selectionChanged();
+
+    const text = selection.toString();
+    expect(text).toContain(`line ${first}`);
+    expect(text).toContain('line 399');
+    expect(text).not.toContain(`line ${first - 1}\n`);
+    expect(selection.anchorNode).toBe(
+      wordsIn(container, `line ${first}`).parentElement?.parentElement
+    );
+
+    selection.removeAllRanges();
+    selectionChanged();
+  });
+
+  it("keeps both ends of one selection from one well's room into another's", () => {
+    const { container } = render(
+      <div>
+        <LogWell follow={false} label="First log" lines={linesTo(400)} />
+        <LogWell
+          follow={false}
+          label="Second log"
+          lines={Array.from({ length: 400 }, (_, index) => ({
+            key: index,
+            text: `second ${index}`
+          }))}
+        />
+      </div>
+    );
+    const [first, second] = [...container.querySelectorAll<HTMLElement>('.log-well')] as [
+      HTMLElement,
+      HTMLElement
+    ];
+    const selection = document.getSelection() as Selection;
+
+    // The second well scrolled down, so it starts with room for its first lines.
+    second.scrollTop = 300 * 18;
+    fireEvent.scroll(second);
+    const tail = first.lastElementChild as HTMLElement;
+    const head = second.firstElementChild as HTMLElement;
+    const from = Number(tail.dataset.from);
+    const to = Number(head.dataset.to);
+
+    expect(head.classList.contains('log-gap')).toBe(true);
+    // From the first well's room after its lines to the second's before them.
+    selection.setBaseAndExtent(tail, 0, head, 0);
+    selectionChanged();
+
+    const text = selection.toString();
+    expect(text).toContain(`line ${from}`);
+    expect(text).toContain('line 399');
+    expect(text).toContain('second 0');
+    expect(text).toContain(`second ${to - 1}`);
+    expect(text).not.toContain(`second ${to}`);
+
+    selection.removeAllRanges();
+    selectionChanged();
   });
 });

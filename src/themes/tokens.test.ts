@@ -448,6 +448,8 @@ const ON = {
   'a match over the cursor row': ['var(--bg-panel)', 'var(--cursor-row-bg)', 'var(--match-bg)'],
   'selected text over a panel': ['var(--bg-panel)', 'var(--text-selection-bg)'],
   'the selection': ['var(--selected-bg)'],
+  // A pane's bell without motion: its cursor row flips to the selection fill.
+  'the bell flash': ['var(--selected-bg)'],
   'the cursor on the selection': ['var(--selected-cursor-bg)'],
   'a match on the selection': ['var(--selection-hit)'],
   'the primary': ['var(--primary)'],
@@ -651,7 +653,10 @@ const PAIRINGS = [
   ...pairs('var(--on-selected)', 4.5, [
     'the selection',
     'the cursor on the selection',
-    'a match on the selection'
+    'a match on the selection',
+    // Every word and glyph on a ringing cursor row under reduced motion
+    // (listing.css), a tree's glyph and quiet words included.
+    'the bell flash'
   ]),
   ...pairs('var(--on-selected-dim)', 4.5, ['the selection', 'the cursor on the selection']),
   ...pairs('var(--on-accent)', 4.5, ['the accent', 'the accent held']),

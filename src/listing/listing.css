@@ -2960,30 +2960,44 @@ button.crumb-label.crumb-siblings > svg {
 
 /* ---- The visual bell (PaneBox's bell) ----
    A key that could not act shoves the pane's cursor row sideways for one
-   beat, the wrong-password shake. The parity classes alternate `bell-0`
-   and `bell-1` on consecutive rings (useBellBeat), on keyframes of two
-   names with the same steps (menu.css), so every refused key shoves again,
-   the repeats of a held one included. Without motion the row flips to the
-   selection fill for the beat instead, its words in the selection's. */
-:where(.listing-root) .pane.bell-0 .row.cursor {
+   beat, the wrong-password shake: a listing's or a tree's row, or a tree's
+   tool row (TreeTool) the cursor stands on. The parity classes alternate
+   `bell-0` and `bell-1` on consecutive rings (useBellBeat), on keyframes of
+   two names with the same steps (menu.css), so every refused key shoves
+   again, the repeats of a held one included. Without motion the row flips
+   to the selection fill for the beat instead, every word and glyph on it
+   in the selection's ink, a tree's glyph and quiet words included. */
+:where(.listing-root) .pane.bell-0 :is(.row, .tree-tool).cursor {
   animation: row-nudge-a var(--duration-slow) var(--ease-in-out);
 }
 
-:where(.listing-root) .pane.bell-1 .row.cursor {
+:where(.listing-root) .pane.bell-1 :is(.row, .tree-tool).cursor {
   animation: row-nudge-b var(--duration-slow) var(--ease-in-out);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  :where(.listing-root) .pane:is(.bell-0, .bell-1) .row.cursor {
+  :where(.listing-root) .pane:is(.bell-0, .bell-1) :is(.row, .tree-tool).cursor {
     animation: none;
     --row-fill: var(--selected-bg);
     background: var(--row-fill);
   }
 
+  /* Past the inks a cursor row's parts set of their own (a tree's glyph
+     and quiet words, a tool's glyph and field, a row's action), which weigh less. */
+  :where(.listing-root) .pane:is(.bell-0, .bell-1) .tree-tool.cursor,
   :where(.listing-root)
     .pane:is(.bell-0, .bell-1)
-    .row.cursor
-    :is(.row-icon, .row-name, .row-meta) {
+    :is(.row, .tree-tool).cursor
+    :is(
+      .row-icon,
+      .row-name,
+      .row-meta,
+      .tree-glyph,
+      .tree-detail,
+      .tree-note-glyph,
+      .tree-filter-input,
+      .pane-act
+    ) {
     color: var(--on-selected);
   }
 }
