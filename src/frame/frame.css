@@ -863,6 +863,15 @@
   grid-template-columns: min-content;
 }
 
+/* For one more read while the component checks the halves (data-natural,
+   gone before the browser paints): a pop-up button stands at its items'
+   whole width, unheld by its column, so the width it would need there is
+   read beside the width it has. */
+.side-by-side[data-natural] select:not([multiple], [size]) {
+  min-width: max-content;
+  max-width: none;
+}
+
 .side-by-side[data-measuring] > .side-by-side-part:first-child {
   border-block-end: var(--line) solid var(--border);
   border-inline-end: var(--line) solid var(--border);

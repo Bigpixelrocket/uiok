@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.7.3] - 2026-11-24
+
+### Added
+
+- `PaneTabItem`'s `live`: a tab that is live (its process takes input, a stream is open), in the host's words ("Taking input"). The tab is lit with an accent ring round a dot after its name, apart from a state mark, a spinner, or a dot in `mark`; the words are its tooltip and join the tab's accessible description, in the strip and in the folded menu. The mark, like a mark ahead of the name, takes its own room on top of the label's floor (`--pane-tab-live`, `--pane-tab-lead`).
+- `StateMark`'s `wordTone`: the word's tone where it differs from the mark's, such as a quiet ring with a failure's word (`tone="muted"`, `wordTone="danger"`). In a row the word takes that tone; a quiet word takes the on-surface tone on a state fill, and a selection paints every word in its own.
+
+### Fixed
+
+- `FilterChips` in a listing `Row`'s `Cell` stay legible on every row state in every theme. On the cursor, a mark, the pointer's row hover, and the grey selection, a chip at rest and every count take the on-surface tone, and a chip that is on gives up its accent wash for its words in the text colour and its ring. On the neutral fill of a quiet mark or the grey selection, where the current item's ring and the accent focus ring are not floored, both take the strong control edge; the ring is set through `--current-ring`, so a held on chip still shows its press. On a selection that holds the keys, chips and counts take the selection's words, an on chip stands on the selection's highlight inside a ring in those words, a chip under the pointer or held takes the highlight, and the focus ring takes the selection's words. Before, a chip at rest stayed in the quiet tone, an on chip's wash and ring matched the selection's accent (1:1), and its words fell to 2.2:1 in some themes. A contrast invariant now holds an on chip's ring at 3:1 on the state fills.
+- `SideBySide` stacks a pair where a half would cut a pop-up button (a `Select`) at its end. A select narrows to its column in a form, or is clipped by its cell in a listing, so it counted as fitting at any width; the halves are now read with each pop-up button's whole width beside the width it shows.
+- A `SideBySide` pair held side by side through a scrollbar hides chips in a one-line `FilterChips` row only while each row's content is no wider than where they last all fit, and each hiding row has lost no more room than half the narrowing, so neither chips that grew nor a column beside them that grew can leave chips hidden. A row's content is read from its chips end to end, not its `scrollWidth`, which reports the row's own width while it fits. Before, the allowance was half the narrowing, which let chips that grew a little stay hidden where the row's column shares its half with another flexible column.
+
 ## [0.7.2] - 2026-11-24
 
 ### Added
@@ -387,7 +400,8 @@ The first published version. The package is published to npm as `@bigpixelrocket
 - `lucide-react` 1.31 or later within 1.x is a peer dependency.
 - Terminal (`@bigpixelrocket/uiok/terminal`, `docs/components/terminal.md`): `Terminal`, Ghostty's VT engine as WebAssembly drawn on a canvas, read-only without `onInput`, with a Copy and Paste menu whose chords come from `menuChords`, a visual bell, line-editing actions bound by `actionForKey`, and `TerminalScrollbackContext`. The package root does not export it, so an app without a terminal never loads its assets. Its words are the new `terminal` label group; the package now ships a `NOTICE` with the engine's, adapter's, and font's licences.
 
-[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.2...HEAD
+[Unreleased]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.3...HEAD
+[0.7.3]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.2...v0.7.3
 [0.7.2]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/Bigpixelrocket/uiok/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/Bigpixelrocket/uiok/compare/v0.6.0...v0.7.0

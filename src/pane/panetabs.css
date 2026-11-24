@@ -56,8 +56,11 @@
    the others stand behind it on the ground, shorter and fainter. A tab takes
    no focus: a press shows it, and the host's verbs are the keyboard's way
    in. It shrinks no narrower than its label's floor (--pane-tab-floor, in
-   characters, which PaneTabs sets) past its insets, its border, and the
-   room it keeps for its close control. */
+   characters, which PaneTabs sets) past its insets, its border, the room it
+   keeps for its close control, and the room of any mark it carries beside
+   its label (`--pane-tab-lead` for a mark ahead of the name,
+   `--pane-tab-live` for a live tab's lit mark), so a mark never takes its
+   room from the label's floor. */
 :where(.listing-root) .pane-tab {
   position: relative;
   flex: 0 1 auto;
@@ -67,10 +70,11 @@
   box-sizing: border-box;
   min-width: calc(
     var(--pane-tab-floor, 0ch) + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) +
-      2 * var(--line)
+      2 * var(--line) + var(--pane-tab-lead, 0px) + var(--pane-tab-live, 0px)
   );
   max-width: calc(
-    32ch + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) + 2 * var(--line)
+    32ch + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) + 2 * var(--line) +
+      var(--pane-tab-lead, 0px) + var(--pane-tab-live, 0px)
   );
   /* Shorter than the tab in front, and clear of the frame's top hairline. */
   height: calc(var(--pane-tab-height) - var(--space-2));
@@ -97,17 +101,21 @@
   min-width: 0;
 }
 
-/* A mark ahead of the name takes its own room on top of the floor. */
+/* A mark ahead of the name, and a live tab's lit mark after it, each take
+   their own room on top of the floor. */
 :where(.listing-root) .pane-tab:has(> .pane-tab-face > .pane-tab-mark) {
-  min-width: calc(
-    var(--pane-tab-floor, 0ch) + var(--space-4) + var(--space-2) + var(--space-2) + var(--icon-lg) +
-      2 * var(--line) + var(--icon-md) + var(--space-2)
-  );
+  --pane-tab-lead: calc(var(--icon-md) + var(--space-2));
+}
+
+:where(.listing-root) .pane-tab:has(> .pane-tab-face > .pane-tab-live) {
+  --pane-tab-live: calc(var(--icon-lg) + var(--space-2));
 }
 
 /* A tab with no close control, pin, or mark of its own has nothing to keep room for. */
 :where(.listing-root)
-  .pane-tab:not(:has(> .pane-tab-close, > .pane-tab-face > :is(.pane-tab-pin, .pane-tab-dirty))) {
+  .pane-tab:not(
+    :has(> .pane-tab-close, > .pane-tab-face > :is(.pane-tab-pin, .pane-tab-dirty, .pane-tab-live))
+  ) {
   padding-right: var(--space-4);
 }
 
@@ -248,6 +256,23 @@
 :where(.listing-root) .pane-tab.dirty:not(:hover) .pane-tab-close,
 :where(.listing-root) .pane-tab.dirty:has(> .pane-tab-close):hover .pane-tab-dirty {
   display: none;
+}
+
+/* A live tab (`live`: its process takes input) is lit: an accent ring
+   round a dot after its name, a shape no state mark, spinner, or host dot
+   takes, in the accent, which keeps 3:1 on a tab at the back, a hovered
+   tab, and the tab in front in every theme. It keeps its place under the
+   pointer. In the folded menu the row carries it with its other marks. */
+:where(.listing-root) .pane-tab-live {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+}
+
+:where(.listing-root) .pane-tab-live > svg {
+  color: var(--accent);
 }
 
 /* A pinned tab stands before the pin rule, keeps its width however crowded

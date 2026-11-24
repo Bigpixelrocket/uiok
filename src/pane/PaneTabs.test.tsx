@@ -113,6 +113,58 @@ describe('PaneTabs', () => {
     expect(box('shop_archive/orders').style.getPropertyValue('--pane-tab-floor')).toBe('11ch');
   });
 
+  it('lights a live tab apart from its other marks, its words its tooltip and read with the tab', () => {
+    strip({
+      tabs: [
+        ...TABS,
+        { id: 'logs', name: 'logs', live: 'Taking input', tip: 'prod / logs', dirty: true },
+        { id: 'quiet', name: 'quiet', live: '' },
+        { id: 'blank', name: 'blank', live: '   ' }
+      ]
+    });
+
+    const live = box('logs').querySelector('.pane-tab-live') as HTMLElement;
+    expect(live.getAttribute('aria-hidden')).toBe('true');
+    expect(live.dataset.tooltip).toBe('Taking input');
+    expect(live.querySelector('svg')).not.toBeNull();
+    // After the name, before the dirty mark; its words join the description.
+    expect([...(tab('logs').children as HTMLCollection)].map((part) => part.className)).toEqual([
+      'pane-tab-label',
+      'pane-tab-live',
+      'pane-tab-dirty'
+    ]);
+    expect(tab('logs').getAttribute('aria-description')).toBe(
+      'prod / logs, Taking input, Changes not saved'
+    );
+    // Empty words are no live state.
+    for (const name of ['quiet', 'blank']) {
+      expect(box(name).querySelector('.pane-tab-live')).toBeNull();
+      expect(tab(name).hasAttribute('aria-description')).toBe(false);
+    }
+  });
+
+  it('keeps a live tab’s lit mark, and a lead mark, out of its label’s floor', () => {
+    applyStylesheets(readStylesheet('src/styles.css'));
+    strip({
+      tabs: [
+        { id: 'plain', name: 'plain' },
+        { id: 'lit', name: 'lit', live: 'Taking input' },
+        { id: 'both', name: 'both', live: 'Taking input', mark: <span /> }
+      ],
+      front: 'plain'
+    });
+    const room = (name: string, token: string) =>
+      getComputedStyle(box(name)).getPropertyValue(token).trim();
+
+    expect(room('plain', '--pane-tab-live')).toBe('');
+    expect(room('lit', '--pane-tab-live')).toBe('calc(var(--icon-lg) + var(--space-2))');
+    expect(room('both', '--pane-tab-live')).toBe('calc(var(--icon-lg) + var(--space-2))');
+    expect(room('both', '--pane-tab-lead')).toBe('calc(var(--icon-md) + var(--space-2))');
+    // The floor adds both rooms on top of the label's.
+    expect(declaredValues(box('lit'), 'min-width').join()).toContain('var(--pane-tab-live, 0px)');
+    document.body.innerHTML = '';
+  });
+
   it('holds no control inside a tab, its close control beside the tab in the box', () => {
     strip();
     const tabs = screen.getAllByRole('tab');
@@ -514,6 +566,23 @@ describe('PaneTabs folding', () => {
     expect(onSelect).toHaveBeenCalledWith('b');
     expect(screen.queryByRole('menu')).toBeNull();
     expect(document.activeElement).toBe(count);
+  });
+
+  it('carries a folded live tab’s lit mark with its words as its tooltip and description', () => {
+    layout(350);
+    strip({
+      front: 'e',
+      tabs: FOLDING.map((item) => (item.id === 'c' ? { ...item, live: 'Taking input' } : item))
+    });
+
+    fireEvent.click(screen.getByRole('button', { name: '3 more tabs' }));
+    const menu = screen.getByRole('menu', { name: 'Folded here' });
+    const row = within(menu).getByRole('menuitem', { name: 'c' });
+
+    expect(row.getAttribute('aria-description')).toBe('Taking input');
+    expect((row.querySelector('.pane-tab-live') as HTMLElement).dataset.tooltip).toBe(
+      'Taking input'
+    );
   });
 
   it('scrolls the row the keys move to into view, and describes a row by its tip', () => {
