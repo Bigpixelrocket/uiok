@@ -370,10 +370,20 @@ describe('LogWell with many lines', () => {
       let width = 400;
       let height = VIEW;
 
+      let stored = 0;
+
       Object.defineProperty(well, 'clientWidth', { configurable: true, get: () => width });
       Object.defineProperty(well, 'clientHeight', { configurable: true, get: () => height });
+      // The browser's clamp: five lines fit, so the well cannot scroll.
+      Object.defineProperty(well, 'scrollTop', {
+        configurable: true,
+        get: () => Math.max(0, Math.min(stored, well.scrollHeight - height)),
+        set: (value: number) => {
+          stored = value;
+        }
+      });
       act(() => resized?.());
-      expect(well.scrollTop).toBe(5 * 18);
+      expect(well.scrollTop).toBe(0);
 
       // Hidden at the head's scroll; 500 lines come; shown again as it was.
       width = 0;
@@ -384,7 +394,8 @@ describe('LogWell with many lines', () => {
       width = 400;
       height = VIEW;
       act(() => resized?.());
-      expect(well.scrollTop).toBe(well.scrollHeight);
+      expect(well.scrollTop).toBe(well.scrollHeight - VIEW);
+      expect(well.scrollTop).toBeGreaterThan(400 * 18);
       expect(drawnLines(container).at(-1)).toBe('line 504');
     });
 
