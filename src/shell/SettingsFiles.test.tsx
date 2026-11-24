@@ -100,6 +100,38 @@ describe('SettingsFiles', () => {
     expect(screen.getByRole('alert').textContent).toBe('The path could not be copied.');
   });
 
+  it('shows the answer of the latest request a row started, whatever order they end in', async () => {
+    let endOpen: (answer: string | null) => void = () => undefined;
+    let endCopy: (answer: string | null) => void = () => undefined;
+    render(
+      <SettingsFiles
+        copyPathLabel="Copy Path"
+        files={[
+          {
+            name: 'settings.toml',
+            summary: 'Read just now',
+            onOpen: () => new Promise((resolve) => (endOpen = resolve)),
+            onCopyPath: () => new Promise((resolve) => (endCopy = resolve)),
+            problemsLabel: 'Problems in settings.toml',
+            problems: []
+          }
+        ]}
+        folder="~/.config/app"
+        folderLabel="Folder"
+        onShowFolder={() => Promise.resolve(null)}
+        openLabel="Open"
+        showFolderLabel="Show in Finder"
+      />
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Open' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copy Path' }));
+    await act(async () => endCopy('The path could not be copied.'));
+    // Open, started first, ends last: its success does not clear the newer failure.
+    await act(async () => endOpen(null));
+    expect(screen.getByRole('alert').textContent).toBe('The path could not be copied.');
+  });
+
   it('draws no Copy Path without its words, whatever a file offers', () => {
     render(
       <SettingsFiles

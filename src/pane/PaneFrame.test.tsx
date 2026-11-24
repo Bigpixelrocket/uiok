@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { Play } from 'lucide-react';
 import { useState, type ReactElement } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -499,6 +499,66 @@ describe('PanePathBar trail fit', () => {
       );
       refit(row);
       expect(row.hasAttribute('data-tight')).toBe(true);
+    });
+
+    it('while a fact’s clamped line hides words, its widest line fitting its box', () => {
+      const { row } = bar();
+      boxes({
+        first: { box: 40, words: 40 },
+        last: { box: 30, words: 30 },
+        fact: { box: 70, words: 70 }
+      });
+      // The words break anywhere: the cut goes on to the line the clamp hides.
+      const fact = row.querySelector('#fact') as HTMLElement;
+      Object.defineProperty(fact, 'scrollHeight', { configurable: true, value: 32 });
+      Object.defineProperty(fact, 'clientHeight', { configurable: true, value: 16 });
+      refit(row);
+      expect(row.hasAttribute('data-tight')).toBe(true);
+    });
+
+    it('in a right-to-left bar too', () => {
+      const { row } = bar();
+      (row.querySelector('.pane-crumbs') as HTMLElement).style.direction = 'rtl';
+      boxes({
+        first: { box: 20, words: 40 },
+        last: { box: 30, words: 30 },
+        fact: { box: 70, words: 70 }
+      });
+      refit(row);
+      expect(row.hasAttribute('data-tight')).toBe(true);
+    });
+
+    it('and again when a tool changes its word on its own, with no render of the bar', async () => {
+      let rename: (to: string) => void = () => undefined;
+      function Tool(): ReactElement {
+        const [word, setWord] = useState('Restart');
+
+        rename = setWord;
+        return (
+          <button className="pane-act" data-word={word} type="button">
+            {word}
+          </button>
+        );
+      }
+      const { container } = render(
+        <PanePathBar trail={['shop', 'web']}>
+          <Tool />
+        </PanePathBar>
+      );
+      const [first, last] = container.querySelectorAll('.crumb-text');
+      first!.id = 'first';
+      last!.id = 'last';
+      const row = container.querySelector('.pane-path-row') as HTMLElement;
+      boxes({ first: { box: 20, words: 40 }, last: { box: 30, words: 30 } });
+      refit(row);
+      expect((container.querySelector('.pane-act') as HTMLElement).dataset.tooltip).toBe('Restart');
+      // Room again, and a shorter word: the bar fits again on the word's own change.
+      boxes({ first: { box: 40, words: 40 }, last: { box: 30, words: 30 } });
+      await act(async () => rename('Run'));
+      expect(row.hasAttribute('data-tight')).toBe(false);
+      expect(
+        (container.querySelector('.pane-act') as HTMLElement).hasAttribute('data-tooltip')
+      ).toBe(false);
     });
 
     it('and not while every crumb and fact shows whole', () => {

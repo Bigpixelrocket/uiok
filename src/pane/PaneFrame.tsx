@@ -94,9 +94,14 @@ function fitTrail(row: HTMLElement): void {
   if (wraps !== row.hasAttribute('data-wraps')) row.toggleAttribute('data-wraps', wraps);
 
   const trail = row.querySelector<HTMLElement>(':scope > .pane-crumbs');
+  if (trail === null) return;
   // Right to left keeps the browser's own scroll origin (decision recorded
   // in pane.md): the trail scrolls, and rests where the browser puts it.
-  if (trail === null || getComputedStyle(trail).direction === 'rtl') return;
+  // Its actions still fold their words before a crumb or a fact is cut.
+  if (getComputedStyle(trail).direction === 'rtl') {
+    stepActionWords(row, trail);
+    return;
+  }
 
   // Measure the bar as the stylesheet lays it out, unpinned.
   const focused = trail.contains(document.activeElement);
@@ -142,10 +147,14 @@ function fitTrail(row: HTMLElement): void {
 
 /**
  * Whether `box` shows less than its whole words: an ellipsis, or a word
- * clipped. Exact widths: a box a fraction of a pixel short of its words
- * already shows its ellipsis.
+ * clipped. A fact's words are one clamped line that breaks anywhere, so
+ * words it cuts go on to a line it hides, which its height tells (as the
+ * tooltip reads it); a crumb's words keep one line, which its width tells,
+ * exactly: a box a fraction of a pixel short of its words already shows
+ * its ellipsis.
  */
 function cutShort(box: HTMLElement): boolean {
+  if (box.scrollHeight > box.clientHeight) return true;
   const words = document.createRange();
   words.selectNodeContents(box);
   // A document without range geometry reads the whole pixels it has.
@@ -356,6 +365,16 @@ export function PanePathBar({
     if (crumbs !== null) {
       menus?.observe(crumbs, { subtree: true, attributeFilter: ['aria-expanded'] });
     }
+    // A tool that changes its word on its own, with no render of the bar:
+    // a folded word changes no box, so only its words tell. The fit itself
+    // writes only tooltips, which this leaves alone.
+    const words = typeof MutationObserver === 'undefined' ? null : new MutationObserver(fit);
+    words?.observe(row, {
+      subtree: true,
+      childList: true,
+      characterData: true,
+      attributeFilter: ['data-word']
+    });
     crumbs?.addEventListener('focusout', left);
     crumbs?.addEventListener('focusin', shown);
     void document.fonts?.ready.then(fit);
@@ -364,6 +383,7 @@ export function PanePathBar({
       sizes.current?.disconnect();
       sizes.current = null;
       menus?.disconnect();
+      words?.disconnect();
       crumbs?.removeEventListener('focusout', left);
       crumbs?.removeEventListener('focusin', shown);
     };

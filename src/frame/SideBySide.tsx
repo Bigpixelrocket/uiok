@@ -30,8 +30,31 @@ export interface SideBySideProps {
 }
 
 /**
+ * A one-line `FilterChips` row, which scrolls its chips sideways: a scroll
+ * container's own box says nothing of the chips it holds (in a listing's
+ * flexible column it lays out nearly nothing wide).
+ */
+const SCROLLING_CHIPS = '.pane-quick-row:not(.pane-quick-row-wrap)';
+
+/**
+ * How much wider `part` needs to be for its widest one-line chip row to
+ * show every chip, as laid out now: the width that row hides, which the
+ * part's own box does not count.
+ */
+const hiddenChips = (part: Element): number => {
+  let hidden = 0;
+
+  for (const row of part.querySelectorAll(SCROLLING_CHIPS)) {
+    hidden = Math.max(hidden, row.scrollWidth - row.clientWidth);
+  }
+  return hidden;
+};
+
+/**
  * The room the two parts need to stand side by side, in pixels: twice the
- * wider part's min-content width, as the columns are equal. Measured by
+ * wider part's min-content width, as the columns are equal, a one-line
+ * chip row counted at its full content width (`hiddenChips`), so chips
+ * that would scroll out of sight in a half stack the pair. Measured by
  * laying the parts out in one `min-content` column for one read
  * (`data-measuring`, which the stylesheet reads), whose width is the wider
  * part's, and back again before the browser paints, so the reader never
@@ -46,8 +69,8 @@ const contentRoom = (element: HTMLElement): number => {
   if (first === undefined || second === undefined) return 0;
   element.setAttribute('data-measuring', '');
   const widest = Math.max(
-    first.getBoundingClientRect().width,
-    second.getBoundingClientRect().width
+    first.getBoundingClientRect().width + hiddenChips(first),
+    second.getBoundingClientRect().width + hiddenChips(second)
   );
 
   element.removeAttribute('data-measuring');
@@ -59,7 +82,8 @@ const contentRoom = (element: HTMLElement): number => {
  * the room the pair is given is `from` pixels wide or more and each part
  * fits its half at its min-content width, one over the other otherwise, a
  * hairline between them either way. So wide content (a form whose labels
- * and fields will not narrow, long unbreakable words) stacks though the
+ * and fields will not narrow, long unbreakable words, a one-line
+ * `FilterChips` row whose chips would scroll) stacks though the
  * room passes `from`, and `from` stays a floor under which the pair never
  * stands side by side. Once side by side, it stacks only under the room it
  * needs less a scrollbar's width, so a scrollbar the two columns bring

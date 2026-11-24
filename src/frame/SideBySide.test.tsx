@@ -242,6 +242,49 @@ describe('SideBySide', () => {
       expect(root.hasAttribute('data-measuring')).toBe(false);
     });
 
+    it('counts a one-line chip row at its full content width, and a wrapping one as laid out', () => {
+      observe();
+      const chipsPair = (wrap: boolean) => (
+        <SideBySide
+          first={
+            <div className={wrap ? 'pane-quick-row pane-quick-row-wrap' : 'pane-quick-row'}>
+              chips
+            </div>
+          }
+          firstLabel="Settings"
+          from={400}
+          second={<p>extensions</p>}
+          secondLabel="Extensions"
+        />
+      );
+      const { container, rerender } = render(chipsPair(false));
+      const root = container.querySelector('.side-by-side') as HTMLElement;
+      const chips = () => root.querySelector('.pane-quick-row') as HTMLElement;
+      /** The chip row lays out 20px wide in the measuring column and hides 200px more. */
+      const hide = () => {
+        Object.defineProperty(chips(), 'clientWidth', { configurable: true, value: 20 });
+        Object.defineProperty(chips(), 'scrollWidth', { configurable: true, value: 220 });
+      };
+
+      // The parts' own boxes need 100px: the floor alone would stand them side by side.
+      content(root, 100, 100);
+      hide();
+      widen(root, 500);
+      act(() => observers.at(-1)?.());
+      // The first needs 100 + 200 = 300px, so the halves need 600px.
+      expect(root.dataset.layout).toBe('stacked');
+      widen(root, 600);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+
+      // Chips that wrap hide nothing sideways: only the part's box counts.
+      rerender(chipsPair(true));
+      hide();
+      widen(root, 500);
+      act(() => observers.at(-1)?.());
+      expect(root.dataset.layout).toBe('side-by-side');
+    });
+
     it('keeps narrow content side by side from the floor', () => {
       observe();
       const { container } = render(pair(400));

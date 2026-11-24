@@ -1,5 +1,5 @@
 import { CircleAlert, Copy, FolderOpen, Info, SquarePen } from 'lucide-react';
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { ReactElement } from 'react';
 
 import { Button } from '../button/Button.js';
@@ -73,6 +73,32 @@ export interface SettingsFilesProps {
   readonly files: readonly SettingsFileEntry[];
 }
 
+/**
+ * A row's requests and the failure under it: `run` starts one, and only the
+ * latest one started says what shows, so a slow request that ends after a
+ * newer one (Open still pending when Copy Path fails) never replaces the
+ * newer one's answer.
+ */
+function useRowRequests(): {
+  readonly failure: string | null;
+  readonly run: (request: SettingsFileRequest) => void;
+} {
+  const [failure, setFailure] = useState<string | null>(null);
+  const latest = useRef(0);
+
+  return {
+    failure,
+    run: (request) => {
+      latest.current += 1;
+      const turn = latest.current;
+
+      void request().then((answer) => {
+        if (latest.current === turn) setFailure(answer);
+      });
+    }
+  };
+}
+
 /** A request's failure under its row, or nothing. */
 function Failure({ message }: { readonly message: string | null }): ReactElement | null {
   return message === null ? null : (
@@ -100,7 +126,7 @@ function SettingsFileRow({
   readonly file: SettingsFileEntry;
   readonly labels: FileVerbLabels;
 }): ReactElement {
-  const [failure, setFailure] = useState<string | null>(null);
+  const { failure, run } = useRowRequests();
   const nameId = useId();
   // Each file's verbs share their words, so each says which file it acts on.
   const verbs = [
@@ -119,12 +145,7 @@ function SettingsFileRow({
           <span className="settings-file-summary">{file.summary}</span>
           {verbs.map(({ id, request, label, icon: Icon }) =>
             request === undefined || label === undefined || label === '' ? null : (
-              <Button
-                aria-describedby={nameId}
-                key={id}
-                onClick={() => void request().then(setFailure)}
-                size="small"
-              >
+              <Button aria-describedby={nameId} key={id} onClick={() => run(request)} size="small">
                 <Icon aria-hidden size={ICON_SM} />
                 {label}
               </Button>
@@ -175,7 +196,8 @@ function SettingsFileRow({
  * (where, which key, what is wrong), on the label column every page shares.
  * Each file's verbs are described by its name, as several rows share their
  * words.
- * A request the host refuses shows its message under its row. Problems show
+ * A request the host refuses shows its message under its row; of a row's
+ * requests the latest started is the one whose answer shows. Problems show
  * only here; the host keeps the page current while it is open, so a fix
  * made in an editor clears its problem as soon as the file is saved.
  */
@@ -195,7 +217,7 @@ export function SettingsFiles({
     show: showFolderLabel,
     copyPath: copyPathLabel
   };
-  const [failure, setFailure] = useState<string | null>(null);
+  const { failure, run } = useRowRequests();
 
   return (
     <div className="field-grid">
@@ -205,7 +227,7 @@ export function SettingsFiles({
       <div className="field-value">
         <div className="field-option">
           <code className="settings-file-path">{folder}</code>
-          <Button onClick={() => void onShowFolder().then(setFailure)} size="small">
+          <Button onClick={() => run(onShowFolder)} size="small">
             <FolderOpen aria-hidden size={ICON_SM} />
             {showFolderLabel}
           </Button>

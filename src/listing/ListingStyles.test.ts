@@ -334,6 +334,37 @@ describe('the listing states', () => {
     document.body.innerHTML = '';
   });
 
+  it('grows a row to hold chips that wrap, and draws chips in a cell without a band’s rule', () => {
+    applyStylesheets(styles);
+    document.body.innerHTML = `<section class="listing-root">
+      <div class="row" id="wraps"><span class="row-name">Modes</span>
+        <span class="row-meta" id="wrap-cell"><div class="pane-quick-row pane-quick-row-wrap" id="wrap"></div></span></div>
+      <div class="row" id="line"><span class="row-name">Modes</span>
+        <span class="row-meta"><div class="pane-quick-row scroll-fade-x" id="one-line"></div></span></div>
+      <div class="pane-quick-row" id="band"></div>
+    </section>`;
+    const style = (id: string) => getComputedStyle(document.getElementById(id) as Element);
+
+    expect([style('wraps').height, style('wraps').minHeight]).toEqual([
+      'auto',
+      'var(--row-height)'
+    ]);
+    expect(style('wrap-cell').whiteSpace).toBe('normal');
+    // A row whose chips keep one line keeps its one-line height.
+    expect(style('line').height).toBe('var(--row-height)');
+    // Declared in source order; the cell's rule outweighs the band's (two classes to one).
+    const rules = (id: string, property = 'border-bottom') =>
+      declaredValues(document.getElementById(id) as Element, property);
+    for (const id of ['wrap', 'one-line']) {
+      expect(rules(id, 'border-bottom-style')).toContain('none');
+      expect(style(id).paddingLeft).toBe('0');
+    }
+    // A pane's quick row under its path bar keeps its band's rule.
+    expect(rules('band', 'border-bottom-style')).not.toContain('none');
+    expect(rules('band').join()).toContain('solid');
+    document.body.innerHTML = '';
+  });
+
   it('dims the name of a row whose item is not there yet, and lifts it on the cursor row', () => {
     applyStylesheets(styles);
     document.body.innerHTML = `<section class="listing-root">

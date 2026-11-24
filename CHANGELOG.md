@@ -11,11 +11,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 ### Added
 
 - `ToneIcon` (`@bigpixelrocket/uiok/icon`, `IconTone`: `accent`, `ready`, `warning`, `danger`): an icon in a theme tone of its own, apart from the words around it, such as an amber update arrow after a version in a `Cell` or in a `TreeRow`'s trailing column. It takes the tone's text colour, which holds on the cursor and hover fills and a mark, and the selection's words on an active selection. With a `label` it is an image named by it, with that tooltip; without one it is decorative.
-- `SettingsFiles`' per-file Show in Finder and Copy Path: a `SettingsFileEntry` takes `onShow` (under the page's `showFolderLabel`) and `onCopyPath` (under the new `copyPathLabel`), drawn after Open. A refused request shows under the file's row, and each file's verbs are described by its name.
+- `SettingsFiles`' per-file Show in Finder and Copy Path: a `SettingsFileEntry` takes `onShow` (under the page's `showFolderLabel`) and `onCopyPath` (under the new `copyPathLabel`), drawn after Open. A refused request shows under the file's row, and each file's verbs are described by its name. Of a row's requests the latest started decides what shows, so one that ends late never replaces a newer answer.
 
 ### Changed
 
-- A `PanePathBar` steps its quiet actions' words down to icons first: while any crumb or fact would be cut, or a crumb out of view, with the words shown, the words go before the trail or a fact gives a character. Before, the crumbs and the facts gave way first and the words only once the last crumb fell below its stem.
+- A `PanePathBar` steps its quiet actions' words down to icons first: while any crumb or fact would be cut (a fact's clamped line hiding words included), or a crumb out of view, with the words shown, the words go before the trail or a fact gives a character, in a right-to-left bar too. Before, the crumbs and the facts gave way first and the words only once the last crumb fell below its stem. The bar also fits again when a tool changes its word on its own.
+- `SideBySide` counts a one-line `FilterChips` row at its whole content width: a scrolling row's own box measured nearly nothing wide in a listing's flexible column, so the halves always seemed to fit and chips scrolled out of sight. Chips that would scroll in a half now stack the pair.
+- A listing `Row` whose `Cell` holds `FilterChips` with `wrap` grows to hold every line of chips instead of letting the second line run over the rows below. Chips in a cell, wrapping or not, draw no band rule under them and no row inset of their own.
 - A `PaletteOption` gives way context first, then its trail's words, then its name, so a long trail no longer squeezes or cuts the name. A trail of words (a string or a number) cuts with an ellipsis, whole in its tooltip while cut (`.palette-meta-text`); a `KeyChord` keeps its width. The option is now a flex row (`.palette-option`).
 
 ### Fixed

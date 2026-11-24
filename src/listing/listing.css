@@ -906,6 +906,29 @@ button.crumb-label.crumb-siblings > svg {
   position: relative;
 }
 
+/* A row whose cell holds chips that wrap (FilterChips' `wrap`, a
+   multi-choice control) grows to hold every line of them: the row's height
+   is then its floor, not its cap, so a second line of chips never runs
+   over the rows below. The cell lets the chips lay out as a block of
+   lines rather than one kept line, and its other cells stay centred on the
+   row. */
+:where(.listing-root) .row:has(> .row-meta > .pane-quick-row-wrap) {
+  height: auto;
+  min-height: var(--row-height);
+}
+
+:where(.listing-root) .row-meta:has(> .pane-quick-row-wrap) {
+  white-space: normal;
+}
+
+/* Chips in a row's cell are a control in the cell, not a pane's band: no
+   rule under them and no row inset of their own, so they start where the
+   cell's words do. */
+:where(.listing-root) .row-meta > .pane-quick-row {
+  padding-inline: 0;
+  border-bottom: none;
+}
+
 /* The column strip, pinned over the scrolling listing: a band a shade under
    the list, labels in the interface font so they read as labels and the rows
    as data, and a short rule in each gutter. */
